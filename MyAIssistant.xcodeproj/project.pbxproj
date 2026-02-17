@@ -85,6 +85,12 @@
 		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000; };
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000; };
 		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000; };
+		AW00000001000000 /* WidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000001000000; };
+		AW00000002000000 /* NextCheckInWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000002000000; };
+		AW00000003000000 /* TodayProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000003000000; };
+		AW00000004000000 /* StreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000004000000; };
+		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000; };
+		AW00000006000000 /* MyAIssistantWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -168,6 +174,11 @@
 		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
 		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
 		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
+		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
+		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
+		BW00000004000000 /* StreakWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +196,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CW00000001000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -192,6 +210,7 @@
 			isa = PBXGroup;
 			children = (
 				D100000002000000 /* MyAIssistant */,
+				DW00000001000000 /* MyAIssistantWidgets */,
 				D900000001000000 /* MyAIssistantTests */,
 				D100000010000000 /* Products */,
 			);
@@ -439,6 +458,7 @@
 			children = (
 				E100000001000000 /* MyAIssistant.app */,
 				E900000001000000 /* MyAIssistantTests.xctest */,
+				EW00000001000000 /* MyAIssistantWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -490,6 +510,17 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		DW00000001000000 /* MyAIssistantWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				BW00000001000000 /* WidgetBundle.swift */,
+				BW00000002000000 /* NextCheckInWidget.swift */,
+				BW00000003000000 /* TodayProgressWidget.swift */,
+				BW00000004000000 /* StreakWidget.swift */,
+			);
+			path = MyAIssistantWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXContainerItemProxy section */
@@ -500,6 +531,13 @@
 			remoteGlobalIDString = F100000001000000;
 			remoteInfo = MyAIssistant;
 		};
+		GW00000001000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FW00000001000000;
+			remoteInfo = MyAIssistantWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXTargetDependency section */
@@ -507,6 +545,11 @@
 			isa = PBXTargetDependency;
 			target = F100000001000000 /* MyAIssistant */;
 			targetProxy = G900000001000000 /* PBXContainerItemProxy */;
+		};
+		HW00000001000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FW00000001000000 /* MyAIssistantWidgets */;
+			targetProxy = GW00000001000000 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -518,10 +561,12 @@
 				C100000002000000 /* Sources */,
 				C100000001000000 /* Frameworks */,
 				CA00000001000000 /* Resources */,
+				CW00000004000000 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				HW00000001000000 /* PBXTargetDependency */,
 			);
 			name = MyAIssistant;
 			productName = MyAIssistant;
@@ -544,6 +589,23 @@
 			productName = MyAIssistantTests;
 			productReference = E900000001000000 /* MyAIssistantTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FW00000001000000 /* MyAIssistantWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */;
+			buildPhases = (
+				CW00000002000000 /* Sources */,
+				CW00000001000000 /* Frameworks */,
+				CW00000003000000 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MyAIssistantWidgets;
+			productName = MyAIssistantWidgets;
+			productReference = EW00000001000000 /* MyAIssistantWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -570,6 +632,7 @@
 			targets = (
 				F100000001000000 /* MyAIssistant */,
 				F100000002000000 /* MyAIssistantTests */,
+				FW00000001000000 /* MyAIssistantWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -666,6 +729,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CW00000002000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AW00000001000000 /* WidgetBundle.swift in Sources */,
+				AW00000002000000 /* NextCheckInWidget.swift in Sources */,
+				AW00000003000000 /* TodayProgressWidget.swift in Sources */,
+				AW00000004000000 /* StreakWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -677,7 +751,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CW00000003000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AW00000005000000 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CW00000004000000 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AW00000006000000 /* MyAIssistantWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		F400000001000000 /* Debug */ = {
@@ -733,7 +829,9 @@
 		F400000003000000 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -760,7 +858,9 @@
 		F400000004000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -820,6 +920,62 @@
 			};
 			name = Release;
 		};
+		FW00000003000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Debug;
+		};
+		FW00000004000000 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -846,6 +1002,15 @@
 			buildConfigurations = (
 				F400000005000000 /* Debug */,
 				F400000006000000 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FW00000003000000 /* Debug */,
+				FW00000004000000 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
