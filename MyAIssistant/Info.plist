@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Calendar Access -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>My AIssistant uses your calendar to sync events with your schedule and help you stay organized.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Full calendar access lets My AIssistant create and update events to keep your schedule in sync.</string>
+
+	<!-- Notifications -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>My AIssistant sends check-in reminders and task alerts to help you stay on track.</string>
+
+	<!-- Background Tasks -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.myaissistant.daily-snapshot</string>
+		<string>com.myaissistant.weekly-review</string>
+		<string>com.myaissistant.calendar-sync</string>
+	</array>
+
+	<!-- Background Modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+</dict>
+</plist>

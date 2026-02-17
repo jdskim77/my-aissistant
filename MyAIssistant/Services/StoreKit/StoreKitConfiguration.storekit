@@ -1,0 +1,228 @@
+{
+  "identifier" : "E7A1F2B3-4C5D-6E7F-8A9B-0C1D2E3F4A5B",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "1234567890",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+      "localizations" : [
+
+      ],
+      "name" : "MyAIssistant Subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A1000001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI check-ins, smarter chat model, calendar sync",
+              "displayName" : "Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "74.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A1000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI check-ins, smarter chat model, calendar sync — save 37%",
+              "displayName" : "Pro Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Annual",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "A1000003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All Pro features at student pricing",
+              "displayName" : "Student Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.student.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Student Monthly",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "A1000004",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All Pro features at student pricing — save 33%",
+              "displayName" : "Student Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.student.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Student Annual",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "A1000005",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Bring your own API key, choose your AI model",
+              "displayName" : "Power User Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.poweruser.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Power User Monthly",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "A1000006",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Bring your own API key, choose your AI model — save 33%",
+              "displayName" : "Power User Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.myaissistant.poweruser.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Power User Annual",
+          "subscriptionGroupID" : "F1A2B3C4-D5E6-7890-ABCD-EF1234567890",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

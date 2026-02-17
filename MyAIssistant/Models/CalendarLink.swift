@@ -1,0 +1,63 @@
+import Foundation
+import SwiftData
+
+@Model
+final class CalendarLink {
+    var id: String
+    var source: String          // "apple" or "google"
+    var calendarID: String      // EKCalendar.calendarIdentifier or Google Calendar ID
+    var name: String
+    var color: String           // Hex color from calendar
+    var enabled: Bool
+    var lastSynced: Date?
+    var createdAt: Date
+
+    // MARK: - Computed source accessor
+
+    @Transient
+    var calendarSource: CalendarSource {
+        get { CalendarSource(rawValue: source) ?? .apple }
+        set { source = newValue.rawValue }
+    }
+
+    init(
+        id: String = UUID().uuidString,
+        source: CalendarSource,
+        calendarID: String,
+        name: String,
+        color: String = "#2D5016",
+        enabled: Bool = true
+    ) {
+        self.id = id
+        self.source = source.rawValue
+        self.calendarID = calendarID
+        self.name = name
+        self.color = color
+        self.enabled = enabled
+        self.lastSynced = nil
+        self.createdAt = Date()
+    }
+}
+
+// MARK: - Calendar Source
+
+enum CalendarSource: String, CaseIterable, Identifiable {
+    case apple
+    case google
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .apple: return "Apple Calendar"
+        case .google: return "Google Calendar"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .apple: return "calendar"
+        case .google: return "globe"
+        }
+    }
+}
