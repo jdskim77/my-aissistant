@@ -25,33 +25,61 @@ extension Color {
 }
 
 struct AppColors {
-    static let background = Color(hex: "F8F5F0")
-    static let surface = Color.white
-    static let card = Color(hex: "FFFEFB")
-    static let border = Color(hex: "E8E2D9")
+    private static var theme: ColorTheme { ThemeManager.shared.currentTheme }
 
-    static let accent = Color(hex: "2D5016")
-    static let accentWarm = Color(hex: "4A7C2F")
-    static let accentLight = Color(hex: "E8F0E0")
+    // MARK: - Backgrounds & Surfaces
+    static var background: Color { theme.background }
+    static var surface: Color { theme.surface }
+    static var card: Color { theme.card }
+    static var border: Color { theme.border }
 
-    static let gold = Color(hex: "B8860B")
-    static let coral = Color(hex: "C94B2B")
-    static let skyBlue = Color(hex: "1A5276")
+    // MARK: - Accents
+    static var accent: Color { theme.accent }
+    static var accentWarm: Color { theme.accentWarm }
+    static var accentLight: Color { theme.accentLight }
 
-    static let textPrimary = Color(hex: "1A1A14")
-    static let textSecondary = Color(hex: "6B6555")
-    static let textMuted = Color(hex: "8A8478")
+    // MARK: - Semantic Colors
+    static var gold: Color { theme.gold }
+    static var coral: Color { theme.coral }
+    static var skyBlue: Color { theme.skyBlue }
 
-    static let morning = Color(hex: "FF9500")
-    static let noon = Color(hex: "34C759")
-    static let afternoon = Color(hex: "007AFF")
-    static let night = Color(hex: "5856D6")
+    // MARK: - Text
+    static var textPrimary: Color { theme.textPrimary }
+    static var textSecondary: Color { theme.textSecondary }
+    static var textMuted: Color { theme.textMuted }
+
+    // MARK: - Check-in Times
+    static var morning: Color { theme.morning }
+    static var noon: Color { theme.noon }
+    static var afternoon: Color { theme.afternoon }
+    static var night: Color { theme.night }
+
+    // MARK: - Task Status
+    static var overdueRed: Color { theme.overdueRed }
+    static var overdueBg: Color { theme.overdueBg }
+    static var completionGreen: Color { theme.completionGreen }
+
+    // MARK: - Chat Bubbles
+    static var userBubbleText: Color { theme.userBubbleText }
+    static var aiBubble: Color { theme.aiBubble }
+    static var aiBubbleText: Color { theme.aiBubbleText }
+    static var aiBubbleBorder: Color { theme.aiBubbleBorder }
+
+    // MARK: - Priority
 
     static func priorityColor(_ priority: TaskPriority) -> Color {
         switch priority {
         case .high: return coral
         case .medium: return gold
         case .low: return textMuted
+        }
+    }
+
+    static func checkboxColor(_ priority: TaskPriority) -> Color {
+        switch priority {
+        case .high: return theme.checkboxHigh
+        case .medium: return theme.checkboxMedium
+        case .low: return theme.checkboxLow
         }
     }
 }

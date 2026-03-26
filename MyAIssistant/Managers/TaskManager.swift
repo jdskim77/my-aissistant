@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 @MainActor
 final class TaskManager: ObservableObject {
@@ -15,17 +16,48 @@ final class TaskManager: ObservableObject {
     func addTask(_ task: TaskItem) {
         modelContext.insert(task)
         try? modelContext.save()
+        updateWidgetData()
     }
 
     func toggleCompletion(_ task: TaskItem) {
         task.done.toggle()
         task.completedAt = task.done ? Date() : nil
+
+        // Auto-generate next recurring instance when marking done
+        if task.done, task.recurrence != .none,
+           let nextDate = task.recurrence.nextDate(after: task.date) {
+            let next = TaskItem(
+                title: task.title,
+                category: task.category,
+                priority: task.priority,
+                date: nextDate,
+                icon: task.icon,
+                notes: task.notes,
+                recurrence: task.recurrence
+            )
+            next.externalCalendarID = task.externalCalendarID
+            modelContext.insert(next)
+        }
+
         try? modelContext.save()
+        updateWidgetData()
     }
 
     func deleteTask(_ task: TaskItem) {
         modelContext.delete(task)
         try? modelContext.save()
+        updateWidgetData()
+    }
+
+    func rescheduleTask(_ task: TaskItem, to newDate: Date) {
+        let calendar = Calendar.current
+        let oldComponents = calendar.dateComponents([.hour, .minute], from: task.date)
+        var newComponents = calendar.dateComponents([.year, .month, .day], from: newDate)
+        newComponents.hour = oldComponents.hour
+        newComponents.minute = oldComponents.minute
+        task.date = calendar.date(from: newComponents) ?? newDate
+        try? modelContext.save()
+        updateWidgetData()
     }
 
     // MARK: - Queries
@@ -33,7 +65,7 @@ final class TaskManager: ObservableObject {
     func todayTasks() -> [TaskItem] {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        let endOfDay = calendar.safeDate(byAdding: .day, value: 1, to: startOfDay)
 
         let descriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate { $0.date >= startOfDay && $0.date < endOfDay },
@@ -102,9 +134,9 @@ final class TaskManager: ObservableObject {
         case .midday:
             return today
         case .afternoon:
-            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let tomorrow = Calendar.current.safeDate(byAdding: .day, value: 1, to: Date())
             let tomorrowStart = Calendar.current.startOfDay(for: tomorrow)
-            let tomorrowEnd = Calendar.current.date(byAdding: .day, value: 1, to: tomorrowStart)!
+            let tomorrowEnd = Calendar.current.safeDate(byAdding: .day, value: 1, to: tomorrowStart)
             let descriptor = FetchDescriptor<TaskItem>(
                 predicate: #Predicate { $0.date >= tomorrowStart && $0.date < tomorrowEnd },
                 sortBy: [SortDescriptor(\TaskItem.priorityRaw)]
@@ -143,12 +175,26 @@ final class TaskManager: ObservableObject {
     // MARK: - AI Context
 
     func scheduleSummary() -> String {
+        let calendar = Calendar.current
+        let windowStart = calendar.safeDate(byAdding: .day, value: -7, to: calendar.startOfDay(for: Date()))
+        let windowEnd = calendar.safeDate(byAdding: .day, value: 14, to: calendar.startOfDay(for: Date()))
+
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= windowStart && $0.date < windowEnd },
+            sortBy: [SortDescriptor(\TaskItem.date)]
+        )
+        let tasks = (try? modelContext.fetch(descriptor)) ?? []
+
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
-        return allTasks().map { task in
+        return tasks.map { task in
             let status = task.done ? "✓" : "○"
             let dateStr = formatter.string(from: task.date)
-            return "\(status) \(dateStr): \(task.title) [\(task.priority.rawValue)] (\(task.category.rawValue))"
+            var line = "\(status) \(dateStr): \(task.title) [\(task.priority.rawValue)] (\(task.category.rawValue))"
+            if let extID = task.externalCalendarID {
+                line += " {id:\(extID)}"
+            }
+            return line
         }.joined(separator: "\n")
     }
 
@@ -159,5 +205,78 @@ final class TaskManager: ObservableObject {
         guard !tasks.isEmpty else { return 0 }
         let done = tasks.filter(\.done).count
         return Int(Double(done) / Double(tasks.count) * 100)
+    }
+
+    // MARK: - Widget Data
+
+    /// Snapshots current state to the shared App Group container for widgets to read.
+    func updateWidgetData(streak: Int = 0) {
+        let today = todayTasks()
+        let completed = today.filter(\.done).count
+        let pending = today.filter { !$0.done }
+            .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
+            .prefix(3)
+            .map { task -> WidgetTaskData in
+                let hour = Calendar.current.component(.hour, from: task.date)
+                let minute = Calendar.current.component(.minute, from: task.date)
+                let timeStr: String? = (hour == 0 && minute == 0) ? nil : {
+                    let f = DateFormatter()
+                    f.dateFormat = "h:mm a"
+                    return f.string(from: task.date)
+                }()
+                return WidgetTaskData(title: task.title, priority: task.priority.rawValue, time: timeStr)
+            }
+
+        // Load today's wisdom quote
+        let quote = WisdomManager.todayQuote()
+
+        let data = WidgetSharedData(
+            tasksCompleted: completed,
+            tasksTotal: today.count,
+            topPending: pending,
+            streakDays: streak,
+            streakActive: streak > 0,
+            quoteText: quote?.text,
+            quoteAuthor: quote?.author,
+            updatedAt: Date()
+        )
+        data.save()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+}
+
+// MARK: - Shared Widget Data (mirrors widget target's WidgetData)
+
+struct WidgetTaskData: Codable {
+    let title: String
+    let priority: String
+    let time: String?
+}
+
+struct WidgetSharedData: Codable {
+    let tasksCompleted: Int
+    let tasksTotal: Int
+    let topPending: [WidgetTaskData]
+    let streakDays: Int
+    let streakActive: Bool
+    let quoteText: String?
+    let quoteAuthor: String?
+    let updatedAt: Date
+
+    static let appGroupID = "group.com.myaissistant.shared"
+    static let fileName = "widget-data.json"
+
+    static var fileURL: URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)?
+            .appendingPathComponent(fileName)
+    }
+
+    func save() {
+        guard let url = Self.fileURL else { return }
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        guard let encoded = try? encoder.encode(self) else { return }
+        try? encoded.write(to: url, options: .atomic)
     }
 }

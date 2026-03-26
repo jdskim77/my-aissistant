@@ -7,8 +7,9 @@ struct ContentView: View {
     @Query(filter: #Predicate<TaskItem> { item in
         item.done == false
     }) private var incompleteTasks: [TaskItem]
-    @State private var selectedTab = 0
+    @State private var selectedTab: Tab = .home
     @State private var onboardingComplete = false
+    @State private var showingChat = false
 
     private var hasCompletedOnboarding: Bool {
         profiles.first?.onboardingCompleted ?? false
@@ -20,57 +21,71 @@ struct ContentView: View {
 
     var body: some View {
         if hasCompletedOnboarding || onboardingComplete {
-            mainTabView
+            mainView
         } else {
             OnboardingContainerView(onboardingComplete: $onboardingComplete)
         }
     }
 
-    private var mainTabView: some View {
-        TabView(selection: $selectedTab) {
-            HomeView()
-                .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Home")
+    private var mainView: some View {
+        ZStack(alignment: .bottom) {
+            Group {
+                switch selectedTab {
+                case .home:
+                    HomeView()
+                case .schedule:
+                    ScheduleView()
+                case .patterns:
+                    PatternsView()
+                case .settings:
+                    SettingsView()
                 }
-                .tag(0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, 56)
 
-            ScheduleView()
-                .tabItem {
-                    Image(systemName: "calendar")
-                    Text("Schedule")
-                }
-                .tag(1)
-                .badge(todayIncompleteCount)
-
-            CheckInsView()
-                .tabItem {
-                    Image(systemName: "bell.fill")
-                    Text("Check-ins")
-                }
-                .tag(2)
-
-            PatternsView()
-                .tabItem {
-                    Image(systemName: "chart.bar.fill")
-                    Text("Patterns")
-                }
-                .tag(3)
-
-            ChatView()
-                .tabItem {
-                    Image(systemName: "sparkle")
-                    Text("Assistant")
-                }
-                .tag(4)
-
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Settings")
-                }
-                .tag(5)
+            CustomTabBar(
+                selectedTab: $selectedTab,
+                onAITap: { showingChat = true },
+                scheduleBadge: todayIncompleteCount
+            )
         }
         .tint(AppColors.accent)
+        .fullScreenCover(isPresented: $showingChat) {
+            ChatView(onDismiss: { showingChat = false })
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didTapNotification)) { notification in
+            guard let destination = notification.userInfo?["destination"] as? String else { return }
+            navigateToDestination(destination)
+        }
+        .onAppear {
+            // Handle cold-launch: app was opened by tapping a notification while not running
+            if let pending = NotificationDelegate.shared.pendingDestination {
+                NotificationDelegate.shared.pendingDestination = nil
+                navigateToDestination(pending)
+            }
+        }
+        .task {
+            // Delayed check for cold-launch race: didReceive is async and may complete
+            // after onAppear fires. Re-check after a brief delay.
+            try? await Task.sleep(for: .milliseconds(500))
+            if let pending = NotificationDelegate.shared.pendingDestination {
+                NotificationDelegate.shared.pendingDestination = nil
+                navigateToDestination(pending)
+            }
+        }
+    }
+
+    private func navigateToDestination(_ destination: String) {
+        switch destination {
+        case "schedule":
+            selectedTab = .schedule
+        case "patterns":
+            selectedTab = .patterns
+        case "settings":
+            selectedTab = .settings
+        default:
+            selectedTab = .home
+        }
     }
 }

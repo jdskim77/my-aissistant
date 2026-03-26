@@ -20,7 +20,7 @@ final class PatternEngine: ObservableObject {
         var checkDate = calendar.startOfDay(for: Date())
 
         while true {
-            let nextDay = calendar.date(byAdding: .day, value: 1, to: checkDate)!
+            let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: checkDate)
 
             let descriptor = FetchDescriptor<TaskItem>(
                 predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay && $0.done == true }
@@ -29,7 +29,7 @@ final class PatternEngine: ObservableObject {
 
             if completedCount > 0 {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
             } else {
                 break
             }
@@ -42,7 +42,7 @@ final class PatternEngine: ObservableObject {
 
     func completionRate(days: Int = 30) -> Int {
         let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: -days, to: Date())!
+        let startDate = calendar.safeDate(byAdding: .day, value: -days, to: Date())
 
         let totalDescriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate { $0.date >= startDate }
@@ -62,7 +62,7 @@ final class PatternEngine: ObservableObject {
 
     func averageTasksPerDay(days: Int = 30) -> Double {
         let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: -days, to: Date())!
+        let startDate = calendar.safeDate(byAdding: .day, value: -days, to: Date())
 
         let descriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate { $0.date >= startDate }
@@ -83,11 +83,11 @@ final class PatternEngine: ObservableObject {
         let today = Date()
         let weekday = calendar.component(.weekday, from: today)
         let daysFromMonday = (weekday + 5) % 7
-        let monday = calendar.date(byAdding: .day, value: -daysFromMonday, to: calendar.startOfDay(for: today))!
+        let monday = calendar.safeDate(byAdding: .day, value: -daysFromMonday, to: calendar.startOfDay(for: today))
 
         for dayOffset in 0..<7 {
-            let dayStart = calendar.date(byAdding: .day, value: dayOffset, to: monday)!
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            let dayStart = calendar.safeDate(byAdding: .day, value: dayOffset, to: monday)
+            let dayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
 
             let descriptor = FetchDescriptor<TaskItem>(
                 predicate: #Predicate { $0.date >= dayStart && $0.date < dayEnd && $0.done == true }
@@ -105,8 +105,8 @@ final class PatternEngine: ObservableObject {
         var results = [Bool](repeating: false, count: 7)
 
         for dayOffset in 0..<7 {
-            let day = calendar.date(byAdding: .day, value: -(6 - dayOffset), to: calendar.startOfDay(for: Date()))!
-            let nextDay = calendar.date(byAdding: .day, value: 1, to: day)!
+            let day = calendar.safeDate(byAdding: .day, value: -(6 - dayOffset), to: calendar.startOfDay(for: Date()))
+            let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: day)
 
             let descriptor = FetchDescriptor<CheckInRecord>(
                 predicate: #Predicate { $0.date >= day && $0.date < nextDay && $0.completed == true }
@@ -166,8 +166,8 @@ final class PatternEngine: ObservableObject {
         var points: [MoodDataPoint] = []
 
         for dayOffset in (0..<days).reversed() {
-            let day = calendar.date(byAdding: .day, value: -dayOffset, to: calendar.startOfDay(for: Date()))!
-            let nextDay = calendar.date(byAdding: .day, value: 1, to: day)!
+            let day = calendar.safeDate(byAdding: .day, value: -dayOffset, to: calendar.startOfDay(for: Date()))
+            let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: day)
 
             // Average mood from check-ins that day
             let checkInDescriptor = FetchDescriptor<CheckInRecord>(
@@ -226,12 +226,111 @@ final class PatternEngine: ObservableObject {
         return numerator / denominator
     }
 
+    // MARK: - Activity Tracking
+
+    func recentActivities(days: Int = 30) -> [ActivityEntry] {
+        let calendar = Calendar.current
+        let startDate = calendar.safeDate(byAdding: .day, value: -days, to: Date())
+
+        var descriptor = FetchDescriptor<ActivityEntry>(
+            predicate: #Predicate { $0.date >= startDate },
+            sortBy: [SortDescriptor(\ActivityEntry.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 100
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    func activityCategorySummary(days: Int = 30) -> [(category: String, count: Int)] {
+        let activities = recentActivities(days: days)
+        var counts: [String: Int] = [:]
+        for activity in activities {
+            counts[activity.category, default: 0] += 1
+        }
+        return counts.map { (category: $0.key, count: $0.value) }
+            .sorted { $0.count > $1.count }
+    }
+
+    func activitySummaryText(days: Int = 30) -> String {
+        let activities = recentActivities(days: days)
+        guard !activities.isEmpty else { return "" }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+
+        let lines = activities.prefix(50).map { entry in
+            "\(formatter.string(from: entry.date)): [\(entry.category)] \(entry.activity)"
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Activity Frequency & Timing
+
+    /// Weekly frequency per activity category over the last N days.
+    /// Returns e.g. [("Exercise", 3.5), ("Social", 1.2)] meaning 3.5 sessions/week on average.
+    func activityWeeklyFrequency(days: Int = 28) -> [(category: String, perWeek: Double)] {
+        let activities = recentActivities(days: days)
+        guard !activities.isEmpty else { return [] }
+
+        let weeks = max(Double(days) / 7.0, 1.0)
+        var counts: [String: Int] = [:]
+        for activity in activities {
+            counts[activity.category, default: 0] += 1
+        }
+
+        return counts.map { (category: $0.key, perWeek: Double($0.value) / weeks) }
+            .sorted { $0.perWeek > $1.perWeek }
+    }
+
+    /// Best (most common) hour of day per activity category.
+    /// Returns e.g. [("Exercise", 8), ("Work", 10)] meaning Exercise typically at 8am.
+    func bestTimePerCategory(days: Int = 28) -> [(category: String, hour: Int)] {
+        let activities = recentActivities(days: days)
+        guard !activities.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        var hoursByCategory: [String: [Int]] = [:]
+        for activity in activities {
+            let hour = calendar.component(.hour, from: activity.date)
+            hoursByCategory[activity.category, default: []].append(hour)
+        }
+
+        return hoursByCategory.compactMap { category, hours in
+            guard !hours.isEmpty else { return nil }
+            // Find the mode (most frequent hour)
+            let freq = Dictionary(grouping: hours, by: { $0 }).mapValues(\.count)
+            guard let bestHour = freq.max(by: { $0.value < $1.value })?.key else { return nil }
+            return (category: category, hour: bestHour)
+        }.sorted { $0.category < $1.category }
+    }
+
+    /// Formatted pattern insights string for feeding into the AI system prompt.
+    /// Combines frequency + timing into a concise, readable block.
+    func patternInsightsText(days: Int = 28) -> String {
+        let frequencies = activityWeeklyFrequency(days: days)
+        let bestTimes = bestTimePerCategory(days: days)
+        guard !frequencies.isEmpty else { return "" }
+
+        let timeMap = Dictionary(uniqueKeysWithValues: bestTimes.map { ($0.category, $0.hour) })
+
+        let lines = frequencies.prefix(10).map { entry in
+            var line = "\(entry.category): ~\(String(format: "%.1f", entry.perWeek))x/week"
+            if let hour = timeMap[entry.category] {
+                let period = hour < 12 ? "am" : "pm"
+                let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
+                line += " (usually around \(displayHour)\(period))"
+            }
+            return line
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
     // MARK: - Weekly Review Generation
 
     func generateWeeklyReview(tier: SubscriptionTier) async {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today)!
+        let weekAgo = calendar.safeDate(byAdding: .day, value: -7, to: today)
 
         // Gather week's stats
         let totalDescriptor = FetchDescriptor<TaskItem>(

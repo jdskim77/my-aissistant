@@ -4,9 +4,20 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
+    @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
+
     @State private var appeared = false
     @State private var showingCheckIn = false
+    @State private var overdueExpanded = true
+    @State private var completedExpanded = false
+    @State private var tomorrowExpanded = false
+    @State private var taskToReschedule: TaskItem?
+    @State private var rescheduleDate = Date()
+    @State private var greetingManager = GreetingManager()
+    @State private var greetingOrbActive = false
+
+    // MARK: - Computed
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -19,200 +30,638 @@ struct HomeView: View {
         Date().formatted(as: "EEEE, MMMM d")
     }
 
-    private var todayTasks: [TaskItem] {
-        allTasks.filter { Calendar.current.isDateInToday($0.date) }
+    private var startOfToday: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+
+    private var endOfToday: Date {
+        Calendar.current.safeDate(byAdding: .day, value: 1, to: startOfToday)
+    }
+
+    private var overdueTasks: [TaskItem] {
+        allTasks.filter { $0.date < startOfToday && !$0.done }
+            .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
+    }
+
+    private var todayActiveTasks: [TaskItem] {
+        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && !$0.done && $0.externalCalendarID == nil }
+            .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
+    }
+
+    private var todayCalendarEvents: [TaskItem] {
+        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && $0.externalCalendarID != nil }
+            .sorted { $0.date < $1.date }
+    }
+
+    private var todayCompletedTasks: [TaskItem] {
+        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && $0.done }
+    }
+
+    private var totalTodayCount: Int {
+        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday }.count
     }
 
     private var completedTodayCount: Int {
-        todayTasks.filter(\.done).count
-    }
-
-    private var highPriorityUpcoming: [TaskItem] {
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        return Array(
-            allTasks
-                .filter { $0.date >= startOfDay && !$0.done && $0.priority == .high }
-                .prefix(3)
-        )
+        todayCompletedTasks.count
     }
 
     private var streak: Int {
         patternEngine?.currentStreak() ?? 0
     }
 
-    private var checkinHistory: [Bool] {
-        patternEngine?.checkInConsistency() ?? Array(repeating: false, count: 7)
+    private var completionFraction: Double {
+        guard totalTodayCount > 0 else { return 0 }
+        return Double(completedTodayCount) / Double(totalTodayCount)
     }
 
+    private var startOfTomorrow: Date { endOfToday }
+
+    private var endOfTomorrow: Date {
+        Calendar.current.safeDate(byAdding: .day, value: 2, to: startOfToday)
+    }
+
+    private var tomorrowTasks: [TaskItem] {
+        allTasks.filter { $0.date >= startOfTomorrow && $0.date < endOfTomorrow && !$0.done }
+            .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
+    }
+
+    // MARK: - Body
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Greeting header
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(greeting)
-                        .font(AppFonts.display(32))
-                        .foregroundColor(AppColors.textPrimary)
-                    Text(formattedDate)
-                        .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(AppColors.textSecondary)
-                }
-                .padding(.top, 8)
-                .offset(y: appeared ? 0 : 20)
-                .opacity(appeared ? 1 : 0)
-
-                // Next check-in card (tappable)
-                Button {
-                    showingCheckIn = true
-                } label: {
-                    nextCheckInCard
-                }
-                .buttonStyle(.plain)
-                .offset(y: appeared ? 0 : 20)
-                .opacity(appeared ? 1 : 0)
-
-                // Stats row
-                HStack(spacing: 12) {
-                    StatCard(
-                        title: "Today's Tasks",
-                        value: "\(todayTasks.count)",
-                        icon: "📋",
-                        color: AppColors.accent
+        List {
+            // AI Greeting
+            if greetingManager.isShowingGreeting {
+                Section {
+                    AIGreetingCard(
+                        greeting: greetingManager.currentGreeting,
+                        isAnimating: greetingOrbActive,
+                        onDismiss: { greetingManager.dismissGreeting() }
                     )
-                    StatCard(
-                        title: "Completed",
-                        value: "\(completedTodayCount)",
-                        icon: "✅",
-                        color: AppColors.accentWarm
-                    )
-                    StatCard(
-                        title: "Streak",
-                        value: "\(streak)",
-                        icon: "🔥",
-                        color: AppColors.coral
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            }
+
+            // Compact header
+            Section {
+                headerView
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+
+            // Daily wisdom
+            if let quote = WisdomManager.todayQuote() {
+                Section {
+                    wisdomCard(quote: quote)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
+            // Stats bar
+            Section {
+                statsBar
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+            }
+
+            // Overdue section
+            if !overdueTasks.isEmpty {
+                Section {
+                    if overdueExpanded {
+                        ForEach(overdueTasks, id: \.id) { task in
+                            TaskCard(task: task, isOverdue: true) {
+                                withAnimation(.spring(response: 0.3)) {
+                                    taskManager?.toggleCompletion(task)
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        if task.externalCalendarID != nil {
+                                            Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                                        }
+                                        taskManager?.deleteTask(task)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button {
+                                    taskToReschedule = task
+                                    rescheduleDate = Date()
+                                } label: {
+                                    Label("Reschedule", systemImage: "calendar.badge.clock")
+                                }
+                                .tint(AppColors.skyBlue)
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        taskManager?.toggleCompletion(task)
+                                    }
+                                } label: {
+                                    Label("Complete", systemImage: "checkmark.circle.fill")
+                                }
+                                .tint(AppColors.completionGreen)
+                            }
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        }
+                    }
+                } header: {
+                    collapsibleHeader(
+                        title: "Overdue",
+                        count: overdueTasks.count,
+                        isExpanded: $overdueExpanded,
+                        tintColor: AppColors.overdueRed
                     )
                 }
-                .offset(y: appeared ? 0 : 20)
-                .opacity(appeared ? 1 : 0)
+            }
 
-                // Streak card
-                streakCard
-                    .offset(y: appeared ? 0 : 20)
-                    .opacity(appeared ? 1 : 0)
+            // Today section
+            Section {
+                // Calendar events inline
+                ForEach(todayCalendarEvents, id: \.id) { event in
+                    CalendarEventRow(task: event)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    Task { await calendarSyncManager?.deleteCalendarEvent(for: event) }
+                                    taskManager?.deleteTask(event)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                }
 
-                // High priority upcoming
-                if !highPriorityUpcoming.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("High Priority")
-                            .font(AppFonts.heading(18))
-                            .foregroundColor(AppColors.textPrimary)
+                // Active tasks
+                if todayActiveTasks.isEmpty && todayCalendarEvents.isEmpty && overdueTasks.isEmpty {
+                    emptyActiveState
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
+                } else {
+                    ForEach(todayActiveTasks, id: \.id) { task in
+                        TaskCard(task: task) {
+                            withAnimation(.spring(response: 0.3)) {
+                                taskManager?.toggleCompletion(task)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    if task.externalCalendarID != nil {
+                                        Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                                    }
+                                    taskManager?.deleteTask(task)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            Button {
+                                taskToReschedule = task
+                                rescheduleDate = Date()
+                            } label: {
+                                Label("Reschedule", systemImage: "calendar.badge.clock")
+                            }
+                            .tint(AppColors.skyBlue)
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            Button {
+                                withAnimation(.spring(response: 0.3)) {
+                                    taskManager?.toggleCompletion(task)
+                                }
+                            } label: {
+                                Label("Complete", systemImage: "checkmark.circle.fill")
+                            }
+                            .tint(AppColors.completionGreen)
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    }
+                }
+            } header: {
+                Text("Today")
+                    .font(AppFonts.heading(15))
+                    .foregroundColor(AppColors.textPrimary)
+                    .textCase(nil)
+            }
 
-                        ForEach(highPriorityUpcoming, id: \.id) { task in
+            // All done celebration
+            if !todayActiveTasks.isEmpty || completedTodayCount == 0 {
+                // Don't show celebration
+            } else if todayActiveTasks.isEmpty && completedTodayCount > 0 && overdueTasks.isEmpty {
+                Section {
+                    allDoneState
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
+                }
+            }
+
+            // Completed section
+            if !todayCompletedTasks.isEmpty {
+                Section {
+                    if completedExpanded {
+                        ForEach(todayCompletedTasks, id: \.id) { task in
                             TaskCard(task: task) {
                                 withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        if task.externalCalendarID != nil {
+                                            Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                                        }
+                                        taskManager?.deleteTask(task)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        taskManager?.toggleCompletion(task)
+                                    }
+                                } label: {
+                                    Label("Undo", systemImage: "arrow.uturn.backward")
+                                }
+                                .tint(AppColors.accentWarm)
+                            }
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .opacity(0.6)
                         }
                     }
-                    .offset(y: appeared ? 0 : 20)
-                    .opacity(appeared ? 1 : 0)
+                } header: {
+                    collapsibleHeader(
+                        title: "Completed",
+                        count: todayCompletedTasks.count,
+                        isExpanded: $completedExpanded,
+                        tintColor: AppColors.completionGreen
+                    )
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 30)
+
+            // Tomorrow section
+            if !tomorrowTasks.isEmpty {
+                Section {
+                    if tomorrowExpanded {
+                        ForEach(tomorrowTasks, id: \.id) { task in
+                            TaskCard(task: task) {
+                                withAnimation(.spring(response: 0.3)) {
+                                    taskManager?.toggleCompletion(task)
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        if task.externalCalendarID != nil {
+                                            Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                                        }
+                                        taskManager?.deleteTask(task)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button {
+                                    taskToReschedule = task
+                                    rescheduleDate = Date()
+                                } label: {
+                                    Label("Reschedule", systemImage: "calendar.badge.clock")
+                                }
+                                .tint(AppColors.skyBlue)
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        taskManager?.toggleCompletion(task)
+                                    }
+                                } label: {
+                                    Label("Complete", systemImage: "checkmark.circle.fill")
+                                }
+                                .tint(AppColors.completionGreen)
+                            }
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        }
+                    }
+                } header: {
+                    collapsibleHeader(
+                        title: "Tomorrow",
+                        count: tomorrowTasks.count,
+                        isExpanded: $tomorrowExpanded,
+                        tintColor: AppColors.skyBlue
+                    )
+                }
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(.easeOut(duration: 0.5)) {
                 appeared = true
+            }
+
+            // Generate contextual AI greeting
+            let todayTasks = taskManager?.todayTasks() ?? []
+            let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
+            let isNew = greetingManager.generateGreetingIfNeeded(
+                todayTaskCount: todayTasks.count,
+                completedTodayCount: todayTasks.filter(\.done).count,
+                highPriorityTitles: highPriority.map(\.title),
+                completionRate: patternEngine?.completionRate() ?? 0,
+                streak: patternEngine?.currentStreak() ?? 0
+            )
+
+            // Pulse the orb briefly on fresh greetings
+            if isNew {
+                greetingOrbActive = true
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    await MainActor.run { greetingOrbActive = false }
+                }
+            }
+
+            // Auto-dismiss greeting after 30 seconds
+            Task {
+                try? await Task.sleep(for: .seconds(30))
+                await MainActor.run { greetingManager.dismissGreeting() }
             }
         }
         .sheet(isPresented: $showingCheckIn) {
             CheckInDetailView(timeSlot: CheckInTime.next())
         }
+        .sheet(item: $taskToReschedule) { task in
+            rescheduleSheet(for: task)
+        }
     }
 
-    // MARK: - Next check-in card
+    // MARK: - Daily Wisdom Card
 
-    private var nextCheckInCard: some View {
-        let next = CheckInTime.next()
-        return HStack(spacing: 14) {
-            Text(next.icon)
-                .font(.system(size: 28))
+    private func wisdomCard(quote: WisdomManager.Quote) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.accentWarm)
+                Text("Daily Wisdom")
+                    .font(AppFonts.label(12))
+                    .foregroundColor(AppColors.accentWarm)
+            }
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Next: \(next.title)")
-                    .font(AppFonts.bodyMedium(15))
+            Text("\"\(quote.text)\"")
+                .font(AppFonts.display(16))
+                .foregroundColor(AppColors.textPrimary)
+                .italic()
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("- \(quote.author)")
+                .font(AppFonts.bodyMedium(13))
+                .foregroundColor(AppColors.textSecondary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(AppColors.card)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(AppColors.accentWarm.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Header
+
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(greeting)
+                    .font(AppFonts.display(28))
                     .foregroundColor(AppColors.textPrimary)
-                Text(next.timeLabel)
-                    .font(AppFonts.caption(13))
+                Text(formattedDate)
+                    .font(AppFonts.bodyMedium(14))
                     .foregroundColor(AppColors.textSecondary)
             }
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(AppColors.textMuted)
+            // Next check-in pill
+            Button {
+                showingCheckIn = true
+            } label: {
+                let next = CheckInTime.next()
+                HStack(spacing: 6) {
+                    Text(next.icon)
+                        .font(.system(size: 14))
+                    Text(next.timeLabel)
+                        .font(AppFonts.label(12))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(AppColors.card)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
         }
-        .padding(16)
-        .background(
-            LinearGradient(
-                colors: [next.color.opacity(0.08), next.color.opacity(0.03)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-        .cornerRadius(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(next.color.opacity(0.2), lineWidth: 1)
-        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
     }
 
-    // MARK: - Streak card
+    // MARK: - Stats Bar
 
-    private var streakCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("🔥")
-                    .font(.system(size: 20))
-                Text("\(streak)-day streak")
-                    .font(AppFonts.heading(17))
+    private var statsBar: some View {
+        HStack(spacing: 16) {
+            // Progress ring
+            ZStack {
+                Circle()
+                    .stroke(AppColors.border, lineWidth: 3)
+                    .frame(width: 36, height: 36)
+                Circle()
+                    .trim(from: 0, to: completionFraction)
+                    .stroke(AppColors.completionGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 36, height: 36)
+                    .rotationEffect(.degrees(-90))
+                Text("\(Int(completionFraction * 100))%")
+                    .font(AppFonts.label(9))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(completedTodayCount) of \(totalTodayCount) done")
+                    .font(AppFonts.bodyMedium(14))
                     .foregroundColor(AppColors.textPrimary)
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                ForEach(0..<7, id: \.self) { i in
-                    let active = checkinHistory[i]
-                    Circle()
-                        .fill(active ? AppColors.accentWarm : AppColors.border)
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Image(systemName: active ? "checkmark" : "")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                        )
+                if streak > 0 {
+                    Text("\(streak)-day streak 🔥")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
-            let days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-            HStack(spacing: 8) {
-                ForEach(0..<7, id: \.self) { i in
-                    Text(days[i])
-                        .font(AppFonts.caption(10))
-                        .foregroundColor(AppColors.textMuted)
-                        .frame(width: 28)
+            Spacer()
+
+            // Overdue badge
+            if !overdueTasks.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                    Text("\(overdueTasks.count) overdue")
+                        .font(AppFonts.label(12))
                 }
+                .foregroundColor(AppColors.overdueRed)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(AppColors.overdueBg)
+                .cornerRadius(12)
             }
         }
-        .padding(16)
+        .padding(14)
         .background(AppColors.card)
         .cornerRadius(14)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
         )
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
+    }
+
+    // MARK: - Collapsible Section Header
+
+    private func collapsibleHeader(title: String, count: Int, isExpanded: Binding<Bool>, tintColor: Color) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                isExpanded.wrappedValue.toggle()
+            }
+        } label: {
+            HStack {
+                Image(systemName: title == "Overdue" ? "exclamationmark.triangle.fill" : title == "Tomorrow" ? "sunrise.fill" : "checkmark.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(tintColor)
+                Text("\(title) (\(count))")
+                    .font(AppFonts.heading(15))
+                    .foregroundColor(AppColors.textPrimary)
+                    .textCase(nil)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.textMuted)
+                    .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Empty States
+
+    private var emptyActiveState: some View {
+        VStack(spacing: 12) {
+            Text("☀️")
+                .font(.system(size: 40))
+            Text("No tasks today")
+                .font(AppFonts.heading(18))
+                .foregroundColor(AppColors.textPrimary)
+            Text("Add tasks from the Schedule tab")
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textMuted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+    }
+
+    private var allDoneState: some View {
+        VStack(spacing: 12) {
+            Text("🎉")
+                .font(.system(size: 40))
+            Text("All done for today!")
+                .font(AppFonts.heading(18))
+                .foregroundColor(AppColors.textPrimary)
+            Text("You completed \(completedTodayCount) task\(completedTodayCount == 1 ? "" : "s")")
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textMuted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+    }
+
+    // MARK: - Reschedule Sheet
+
+    private func rescheduleSheet(for task: TaskItem) -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Reschedule \"\(task.title)\"")
+                    .font(AppFonts.heading(17))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+
+                // Quick buttons
+                HStack(spacing: 12) {
+                    quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                    quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                    quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                }
+
+                Divider()
+
+                // Date picker
+                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(AppColors.accent)
+
+                Button {
+                    taskManager?.rescheduleTask(task, to: rescheduleDate)
+                    taskToReschedule = nil
+                } label: {
+                    Text("Reschedule")
+                        .font(AppFonts.bodyMedium(16))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(AppColors.accent)
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { taskToReschedule = nil }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
+        Button {
+            let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
+            taskManager?.rescheduleTask(task, to: target)
+            taskToReschedule = nil
+        } label: {
+            Text(label)
+                .font(AppFonts.label(13))
+                .foregroundColor(AppColors.accent)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(AppColors.accentLight)
+                .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
     }
 }

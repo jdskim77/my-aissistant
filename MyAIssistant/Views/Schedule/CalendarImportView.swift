@@ -1,10 +1,13 @@
 import SwiftUI
 import EventKit
+import AuthenticationServices
 
 struct CalendarImportView: View {
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.dismiss) private var dismiss
     @State private var appeared = false
+    @State private var isSigningInGoogle = false
+    @State private var googleAuthError: String?
 
     var body: some View {
         NavigationStack {
@@ -41,6 +44,10 @@ struct CalendarImportView: View {
                 Task {
                     if calendarSyncManager?.appleCalendarAuthorized == true {
                         await calendarSyncManager?.loadAppleCalendars()
+                    }
+                    // Load Google calendars if already connected
+                    if await calendarSyncManager?.googleCalendarConnected() == true {
+                        await calendarSyncManager?.loadGoogleCalendars()
                     }
                 }
             }
@@ -119,9 +126,70 @@ struct CalendarImportView: View {
                     .foregroundColor(AppColors.textPrimary)
             }
 
-            Text("Google Calendar integration requires a configured OAuth client. Coming soon.")
-                .font(AppFonts.body(14))
-                .foregroundColor(AppColors.textMuted)
+            let googleCals = calendarSyncManager?.googleCalendars ?? []
+
+            if !googleCals.isEmpty {
+                // Show Google calendars when connected
+                ForEach(googleCals) { cal in
+                    calendarRow(
+                        name: cal.displayName,
+                        color: Color(hex: cal.backgroundColor?.replacingOccurrences(of: "#", with: "") ?? "4285F4"),
+                        isLinked: isLinked(calendarID: cal.id, source: .google)
+                    ) {
+                        toggleGoogleLink(calendar: cal)
+                    }
+                }
+
+                Button {
+                    Task {
+                        await calendarSyncManager?.googleService.signOut()
+                        calendarSyncManager?.googleCalendars = []
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 13, weight: .medium))
+                        Text("Sign Out")
+                            .font(AppFonts.bodyMedium(13))
+                    }
+                    .foregroundColor(AppColors.coral)
+                    .padding(.top, 4)
+                }
+            } else {
+                // Sign-in button
+                Text("Import events from your Google Calendar. Events sync as read-only.")
+                    .font(AppFonts.body(14))
+                    .foregroundColor(AppColors.textMuted)
+
+                if let error = googleAuthError {
+                    Text(error)
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.coral)
+                }
+
+                Button {
+                    signInWithGoogle()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isSigningInGoogle {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "globe")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        Text("Sign in with Google")
+                            .font(AppFonts.bodyMedium(14))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "4285F4"))
+                    .cornerRadius(10)
+                }
+                .disabled(isSigningInGoogle)
+            }
         }
         .padding(16)
         .background(AppColors.card)
@@ -210,6 +278,60 @@ struct CalendarImportView: View {
         }
     }
 
+    // MARK: - Google OAuth
+
+    private func signInWithGoogle() {
+        guard let syncManager = calendarSyncManager else { return }
+
+        Task {
+            guard let authURL = await syncManager.googleService.authorizationURL() else {
+                googleAuthError = "Google Calendar is not configured. Add a Google OAuth client ID."
+                return
+            }
+
+            isSigningInGoogle = true
+            googleAuthError = nil
+
+            // Present ASWebAuthenticationSession
+            let callbackURL = await startGoogleAuth(url: authURL)
+
+            if let callbackURL,
+               let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+                do {
+                    try await syncManager.googleService.exchangeCodeForTokens(code)
+                    await syncManager.loadGoogleCalendars()
+                } catch {
+                    googleAuthError = "Sign-in failed: \(error.localizedDescription)"
+                }
+            } else {
+                googleAuthError = "Sign-in was cancelled."
+            }
+
+            isSigningInGoogle = false
+        }
+    }
+
+    @MainActor
+    private func startGoogleAuth(url: URL) async -> URL? {
+        await withCheckedContinuation { continuation in
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callbackURLScheme: "com.myaissistant"
+            ) { callbackURL, error in
+                if let error {
+                    print("Google auth error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                } else {
+                    continuation.resume(returning: callbackURL)
+                }
+            }
+            session.prefersEphemeralWebBrowserSession = false
+            session.presentationContextProvider = GoogleAuthPresenter.shared
+            session.start()
+        }
+    }
+
     // MARK: - Helpers
 
     private func calendarRow(
@@ -266,6 +388,34 @@ struct CalendarImportView: View {
                 color: hex
             )
         }
+    }
+
+    private func toggleGoogleLink(calendar: GoogleCalendar) {
+        let links = calendarSyncManager?.linkedCalendars() ?? []
+        if let existing = links.first(where: { $0.calendarID == calendar.id && $0.source == CalendarSource.google.rawValue }) {
+            calendarSyncManager?.unlinkCalendar(existing)
+        } else {
+            calendarSyncManager?.linkCalendar(
+                source: .google,
+                calendarID: calendar.id,
+                name: calendar.displayName,
+                color: calendar.backgroundColor ?? "#4285F4"
+            )
+        }
+    }
+}
+
+// MARK: - Google Auth Presentation Context
+
+final class GoogleAuthPresenter: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = GoogleAuthPresenter()
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = scene.windows.first else {
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }
 

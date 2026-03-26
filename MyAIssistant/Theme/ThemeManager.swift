@@ -1,0 +1,201 @@
+import SwiftUI
+
+@Observable
+final class ThemeManager {
+    static let shared = ThemeManager()
+
+    var selectedTheme: AppTheme {
+        didSet {
+            UserDefaults.standard.set(selectedTheme.rawValue, forKey: AppConstants.appThemeKey)
+            themeID = UUID()
+        }
+    }
+
+    /// Changes on every theme switch; used with `.id()` to force full re-render.
+    var themeID = UUID()
+
+    var currentTheme: ColorTheme {
+        Self.theme(for: selectedTheme)
+    }
+
+    private init() {
+        let saved = UserDefaults.standard.string(forKey: AppConstants.appThemeKey) ?? ""
+        self.selectedTheme = AppTheme(rawValue: saved) ?? .natural
+    }
+
+    func setTheme(_ theme: AppTheme) {
+        selectedTheme = theme
+    }
+
+    // MARK: - Theme Definitions
+
+    static func theme(for appTheme: AppTheme) -> ColorTheme {
+        switch appTheme {
+        case .natural: return natural
+        case .ocean: return ocean
+        case .highContrast: return highContrast
+        case .midnight: return midnight
+        case .twilight: return twilight
+        }
+    }
+
+    // MARK: - 1. Natural (Improved Current)
+
+    private static let natural = ColorTheme(
+        background: Color(hex: "F8F5F0"),
+        surface: Color.white,
+        card: Color(hex: "FFFEFB"),
+        border: Color(hex: "E8E2D9"),
+        accent: Color(hex: "2D5016"),
+        accentWarm: Color(hex: "4A7C2F"),
+        accentLight: Color(hex: "E8F0E0"),
+        gold: Color(hex: "B8860B"),
+        coral: Color(hex: "C94B2B"),
+        skyBlue: Color(hex: "1A5276"),
+        textPrimary: Color(hex: "1A1A14"),
+        textSecondary: Color(hex: "544E3F"),
+        textMuted: Color(hex: "6E6860"),
+        morning: Color(hex: "FF9500"),
+        noon: Color(hex: "34C759"),
+        afternoon: Color(hex: "007AFF"),
+        night: Color(hex: "5856D6"),
+        overdueRed: Color(hex: "D32F2F"),
+        overdueBg: Color(hex: "FDEDED"),
+        completionGreen: Color(hex: "34A853"),
+        userBubbleText: Color.white,
+        aiBubble: Color.white,
+        aiBubbleText: Color(hex: "1A1A14"),
+        aiBubbleBorder: Color(hex: "E8E2D9"),
+        checkboxHigh: Color(hex: "D32F2F"),
+        checkboxMedium: Color(hex: "E8860B"),
+        checkboxLow: Color(hex: "1A5276")
+    )
+
+    // MARK: - 2. Ocean
+
+    private static let ocean = ColorTheme(
+        background: Color(hex: "F0F4F8"),
+        surface: Color.white,
+        card: Color(hex: "F8FAFC"),
+        border: Color(hex: "D1D9E6"),
+        accent: Color(hex: "1B6B93"),
+        accentWarm: Color(hex: "2E96C9"),
+        accentLight: Color(hex: "E1F0FA"),
+        gold: Color(hex: "C07D10"),
+        coral: Color(hex: "C94B2B"),
+        skyBlue: Color(hex: "1B6B93"),
+        textPrimary: Color(hex: "111827"),
+        textSecondary: Color(hex: "4B5563"),
+        textMuted: Color(hex: "6B7280"),
+        morning: Color(hex: "F59E0B"),
+        noon: Color(hex: "10B981"),
+        afternoon: Color(hex: "3B82F6"),
+        night: Color(hex: "8B5CF6"),
+        overdueRed: Color(hex: "DC2626"),
+        overdueBg: Color(hex: "FEF2F2"),
+        completionGreen: Color(hex: "059669"),
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "F8FAFC"),
+        aiBubbleText: Color(hex: "111827"),
+        aiBubbleBorder: Color(hex: "D1D9E6"),
+        checkboxHigh: Color(hex: "DC2626"),
+        checkboxMedium: Color(hex: "F59E0B"),
+        checkboxLow: Color(hex: "1B6B93")
+    )
+
+    // MARK: - 3. High Contrast (Colorblind-Friendly, WCAG AAA)
+
+    private static let highContrast = ColorTheme(
+        background: Color.white,
+        surface: Color(hex: "F5F5F5"),
+        card: Color.white,
+        border: Color(hex: "BDBDBD"),
+        accent: Color(hex: "0052CC"),
+        accentWarm: Color(hex: "0065FF"),
+        accentLight: Color(hex: "DEEBFF"),
+        gold: Color(hex: "E65100"),       // Orange (not gold — avoids yellow confusion)
+        coral: Color(hex: "D84315"),      // Deep orange-red
+        skyBlue: Color(hex: "0052CC"),
+        textPrimary: Color.black,          // 21:1 on white
+        textSecondary: Color(hex: "333333"), // 12.6:1 on white
+        textMuted: Color(hex: "555555"),   // 7.5:1 on white (WCAG AAA)
+        morning: Color(hex: "E65100"),
+        noon: Color(hex: "0052CC"),
+        afternoon: Color(hex: "1565C0"),
+        night: Color(hex: "4A148C"),
+        overdueRed: Color(hex: "B71C1C"),
+        overdueBg: Color(hex: "FFEBEE"),
+        completionGreen: Color(hex: "1565C0"),  // Blue not green — colorblind-safe
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "F5F5F5"),
+        aiBubbleText: Color.black,
+        aiBubbleBorder: Color(hex: "BDBDBD"),
+        checkboxHigh: Color(hex: "D84315"),    // Orange
+        checkboxMedium: Color(hex: "E65100"),  // Darker orange
+        checkboxLow: Color(hex: "0052CC")      // Blue
+    )
+
+    // MARK: - 4. Midnight (OLED Dark)
+
+    private static let midnight = ColorTheme(
+        background: Color.black,
+        surface: Color(hex: "111111"),
+        card: Color(hex: "1A1A1A"),
+        border: Color(hex: "2D2D2D"),
+        accent: Color(hex: "5DB075"),
+        accentWarm: Color(hex: "7BC794"),
+        accentLight: Color(hex: "1A2E22"),
+        gold: Color(hex: "D4A76A"),
+        coral: Color(hex: "E57373"),
+        skyBlue: Color(hex: "64B5F6"),
+        textPrimary: Color(hex: "F0F0F0"),
+        textSecondary: Color(hex: "A0A0A0"),
+        textMuted: Color(hex: "707070"),
+        morning: Color(hex: "FFB74D"),
+        noon: Color(hex: "66BB6A"),
+        afternoon: Color(hex: "64B5F6"),
+        night: Color(hex: "B39DDB"),
+        overdueRed: Color(hex: "EF5350"),
+        overdueBg: Color(hex: "3D1515"),
+        completionGreen: Color(hex: "66BB6A"),
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "1A1A1A"),
+        aiBubbleText: Color(hex: "F0F0F0"),
+        aiBubbleBorder: Color(hex: "2D2D2D"),
+        checkboxHigh: Color(hex: "EF5350"),
+        checkboxMedium: Color(hex: "FFB74D"),
+        checkboxLow: Color(hex: "64B5F6")
+    )
+
+    // MARK: - 5. Twilight (Soft Dark)
+
+    private static let twilight = ColorTheme(
+        background: Color(hex: "1C1C1E"),
+        surface: Color(hex: "2C2C2E"),
+        card: Color(hex: "3A3A3C"),
+        border: Color(hex: "48484A"),
+        accent: Color(hex: "D4A76A"),
+        accentWarm: Color(hex: "E0BD85"),
+        accentLight: Color(hex: "3D3428"),
+        gold: Color(hex: "E0BD85"),
+        coral: Color(hex: "FF8A80"),
+        skyBlue: Color(hex: "82B1FF"),
+        textPrimary: Color(hex: "EEEEE8"),
+        textSecondary: Color(hex: "A8A8A0"),
+        textMuted: Color(hex: "787870"),
+        morning: Color(hex: "FFB74D"),
+        noon: Color(hex: "81C784"),
+        afternoon: Color(hex: "82B1FF"),
+        night: Color(hex: "CE93D8"),
+        overdueRed: Color(hex: "FF5252"),
+        overdueBg: Color(hex: "3D2020"),
+        completionGreen: Color(hex: "81C784"),
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "3A3A3C"),
+        aiBubbleText: Color(hex: "EEEEE8"),
+        aiBubbleBorder: Color(hex: "48484A"),
+        checkboxHigh: Color(hex: "FF5252"),
+        checkboxMedium: Color(hex: "FFB74D"),
+        checkboxLow: Color(hex: "82B1FF")
+    )
+}

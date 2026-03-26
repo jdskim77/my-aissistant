@@ -94,6 +94,44 @@ final class NotificationManager: ObservableObject {
             .removePendingNotificationRequests(withIdentifiers: ["task-\(taskID)"])
     }
 
+    // MARK: - Alarms
+
+    func scheduleAlarm(notificationID: String, label: String, time: Date, repeatsDaily: Bool) {
+        let center = UNUserNotificationCenter.current()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Alarm"
+        content.body = label
+        content.sound = UNNotificationSound.defaultCritical
+        content.categoryIdentifier = "ALARM"
+        content.userInfo = ["alarmID": notificationID]
+        content.interruptionLevel = .timeSensitive
+
+        let components: DateComponents
+        if repeatsDaily {
+            components = Calendar.current.dateComponents([.hour, .minute], from: time)
+        } else {
+            components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute],
+                from: time
+            )
+        }
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: repeatsDaily)
+        let request = UNNotificationRequest(
+            identifier: "alarm-\(notificationID)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
+    }
+
+    func cancelAlarm(notificationID: String) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["alarm-\(notificationID)"])
+    }
+
     // MARK: - Cancel All
 
     func cancelAllReminders() {
@@ -131,7 +169,23 @@ final class NotificationManager: ObservableObject {
             intentIdentifiers: []
         )
 
+        let snoozeAction = UNNotificationAction(
+            identifier: "SNOOZE_ALARM",
+            title: "Snooze (5 min)",
+            options: []
+        )
+        let stopAlarmAction = UNNotificationAction(
+            identifier: "STOP_ALARM",
+            title: "Stop",
+            options: [.destructive]
+        )
+        let alarmCategory = UNNotificationCategory(
+            identifier: "ALARM",
+            actions: [snoozeAction, stopAlarmAction],
+            intentIdentifiers: []
+        )
+
         UNUserNotificationCenter.current()
-            .setNotificationCategories([checkInCategory, taskCategory])
+            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory])
     }
 }

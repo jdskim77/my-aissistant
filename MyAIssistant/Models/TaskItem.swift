@@ -1,6 +1,30 @@
 import Foundation
 import SwiftData
 
+// MARK: - Recurrence
+
+enum TaskRecurrence: String, CaseIterable, Identifiable, Codable {
+    case none = "None"
+    case daily = "Daily"
+    case weekly = "Weekly"
+    case biweekly = "Biweekly"
+    case monthly = "Monthly"
+
+    var id: String { rawValue }
+
+    /// Calendar component offset for generating the next occurrence.
+    func nextDate(after date: Date) -> Date? {
+        let cal = Calendar.current
+        switch self {
+        case .none: return nil
+        case .daily: return cal.date(byAdding: .day, value: 1, to: date)
+        case .weekly: return cal.date(byAdding: .weekOfYear, value: 1, to: date)
+        case .biweekly: return cal.date(byAdding: .weekOfYear, value: 2, to: date)
+        case .monthly: return cal.date(byAdding: .month, value: 1, to: date)
+        }
+    }
+}
+
 @Model
 final class TaskItem {
     var id: String
@@ -14,6 +38,7 @@ final class TaskItem {
     var createdAt: Date
     var completedAt: Date?
     var externalCalendarID: String?
+    var recurrenceRaw: String?
 
     // MARK: - Computed enum accessors
 
@@ -29,6 +54,12 @@ final class TaskItem {
         set { priorityRaw = newValue.rawValue }
     }
 
+    @Transient
+    var recurrence: TaskRecurrence {
+        get { TaskRecurrence(rawValue: recurrenceRaw ?? "") ?? .none }
+        set { recurrenceRaw = newValue == .none ? nil : newValue.rawValue }
+    }
+
     init(
         id: String = UUID().uuidString,
         title: String,
@@ -37,7 +68,8 @@ final class TaskItem {
         date: Date,
         done: Bool = false,
         icon: String,
-        notes: String = ""
+        notes: String = "",
+        recurrence: TaskRecurrence = .none
     ) {
         self.id = id
         self.title = title
@@ -49,5 +81,6 @@ final class TaskItem {
         self.notes = notes
         self.createdAt = Date()
         self.completedAt = done ? Date() : nil
+        self.recurrenceRaw = recurrence == .none ? nil : recurrence.rawValue
     }
 }

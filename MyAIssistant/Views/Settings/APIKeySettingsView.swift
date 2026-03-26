@@ -144,6 +144,10 @@ struct APIKeySettingsView: View {
     private func saveKeys() {
         var results: [String] = []
 
+        // Trim whitespace that may have been copied with the key
+        anthropicKey = anthropicKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        openAIKey = openAIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if !anthropicKey.isEmpty {
             if keychainService.saveAnthropicAPIKey(anthropicKey) {
                 results.append("Anthropic key saved")

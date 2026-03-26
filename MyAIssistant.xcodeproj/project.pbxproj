@@ -7,196 +7,267 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000; };
-		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000; };
-		A100000005000000 /* CheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005000000; };
-		A100000006000000 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006000000; };
-		A100000009000000 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009000000; };
-		A100000010000000 /* AppFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010000000; };
-		A100000012000000 /* TaskCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000012000000; };
-		A100000013000000 /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000013000000; };
-		A100000014000000 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014000000; };
-		A100000015000000 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015000000; };
-		A100000016000000 /* CheckInsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016000000; };
-		A100000017000000 /* PatternsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000017000000; };
-		A100000018000000 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018000000; };
-		A200000001000000 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001000000; };
-		A200000002000000 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002000000; };
-		A200000003000000 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003000000; };
-		A200000004000000 /* TaskCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004000000; };
-		A200000005000000 /* TaskPriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005000000; };
-		A200000006000000 /* CheckInRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006000000; };
-		A200000007000000 /* DailySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000007000000; };
-		A200000008000000 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000008000000; };
-		A200000009000000 /* TaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000009000000; };
-		A200000010000000 /* PatternEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000010000000; };
-		A200000011000000 /* DateHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000011000000; };
-		A200000012000000 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000012000000; };
-		A200000013000000 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000013000000; };
-		A300000001000000 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001000000; };
-		A300000002000000 /* AIPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002000000; };
-		A300000003000000 /* AnthropicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003000000; };
-		A300000004000000 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000004000000; };
-		A300000005000000 /* AIProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005000000; };
-		A300000006000000 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006000000; };
-		A300000007000000 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007000000; };
-		A300000008000000 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008000000; };
-		A400000001000000 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001000000; };
-		A400000002000000 /* CheckInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002000000; };
-		A400000003000000 /* MoodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000003000000; };
-		A400000004000000 /* CheckInDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000004000000; };
-		A400000005000000 /* CheckInHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000000; };
-		A400000006000000 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000006000000; };
-		A400000007000000 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000007000000; };
-		A400000008000000 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000008000000; };
-		A400000009000000 /* SubscriptionOfferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000009000000; };
-		A400000010000000 /* OnboardingCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000010000000; };
-		A500000001000000 /* CalendarLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000001000000; };
-		A500000002000000 /* EventKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000002000000; };
-		A500000003000000 /* GoogleCalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000003000000; };
-		A500000004000000 /* CalendarSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000004000000; };
-		A500000005000000 /* CalendarImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000005000000; };
-		A500000006000000 /* CalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000006000000; };
-		A600000001000000 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000001000000; };
-		A600000002000000 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000002000000; };
-		A600000003000000 /* UsageGateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000003000000; };
-		A600000004000000 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000004000000; };
-		A600000005000000 /* SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000005000000; };
-		A600000006000000 /* APIKeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000006000000; };
-		A600000007000000 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000007000000; };
-		A600000008000000 /* PaywallCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000008000000; };
-		A700000001000000 /* WeeklyAIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000001000000; };
-		A700000002000000 /* MoodTrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000002000000; };
-		A700000003000000 /* WeeklyChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000003000000; };
-		A700000004000000 /* CategoryBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000004000000; };
-		A800000001000000 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000001000000; };
-		A800000002000000 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000002000000; };
-		A800000003000000 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000003000000; };
-		A800000004000000 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000004000000; };
-		A800000005000000 /* ChatBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000005000000; };
-		A800000006000000 /* QuickActionsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000006000000; };
-		A800000007000000 /* ConversationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000007000000; };
-		A900000001000000 /* TestModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000001000000; };
-		A900000002000000 /* MockAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000002000000; };
-		A900000003000000 /* MockKeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000003000000; };
-		A900000004000000 /* TaskManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000004000000; };
-		A900000005000000 /* PatternEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000005000000; };
-		A900000006000000 /* UsageGateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000006000000; };
-		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000; };
-		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000; };
-		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000; };
-		AW00000001000000 /* WidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000001000000; };
-		AW00000002000000 /* NextCheckInWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000002000000; };
-		AW00000003000000 /* TodayProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000003000000; };
-		AW00000004000000 /* StreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000004000000; };
-		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000; };
-		AW00000006000000 /* MyAIssistantWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
+		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
+		'A100000001000000' = {isa = PBXBuildFile; fileRef = B100000001000000; };
+		'A100000002000000' = {isa = PBXBuildFile; fileRef = B100000002000000; };
+		'A100000005000000' = {isa = PBXBuildFile; fileRef = B100000005000000; };
+		'A100000006000000' = {isa = PBXBuildFile; fileRef = B100000006000000; };
+		'A100000009000000' = {isa = PBXBuildFile; fileRef = B100000009000000; };
+		'A100000010000000' = {isa = PBXBuildFile; fileRef = B100000010000000; };
+		'A100000012000000' = {isa = PBXBuildFile; fileRef = B100000012000000; };
+		'A100000013000000' = {isa = PBXBuildFile; fileRef = B100000013000000; };
+		'A100000014000000' = {isa = PBXBuildFile; fileRef = B100000014000000; };
+		'A100000015000000' = {isa = PBXBuildFile; fileRef = B100000015000000; };
+		'A100000016000000' = {isa = PBXBuildFile; fileRef = B100000016000000; };
+		'A100000017000000' = {isa = PBXBuildFile; fileRef = B100000017000000; };
+		'A100000018000000' = {isa = PBXBuildFile; fileRef = B100000018000000; };
+		'A200000001000000' = {isa = PBXBuildFile; fileRef = B200000001000000; };
+		'A200000002000000' = {isa = PBXBuildFile; fileRef = B200000002000000; };
+		'A200000003000000' = {isa = PBXBuildFile; fileRef = B200000003000000; };
+		'A200000004000000' = {isa = PBXBuildFile; fileRef = B200000004000000; };
+		'A200000005000000' = {isa = PBXBuildFile; fileRef = B200000005000000; };
+		'A200000006000000' = {isa = PBXBuildFile; fileRef = B200000006000000; };
+		'A200000007000000' = {isa = PBXBuildFile; fileRef = B200000007000000; };
+		'A200000008000000' = {isa = PBXBuildFile; fileRef = B200000008000000; };
+		'A200000009000000' = {isa = PBXBuildFile; fileRef = B200000009000000; };
+		'A200000010000000' = {isa = PBXBuildFile; fileRef = B200000010000000; };
+		'A200000011000000' = {isa = PBXBuildFile; fileRef = B200000011000000; };
+		'A200000012000000' = {isa = PBXBuildFile; fileRef = B200000012000000; };
+		'A200000013000000' = {isa = PBXBuildFile; fileRef = B200000013000000; };
+		'A300000001000000' = {isa = PBXBuildFile; fileRef = B300000001000000; };
+		'A300000002000000' = {isa = PBXBuildFile; fileRef = B300000002000000; };
+		'A300000003000000' = {isa = PBXBuildFile; fileRef = B300000003000000; };
+		'A300000004000000' = {isa = PBXBuildFile; fileRef = B300000004000000; };
+		'A300000005000000' = {isa = PBXBuildFile; fileRef = B300000005000000; };
+		'A300000006000000' = {isa = PBXBuildFile; fileRef = B300000006000000; };
+		'A300000007000000' = {isa = PBXBuildFile; fileRef = B300000007000000; };
+		'A300000008000000' = {isa = PBXBuildFile; fileRef = B300000008000000; };
+		'A400000001000000' = {isa = PBXBuildFile; fileRef = B400000001000000; };
+		'A400000002000000' = {isa = PBXBuildFile; fileRef = B400000002000000; };
+		'A400000003000000' = {isa = PBXBuildFile; fileRef = B400000003000000; };
+		'A400000004000000' = {isa = PBXBuildFile; fileRef = B400000004000000; };
+		'A400000005000000' = {isa = PBXBuildFile; fileRef = B400000005000000; };
+		'A400000006000000' = {isa = PBXBuildFile; fileRef = B400000006000000; };
+		'A400000007000000' = {isa = PBXBuildFile; fileRef = B400000007000000; };
+		'A400000008000000' = {isa = PBXBuildFile; fileRef = B400000008000000; };
+		'A400000009000000' = {isa = PBXBuildFile; fileRef = B400000009000000; };
+		'A400000010000000' = {isa = PBXBuildFile; fileRef = B400000010000000; };
+		'A500000001000000' = {isa = PBXBuildFile; fileRef = B500000001000000; };
+		'A500000002000000' = {isa = PBXBuildFile; fileRef = B500000002000000; };
+		'A500000003000000' = {isa = PBXBuildFile; fileRef = B500000003000000; };
+		'A500000004000000' = {isa = PBXBuildFile; fileRef = B500000004000000; };
+		'A500000005000000' = {isa = PBXBuildFile; fileRef = B500000005000000; };
+		'A500000006000000' = {isa = PBXBuildFile; fileRef = B500000006000000; };
+		'A600000001000000' = {isa = PBXBuildFile; fileRef = B600000001000000; };
+		'A600000002000000' = {isa = PBXBuildFile; fileRef = B600000002000000; };
+		'A600000003000000' = {isa = PBXBuildFile; fileRef = B600000003000000; };
+		'A600000004000000' = {isa = PBXBuildFile; fileRef = B600000004000000; };
+		'A600000005000000' = {isa = PBXBuildFile; fileRef = B600000005000000; };
+		'A600000006000000' = {isa = PBXBuildFile; fileRef = B600000006000000; };
+		'A600000007000000' = {isa = PBXBuildFile; fileRef = B600000007000000; };
+		'A600000008000000' = {isa = PBXBuildFile; fileRef = B600000008000000; };
+		'A700000001000000' = {isa = PBXBuildFile; fileRef = B700000001000000; };
+		'A700000002000000' = {isa = PBXBuildFile; fileRef = B700000002000000; };
+		'A700000003000000' = {isa = PBXBuildFile; fileRef = B700000003000000; };
+		'A700000004000000' = {isa = PBXBuildFile; fileRef = B700000004000000; };
+		'A800000001000000' = {isa = PBXBuildFile; fileRef = B800000001000000; };
+		'A800000002000000' = {isa = PBXBuildFile; fileRef = B800000002000000; };
+		'A800000003000000' = {isa = PBXBuildFile; fileRef = B800000003000000; };
+		'A800000004000000' = {isa = PBXBuildFile; fileRef = B800000004000000; };
+		'A800000005000000' = {isa = PBXBuildFile; fileRef = B800000005000000; };
+		'A800000006000000' = {isa = PBXBuildFile; fileRef = B800000006000000; };
+		'A800000007000000' = {isa = PBXBuildFile; fileRef = B800000007000000; };
+		'A900000001000000' = {isa = PBXBuildFile; fileRef = B900000001000000; };
+		'A900000002000000' = {isa = PBXBuildFile; fileRef = B900000002000000; };
+		'A900000003000000' = {isa = PBXBuildFile; fileRef = B900000003000000; };
+		'A900000004000000' = {isa = PBXBuildFile; fileRef = B900000004000000; };
+		'A900000005000000' = {isa = PBXBuildFile; fileRef = B900000005000000; };
+		'A900000006000000' = {isa = PBXBuildFile; fileRef = B900000006000000; };
+		'A900000007000000' = {isa = PBXBuildFile; fileRef = B900000007000000; };
+		'A900000008000000' = {isa = PBXBuildFile; fileRef = B900000008000000; };
+		'AA00000001000000' = {isa = PBXBuildFile; fileRef = BA00000001000000; };
+		'AC00000001000000' = {isa = PBXBuildFile; fileRef = BC00000001000000; };
+		'AC00000002000000' = {isa = PBXBuildFile; fileRef = BC00000002000000; };
+		'AC00000003000000' = {isa = PBXBuildFile; fileRef = BC00000003000000; };
+		'AC00000005000000' = {isa = PBXBuildFile; fileRef = BC00000005000000; };
+		'AC00000006000000' = {isa = PBXBuildFile; fileRef = BC00000006000000; };
+		'AC00000007000000' = {isa = PBXBuildFile; fileRef = BC00000007000000; };
+		'AC00000008000000' = {isa = PBXBuildFile; fileRef = BC00000008000000; };
+		'AC00000009000000' = {isa = PBXBuildFile; fileRef = BC00000009000000; };
+		'AC00000010000000' = {isa = PBXBuildFile; fileRef = BC00000010000000; };
+		'AD00000001000000' = {isa = PBXBuildFile; fileRef = BD00000001000000; };
+		'AD00000002000000' = {isa = PBXBuildFile; fileRef = BD00000002000000; };
+		'AD00000003000000' = {isa = PBXBuildFile; fileRef = BD00000003000000; };
+		'AD00000004000000' = {isa = PBXBuildFile; fileRef = BD00000004000000; };
+		'AE00000001000000' = {isa = PBXBuildFile; fileRef = BE00000001000000; };
+		'AE00000002000000' = {isa = PBXBuildFile; fileRef = BE00000002000000; };
+		'AF00000001000000' = {isa = PBXBuildFile; fileRef = BF00000001000000; };
+		'AF00000002000000' = {isa = PBXBuildFile; fileRef = BF00000002000000; };
+		'AW00000001000000' = {isa = PBXBuildFile; fileRef = BW00000001000000; };
+		'AW00000002000000' = {isa = PBXBuildFile; fileRef = BW00000002000000; };
+		'AW00000003000000' = {isa = PBXBuildFile; fileRef = BW00000003000000; };
+		'AW00000004000000' = {isa = PBXBuildFile; fileRef = BW00000004000000; };
+		'WDTA00000001000' = {isa = PBXBuildFile; fileRef = BW00000005000000; };
+		'AW00000005000000' = {isa = PBXBuildFile; fileRef = BA00000001000000; };
+		'AW00000006000000' = {isa = PBXBuildFile; fileRef = EW00000001000000; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		'G900000001000000' = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000;
+			proxyType = 1;
+			remoteGlobalIDString = F100000001000000;
+			remoteInfo = MyAIssistant;
+		};
+		'GW00000001000000' = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000;
+			proxyType = 1;
+			remoteGlobalIDString = FW00000001000000;
+			remoteInfo = MyAIssistantWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		'CW00000004000000' = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AW00000006000000,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		B100000001000000 /* MyAIssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
-		B100000002000000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B100000005000000 /* CheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckIn.swift; sourceTree = "<group>"; };
-		B100000006000000 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
-		B100000009000000 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
-		B100000010000000 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
-		B100000012000000 /* TaskCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCard.swift; sourceTree = "<group>"; };
-		B100000013000000 /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
-		B100000014000000 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		B100000015000000 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
-		B100000016000000 /* CheckInsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInsView.swift; sourceTree = "<group>"; };
-		B100000017000000 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
-		B100000018000000 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		B200000001000000 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
-		B200000002000000 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
-		B200000003000000 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
-		B200000004000000 /* TaskCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCategory.swift; sourceTree = "<group>"; };
-		B200000005000000 /* TaskPriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPriority.swift; sourceTree = "<group>"; };
-		B200000006000000 /* CheckInRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
-		B200000007000000 /* DailySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
-		B200000008000000 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
-		B200000009000000 /* TaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
-		B200000010000000 /* PatternEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngine.swift; sourceTree = "<group>"; };
-		B200000011000000 /* DateHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelpers.swift; sourceTree = "<group>"; };
-		B200000012000000 /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
-		B200000013000000 /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
-		B300000001000000 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
-		B300000002000000 /* AIPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
-		B300000003000000 /* AnthropicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicProvider.swift; sourceTree = "<group>"; };
-		B300000004000000 /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
-		B300000005000000 /* AIProviderFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
-		B300000006000000 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		B300000007000000 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		B300000008000000 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
-		B400000001000000 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		B400000002000000 /* CheckInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
-		B400000003000000 /* MoodPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
-		B400000004000000 /* CheckInDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInDetailView.swift; sourceTree = "<group>"; };
-		B400000005000000 /* CheckInHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
-		B400000006000000 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
-		B400000007000000 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		B400000008000000 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
-		B400000009000000 /* SubscriptionOfferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferView.swift; sourceTree = "<group>"; };
-		B400000010000000 /* OnboardingCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompleteView.swift; sourceTree = "<group>"; };
-		B500000001000000 /* CalendarLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarLink.swift; sourceTree = "<group>"; };
-		B500000002000000 /* EventKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitService.swift; sourceTree = "<group>"; };
-		B500000003000000 /* GoogleCalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
-		B500000004000000 /* CalendarSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncManager.swift; sourceTree = "<group>"; };
-		B500000005000000 /* CalendarImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarImportView.swift; sourceTree = "<group>"; };
-		B500000006000000 /* CalendarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
-		B600000001000000 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
-		B600000002000000 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
-		B600000003000000 /* UsageGateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManager.swift; sourceTree = "<group>"; };
-		B600000004000000 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		B600000005000000 /* SubscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionView.swift; sourceTree = "<group>"; };
-		B600000006000000 /* APIKeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsView.swift; sourceTree = "<group>"; };
-		B600000007000000 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
-		B600000008000000 /* PaywallCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallCard.swift; sourceTree = "<group>"; };
-		B700000001000000 /* WeeklyAIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyAIReviewView.swift; sourceTree = "<group>"; };
-		B700000002000000 /* MoodTrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrendView.swift; sourceTree = "<group>"; };
-		B700000003000000 /* WeeklyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyChartView.swift; sourceTree = "<group>"; };
-		B700000004000000 /* CategoryBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownView.swift; sourceTree = "<group>"; };
-		B800000001000000 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
-		B800000002000000 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
-		B800000003000000 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
-		B800000004000000 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
-		B800000005000000 /* ChatBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubble.swift; sourceTree = "<group>"; };
-		B800000006000000 /* QuickActionsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsBar.swift; sourceTree = "<group>"; };
-		B800000007000000 /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
-		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B900000001000000 /* TestModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
-		B900000002000000 /* MockAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIProvider.swift; sourceTree = "<group>"; };
-		B900000003000000 /* MockKeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKeychainService.swift; sourceTree = "<group>"; };
-		B900000004000000 /* TaskManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
-		B900000005000000 /* PatternEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngineTests.swift; sourceTree = "<group>"; };
-		B900000006000000 /* UsageGateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
-		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
-		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
-		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
-		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
-		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
-		BW00000004000000 /* StreakWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
+		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
+		'B100000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
+		'B100000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		'B100000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckIn.swift; sourceTree = "<group>"; };
+		'B100000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		'B100000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		'B100000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
+		'B100000012000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCard.swift; sourceTree = "<group>"; };
+		'B100000013000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+		'B100000014000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		'B100000015000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		'B100000016000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInsView.swift; sourceTree = "<group>"; };
+		'B100000017000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
+		'B100000018000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		'B200000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		'B200000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		'B200000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		'B200000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCategory.swift; sourceTree = "<group>"; };
+		'B200000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPriority.swift; sourceTree = "<group>"; };
+		'B200000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
+		'B200000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
+		'B200000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		'B200000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
+		'B200000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngine.swift; sourceTree = "<group>"; };
+		'B200000011000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelpers.swift; sourceTree = "<group>"; };
+		'B200000012000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
+		'B200000013000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
+		'B300000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
+		'B300000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
+		'B300000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicProvider.swift; sourceTree = "<group>"; };
+		'B300000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
+		'B300000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
+		'B300000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		'B300000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		'B300000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
+		'B400000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		'B400000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
+		'B400000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
+		'B400000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInDetailView.swift; sourceTree = "<group>"; };
+		'B400000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
+		'B400000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
+		'B400000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		'B400000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		'B400000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferView.swift; sourceTree = "<group>"; };
+		'B400000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompleteView.swift; sourceTree = "<group>"; };
+		'B500000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarLink.swift; sourceTree = "<group>"; };
+		'B500000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitService.swift; sourceTree = "<group>"; };
+		'B500000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
+		'B500000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncManager.swift; sourceTree = "<group>"; };
+		'B500000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarImportView.swift; sourceTree = "<group>"; };
+		'B500000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
+		'B600000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
+		'B600000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		'B600000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManager.swift; sourceTree = "<group>"; };
+		'B600000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		'B600000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionView.swift; sourceTree = "<group>"; };
+		'B600000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsView.swift; sourceTree = "<group>"; };
+		'B600000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		'B600000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallCard.swift; sourceTree = "<group>"; };
+		'B700000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyAIReviewView.swift; sourceTree = "<group>"; };
+		'B700000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrendView.swift; sourceTree = "<group>"; };
+		'B700000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyChartView.swift; sourceTree = "<group>"; };
+		'B700000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownView.swift; sourceTree = "<group>"; };
+		'B800000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
+		'B800000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		'B800000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		'B800000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		'B800000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubble.swift; sourceTree = "<group>"; };
+		'B800000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsBar.swift; sourceTree = "<group>"; };
+		'B800000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
+		'B900000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
+		'B900000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIProvider.swift; sourceTree = "<group>"; };
+		'B900000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKeychainService.swift; sourceTree = "<group>"; };
+		'B900000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
+		'B900000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngineTests.swift; sourceTree = "<group>"; };
+		'B900000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
+		'B900000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
+		'B900000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
+		'BA00000001000000' = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		'BC00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		'BC00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
+		'BC00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
+		'BC00000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
+		'BC00000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeSelectionView.swift; sourceTree = "<group>"; };
+		'BC00000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventRow.swift; sourceTree = "<group>"; };
+		'BC00000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
+		'BC00000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		'BC00000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
+		'BD00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActivityOrb.swift; sourceTree = "<group>"; };
+		'BD00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
+		'BD00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
+		'BD00000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGreetingCard.swift; sourceTree = "<group>"; };
+		'BE00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEntry.swift; sourceTree = "<group>"; };
+		'BE00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
+		'BF00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
+		'BF00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
+		'BW00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
+		'BW00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
+		'BW00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
+		'BW00000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
+		'BW00000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
+		C85E40C1975819FFCA2410F6 /* DailyWisdom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = DailyWisdom.json; path = MyAIssistant/Resources/DailyWisdom.json; sourceTree = SOURCE_ROOT; };
+		'E100000001000000' = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		'E900000001000000' = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		'EW00000001000000' = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C100000001000000 /* Frameworks */ = {
+		'C100000001000000' = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C900000001000000 /* Frameworks */ = {
+		'C900000001000000' = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CW00000001000000 /* Frameworks */ = {
+		'CW00000001000000' = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -206,397 +277,395 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		D100000001000000 = {
+		'D100000001000000' = {
 			isa = PBXGroup;
 			children = (
-				D100000002000000 /* MyAIssistant */,
-				DW00000001000000 /* MyAIssistantWidgets */,
-				D900000001000000 /* MyAIssistantTests */,
-				D100000010000000 /* Products */,
+				D100000002000000,
+				DW00000001000000,
+				D900000001000000,
+				D100000010000000,
+				12CC4D3DBACA141D3B64244D /* WisdomManager.swift */,
+				C85E40C1975819FFCA2410F6 /* DailyWisdom.json */,
 			);
 			sourceTree = "<group>";
 		};
-		D100000002000000 /* MyAIssistant */ = {
+		'D100000002000000' = {
 			isa = PBXGroup;
 			children = (
-				B100000001000000 /* MyAIssistantApp.swift */,
-				B100000002000000 /* ContentView.swift */,
-				BA00000001000000 /* Assets.xcassets */,
-				D200000001000000 /* Core */,
-				D100000003000000 /* Models */,
-				D200000002000000 /* Managers */,
-				D100000004000000 /* Theme */,
-				D100000005000000 /* Services */,
-				D100000006000000 /* Views */,
-				D200000003000000 /* Utilities */,
+				B100000001000000,
+				B100000002000000,
+				BA00000001000000,
+				D200000001000000,
+				D100000003000000,
+				D200000002000000,
+				D100000004000000,
+				D100000005000000,
+				D100000006000000,
+				D200000003000000,
 			);
 			path = MyAIssistant;
 			sourceTree = "<group>";
 		};
-		D200000001000000 /* Core */ = {
+		'D100000003000000' = {
 			isa = PBXGroup;
 			children = (
-				B200000001000000 /* AppConstants.swift */,
-				B200000002000000 /* DependencyContainer.swift */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		D100000003000000 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				B200000003000000 /* TaskItem.swift */,
-				B200000004000000 /* TaskCategory.swift */,
-				B200000005000000 /* TaskPriority.swift */,
-				B100000005000000 /* CheckIn.swift */,
-				B100000006000000 /* ChatMessage.swift */,
-				B200000006000000 /* CheckInRecord.swift */,
-				B200000007000000 /* DailySnapshot.swift */,
-				B200000008000000 /* UserProfile.swift */,
-				B300000008000000 /* UsageTracker.swift */,
-				B500000001000000 /* CalendarLink.swift */,
+				B200000003000000,
+				B200000004000000,
+				B200000005000000,
+				B100000005000000,
+				B100000006000000,
+				B200000006000000,
+				B200000007000000,
+				B200000008000000,
+				B300000008000000,
+				B500000001000000,
+				BE00000001000000,
+				BF00000001000000,
+				BF00000002000000,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		D200000002000000 /* Managers */ = {
+		'D100000004000000' = {
 			isa = PBXGroup;
 			children = (
-				B200000009000000 /* TaskManager.swift */,
-				B200000010000000 /* PatternEngine.swift */,
-				B400000001000000 /* NotificationManager.swift */,
-				B400000002000000 /* CheckInManager.swift */,
-				B500000004000000 /* CalendarSyncManager.swift */,
-				B600000003000000 /* UsageGateManager.swift */,
-				B800000001000000 /* BackgroundTaskManager.swift */,
-			);
-			path = Managers;
-			sourceTree = "<group>";
-		};
-		D100000004000000 /* Theme */ = {
-			isa = PBXGroup;
-			children = (
-				B100000009000000 /* AppColors.swift */,
-				B100000010000000 /* AppFonts.swift */,
+				B100000009000000,
+				B100000010000000,
+				BC00000008000000,
+				BC00000009000000,
 			);
 			path = Theme;
 			sourceTree = "<group>";
 		};
-		D100000005000000 /* Services */ = {
+		'D100000005000000' = {
 			isa = PBXGroup;
 			children = (
-				D300000001000000 /* AI */,
-				D300000002000000 /* Keychain */,
-				D300000003000000 /* Networking */,
-				D500000001000000 /* Calendar */,
-				D600000001000000 /* StoreKit */,
+				D300000001000000,
+				D300000002000000,
+				D300000003000000,
+				D500000001000000,
+				D600000001000000,
+				DC00000001000000,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
-		D600000001000000 /* StoreKit */ = {
+		'D100000006000000' = {
 			isa = PBXGroup;
 			children = (
-				B600000001000000 /* SubscriptionTier.swift */,
-				B600000002000000 /* SubscriptionManager.swift */,
-			);
-			path = StoreKit;
-			sourceTree = "<group>";
-		};
-		D500000001000000 /* Calendar */ = {
-			isa = PBXGroup;
-			children = (
-				B500000002000000 /* EventKitService.swift */,
-				B500000003000000 /* GoogleCalendarService.swift */,
-			);
-			path = Calendar;
-			sourceTree = "<group>";
-		};
-		D300000001000000 /* AI */ = {
-			isa = PBXGroup;
-			children = (
-				B300000001000000 /* AIProvider.swift */,
-				B300000002000000 /* AIPromptBuilder.swift */,
-				B300000003000000 /* AnthropicProvider.swift */,
-				B300000004000000 /* OpenAIProvider.swift */,
-				B300000005000000 /* AIProviderFactory.swift */,
-			);
-			path = AI;
-			sourceTree = "<group>";
-		};
-		D300000002000000 /* Keychain */ = {
-			isa = PBXGroup;
-			children = (
-				B300000006000000 /* KeychainService.swift */,
-			);
-			path = Keychain;
-			sourceTree = "<group>";
-		};
-		D300000003000000 /* Networking */ = {
-			isa = PBXGroup;
-			children = (
-				B300000007000000 /* APIClient.swift */,
-			);
-			path = Networking;
-			sourceTree = "<group>";
-		};
-		D100000006000000 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				D100000007000000 /* Components */,
-				D100000008000000 /* Home */,
-				D100000009000000 /* Schedule */,
-				D100000011000000 /* CheckIns */,
-				D100000012000000 /* Patterns */,
-				D100000013000000 /* Chat */,
-				D400000001000000 /* Onboarding */,
-				D500000002000000 /* Settings */,
+				D100000007000000,
+				D100000008000000,
+				D100000009000000,
+				D100000011000000,
+				D100000012000000,
+				D100000013000000,
+				D400000001000000,
+				D500000002000000,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		D400000001000000 /* Onboarding */ = {
+		'D100000007000000' = {
 			isa = PBXGroup;
 			children = (
-				B400000006000000 /* OnboardingContainerView.swift */,
-				B400000007000000 /* WelcomeView.swift */,
-				B400000008000000 /* PermissionsView.swift */,
-				B400000009000000 /* SubscriptionOfferView.swift */,
-				B400000010000000 /* OnboardingCompleteView.swift */,
-			);
-			path = Onboarding;
-			sourceTree = "<group>";
-		};
-		D500000002000000 /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				B600000004000000 /* SettingsView.swift */,
-				B600000005000000 /* SubscriptionView.swift */,
-				B600000006000000 /* APIKeySettingsView.swift */,
-				B600000007000000 /* NotificationSettingsView.swift */,
-				B500000006000000 /* CalendarSettingsView.swift */,
-			);
-			path = Settings;
-			sourceTree = "<group>";
-		};
-		D100000007000000 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				B100000012000000 /* TaskCard.swift */,
-				B100000013000000 /* StatCard.swift */,
-				B600000008000000 /* PaywallCard.swift */,
-				B800000002000000 /* EmptyStateView.swift */,
-				B800000003000000 /* LoadingView.swift */,
+				B100000012000000,
+				B100000013000000,
+				B600000008000000,
+				B800000002000000,
+				B800000003000000,
+				BC00000002000000,
+				BD00000001000000,
 			);
 			path = Components;
 			sourceTree = "<group>";
 		};
-		D100000008000000 /* Home */ = {
+		'D100000008000000' = {
 			isa = PBXGroup;
 			children = (
-				B100000014000000 /* HomeView.swift */,
+				B100000014000000,
+				BC00000007000000,
+				BD00000004000000,
 			);
 			path = Home;
 			sourceTree = "<group>";
 		};
-		D100000009000000 /* Schedule */ = {
+		'D100000009000000' = {
 			isa = PBXGroup;
 			children = (
-				B100000015000000 /* ScheduleView.swift */,
-				B500000005000000 /* CalendarImportView.swift */,
-				B800000004000000 /* TaskDetailView.swift */,
+				B100000015000000,
+				B500000005000000,
+				B800000004000000,
 			);
 			path = Schedule;
 			sourceTree = "<group>";
 		};
-		D100000011000000 /* CheckIns */ = {
+		'D100000010000000' = {
 			isa = PBXGroup;
 			children = (
-				B100000016000000 /* CheckInsView.swift */,
-				B400000003000000 /* MoodPicker.swift */,
-				B400000004000000 /* CheckInDetailView.swift */,
-				B400000005000000 /* CheckInHistoryView.swift */,
-			);
-			path = CheckIns;
-			sourceTree = "<group>";
-		};
-		D100000012000000 /* Patterns */ = {
-			isa = PBXGroup;
-			children = (
-				B100000017000000 /* PatternsView.swift */,
-				B700000001000000 /* WeeklyAIReviewView.swift */,
-				B700000002000000 /* MoodTrendView.swift */,
-				B700000003000000 /* WeeklyChartView.swift */,
-				B700000004000000 /* CategoryBreakdownView.swift */,
-			);
-			path = Patterns;
-			sourceTree = "<group>";
-		};
-		D100000013000000 /* Chat */ = {
-			isa = PBXGroup;
-			children = (
-				B100000018000000 /* ChatView.swift */,
-				B800000005000000 /* ChatBubble.swift */,
-				B800000006000000 /* QuickActionsBar.swift */,
-				B800000007000000 /* ConversationListView.swift */,
-			);
-			path = Chat;
-			sourceTree = "<group>";
-		};
-		D200000003000000 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				B200000011000000 /* DateHelpers.swift */,
-				B200000012000000 /* DataSeeder.swift */,
-				B200000013000000 /* PreviewHelpers.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		D100000010000000 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				E100000001000000 /* MyAIssistant.app */,
-				E900000001000000 /* MyAIssistantTests.xctest */,
-				EW00000001000000 /* MyAIssistantWidgets.appex */,
+				E100000001000000,
+				E900000001000000,
+				EW00000001000000,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D900000001000000 /* MyAIssistantTests */ = {
+		'D100000011000000' = {
 			isa = PBXGroup;
 			children = (
-				D900000002000000 /* Managers */,
-				D900000003000000 /* Services */,
-				D900000004000000 /* Mocks */,
-				D900000005000000 /* Utilities */,
+				B100000016000000,
+				B400000003000000,
+				B400000004000000,
+				B400000005000000,
 			);
-			path = MyAIssistantTests;
+			path = CheckIns;
 			sourceTree = "<group>";
 		};
-		D900000002000000 /* Managers */ = {
+		'D100000012000000' = {
 			isa = PBXGroup;
 			children = (
-				B900000004000000 /* TaskManagerTests.swift */,
-				B900000005000000 /* PatternEngineTests.swift */,
-				B900000006000000 /* UsageGateManagerTests.swift */,
+				B100000017000000,
+				B700000001000000,
+				B700000002000000,
+				B700000003000000,
+				B700000004000000,
+				BE00000002000000,
+			);
+			path = Patterns;
+			sourceTree = "<group>";
+		};
+		'D100000013000000' = {
+			isa = PBXGroup;
+			children = (
+				B100000018000000,
+				B800000005000000,
+				B800000006000000,
+				B800000007000000,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		'D200000001000000' = {
+			isa = PBXGroup;
+			children = (
+				B200000001000000,
+				B200000002000000,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		'D200000002000000' = {
+			isa = PBXGroup;
+			children = (
+				B200000009000000,
+				B200000010000000,
+				B400000001000000,
+				B400000002000000,
+				B500000004000000,
+				B600000003000000,
+				B800000001000000,
+				BD00000003000000,
 			);
 			path = Managers;
 			sourceTree = "<group>";
 		};
-		D900000003000000 /* Services */ = {
+		'D200000003000000' = {
 			isa = PBXGroup;
 			children = (
-				B900000007000000 /* AIProviderFactoryTests.swift */,
-				B900000008000000 /* AIPromptBuilderTests.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		D900000004000000 /* Mocks */ = {
-			isa = PBXGroup;
-			children = (
-				B900000002000000 /* MockAIProvider.swift */,
-				B900000003000000 /* MockKeychainService.swift */,
-			);
-			path = Mocks;
-			sourceTree = "<group>";
-		};
-		D900000005000000 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				B900000001000000 /* TestModelContainer.swift */,
+				B200000011000000,
+				B200000012000000,
+				B200000013000000,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		DW00000001000000 /* MyAIssistantWidgets */ = {
+		'D300000001000000' = {
 			isa = PBXGroup;
 			children = (
-				BW00000001000000 /* WidgetBundle.swift */,
-				BW00000002000000 /* NextCheckInWidget.swift */,
-				BW00000003000000 /* TodayProgressWidget.swift */,
-				BW00000004000000 /* StreakWidget.swift */,
+				B300000001000000,
+				B300000002000000,
+				B300000003000000,
+				B300000004000000,
+				B300000005000000,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		'D300000002000000' = {
+			isa = PBXGroup;
+			children = (
+				B300000006000000,
+			);
+			path = Keychain;
+			sourceTree = "<group>";
+		};
+		'D300000003000000' = {
+			isa = PBXGroup;
+			children = (
+				B300000007000000,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		'D400000001000000' = {
+			isa = PBXGroup;
+			children = (
+				B400000006000000,
+				B400000007000000,
+				B400000008000000,
+				B400000009000000,
+				B400000010000000,
+				BC00000006000000,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		'D500000001000000' = {
+			isa = PBXGroup;
+			children = (
+				B500000002000000,
+				B500000003000000,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		'D500000002000000' = {
+			isa = PBXGroup;
+			children = (
+				B600000004000000,
+				B600000005000000,
+				B600000006000000,
+				B600000007000000,
+				B500000006000000,
+				BC00000005000000,
+				BC00000010000000,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		'D600000001000000' = {
+			isa = PBXGroup;
+			children = (
+				B600000001000000,
+				B600000002000000,
+			);
+			path = StoreKit;
+			sourceTree = "<group>";
+		};
+		'D900000001000000' = {
+			isa = PBXGroup;
+			children = (
+				D900000002000000,
+				D900000003000000,
+				D900000004000000,
+				D900000005000000,
+			);
+			path = MyAIssistantTests;
+			sourceTree = "<group>";
+		};
+		'D900000002000000' = {
+			isa = PBXGroup;
+			children = (
+				B900000004000000,
+				B900000005000000,
+				B900000006000000,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		'D900000003000000' = {
+			isa = PBXGroup;
+			children = (
+				B900000007000000,
+				B900000008000000,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		'D900000004000000' = {
+			isa = PBXGroup;
+			children = (
+				B900000002000000,
+				B900000003000000,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		'D900000005000000' = {
+			isa = PBXGroup;
+			children = (
+				B900000001000000,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		'DC00000001000000' = {
+			isa = PBXGroup;
+			children = (
+				BC00000001000000,
+				BC00000003000000,
+				BD00000002000000,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		'DW00000001000000' = {
+			isa = PBXGroup;
+			children = (
+				BW00000001000000,
+				BW00000002000000,
+				BW00000003000000,
+				BW00000004000000,
+				BW00000005000000,
 			);
 			path = MyAIssistantWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
-/* Begin PBXContainerItemProxy section */
-		G900000001000000 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F200000001000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F100000001000000;
-			remoteInfo = MyAIssistant;
-		};
-		GW00000001000000 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F200000001000000 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = FW00000001000000;
-			remoteInfo = MyAIssistantWidgets;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		H900000001000000 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F100000001000000 /* MyAIssistant */;
-			targetProxy = G900000001000000 /* PBXContainerItemProxy */;
-		};
-		HW00000001000000 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = FW00000001000000 /* MyAIssistantWidgets */;
-			targetProxy = GW00000001000000 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXNativeTarget section */
-		F100000001000000 /* MyAIssistant */ = {
+		'F100000001000000' = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F300000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistant" */;
+			buildConfigurationList = F300000002000000;
 			buildPhases = (
-				C100000002000000 /* Sources */,
-				C100000001000000 /* Frameworks */,
-				CA00000001000000 /* Resources */,
-				CW00000004000000 /* Embed App Extensions */,
+				C100000002000000,
+				C100000001000000,
+				CA00000001000000,
+				CW00000004000000,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				HW00000001000000 /* PBXTargetDependency */,
+				HW00000001000000,
 			);
 			name = MyAIssistant;
 			productName = MyAIssistant;
-			productReference = E100000001000000 /* MyAIssistant.app */;
+			productReference = E100000001000000;
 			productType = "com.apple.product-type.application";
 		};
-		F100000002000000 /* MyAIssistantTests */ = {
+		'F100000002000000' = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F300000003000000 /* Build configuration list for PBXNativeTarget "MyAIssistantTests" */;
+			buildConfigurationList = F300000003000000;
 			buildPhases = (
-				C900000002000000 /* Sources */,
-				C900000001000000 /* Frameworks */,
+				C900000002000000,
+				C900000001000000,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				H900000001000000 /* PBXTargetDependency */,
+				H900000001000000,
 			);
 			name = MyAIssistantTests;
 			productName = MyAIssistantTests;
-			productReference = E900000001000000 /* MyAIssistantTests.xctest */;
+			productReference = E900000001000000;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		FW00000001000000 /* MyAIssistantWidgets */ = {
+		'FW00000001000000' = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */;
+			buildConfigurationList = FW00000002000000;
 			buildPhases = (
-				CW00000002000000 /* Sources */,
-				CW00000001000000 /* Frameworks */,
-				CW00000003000000 /* Resources */,
+				CW00000002000000,
+				CW00000001000000,
+				CW00000003000000,
 			);
 			buildRules = (
 			);
@@ -604,20 +673,20 @@
 			);
 			name = MyAIssistantWidgets;
 			productName = MyAIssistantWidgets;
-			productReference = EW00000001000000 /* MyAIssistantWidgets.appex */;
+			productReference = EW00000001000000;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		F200000001000000 /* Project object */ = {
+		'F200000001000000' = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = 1;
+				BuildIndependentTargetsInParallel = NO;
 				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1540;
 			};
-			buildConfigurationList = F300000001000000 /* Build configuration list for PBXProject "MyAIssistant" */;
+			buildConfigurationList = F300000001000000;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -626,157 +695,176 @@
 				Base,
 			);
 			mainGroup = D100000001000000;
-			productRefGroup = D100000010000000 /* Products */;
+			productRefGroup = D100000010000000;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F100000001000000 /* MyAIssistant */,
-				F100000002000000 /* MyAIssistantTests */,
-				FW00000001000000 /* MyAIssistantWidgets */,
+				F100000001000000,
+				F100000002000000,
+				FW00000001000000,
 			);
 		};
 /* End PBXProject section */
 
-/* Begin PBXSourcesBuildPhase section */
-		C100000002000000 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A100000001000000 /* MyAIssistantApp.swift in Sources */,
-				A100000002000000 /* ContentView.swift in Sources */,
-				A200000001000000 /* AppConstants.swift in Sources */,
-				A200000002000000 /* DependencyContainer.swift in Sources */,
-				A200000003000000 /* TaskItem.swift in Sources */,
-				A200000004000000 /* TaskCategory.swift in Sources */,
-				A200000005000000 /* TaskPriority.swift in Sources */,
-				A100000005000000 /* CheckIn.swift in Sources */,
-				A100000006000000 /* ChatMessage.swift in Sources */,
-				A200000006000000 /* CheckInRecord.swift in Sources */,
-				A200000007000000 /* DailySnapshot.swift in Sources */,
-				A200000008000000 /* UserProfile.swift in Sources */,
-				A300000008000000 /* UsageTracker.swift in Sources */,
-				A200000009000000 /* TaskManager.swift in Sources */,
-				A200000010000000 /* PatternEngine.swift in Sources */,
-				A100000009000000 /* AppColors.swift in Sources */,
-				A100000010000000 /* AppFonts.swift in Sources */,
-				A300000001000000 /* AIProvider.swift in Sources */,
-				A300000002000000 /* AIPromptBuilder.swift in Sources */,
-				A300000003000000 /* AnthropicProvider.swift in Sources */,
-				A300000004000000 /* OpenAIProvider.swift in Sources */,
-				A300000005000000 /* AIProviderFactory.swift in Sources */,
-				A300000006000000 /* KeychainService.swift in Sources */,
-				A300000007000000 /* APIClient.swift in Sources */,
-				A100000012000000 /* TaskCard.swift in Sources */,
-				A100000013000000 /* StatCard.swift in Sources */,
-				A100000014000000 /* HomeView.swift in Sources */,
-				A100000015000000 /* ScheduleView.swift in Sources */,
-				A100000016000000 /* CheckInsView.swift in Sources */,
-				A100000017000000 /* PatternsView.swift in Sources */,
-				A100000018000000 /* ChatView.swift in Sources */,
-				A200000011000000 /* DateHelpers.swift in Sources */,
-				A200000012000000 /* DataSeeder.swift in Sources */,
-				A200000013000000 /* PreviewHelpers.swift in Sources */,
-				A400000001000000 /* NotificationManager.swift in Sources */,
-				A400000002000000 /* CheckInManager.swift in Sources */,
-				A400000003000000 /* MoodPicker.swift in Sources */,
-				A400000004000000 /* CheckInDetailView.swift in Sources */,
-				A400000005000000 /* CheckInHistoryView.swift in Sources */,
-				A400000006000000 /* OnboardingContainerView.swift in Sources */,
-				A400000007000000 /* WelcomeView.swift in Sources */,
-				A400000008000000 /* PermissionsView.swift in Sources */,
-				A400000009000000 /* SubscriptionOfferView.swift in Sources */,
-				A400000010000000 /* OnboardingCompleteView.swift in Sources */,
-				A500000001000000 /* CalendarLink.swift in Sources */,
-				A500000002000000 /* EventKitService.swift in Sources */,
-				A500000003000000 /* GoogleCalendarService.swift in Sources */,
-				A500000004000000 /* CalendarSyncManager.swift in Sources */,
-				A500000005000000 /* CalendarImportView.swift in Sources */,
-				A500000006000000 /* CalendarSettingsView.swift in Sources */,
-				A600000001000000 /* SubscriptionTier.swift in Sources */,
-				A600000002000000 /* SubscriptionManager.swift in Sources */,
-				A600000003000000 /* UsageGateManager.swift in Sources */,
-				A600000004000000 /* SettingsView.swift in Sources */,
-				A600000005000000 /* SubscriptionView.swift in Sources */,
-				A600000006000000 /* APIKeySettingsView.swift in Sources */,
-				A600000007000000 /* NotificationSettingsView.swift in Sources */,
-				A600000008000000 /* PaywallCard.swift in Sources */,
-				A700000001000000 /* WeeklyAIReviewView.swift in Sources */,
-				A700000002000000 /* MoodTrendView.swift in Sources */,
-				A700000003000000 /* WeeklyChartView.swift in Sources */,
-				A700000004000000 /* CategoryBreakdownView.swift in Sources */,
-				A800000001000000 /* BackgroundTaskManager.swift in Sources */,
-				A800000002000000 /* EmptyStateView.swift in Sources */,
-				A800000003000000 /* LoadingView.swift in Sources */,
-				A800000004000000 /* TaskDetailView.swift in Sources */,
-				A800000005000000 /* ChatBubble.swift in Sources */,
-				A800000006000000 /* QuickActionsBar.swift in Sources */,
-				A800000007000000 /* ConversationListView.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C900000002000000 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A900000001000000 /* TestModelContainer.swift in Sources */,
-				A900000002000000 /* MockAIProvider.swift in Sources */,
-				A900000003000000 /* MockKeychainService.swift in Sources */,
-				A900000004000000 /* TaskManagerTests.swift in Sources */,
-				A900000005000000 /* PatternEngineTests.swift in Sources */,
-				A900000006000000 /* UsageGateManagerTests.swift in Sources */,
-				A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
-				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CW00000002000000 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AW00000001000000 /* WidgetBundle.swift in Sources */,
-				AW00000002000000 /* NextCheckInWidget.swift in Sources */,
-				AW00000003000000 /* TodayProgressWidget.swift in Sources */,
-				AW00000004000000 /* StreakWidget.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXSourcesBuildPhase section */
-
 /* Begin PBXResourcesBuildPhase section */
-		CA00000001000000 /* Resources */ = {
+		'CA00000001000000' = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA00000001000000 /* Assets.xcassets in Resources */,
+				AA00000001000000,
+				8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CW00000003000000 /* Resources */ = {
+		'CW00000003000000' = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AW00000005000000 /* Assets.xcassets in Resources */,
+				AW00000005000000,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		CW00000004000000 /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
+/* Begin PBXSourcesBuildPhase section */
+		'C100000002000000' = {
+			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
 			files = (
-				AW00000006000000 /* MyAIssistantWidgets.appex in Embed App Extensions */,
+				A100000001000000,
+				A100000002000000,
+				A200000001000000,
+				A200000002000000,
+				A200000003000000,
+				A200000004000000,
+				A200000005000000,
+				A100000005000000,
+				A100000006000000,
+				A200000006000000,
+				A200000007000000,
+				A200000008000000,
+				A300000008000000,
+				A200000009000000,
+				A200000010000000,
+				A100000009000000,
+				A100000010000000,
+				A300000001000000,
+				A300000002000000,
+				A300000003000000,
+				A300000004000000,
+				A300000005000000,
+				A300000006000000,
+				A300000007000000,
+				A100000012000000,
+				A100000013000000,
+				A100000014000000,
+				AC00000007000000,
+				A100000015000000,
+				A100000016000000,
+				A100000017000000,
+				A100000018000000,
+				A200000011000000,
+				A200000012000000,
+				A200000013000000,
+				A400000001000000,
+				A400000002000000,
+				A400000003000000,
+				A400000004000000,
+				A400000005000000,
+				A400000006000000,
+				A400000007000000,
+				A400000008000000,
+				A400000009000000,
+				A400000010000000,
+				A500000001000000,
+				A500000002000000,
+				A500000003000000,
+				A500000004000000,
+				A500000005000000,
+				A500000006000000,
+				A600000001000000,
+				A600000002000000,
+				A600000003000000,
+				A600000004000000,
+				A600000005000000,
+				A600000006000000,
+				A600000007000000,
+				A600000008000000,
+				A700000001000000,
+				A700000002000000,
+				A700000003000000,
+				A700000004000000,
+				A800000001000000,
+				A800000002000000,
+				A800000003000000,
+				A800000004000000,
+				A800000005000000,
+				A800000006000000,
+				A800000007000000,
+				AC00000001000000,
+				AC00000002000000,
+				AC00000003000000,
+				AC00000005000000,
+				AC00000006000000,
+				AC00000008000000,
+				AC00000009000000,
+				AC00000010000000,
+				AD00000001000000,
+				AD00000002000000,
+				AD00000003000000,
+				AD00000004000000,
+				AE00000001000000,
+				AE00000002000000,
+				AF00000001000000,
+				AF00000002000000,
+				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
 			);
-			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXCopyFilesBuildPhase section */
+		'C900000002000000' = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A900000001000000,
+				A900000002000000,
+				A900000003000000,
+				A900000004000000,
+				A900000005000000,
+				A900000006000000,
+				A900000007000000,
+				A900000008000000,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		'CW00000002000000' = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AW00000001000000,
+				AW00000002000000,
+				AW00000003000000,
+				AW00000004000000,
+				WDTA00000001000,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		'H900000001000000' = {
+			isa = PBXTargetDependency;
+			target = F100000001000000;
+			targetProxy = G900000001000000;
+		};
+		'HW00000001000000' = {
+			isa = PBXTargetDependency;
+			target = FW00000001000000;
+			targetProxy = GW00000001000000;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		F400000001000000 /* Debug */ = {
+		'F400000001000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -803,7 +891,7 @@
 			};
 			name = Debug;
 		};
-		F400000002000000 /* Release */ = {
+		'F400000002000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -826,7 +914,7 @@
 			};
 			name = Release;
 		};
-		F400000003000000 /* Debug */ = {
+		'F400000003000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
@@ -834,7 +922,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -851,11 +939,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		F400000004000000 /* Release */ = {
+		'F400000004000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
@@ -863,7 +951,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -880,16 +968,17 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
-		F400000005000000 /* Debug */ = {
+		'F400000005000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -897,17 +986,18 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyAIssistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyAIssistant";
 			};
 			name = Debug;
 		};
-		F400000006000000 /* Release */ = {
+		'F400000006000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -915,12 +1005,12 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyAIssistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyAIssistant";
 			};
 			name = Release;
 		};
-		FW00000003000000 /* Debug */ = {
+		'FW00000003000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -928,6 +1018,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
@@ -944,11 +1035,11 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		FW00000004000000 /* Release */ = {
+		'FW00000004000000' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -956,6 +1047,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
@@ -972,50 +1064,50 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F300000001000000 /* Build configuration list for PBXProject "MyAIssistant" */ = {
+		'F300000001000000' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000001000000 /* Debug */,
-				F400000002000000 /* Release */,
+				F400000001000000,
+				F400000002000000,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F300000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistant" */ = {
+		'F300000002000000' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000003000000 /* Debug */,
-				F400000004000000 /* Release */,
+				F400000003000000,
+				F400000004000000,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F300000003000000 /* Build configuration list for PBXNativeTarget "MyAIssistantTests" */ = {
+		'F300000003000000' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000005000000 /* Debug */,
-				F400000006000000 /* Release */,
+				F400000005000000,
+				F400000006000000,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */ = {
+		'FW00000002000000' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FW00000003000000 /* Debug */,
-				FW00000004000000 /* Release */,
+				FW00000003000000,
+				FW00000004000000,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = F200000001000000 /* Project object */;
+	rootObject = F200000001000000;
 }

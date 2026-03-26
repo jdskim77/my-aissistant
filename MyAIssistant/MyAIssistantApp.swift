@@ -12,20 +12,33 @@ struct MyAIssistantApp: App {
     @State private var usageGateManager: UsageGateManager
     @StateObject private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
+    @State private var greetingManager = GreetingManager()
+    @State private var themeManager = ThemeManager.shared
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
-        let schema = Schema([
-            TaskItem.self,
-            ChatMessage.self,
-            CheckInRecord.self,
-            DailySnapshot.self,
-            UserProfile.self,
-            UsageTracker.self,
-            CalendarLink.self
-        ])
+        let schema = Schema(versionedSchema: SchemaV1.self)
         let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
-        let container = try! ModelContainer(for: schema, configurations: [config])
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: schema,
+                migrationPlan: MyAIssistantMigrationPlan.self,
+                configurations: [config]
+            )
+        } catch {
+            // Database corrupted — delete and recreate to prevent permanent launch crash
+            let storeURL = config.url
+            try? FileManager.default.removeItem(at: storeURL)
+            // Also remove WAL/SHM sidecar files
+            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+            container = (try? ModelContainer(
+                for: schema,
+                migrationPlan: MyAIssistantMigrationPlan.self,
+                configurations: [config]
+            )) ?? ModelContainer.fallbackInMemory(schema: schema)
+        }
 
         self.modelContainer = container
         let context = container.mainContext
@@ -46,6 +59,9 @@ struct MyAIssistantApp: App {
             calendarSyncManager: csm
         )
 
+        // Register background tasks (must happen during init, before app finishes launching)
+        self.backgroundTaskManager?.registerAll()
+
         // Seed sample data on first launch
         DataSeeder.seedIfEmpty(context: context)
 
@@ -56,6 +72,8 @@ struct MyAIssistantApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .id(themeManager.themeID)
+                .preferredColorScheme(themeManager.selectedTheme.isDark ? .dark : .light)
                 .environment(\.taskManager, taskManager)
                 .environment(\.patternEngine, patternEngine)
                 .environment(\.checkInManager, checkInManager)
@@ -63,13 +81,13 @@ struct MyAIssistantApp: App {
                 .environment(\.usageGateManager, usageGateManager)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
                 .environment(\.keychainService, keychainService)
+                .environment(\.greetingManager, greetingManager)
                 .environmentObject(subscriptionManager)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
 
-                    // Register and schedule background tasks
-                    backgroundTaskManager?.registerAll()
+                    // Schedule background tasks
                     backgroundTaskManager?.scheduleDailySnapshot()
                     backgroundTaskManager?.scheduleWeeklyReview()
                     backgroundTaskManager?.scheduleCalendarSync()
@@ -81,8 +99,16 @@ struct MyAIssistantApp: App {
 
 // MARK: - Notification Delegate
 
+extension Notification.Name {
+    static let didTapNotification = Notification.Name("didTapNotification")
+}
+
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationDelegate()
+
+    /// Stores the destination when the app is launched from a notification tap (cold launch).
+    /// ContentView reads and clears this on appear.
+    var pendingDestination: String?
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -95,9 +121,54 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        // Handle notification taps — deep linking will be added in later phases
+        let category = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
-        _ = response.actionIdentifier
-        _ = userInfo
+        let action = response.actionIdentifier
+
+        // Determine which screen to open
+        let destination: String
+        switch category {
+        case "CHECKIN":
+            destination = "home"
+        case "TASK":
+            destination = "schedule"
+        case "ALARM":
+            // Snooze: reschedule 5 minutes from now, don't open app
+            if action == "SNOOZE_ALARM", let alarmID = userInfo["alarmID"] as? String {
+                let snoozeTime = Date().addingTimeInterval(5 * 60)
+                guard let content = response.notification.request.content.mutableCopy() as? UNMutableNotificationContent else {
+                    return
+                }
+                let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: snoozeTime)
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                let request = UNNotificationRequest(identifier: "alarm-\(alarmID)-snooze", content: content, trigger: trigger)
+                try? await center.add(request)
+                return
+            }
+            destination = "home"
+        default:
+            destination = "home"
+        }
+
+        await MainActor.run {
+            // Store for cold-launch case (ContentView not yet mounted)
+            Self.shared.pendingDestination = destination
+
+            NotificationCenter.default.post(
+                name: .didTapNotification,
+                object: nil,
+                userInfo: ["destination": destination, "category": category, "originalUserInfo": userInfo]
+            )
+        }
+    }
+}
+
+// MARK: - ModelContainer Recovery
+
+extension ModelContainer {
+    /// Last-resort in-memory container so the app can at least launch.
+    static func fallbackInMemory(schema: Schema) -> ModelContainer {
+        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
+        return try! ModelContainer(for: schema, configurations: [inMemory])
     }
 }

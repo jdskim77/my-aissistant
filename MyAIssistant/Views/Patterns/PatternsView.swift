@@ -55,6 +55,11 @@ struct PatternsView: View {
                     .offset(y: appeared ? 0 : 20)
                     .opacity(appeared ? 1 : 0)
 
+                // Activity tracker
+                ActivityTimelineView()
+                    .offset(y: appeared ? 0 : 20)
+                    .opacity(appeared ? 1 : 0)
+
                 // Category breakdown (extracted)
                 CategoryBreakdownView(breakdown: patternEngine?.categoryBreakdown() ?? [])
                     .offset(y: appeared ? 0 : 20)

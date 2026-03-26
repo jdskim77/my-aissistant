@@ -56,7 +56,7 @@ final class BackgroundTaskManager {
         // Run after midnight
         let calendar = Calendar.current
         var nextMidnight = calendar.startOfDay(for: Date())
-        nextMidnight = calendar.date(byAdding: .day, value: 1, to: nextMidnight)!
+        nextMidnight = calendar.safeDate(byAdding: .day, value: 1, to: nextMidnight)
         request.earliestBeginDate = nextMidnight
         request.requiresNetworkConnectivity = false
         request.requiresExternalPower = false
@@ -115,7 +115,7 @@ final class BackgroundTaskManager {
 
     private func createDailySnapshot() async {
         let calendar = Calendar.current
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))!
+        let yesterday = calendar.safeDate(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))
         let today = calendar.startOfDay(for: Date())
 
         // Tasks

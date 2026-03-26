@@ -1,12 +1,19 @@
 import Foundation
 
+extension Calendar {
+    /// Safe date addition that falls back to the input date instead of crashing.
+    func safeDate(byAdding component: Calendar.Component, value: Int, to date: Date) -> Date {
+        self.date(byAdding: component, value: value, to: date) ?? date
+    }
+}
+
 extension Date {
     var startOfDay: Date {
         Calendar.current.startOfDay(for: self)
     }
 
     var endOfDay: Date {
-        Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        Calendar.current.safeDate(byAdding: .day, value: 1, to: startOfDay)
     }
 
     var isToday: Bool {
@@ -29,6 +36,6 @@ extension Date {
         components.month = month
         components.day = day
         components.hour = hour
-        return Calendar.current.date(from: components)!
+        return Calendar.current.date(from: components) ?? Date()
     }
 }

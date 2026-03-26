@@ -6,8 +6,8 @@ enum AppConstants {
     static let anthropicAPIVersion = "2023-06-01"
 
     // MARK: - AI Models
-    static let haikuModel = "claude-3-5-haiku-20241022"
-    static let sonnetModel = "claude-sonnet-4-20250514"
+    static let haikuModel = "claude-haiku-4-5-20251001"
+    static let sonnetModel = "claude-sonnet-4-5-20250929"
     static let defaultMaxTokens = 1000
 
     // MARK: - Free Tier Limits
@@ -26,6 +26,25 @@ enum AppConstants {
     // MARK: - Keychain Keys
     static let anthropicAPIKeyKey = "com.myaissistant.anthropic-api-key"
     static let openAIAPIKeyKey = "com.myaissistant.openai-api-key"
+
+    // MARK: - UserDefaults Keys (Voice)
+    static let voiceModeDefaultKey = "voiceModeDefault"
+    static let selectedVoiceIDKey = "selectedVoiceID"
+
+    // MARK: - UserDefaults Keys (Theme)
+    static let appThemeKey = "appTheme"
+
+    // MARK: - UserDefaults Keys (Google Calendar)
+    static let googleClientIDKey = "googleClientID"
+
+    // MARK: - Keychain Keys (Google Calendar)
+    static let googleAccessTokenKey = "com.myaissistant.google-access-token"
+    static let googleRefreshTokenKey = "com.myaissistant.google-refresh-token"
+    static let googleTokenExpiryKey = "com.myaissistant.google-token-expiry"
+
+    // MARK: - UserDefaults Keys (Greeting)
+    static let lastGreetedTimestampKey = "lastGreetedTimestamp"
+    static let lastGreetingTextKey = "lastGreetingText"
 
     // MARK: - App Group
     static let appGroupID = "group.com.myaissistant.shared"

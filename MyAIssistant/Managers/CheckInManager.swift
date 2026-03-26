@@ -77,7 +77,7 @@ final class CheckInManager: ObservableObject {
 
     func todayCheckIns() -> [CheckInRecord] {
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        let endOfDay = Calendar.current.safeDate(byAdding: .day, value: 1, to: startOfDay)
 
         let descriptor = FetchDescriptor<CheckInRecord>(
             predicate: #Predicate { $0.date >= startOfDay && $0.date < endOfDay },
@@ -89,7 +89,7 @@ final class CheckInManager: ObservableObject {
     func isCheckInCompleted(_ timeSlot: CheckInTime) -> Bool {
         let slotRaw = timeSlot.rawValue
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        let endOfDay = Calendar.current.safeDate(byAdding: .day, value: 1, to: startOfDay)
 
         let descriptor = FetchDescriptor<CheckInRecord>(
             predicate: #Predicate {

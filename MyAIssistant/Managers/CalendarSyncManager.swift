@@ -17,6 +17,15 @@ final class CalendarSyncManager: ObservableObject {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+        // Load stored Google client ID
+        if let storedID = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey), !storedID.isEmpty {
+            Task { await googleService.updateClientID(storedID) }
+        }
+    }
+
+    func setGoogleClientID(_ clientID: String) {
+        UserDefaults.standard.set(clientID, forKey: AppConstants.googleClientIDKey)
+        Task { await googleService.updateClientID(clientID) }
     }
 
     // MARK: - Apple Calendar Access
@@ -95,6 +104,39 @@ final class CalendarSyncManager: ObservableObject {
         try? modelContext.save()
     }
 
+    // MARK: - Deduplication
+
+    /// Check if a task with an equivalent title already exists on the same day.
+    /// Uses normalized comparison to catch birthday variants
+    /// (e.g. "John's Birthday" matches "John").
+    private func taskExistsOnSameDay(title: String, date: Date) -> Bool {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= dayStart && $0.date < dayEnd }
+        )
+        let existing = (try? modelContext.fetch(descriptor)) ?? []
+        let newKey = Self.deduplicationKey(for: title)
+        return existing.contains { Self.deduplicationKey(for: $0.title) == newKey }
+    }
+
+    /// Normalize a title for dedup: lowercase, strip birthday suffixes/prefixes, trim.
+    private static func deduplicationKey(for title: String) -> String {
+        var key = title.lowercased()
+        for suffix in ["'s birthday", "\u{2019}s birthday", " birthday", "'s bday"] {
+            if key.hasSuffix(suffix) {
+                key = String(key.dropLast(suffix.count))
+            }
+        }
+        for prefix in ["birthday - ", "birthday: "] {
+            if key.hasPrefix(prefix) {
+                key = String(key.dropFirst(prefix.count))
+            }
+        }
+        return key.trimmingCharacters(in: .whitespaces)
+    }
+
     // MARK: - Sync Apple Calendar Events
 
     func syncAppleCalendar(days: Int = 30) async {
@@ -108,7 +150,7 @@ final class CalendarSyncManager: ObservableObject {
 
         let calendarIDs = enabledLinks.map(\.calendarID)
         let startDate = Calendar.current.startOfDay(for: Date())
-        let endDate = Calendar.current.date(byAdding: .day, value: days, to: startDate)!
+        let endDate = Calendar.current.safeDate(byAdding: .day, value: days, to: startDate)
 
         let events = await eventKitService.events(in: calendarIDs, from: startDate, to: endDate)
 
@@ -128,9 +170,12 @@ final class CalendarSyncManager: ObservableObject {
                 existingTask.date = ekEvent.startDate
                 existingTask.notes = ekEvent.notes ?? ""
             } else {
-                // Create new task from calendar event
+                // Skip if a task with the same title already exists on this day (cross-source dedup)
+                let title = ekEvent.title ?? "Untitled"
+                guard !taskExistsOnSameDay(title: title, date: ekEvent.startDate) else { continue }
+
                 let task = TaskItem(
-                    title: ekEvent.title ?? "Untitled",
+                    title: title,
                     category: .personal,
                     priority: .medium,
                     date: ekEvent.startDate,
@@ -162,7 +207,7 @@ final class CalendarSyncManager: ObservableObject {
         guard !enabledLinks.isEmpty else { return }
 
         let startDate = Calendar.current.startOfDay(for: Date())
-        let endDate = Calendar.current.date(byAdding: .day, value: days, to: startDate)!
+        let endDate = Calendar.current.safeDate(byAdding: .day, value: days, to: startDate)
 
         for link in enabledLinks {
             do {
@@ -186,6 +231,9 @@ final class CalendarSyncManager: ObservableObject {
                         existingTask.date = startDate
                         existingTask.notes = event.description ?? ""
                     } else {
+                        // Skip if a task with the same title already exists on this day (cross-source dedup)
+                        guard !taskExistsOnSameDay(title: event.title, date: startDate) else { continue }
+
                         let task = TaskItem(
                             title: event.title,
                             category: .personal,
@@ -244,8 +292,57 @@ final class CalendarSyncManager: ObservableObject {
     }
 
     func deleteCalendarEvent(for task: TaskItem) async {
-        guard let eventID = task.externalCalendarID, !eventID.hasPrefix("google:") else { return }
-        try? await eventKitService.deleteEvent(identifier: eventID)
+        guard let eventID = task.externalCalendarID else { return }
+
+        if eventID.hasPrefix("google:") {
+            // Delete from Google Calendar
+            let googleEventID = String(eventID.dropFirst("google:".count))
+            let googleLinks = enabledCalendarLinks().filter { $0.calendarSource == .google }
+            if let calendarID = googleLinks.first?.calendarID {
+                try? await googleService.deleteEvent(calendarID: calendarID, eventID: googleEventID)
+            }
+        } else {
+            // Delete from Apple Calendar
+            try? await eventKitService.deleteEvent(identifier: eventID)
+        }
+    }
+
+    // MARK: - Push to Google Calendar
+
+    func pushTaskToGoogleCalendar(_ task: TaskItem, calendarID: String? = nil) async throws -> String {
+        let googleLinks = enabledCalendarLinks().filter { $0.calendarSource == .google }
+        guard let targetCalendarID = calendarID ?? googleLinks.first?.calendarID else {
+            throw GoogleCalendarError.notAuthenticated
+        }
+
+        let endDate = Calendar.current.date(byAdding: .hour, value: 1, to: task.date) ?? task.date
+        let eventID = try await googleService.createEvent(
+            calendarID: targetCalendarID,
+            title: task.title,
+            startDate: task.date,
+            endDate: endDate,
+            description: task.notes.isEmpty ? nil : task.notes
+        )
+        task.externalCalendarID = "google:\(eventID)"
+        try? modelContext.save()
+        return eventID
+    }
+
+    func updateGoogleCalendarEvent(for task: TaskItem) async {
+        guard let eventID = task.externalCalendarID, eventID.hasPrefix("google:") else { return }
+        let googleEventID = String(eventID.dropFirst("google:".count))
+        let googleLinks = enabledCalendarLinks().filter { $0.calendarSource == .google }
+        guard let calendarID = googleLinks.first?.calendarID else { return }
+
+        let endDate = Calendar.current.date(byAdding: .hour, value: 1, to: task.date) ?? task.date
+        try? await googleService.updateEvent(
+            calendarID: calendarID,
+            eventID: googleEventID,
+            title: task.title,
+            startDate: task.date,
+            endDate: endDate,
+            description: task.notes.isEmpty ? nil : task.notes
+        )
     }
 
     // MARK: - Listen for External Changes

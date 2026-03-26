@@ -23,7 +23,7 @@ struct StreakProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<StreakEntry>) -> Void) {
         // In production, read from shared App Group SwiftData container
         let entry = StreakEntry(date: Date(), streakDays: 0, isActive: false)
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+        let refreshDate = Calendar.current.safeDate(byAdding: .hour, value: 1, to: Date())
         let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
         completion(timeline)
     }

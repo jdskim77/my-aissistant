@@ -29,7 +29,7 @@ struct TodayProgressProvider: TimelineProvider {
             tasksTotal: 0,
             topPending: []
         )
-        let refreshDate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+        let refreshDate = Calendar.current.safeDate(byAdding: .minute, value: 30, to: Date())
         let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
         completion(timeline)
     }

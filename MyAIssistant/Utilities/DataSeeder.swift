@@ -36,7 +36,7 @@ struct DataSeeder {
         // Seed some check-in records for pattern display
         let calendar = Calendar.current
         for dayOffset in 1...6 {
-            let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date())!
+            let date = calendar.safeDate(byAdding: .day, value: -dayOffset, to: Date())
             let record = CheckInRecord(
                 timeSlot: .morning,
                 date: date,

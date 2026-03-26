@@ -12,7 +12,8 @@ struct ChatBubble: View {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
                     .font(AppFonts.body(15))
-                    .foregroundColor(isUser ? .white : AppColors.textPrimary)
+                    .foregroundColor(isUser ? AppColors.userBubbleText : AppColors.aiBubbleText)
+                    .textSelection(.enabled)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(
@@ -24,15 +25,22 @@ struct ChatBubble: View {
                                     endPoint: .bottomTrailing
                                 )
                               )
-                            : AnyShapeStyle(AppColors.surface)
+                            : AnyShapeStyle(AppColors.aiBubble)
                     )
                     .cornerRadius(18)
                     .overlay(
                         !isUser
                             ? RoundedRectangle(cornerRadius: 18)
-                                .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                                .stroke(AppColors.aiBubbleBorder, lineWidth: 1)
                             : nil
                     )
+                    .contextMenu {
+                        Button {
+                            UIPasteboard.general.string = message.content
+                        } label: {
+                            Label("Copy Message", systemImage: "doc.on.doc")
+                        }
+                    }
 
                 Text(formatTime(message.timestamp))
                     .font(AppFonts.caption(10))

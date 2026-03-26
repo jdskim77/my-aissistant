@@ -34,7 +34,7 @@ struct NextCheckInProvider: TimelineProvider {
         let minutes = max(0, Int(nextDate.timeIntervalSince(now) / 60))
 
         let entry = NextCheckInEntry(date: now, timeSlot: slot, greeting: greeting, minutesUntil: minutes)
-        let refreshDate = calendar.date(byAdding: .minute, value: 15, to: now)!
+        let refreshDate = calendar.date(byAdding: .minute, value: 15, to: now) ?? now
         let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
         completion(timeline)
     }

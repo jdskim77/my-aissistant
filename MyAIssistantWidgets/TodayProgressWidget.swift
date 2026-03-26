@@ -7,37 +7,58 @@ struct TodayProgressEntry: TimelineEntry {
     let date: Date
     let tasksCompleted: Int
     let tasksTotal: Int
-    let topPending: [String]
+    let topPending: [WidgetData.WidgetTask]
+    let quoteText: String?
+    let quoteAuthor: String?
 }
 
 // MARK: - Timeline Provider
 
 struct TodayProgressProvider: TimelineProvider {
     func placeholder(in context: Context) -> TodayProgressEntry {
-        TodayProgressEntry(date: Date(), tasksCompleted: 3, tasksTotal: 7, topPending: ["Review proposal", "Gym session"])
+        TodayProgressEntry(
+            date: Date(),
+            tasksCompleted: 3,
+            tasksTotal: 7,
+            topPending: [
+                .init(title: "Review proposal", priority: "High", time: "10:00 AM"),
+                .init(title: "Gym session", priority: "Medium", time: "6:00 PM")
+            ],
+            quoteText: "The secret of getting ahead is getting started.",
+            quoteAuthor: "Mark Twain"
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping @Sendable (TodayProgressEntry) -> Void) {
-        completion(placeholder(in: context))
+        completion(loadEntry())
     }
 
     func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<TodayProgressEntry>) -> Void) {
-        // In production, read from shared App Group SwiftData container
-        let entry = TodayProgressEntry(
-            date: Date(),
-            tasksCompleted: 0,
-            tasksTotal: 0,
-            topPending: []
-        )
-        let refreshDate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+        let entry = loadEntry()
+        let refreshDate = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
         completion(timeline)
+    }
+
+    private func loadEntry() -> TodayProgressEntry {
+        if let data = WidgetData.load() {
+            return TodayProgressEntry(
+                date: Date(),
+                tasksCompleted: data.tasksCompleted,
+                tasksTotal: data.tasksTotal,
+                topPending: data.topPending,
+                quoteText: data.quoteText,
+                quoteAuthor: data.quoteAuthor
+            )
+        }
+        return TodayProgressEntry(date: Date(), tasksCompleted: 0, tasksTotal: 0, topPending: [], quoteText: nil, quoteAuthor: nil)
     }
 }
 
 // MARK: - Widget View
 
 struct TodayProgressWidgetView: View {
+    @Environment(\.widgetFamily) var family
     let entry: TodayProgressEntry
 
     private var progress: Double {
@@ -46,29 +67,22 @@ struct TodayProgressWidgetView: View {
     }
 
     var body: some View {
+        switch family {
+        case .systemMedium:
+            mediumView
+        case .systemLarge:
+            largeView
+        default:
+            mediumView
+        }
+    }
+
+    // MARK: - Medium
+
+    private var mediumView: some View {
         HStack(spacing: 16) {
-            // Progress ring
-            ZStack {
-                Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 8)
-                    .frame(width: 60, height: 60)
+            progressRing(size: 60, lineWidth: 8, fontSize: 18)
 
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(Color.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .frame(width: 60, height: 60)
-                    .rotationEffect(.degrees(-90))
-
-                VStack(spacing: 0) {
-                    Text("\(entry.tasksCompleted)")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("/\(entry.tasksTotal)")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            // Task list
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today's Progress")
                     .font(.system(size: 13, weight: .semibold))
@@ -83,16 +97,8 @@ struct TodayProgressWidgetView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.green)
                 } else {
-                    ForEach(entry.topPending.prefix(3), id: \.self) { task in
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color.orange)
-                                .frame(width: 5, height: 5)
-                            Text(task)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
+                    ForEach(entry.topPending.prefix(3), id: \.title) { task in
+                        taskRow(task)
                     }
                 }
             }
@@ -101,6 +107,127 @@ struct TodayProgressWidgetView: View {
         }
         .padding()
         .containerBackground(.fill.tertiary, for: .widget)
+    }
+
+    // MARK: - Large
+
+    private var largeView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Top: progress + summary
+            HStack(spacing: 14) {
+                progressRing(size: 52, lineWidth: 6, fontSize: 16)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Today's Progress")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("\(entry.tasksCompleted) of \(entry.tasksTotal) done")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+
+            Divider()
+
+            // Tasks
+            if entry.topPending.isEmpty && entry.tasksTotal == 0 {
+                Text("No tasks today")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            } else if entry.topPending.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("All tasks completed!")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.green)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(entry.topPending.prefix(5), id: \.title) { task in
+                        taskRow(task)
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Daily wisdom quote
+            if let quote = entry.quoteText, let author = entry.quoteAuthor {
+                Divider()
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 9, weight: .semibold))
+                        Text("Daily Wisdom")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .foregroundColor(.orange)
+
+                    Text("\"\(quote)\"")
+                        .font(.system(size: 11, design: .serif))
+                        .foregroundColor(.primary)
+                        .lineLimit(3)
+                        .italic()
+
+                    Text("- \(author)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding()
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+
+    // MARK: - Shared Components
+
+    private func progressRing(size: CGFloat, lineWidth: CGFloat, fontSize: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.gray.opacity(0.2), lineWidth: lineWidth)
+                .frame(width: size, height: size)
+
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(Color.green, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .frame(width: size, height: size)
+                .rotationEffect(.degrees(-90))
+
+            VStack(spacing: 0) {
+                Text("\(entry.tasksCompleted)")
+                    .font(.system(size: fontSize, weight: .bold))
+                Text("/\(entry.tasksTotal)")
+                    .font(.system(size: fontSize * 0.6))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func taskRow(_ task: WidgetData.WidgetTask) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(priorityColor(task.priority))
+                .frame(width: 6, height: 6)
+            Text(task.title)
+                .font(.system(size: 12))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+            Spacer()
+            if let time = task.time {
+                Text(time)
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func priorityColor(_ priority: String) -> Color {
+        switch priority {
+        case "High": return .red
+        case "Medium": return .orange
+        default: return .blue
+        }
     }
 }
 
@@ -115,6 +242,6 @@ struct TodayProgressWidget: Widget {
         }
         .configurationDisplayName("Today's Progress")
         .description("Track your daily task completion.")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

@@ -79,6 +79,19 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - GreetingManager Environment Key
+
+struct GreetingManagerKey: EnvironmentKey {
+    static let defaultValue: GreetingManager? = nil
+}
+
+extension EnvironmentValues {
+    var greetingManager: GreetingManager? {
+        get { self[GreetingManagerKey.self] }
+        set { self[GreetingManagerKey.self] = newValue }
+    }
+}
+
 // MARK: - UsageGateManager Environment Key
 
 struct UsageGateManagerKey: EnvironmentKey {

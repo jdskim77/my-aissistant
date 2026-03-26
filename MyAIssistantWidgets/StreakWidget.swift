@@ -17,15 +17,21 @@ struct StreakProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping @Sendable (StreakEntry) -> Void) {
-        completion(placeholder(in: context))
+        completion(loadEntry())
     }
 
     func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<StreakEntry>) -> Void) {
-        // In production, read from shared App Group SwiftData container
-        let entry = StreakEntry(date: Date(), streakDays: 0, isActive: false)
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+        let entry = loadEntry()
+        let refreshDate = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
         completion(timeline)
+    }
+
+    private func loadEntry() -> StreakEntry {
+        if let data = WidgetData.load() {
+            return StreakEntry(date: Date(), streakDays: data.streakDays, isActive: data.streakActive)
+        }
+        return StreakEntry(date: Date(), streakDays: 0, isActive: false)
     }
 }
 

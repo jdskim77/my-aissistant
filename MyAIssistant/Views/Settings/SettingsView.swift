@@ -7,6 +7,22 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Appearance
+                Section {
+                    NavigationLink {
+                        ThemePickerView()
+                    } label: {
+                        settingsRow(
+                            icon: "paintpalette.fill",
+                            color: AppColors.skyBlue,
+                            title: "Appearance",
+                            subtitle: ThemeManager.shared.selectedTheme.rawValue
+                        )
+                    }
+                } header: {
+                    Text("Appearance")
+                }
+
                 // Account & Subscription
                 Section {
                     NavigationLink {
@@ -20,17 +36,15 @@ struct SettingsView: View {
                         )
                     }
 
-                    if tier == .powerUser {
-                        NavigationLink {
-                            APIKeySettingsView()
-                        } label: {
-                            settingsRow(
-                                icon: "key.fill",
-                                color: AppColors.accent,
-                                title: "API Keys",
-                                subtitle: "Manage your API keys"
-                            )
-                        }
+                    NavigationLink {
+                        APIKeySettingsView()
+                    } label: {
+                        settingsRow(
+                            icon: "key.fill",
+                            color: AppColors.accent,
+                            title: "API Keys",
+                            subtitle: "Manage your API keys"
+                        )
                     }
                 } header: {
                     Text("Account")
@@ -46,6 +60,17 @@ struct SettingsView: View {
                             color: AppColors.coral,
                             title: "Notifications",
                             subtitle: "Check-in reminders & alerts"
+                        )
+                    }
+
+                    NavigationLink {
+                        VoiceSettingsView()
+                    } label: {
+                        settingsRow(
+                            icon: "waveform.circle.fill",
+                            color: AppColors.accentWarm,
+                            title: "Voice",
+                            subtitle: "Voice mode & voice selection"
                         )
                     }
 

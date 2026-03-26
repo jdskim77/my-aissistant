@@ -1,8 +1,15 @@
 import SwiftUI
+import AuthenticationServices
 
 struct CalendarSettingsView: View {
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @State private var showingImport = false
+    @State private var googleClientID: String = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
+    @State private var showClientID = false
+    @State private var clientIDSaved = false
+    @State private var isGoogleConnected = false
+    @State private var isSigningInGoogle = false
+    @State private var googleAuthError: String?
 
     var body: some View {
         List {
@@ -41,15 +48,145 @@ struct CalendarSettingsView: View {
                         Text("Google Calendar")
                             .font(AppFonts.bodyMedium(15))
                             .foregroundColor(AppColors.textPrimary)
-                        Text("Not configured")
+                        Text(googleStatusText)
                             .font(AppFonts.caption(13))
-                            .foregroundColor(AppColors.textMuted)
+                            .foregroundColor(isGoogleConnected ? AppColors.accentWarm : (googleClientID.isEmpty ? AppColors.textMuted : AppColors.accentWarm))
                     }
 
                     Spacer()
+
+                    if isGoogleConnected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.accentWarm)
+                    } else if !googleClientID.isEmpty {
+                        Image(systemName: "checkmark.circle")
+                            .foregroundColor(AppColors.textMuted)
+                    }
                 }
             } header: {
                 Text("Calendar Sources")
+            }
+
+            // Google Client ID
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Google OAuth Client ID")
+                        .font(AppFonts.bodyMedium(15))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    HStack {
+                        if showClientID {
+                            TextField("123456789.apps.googleusercontent.com", text: $googleClientID)
+                                .font(AppFonts.body(13))
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        } else {
+                            SecureField("123456789.apps.googleusercontent.com", text: $googleClientID)
+                                .font(AppFonts.body(13))
+                        }
+
+                        Button {
+                            showClientID.toggle()
+                        } label: {
+                            Image(systemName: showClientID ? "eye.slash" : "eye")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.textMuted)
+                        }
+                    }
+                    .padding(12)
+                    .background(AppColors.surface)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(AppColors.border, lineWidth: 1)
+                    )
+
+                    Button {
+                        let trimmed = googleClientID.trimmingCharacters(in: .whitespacesAndNewlines)
+                        googleClientID = trimmed
+                        calendarSyncManager?.setGoogleClientID(trimmed)
+                        clientIDSaved = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { clientIDSaved = false }
+                    } label: {
+                        Text("Save Client ID")
+                            .font(AppFonts.bodyMedium(14))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(AppColors.accent)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+
+                    if clientIDSaved {
+                        Text("Client ID saved")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.accentWarm)
+                    }
+
+                    // Google Sign-In / Sign-Out
+                    if !googleClientID.isEmpty {
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        if isGoogleConnected {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(AppColors.accentWarm)
+                                Text("Signed in to Google")
+                                    .font(AppFonts.bodyMedium(14))
+                                    .foregroundColor(AppColors.accentWarm)
+                                Spacer()
+                                Button {
+                                    Task {
+                                        await calendarSyncManager?.googleService.signOut()
+                                        isGoogleConnected = false
+                                        calendarSyncManager?.googleCalendars = []
+                                    }
+                                } label: {
+                                    Text("Sign Out")
+                                        .font(AppFonts.bodyMedium(13))
+                                        .foregroundColor(AppColors.coral)
+                                }
+                            }
+                        } else {
+                            if let error = googleAuthError {
+                                Text(error)
+                                    .font(AppFonts.caption(12))
+                                    .foregroundColor(AppColors.coral)
+                            }
+
+                            Button {
+                                signInWithGoogle()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    if isSigningInGoogle {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: "globe")
+                                            .font(.system(size: 14, weight: .medium))
+                                    }
+                                    Text("Sign in with Google")
+                                        .font(AppFonts.bodyMedium(14))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "4285F4"))
+                                .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isSigningInGoogle)
+                        }
+                    }
+                }
+            } header: {
+                Text("Google Calendar Setup")
+            } footer: {
+                Text("Create an OAuth client ID in Google Cloud Console with Calendar API enabled. Use iOS type with bundle ID com.myaissistant. Add your email as a test user in the OAuth consent screen.")
+                    .font(AppFonts.caption(11))
             }
 
             // Linked calendars
@@ -126,7 +263,7 @@ struct CalendarSettingsView: View {
                     Text("How Calendar Sync Works")
                         .font(AppFonts.bodyMedium(14))
                         .foregroundColor(AppColors.textPrimary)
-                    Text("Events from linked calendars appear as tasks in your schedule. Tasks created in the app can be pushed to Apple Calendar. Google Calendar sync is read-only.")
+                    Text("Events from linked calendars appear as tasks in your schedule. Tasks created in the app can be pushed to Apple or Google Calendar. Your AI assistant can also add and remove events on your behalf.")
                         .font(AppFonts.body(13))
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -138,6 +275,98 @@ struct CalendarSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingImport) {
             CalendarImportView()
+        }
+        .onAppear {
+            Task {
+                isGoogleConnected = await calendarSyncManager?.googleCalendarConnected() == true
+            }
+        }
+    }
+
+    // MARK: - Computed
+
+    private var googleStatusText: String {
+        if isGoogleConnected { return "Connected" }
+        if !googleClientID.isEmpty { return "Client ID set — sign in below" }
+        return "Not configured"
+    }
+
+    // MARK: - Google OAuth
+
+    private func signInWithGoogle() {
+        guard let syncManager = calendarSyncManager else { return }
+
+        Task {
+            guard let authURL = await syncManager.googleService.authorizationURL() else {
+                googleAuthError = "Client ID not configured correctly."
+                return
+            }
+
+            isSigningInGoogle = true
+            googleAuthError = nil
+
+            let callbackURL = await startGoogleAuth(url: authURL)
+
+            if let callbackURL,
+               let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+                do {
+                    try await syncManager.googleService.exchangeCodeForTokens(code)
+                    await syncManager.loadGoogleCalendars()
+                    isGoogleConnected = true
+
+                    // Auto-link primary calendar so the AI can access it immediately
+                    autoLinkPrimaryCalendar()
+
+                    // Trigger initial sync
+                    await syncManager.syncGoogleCalendar()
+                } catch {
+                    googleAuthError = "Sign-in failed: \(error.localizedDescription)"
+                }
+            } else {
+                googleAuthError = "Sign-in was cancelled."
+            }
+
+            isSigningInGoogle = false
+        }
+    }
+
+    private func autoLinkPrimaryCalendar() {
+        guard let syncManager = calendarSyncManager else { return }
+        let calendars = syncManager.googleCalendars
+
+        // Find the primary calendar, or fall back to the first one
+        let primary = calendars.first(where: { $0.primary == true }) ?? calendars.first
+        guard let cal = primary else { return }
+
+        // Only link if not already linked
+        let existing = syncManager.linkedCalendars()
+        if !existing.contains(where: { $0.calendarID == cal.id && $0.source == CalendarSource.google.rawValue }) {
+            syncManager.linkCalendar(
+                source: .google,
+                calendarID: cal.id,
+                name: cal.displayName,
+                color: cal.backgroundColor ?? "#4285F4"
+            )
+        }
+    }
+
+    @MainActor
+    private func startGoogleAuth(url: URL) async -> URL? {
+        await withCheckedContinuation { continuation in
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callbackURLScheme: "com.myaissistant"
+            ) { callbackURL, error in
+                if error != nil {
+                    continuation.resume(returning: nil)
+                } else {
+                    continuation.resume(returning: callbackURL)
+                }
+            }
+            session.prefersEphemeralWebBrowserSession = false
+            session.presentationContextProvider = GoogleAuthPresenter.shared
+            session.start()
         }
     }
 }

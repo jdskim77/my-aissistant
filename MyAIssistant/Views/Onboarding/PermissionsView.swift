@@ -1,8 +1,10 @@
 import SwiftUI
+import Speech
 
 struct PermissionsView: View {
     let onContinue: () -> Void
     @State private var notificationsGranted: Bool?
+    @State private var microphoneGranted: Bool?
     @State private var appeared = false
 
     var body: some View {
@@ -22,7 +24,7 @@ struct PermissionsView: View {
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
 
-                // Notification permission card
+                // Permission cards
                 VStack(spacing: 16) {
                     permissionCard(
                         icon: "bell.badge.fill",
@@ -31,6 +33,15 @@ struct PermissionsView: View {
                         granted: notificationsGranted
                     ) {
                         requestNotifications()
+                    }
+
+                    permissionCard(
+                        icon: "mic.fill",
+                        title: "Microphone",
+                        subtitle: "Voice input for AI assistant",
+                        granted: microphoneGranted
+                    ) {
+                        requestMicrophone()
                     }
                 }
                 .padding(.horizontal, 24)
@@ -127,6 +138,20 @@ struct PermissionsView: View {
                 if granted {
                     manager.scheduleCheckInReminders()
                 }
+            }
+        }
+    }
+
+    private func requestMicrophone() {
+        Task {
+            let speechStatus = await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { status in
+                    continuation.resume(returning: status)
+                }
+            }
+            let micGranted = await AVAudioApplication.requestRecordPermission()
+            await MainActor.run {
+                microphoneGranted = (speechStatus == .authorized && micGranted)
             }
         }
     }
