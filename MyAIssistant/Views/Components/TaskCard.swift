@@ -30,8 +30,11 @@ struct TaskCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Main row
             HStack(spacing: 12) {
-                // Priority-colored checkbox
-                Button(action: onToggle) {
+                // Priority-colored checkbox — 44x44 touch target
+                Button {
+                    Haptics.success()
+                    onToggle()
+                } label: {
                     ZStack {
                         Circle()
                             .stroke(checkboxColor, lineWidth: 2)
@@ -46,10 +49,13 @@ struct TaskCard: View {
                                 .foregroundColor(.white)
                         }
                     }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(task.done ? "Mark \(task.title) incomplete" : "Complete \(task.title)")
 
-                // Title + time/overdue
+                // Title + metadata
                 VStack(alignment: .leading, spacing: 2) {
                     Text(task.title)
                         .font(AppFonts.bodyMedium(15))
@@ -57,7 +63,7 @@ struct TaskCard: View {
                         .strikethrough(task.done)
                         .lineLimit(isExpanded ? nil : 1)
 
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         if isOverdue && !task.done {
                             Text(overdueDateText)
                                 .font(AppFonts.caption(12))
@@ -77,25 +83,40 @@ struct TaskCard: View {
 
                 Spacer()
 
-                // Priority dot
+                // Priority badge (color + text, not color-only)
                 if !task.done {
-                    Circle()
-                        .fill(AppColors.checkboxColor(task.priority))
-                        .frame(width: 8, height: 8)
+                    Text(task.priority.rawValue.prefix(1))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(AppColors.checkboxColor(task.priority))
+                        .frame(width: 24, height: 24)
+                        .background(AppColors.checkboxColor(task.priority).opacity(0.12))
+                        .cornerRadius(6)
+                        .accessibilityLabel("\(task.priority.rawValue) priority")
                 }
 
-                // Expand chevron
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(AppColors.textMuted)
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                // Expand/collapse button
+                Button {
+                    Haptics.light()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(AppColors.textMuted)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 32, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isExpanded ? "Collapse details" : "Expand details")
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 4)
 
             // Expanded details
             if isExpanded {
                 Divider()
-                    .padding(.leading, 36)
+                    .padding(.leading, 56)
 
                 VStack(alignment: .leading, spacing: 10) {
                     if !task.notes.isEmpty {
@@ -142,14 +163,8 @@ struct TaskCard: View {
                             .foregroundColor(AppColors.textMuted)
                     }
                 }
-                .padding(.leading, 36)
+                .padding(.leading, 56)
                 .padding(.vertical, 8)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                isExpanded.toggle()
             }
         }
         .listRowBackground(

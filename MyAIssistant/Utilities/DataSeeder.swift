@@ -3,6 +3,10 @@ import SwiftData
 
 struct DataSeeder {
     static func seedIfEmpty(context: ModelContext) {
+        #if !DEBUG
+        // Only seed sample data in debug builds — real users start with a clean slate
+        return
+        #else
         let descriptor = FetchDescriptor<TaskItem>()
         let existingCount = (try? context.fetchCount(descriptor)) ?? 0
         guard existingCount == 0 else { return }
@@ -46,5 +50,6 @@ struct DataSeeder {
         }
 
         try? context.save()
+        #endif
     }
 }

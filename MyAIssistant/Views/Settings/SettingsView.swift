@@ -19,6 +19,18 @@ struct SettingsView: View {
                             subtitle: ThemeManager.shared.selectedTheme.rawValue
                         )
                     }
+
+
+                    NavigationLink {
+                        TextSizeSettingsView()
+                    } label: {
+                        settingsRow(
+                            icon: "textformat.size",
+                            color: AppColors.gold,
+                            title: "Text Size",
+                            subtitle: TextSizeManager.shared.selectedSize.rawValue
+                        )
+                    }
                 } header: {
                     Text("Appearance")
                 }
@@ -88,6 +100,32 @@ struct SettingsView: View {
                     Text("Preferences")
                 }
 
+                // Permissions
+                Section {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Label("Manage Permissions", systemImage: "lock.shield")
+                                .font(AppFonts.body(15))
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
+                            Text("Mic, Calendar, Notifications")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColors.textMuted)
+                        }
+                    }
+                } header: {
+                    Text("Permissions")
+                } footer: {
+                    Text("Opens iOS Settings to manage microphone, calendar, notification, and camera access.")
+                }
+
                 // About
                 Section {
                     HStack {
@@ -95,7 +133,7 @@ struct SettingsView: View {
                             .font(AppFonts.body(15))
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
-                        Text("1.0.0")
+                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                             .font(AppFonts.body(15))
                             .foregroundColor(AppColors.textMuted)
                     }

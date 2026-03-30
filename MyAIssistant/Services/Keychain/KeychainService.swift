@@ -2,6 +2,7 @@ import Foundation
 import Security
 
 class KeychainService: @unchecked Sendable {
+    private let accessGroup = "group.com.myaissistant.shared"
 
     // MARK: - Read
 
@@ -9,6 +10,7 @@ class KeychainService: @unchecked Sendable {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: accessGroup,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -16,12 +18,28 @@ class KeychainService: @unchecked Sendable {
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let string = String(data: data, encoding: .utf8) else {
-            return nil
+        if status == errSecSuccess, let data = result as? Data,
+           let string = String(data: data, encoding: .utf8) {
+            return string
         }
-        return string
+
+        // Fallback: try reading without access group (migrates old keys)
+        let fallbackQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var fallbackResult: AnyObject?
+        let fallbackStatus = SecItemCopyMatching(fallbackQuery as CFDictionary, &fallbackResult)
+        if fallbackStatus == errSecSuccess, let data = fallbackResult as? Data,
+           let string = String(data: data, encoding: .utf8) {
+            // Re-save with shared access group so Watch can access it
+            _ = save(key: key, value: string)
+            return string
+        }
+
+        return nil
     }
 
     // MARK: - Write
@@ -36,8 +54,9 @@ class KeychainService: @unchecked Sendable {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: accessGroup,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
@@ -48,12 +67,20 @@ class KeychainService: @unchecked Sendable {
 
     @discardableResult
     func delete(key: String) -> Bool {
-        let query: [String: Any] = [
+        // Delete from shared group
+        let sharedQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: accessGroup
+        ]
+        SecItemDelete(sharedQuery as CFDictionary)
+
+        // Also delete from default group (legacy cleanup)
+        let defaultQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key
         ]
-
-        let status = SecItemDelete(query as CFDictionary)
+        let status = SecItemDelete(defaultQuery as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
     }
 

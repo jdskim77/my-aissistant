@@ -3,77 +3,630 @@ import SwiftData
 
 struct ScheduleView: View {
     @Environment(\.taskManager) private var taskManager
+    @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
-    @State private var selectedCategory: TaskCategory? = nil
-    @State private var showingAddForm = false
+    @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var showingCalendarImport = false
-    @State private var appeared = false
-    @State private var expandedPastDates: Set<Date> = []
+    @State private var showingEventScanner = false
+    @State private var showingCheckIn = false
+    @State private var checkInSlot: CheckInTime = .morning
+    @State private var taskToReschedule: TaskItem?
+    @State private var taskToDelete: TaskItem?
+    @State private var rescheduleDate = Date()
 
-    // Add form fields
-    @State private var newTitle = ""
-    @State private var newIcon = "📌"
+    // Quick-add
+    @State private var quickAddText = ""
+    @State private var quickAddExpanded = false
     @State private var newDate = Date()
-    @State private var newCategory: TaskCategory = .personal
     @State private var newPriority: TaskPriority = .medium
-    @State private var newNotes = ""
     @State private var newRecurrence: TaskRecurrence = .none
 
-    private let iconOptions = ["📌", "✈️", "🏨", "🚐", "🧳", "🛫", "🛬", "🏜️", "💱", "📋", "📘", "🛒", "💳", "🔧", "🧘", "📞", "💊", "🎁", "📦", "🏃"]
+    private let calendar = Calendar.current
 
-    private var monthTitle: String {
-        Date().formatted(as: "MMMM yyyy")
+    // MARK: - Computed
+
+    /// Task counts per day for DayTicker density dots
+    private var taskCountsByDay: [Date: Int] {
+        Dictionary(grouping: allTasks) { calendar.startOfDay(for: $0.date) }
+            .mapValues(\.count)
     }
 
-    private var startOfToday: Date { Calendar.current.startOfDay(for: Date()) }
+    /// Tasks for the selected day, sorted chronologically
+    private var selectedDayTasks: [TaskItem] {
+        let dayStart = calendar.startOfDay(for: selectedDate)
+        let dayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
 
-    private var pastGroups: [(date: Date, tasks: [TaskItem])] {
-        filteredGrouped.filter { $0.date < startOfToday }
-    }
-
-    private var todayGroup: (date: Date, tasks: [TaskItem])? {
-        filteredGrouped.first { Calendar.current.isDateInToday($0.date) }
-    }
-
-    private var futureGroups: [(date: Date, tasks: [TaskItem])] {
-        filteredGrouped.filter { $0.date > startOfToday && !Calendar.current.isDateInToday($0.date) }
-    }
-
-    private var filteredGrouped: [(date: Date, tasks: [TaskItem])] {
-        let filtered: [TaskItem]
-        if let selectedCategory {
-            filtered = allTasks.filter { $0.category == selectedCategory }
-        } else {
-            filtered = Array(allTasks)
-        }
-
-        let grouped = Dictionary(grouping: filtered) { task in
-            Calendar.current.startOfDay(for: task.date)
-        }
-
-        // Dedup within each day: remove tasks with equivalent titles (handles birthday variants, etc.)
-        return grouped
-            .map { date, tasks in
-                var seen = Set<String>()
-                let unique = tasks
-                    .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
-                    .filter { task in
-                        let key = Self.deduplicationKey(for: task.title)
-                        return seen.insert(key).inserted
-                    }
-                return (date: date, tasks: unique)
-            }
+        // Dedup
+        var seen = Set<String>()
+        return allTasks
+            .filter { $0.date >= dayStart && $0.date < dayEnd }
             .sorted { $0.date < $1.date }
+            .filter { task in
+                let key = Self.deduplicationKey(for: task.title)
+                return seen.insert(key).inserted
+            }
     }
 
-    /// Normalize a task title for dedup comparison.
-    /// Strips "'s Birthday", "'s birthday", "Birthday - ", lowercases, and trims whitespace
-    /// so "John Smith's Birthday" and "John Smith" collapse to the same key.
+    /// Check-in slots that fall on the selected day
+    private var checkInSlots: [CheckInTime] {
+        let isToday = calendar.isDateInToday(selectedDate)
+        return isToday ? CheckInTime.allCases : []
+    }
+
+    /// Interleaved timeline: check-in prompts + tasks, sorted by time
+    private var timelineItems: [TimelineItem] {
+        var items: [TimelineItem] = []
+
+        // Add tasks
+        for task in selectedDayTasks {
+            let hour = calendar.component(.hour, from: task.date)
+            let minute = calendar.component(.minute, from: task.date)
+            items.append(.task(task, sortMinutes: hour * 60 + minute))
+        }
+
+        // Add check-in slots (today only)
+        for slot in checkInSlots {
+            items.append(.checkIn(slot, sortMinutes: slot.hour * 60))
+        }
+
+        return items.sorted { $0.sortMinutes < $1.sortMinutes }
+    }
+
+    /// Minutes since midnight for "Up Next" calculation
+    private var currentMinutes: Int {
+        let now = Date()
+        return calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+    }
+
+    private var dateTitle: String {
+        if calendar.isDateInToday(selectedDate) { return "Today" }
+        if calendar.isDateInTomorrow(selectedDate) { return "Tomorrow" }
+        if calendar.isDateInYesterday(selectedDate) { return "Yesterday" }
+        return selectedDate.formatted(as: "EEEE, MMM d")
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            headerSection
+
+            // DayTicker
+            DayTickerView(selectedDate: $selectedDate, taskCounts: taskCountsByDay)
+                .padding(.vertical, 8)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            // Day content
+            if selectedDayTasks.isEmpty && checkInSlots.isEmpty {
+                Spacer()
+                emptyDayState
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(timelineItems.enumerated()), id: \.offset) { index, item in
+                            timelineRow(item: item, isFirst: index == 0)
+                        }
+                    }
+                    .padding(.bottom, 100) // space for quick-add bar
+                }
+            }
+
+            // Quick-add bar (persistent at bottom)
+            quickAddBar
+        }
+        .background(AppColors.background.ignoresSafeArea())
+        .sheet(isPresented: $showingCalendarImport) {
+            CalendarImportView()
+        }
+        .sheet(isPresented: $showingEventScanner) {
+            EventScannerView()
+        }
+        .sheet(item: $taskToReschedule) { task in
+            rescheduleSheet(for: task)
+        }
+        .sheet(isPresented: $showingCheckIn) {
+            CheckInDetailView(timeSlot: checkInSlot)
+        }
+        .alert("Delete Task", isPresented: Binding(
+            get: { taskToDelete != nil },
+            set: { if !$0 { taskToDelete = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                guard let task = taskToDelete else { return }
+                Haptics.heavy()
+                withAnimation {
+                    if task.externalCalendarID != nil {
+                        Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                    }
+                    taskManager?.deleteTask(task)
+                }
+                taskToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { taskToDelete = nil }
+        } message: {
+            Text("Are you sure you want to delete \"\(taskToDelete?.title ?? "")\"?")
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(dateTitle)
+                    .font(AppFonts.display(24))
+                    .foregroundColor(AppColors.textPrimary)
+                Text(selectedDate.formatted(as: "MMMM yyyy"))
+                    .font(AppFonts.caption(13))
+                    .foregroundColor(AppColors.textMuted)
+            }
+
+            Spacer()
+
+            Button {
+                Haptics.light()
+                showingEventScanner = true
+            } label: {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 44, height: 44)
+                    .background(AppColors.accentLight)
+                    .cornerRadius(12)
+            }
+            .accessibilityLabel("Scan event from image")
+
+            Button {
+                Haptics.light()
+                showingCalendarImport = true
+            } label: {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 44, height: 44)
+                    .background(AppColors.accentLight)
+                    .cornerRadius(12)
+            }
+            .accessibilityLabel("Import from calendar")
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Timeline Row
+
+    private func timelineRow(item: TimelineItem, isFirst: Bool) -> some View {
+        let isUpNext = calendar.isDateInToday(selectedDate)
+            && !isFirst // don't mark first item as "up next" if it's already past
+            && item.sortMinutes > currentMinutes
+            && item.sortMinutes - currentMinutes < 120 // within next 2 hours
+
+        return VStack(spacing: 0) {
+            // "Up Next" marker — show before the first future item today
+            if isUpNext && isFirstFutureItem(item) {
+                upNextMarker
+            }
+
+            switch item {
+            case .task(let task, _):
+                taskTimelineRow(task)
+            case .checkIn(let slot, _):
+                checkInTimelineRow(slot)
+            }
+        }
+    }
+
+    private func isFirstFutureItem(_ item: TimelineItem) -> Bool {
+        guard let firstFuture = timelineItems.first(where: { $0.sortMinutes > currentMinutes }) else {
+            return false
+        }
+        return firstFuture.sortMinutes == item.sortMinutes
+    }
+
+    private var upNextMarker: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(AppColors.accent)
+                .frame(width: 8, height: 8)
+            Text("UP NEXT")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(AppColors.accent)
+            Rectangle()
+                .fill(AppColors.accent)
+                .frame(height: 1.5)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Task Row
+
+    private func taskTimelineRow(_ task: TaskItem) -> some View {
+        let isCalendarEvent = task.externalCalendarID != nil
+        let hour = calendar.component(.hour, from: task.date)
+        let minute = calendar.component(.minute, from: task.date)
+        let hasTime = hour != 0 || minute != 0
+
+        return HStack(alignment: .top, spacing: 12) {
+            // Time column
+            VStack {
+                if hasTime {
+                    Text(task.date.formatted(as: "h:mm"))
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundColor(AppColors.textMuted)
+                    Text(task.date.formatted(as: "a"))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(AppColors.textMuted)
+                }
+            }
+            .frame(width: 48, alignment: .trailing)
+
+            // Color bar (calendar events get accent, tasks get priority color)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(isCalendarEvent ? AppColors.skyBlue : AppColors.checkboxColor(task.priority))
+                .frame(width: 4)
+                .frame(minHeight: 44)
+
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    if !isCalendarEvent {
+                        // Checkbox
+                        Button {
+                            Haptics.success()
+                            withAnimation(.spring(response: 0.3)) {
+                                taskManager?.toggleCompletion(task)
+                            }
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .stroke(task.done ? AppColors.completionGreen : AppColors.checkboxColor(task.priority), lineWidth: 2)
+                                    .frame(width: 22, height: 22)
+                                if task.done {
+                                    Circle()
+                                        .fill(AppColors.completionGreen)
+                                        .frame(width: 22, height: 22)
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .frame(width: 36, height: 36)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.skyBlue)
+                            .frame(width: 36, height: 36)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(task.title)
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(task.done ? AppColors.textMuted : AppColors.textPrimary)
+                            .strikethrough(task.done)
+                            .lineLimit(2)
+
+                        if !task.notes.isEmpty {
+                            Text(task.notes)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    Spacer()
+
+                    if !task.done && !isCalendarEvent {
+                        Text(task.priority.rawValue.prefix(1))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppColors.checkboxColor(task.priority))
+                            .frame(width: 22, height: 22)
+                            .background(AppColors.checkboxColor(task.priority).opacity(0.12))
+                            .cornerRadius(6)
+                    }
+
+                    if task.recurrence != .none {
+                        Image(systemName: "repeat")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(AppColors.accent)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+        .padding(.horizontal, 20)
+        .opacity(task.done ? 0.5 : 1.0)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                Haptics.medium()
+                taskToDelete = task
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                Haptics.light()
+                taskToReschedule = task
+                rescheduleDate = Date()
+            } label: {
+                Label("Reschedule", systemImage: "calendar.badge.clock")
+            }
+            .tint(AppColors.skyBlue)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                Haptics.success()
+                withAnimation(.spring(response: 0.3)) {
+                    taskManager?.toggleCompletion(task)
+                }
+            } label: {
+                Label(task.done ? "Undo" : "Complete", systemImage: task.done ? "arrow.uturn.backward" : "checkmark.circle.fill")
+            }
+            .tint(AppColors.completionGreen)
+        }
+    }
+
+    // MARK: - Check-in Row
+
+    private func checkInTimelineRow(_ slot: CheckInTime) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            // Time column
+            VStack {
+                Text(String(format: "%d:00", slot.hour > 12 ? slot.hour - 12 : slot.hour))
+                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .foregroundColor(AppColors.accentWarm)
+                Text(slot.hour >= 12 ? "PM" : "AM")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(AppColors.accentWarm)
+            }
+            .frame(width: 48, alignment: .trailing)
+
+            // Color bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(AppColors.accentWarm.opacity(0.5))
+                .frame(width: 4, height: 44)
+
+            // Content
+            Button {
+                Haptics.light()
+                checkInSlot = slot
+                showingCheckIn = true
+            } label: {
+                HStack(spacing: 8) {
+                    Text(slot.icon)
+                        .font(.system(size: 18))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(slot.rawValue) Check-in")
+                            .font(AppFonts.bodyMedium(14))
+                            .foregroundColor(AppColors.accentWarm)
+                        Text(slot.greeting)
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(AppColors.textMuted)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppColors.accentWarm.opacity(0.08))
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Empty State
+
+    private var emptyDayState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: calendar.isDateInToday(selectedDate) ? "sun.max" : "calendar")
+                .font(.system(size: 44))
+                .foregroundColor(AppColors.textMuted)
+
+            Text(calendar.isDateInToday(selectedDate) ? "Nothing planned for today" : "No tasks on this day")
+                .font(AppFonts.heading(18))
+                .foregroundColor(AppColors.textPrimary)
+
+            Text("Type below to add a task")
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textMuted)
+        }
+        .padding(.horizontal, 40)
+    }
+
+    // MARK: - Quick-Add Bar
+
+    private var quickAddBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            VStack(spacing: 8) {
+                // Expanded options
+                if quickAddExpanded {
+                    HStack(spacing: 12) {
+                        DatePicker("", selection: $newDate, displayedComponents: [.date, .hourAndMinute])
+                            .labelsHidden()
+                            .tint(AppColors.accent)
+
+                        Spacer()
+
+                        ForEach(TaskPriority.allCases) { pri in
+                            Button {
+                                Haptics.selection()
+                                newPriority = pri
+                            } label: {
+                                Text(pri.rawValue.prefix(1))
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(newPriority == pri ? .white : AppColors.priorityColor(pri))
+                                    .frame(width: 32, height: 32)
+                                    .background(newPriority == pri ? AppColors.priorityColor(pri) : AppColors.priorityColor(pri).opacity(0.12))
+                                    .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        Haptics.light()
+                        withAnimation(.spring(response: 0.3)) {
+                            quickAddExpanded.toggle()
+                        }
+                    } label: {
+                        Image(systemName: quickAddExpanded ? "chevron.down" : "slider.horizontal.3")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.accent)
+                            .frame(width: 36, height: 36)
+                    }
+                    .accessibilityLabel(quickAddExpanded ? "Collapse options" : "Show options")
+
+                    TextField("What needs to get done?", text: $quickAddText)
+                        .font(AppFonts.body(15))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(AppColors.surface)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(AppColors.border, lineWidth: 1)
+                        )
+                        .submitLabel(.done)
+                        .onSubmit { submitQuickAdd() }
+
+                    Button {
+                        submitQuickAdd()
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(quickAddText.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textMuted : AppColors.accent)
+                    }
+                    .disabled(quickAddText.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Add task")
+                }
+                .padding(.horizontal, 12)
+            }
+            .padding(.vertical, 10)
+            .background(AppColors.surface.ignoresSafeArea(edges: .bottom))
+        }
+    }
+
+    private func submitQuickAdd() {
+        let title = quickAddText.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+
+        Haptics.success()
+        let taskDate = quickAddExpanded ? newDate : selectedDate
+        let task = TaskItem(
+            title: title,
+            category: .personal,
+            priority: newPriority,
+            date: taskDate,
+            icon: "📌",
+            recurrence: newRecurrence
+        )
+        taskManager?.addTask(task)
+        quickAddText = ""
+        newPriority = .medium
+        newRecurrence = .none
+        if quickAddExpanded {
+            withAnimation(.spring(response: 0.3)) {
+                quickAddExpanded = false
+            }
+        }
+    }
+
+    // MARK: - Reschedule Sheet
+
+    private func rescheduleSheet(for task: TaskItem) -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("Reschedule \"\(task.title)\"")
+                    .font(AppFonts.heading(17))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+
+                HStack(spacing: 12) {
+                    quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                    quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                    quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                }
+
+                Divider()
+
+                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(AppColors.accent)
+
+                Button {
+                    Haptics.success()
+                    taskManager?.rescheduleTask(task, to: rescheduleDate)
+                    taskToReschedule = nil
+                } label: {
+                    Text("Reschedule")
+                        .font(AppFonts.bodyMedium(16))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(AppColors.accent)
+                        .cornerRadius(16)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { taskToReschedule = nil }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
+        Button {
+            Haptics.light()
+            let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
+            taskManager?.rescheduleTask(task, to: target)
+            taskToReschedule = nil
+        } label: {
+            Text(label)
+                .font(AppFonts.label(13))
+                .foregroundColor(AppColors.accent)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+                .background(AppColors.accentLight)
+                .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
     private static func deduplicationKey(for title: String) -> String {
         var key = title.lowercased()
-        // Remove common birthday suffixes/prefixes
-        for suffix in ["'s birthday", "'s birthday", " birthday", "'s bday"] {
+        for suffix in ["'s birthday", "\u{2019}s birthday", " birthday", "'s bday"] {
             if key.hasSuffix(suffix) {
                 key = String(key.dropLast(suffix.count))
             }
@@ -85,458 +638,18 @@ struct ScheduleView: View {
         }
         return key.trimmingCharacters(in: .whitespaces)
     }
+}
 
-    var body: some View {
-        NavigationStack {
-        ScrollViewReader { proxy in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                HStack {
-                    Text(monthTitle)
-                        .font(AppFonts.display(28))
-                        .foregroundColor(AppColors.textPrimary)
+// MARK: - Timeline Item
 
-                    Spacer()
+private enum TimelineItem {
+    case task(TaskItem, sortMinutes: Int)
+    case checkIn(CheckInTime, sortMinutes: Int)
 
-                    Button {
-                        showingCalendarImport = true
-                    } label: {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(AppColors.accent)
-                            .padding(8)
-                            .background(AppColors.accentLight)
-                            .cornerRadius(8)
-                    }
-
-                    Button {
-                        withAnimation(.spring(response: 0.3)) {
-                            showingAddForm.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: showingAddForm ? "xmark" : "plus")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text(showingAddForm ? "Cancel" : "Add")
-                                .font(AppFonts.bodyMedium(14))
-                        }
-                        .foregroundColor(AppColors.accent)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(AppColors.accentLight)
-                        .cornerRadius(10)
-                    }
-                }
-                .padding(.top, 8)
-
-                // Category filter pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        filterPill(label: "All", category: nil)
-                        ForEach(TaskCategory.allCases) { cat in
-                            filterPill(label: cat.rawValue, category: cat)
-                        }
-                    }
-                }
-
-                // Add task form
-                if showingAddForm {
-                    addTaskForm
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity),
-                            removal: .opacity
-                        ))
-                }
-
-                // Past dates — collapsed & dimmed
-                ForEach(pastGroups, id: \.date) { group in
-                    pastDateSection(date: group.date, tasks: group.tasks)
-                }
-
-                // Today divider
-                if todayGroup != nil || !futureGroups.isEmpty {
-                    todayDivider
-                        .id("today-scroll-anchor")
-                }
-
-                // Today — full display
-                if let today = todayGroup {
-                    dateSection(date: today.date, tasks: today.tasks, index: 0)
-                }
-
-                // Future — full display
-                ForEach(Array(futureGroups.enumerated()), id: \.element.date) { offset, group in
-                    dateSection(date: group.date, tasks: group.tasks, index: offset + 1)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 30)
+    var sortMinutes: Int {
+        switch self {
+        case .task(_, let m): return m
+        case .checkIn(_, let m): return m
         }
-        .background(AppColors.background.ignoresSafeArea())
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) {
-                appeared = true
-            }
-            // Auto-scroll to today
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation {
-                    proxy.scrollTo("today-scroll-anchor", anchor: .top)
-                }
-            }
-        }
-        .sheet(isPresented: $showingCalendarImport) {
-            CalendarImportView()
-        }
-        } // ScrollViewReader
-        } // NavigationStack
-    }
-
-    // MARK: - Filter pill
-
-    private func filterPill(label: String, category: TaskCategory?) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.3)) {
-                selectedCategory = category
-            }
-        } label: {
-            Text(label)
-                .font(AppFonts.bodyMedium(14))
-                .foregroundColor(selectedCategory == category ? .white : AppColors.textSecondary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(selectedCategory == category ? AppColors.accent : AppColors.card)
-                .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(selectedCategory == category ? Color.clear : AppColors.border, lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Past date section (collapsed & dimmed)
-
-    private func pastDateSection(date: Date, tasks: [TaskItem]) -> some View {
-        let isExpanded = expandedPastDates.contains(date)
-        let doneCount = tasks.filter(\.done).count
-        let dateStr = date.formatted(as: "EEE, MMM d")
-
-        return VStack(alignment: .leading, spacing: 4) {
-            Button {
-                withAnimation(.spring(response: 0.3)) {
-                    if isExpanded {
-                        expandedPastDates.remove(date)
-                    } else {
-                        expandedPastDates.insert(date)
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(AppColors.textMuted)
-                        .frame(width: 16)
-
-                    Text(dateStr)
-                        .font(AppFonts.heading(15))
-                        .foregroundColor(AppColors.textMuted)
-
-                    Text("— \(doneCount)/\(tasks.count) done")
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.textMuted)
-
-                    Spacer()
-                }
-            }
-            .buttonStyle(.plain)
-
-            if isExpanded {
-                ForEach(tasks, id: \.id) { task in
-                    NavigationLink {
-                        TaskDetailView(task: task)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 0) {
-                            TaskCard(task: task) {
-                                withAnimation(.spring(response: 0.3)) {
-                                    taskManager?.toggleCompletion(task)
-                                }
-                            }
-
-                            if let sourceLabel = taskManager?.calendarSourceLabel(task) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: sourceLabel == "Google" ? "globe" : "calendar")
-                                        .font(.system(size: 9, weight: .medium))
-                                    Text("From \(sourceLabel)")
-                                        .font(AppFonts.caption(10))
-                                }
-                                .foregroundColor(AppColors.textMuted)
-                                .padding(.leading, 52)
-                                .padding(.top, 2)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                .opacity(0.5)
-            }
-        }
-        .padding(.top, 4)
-        .opacity(0.6)
-    }
-
-    // MARK: - Today divider
-
-    private var todayDivider: some View {
-        HStack(spacing: 12) {
-            Rectangle()
-                .fill(AppColors.accent)
-                .frame(height: 1.5)
-            Text("Today")
-                .font(AppFonts.bodyMedium(13))
-                .foregroundColor(AppColors.accent)
-            Rectangle()
-                .fill(AppColors.accent)
-                .frame(height: 1.5)
-        }
-        .padding(.vertical, 8)
-    }
-
-    // MARK: - Date section
-
-    private func dateSection(date: Date, tasks: [TaskItem], index: Int) -> some View {
-        let isToday = Calendar.current.isDateInToday(date)
-        let isTomorrow = Calendar.current.isDateInTomorrow(date)
-        let dateStr = isToday ? "Today" : isTomorrow ? "Tomorrow" : date.formatted(as: "EEE, MMM d")
-        let doneCount = tasks.filter(\.done).count
-        let isEvenRow = index % 2 == 0
-
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                if isToday {
-                    Circle()
-                        .fill(AppColors.accent)
-                        .frame(width: 8, height: 8)
-                }
-
-                Text(dateStr)
-                    .font(AppFonts.heading(15))
-                    .foregroundColor(isToday ? AppColors.accent : AppColors.textPrimary)
-
-                Text("\(doneCount)/\(tasks.count)")
-                    .font(AppFonts.caption(12))
-                    .foregroundColor(AppColors.textMuted)
-
-                Spacer()
-            }
-
-            ForEach(tasks, id: \.id) { task in
-                NavigationLink {
-                    TaskDetailView(task: task)
-                } label: {
-                    VStack(alignment: .leading, spacing: 0) {
-                        TaskCard(task: task) {
-                            withAnimation(.spring(response: 0.3)) {
-                                taskManager?.toggleCompletion(task)
-                            }
-                        }
-
-                        // Calendar source indicator
-                        if let sourceLabel = taskManager?.calendarSourceLabel(task) {
-                            HStack(spacing: 4) {
-                                Image(systemName: sourceLabel == "Google" ? "globe" : "calendar")
-                                    .font(.system(size: 9, weight: .medium))
-                                Text("From \(sourceLabel)")
-                                    .font(AppFonts.caption(10))
-                            }
-                            .foregroundColor(AppColors.textMuted)
-                            .padding(.leading, 52)
-                            .padding(.top, 2)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isToday
-                    ? AppColors.accentLight.opacity(0.5)
-                    : isEvenRow ? AppColors.card : AppColors.surface.opacity(0.5))
-        )
-        .overlay(
-            isToday
-                ? RoundedRectangle(cornerRadius: 12)
-                    .stroke(AppColors.accent.opacity(0.3), lineWidth: 1.5)
-                : nil
-        )
-    }
-
-    // MARK: - Add task form
-
-    private var addTaskForm: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("New Task")
-                .font(AppFonts.heading(16))
-                .foregroundColor(AppColors.textPrimary)
-
-            // Icon picker
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(iconOptions, id: \.self) { icon in
-                        Button {
-                            newIcon = icon
-                        } label: {
-                            Text(icon)
-                                .font(.system(size: 22))
-                                .padding(6)
-                                .background(newIcon == icon ? AppColors.accentLight : Color.clear)
-                                .cornerRadius(8)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            TextField("Task title", text: $newTitle)
-                .font(AppFonts.body(15))
-                .padding(12)
-                .background(AppColors.surface)
-                .cornerRadius(10)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(AppColors.border, lineWidth: 1)
-                )
-
-            DatePicker("Due date", selection: $newDate, displayedComponents: .date)
-                .font(AppFonts.body(14))
-                .tint(AppColors.accent)
-
-            // Category selector
-            HStack(spacing: 8) {
-                ForEach(TaskCategory.allCases) { cat in
-                    Button {
-                        newCategory = cat
-                    } label: {
-                        Text(cat.rawValue)
-                            .font(AppFonts.bodyMedium(13))
-                            .foregroundColor(newCategory == cat ? .white : AppColors.textSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(newCategory == cat ? AppColors.accent : AppColors.surface)
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(newCategory == cat ? Color.clear : AppColors.border, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            // Priority selector
-            HStack(spacing: 8) {
-                ForEach(TaskPriority.allCases) { pri in
-                    Button {
-                        newPriority = pri
-                    } label: {
-                        Text(pri.rawValue)
-                            .font(AppFonts.bodyMedium(13))
-                            .foregroundColor(newPriority == pri ? .white : AppColors.priorityColor(pri))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(newPriority == pri ? AppColors.priorityColor(pri) : AppColors.priorityColor(pri).opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            // Recurrence selector
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(TaskRecurrence.allCases) { rec in
-                        Button {
-                            newRecurrence = rec
-                        } label: {
-                            HStack(spacing: 4) {
-                                if rec != .none {
-                                    Image(systemName: "repeat")
-                                        .font(.system(size: 10, weight: .semibold))
-                                }
-                                Text(rec.rawValue)
-                                    .font(AppFonts.bodyMedium(13))
-                            }
-                            .foregroundColor(newRecurrence == rec ? .white : AppColors.textSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(newRecurrence == rec ? AppColors.accent : AppColors.surface)
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(newRecurrence == rec ? Color.clear : AppColors.border, lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            TextField("Notes (optional)", text: $newNotes)
-                .font(AppFonts.body(14))
-                .padding(12)
-                .background(AppColors.surface)
-                .cornerRadius(10)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(AppColors.border, lineWidth: 1)
-                )
-
-            Button {
-                guard !newTitle.isEmpty else { return }
-                let task = TaskItem(
-                    title: newTitle,
-                    category: newCategory,
-                    priority: newPriority,
-                    date: newDate,
-                    icon: newIcon,
-                    notes: newNotes,
-                    recurrence: newRecurrence
-                )
-                taskManager?.addTask(task)
-                resetForm()
-                withAnimation(.spring(response: 0.3)) {
-                    showingAddForm = false
-                }
-            } label: {
-                Text("Add Task")
-                    .font(AppFonts.bodyMedium(15))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(newTitle.isEmpty ? AppColors.textMuted : AppColors.accent)
-                    .cornerRadius(10)
-            }
-            .disabled(newTitle.isEmpty)
-        }
-        .padding(16)
-        .background(AppColors.card)
-        .cornerRadius(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-        )
-    }
-
-    private func resetForm() {
-        newTitle = ""
-        newIcon = "📌"
-        newDate = Date()
-        newCategory = .personal
-        newPriority = .medium
-        newNotes = ""
-        newRecurrence = .none
     }
 }

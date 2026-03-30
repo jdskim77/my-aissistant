@@ -10,6 +10,7 @@ struct CalendarSettingsView: View {
     @State private var isGoogleConnected = false
     @State private var isSigningInGoogle = false
     @State private var googleAuthError: String?
+    @State private var showingGoogleSignOutConfirm = false
 
     var body: some View {
         List {
@@ -138,11 +139,7 @@ struct CalendarSettingsView: View {
                                     .foregroundColor(AppColors.accentWarm)
                                 Spacer()
                                 Button {
-                                    Task {
-                                        await calendarSyncManager?.googleService.signOut()
-                                        isGoogleConnected = false
-                                        calendarSyncManager?.googleCalendars = []
-                                    }
+                                    showingGoogleSignOutConfirm = true
                                 } label: {
                                     Text("Sign Out")
                                         .font(AppFonts.bodyMedium(13))
@@ -280,6 +277,18 @@ struct CalendarSettingsView: View {
             Task {
                 isGoogleConnected = await calendarSyncManager?.googleCalendarConnected() == true
             }
+        }
+        .alert("Sign Out of Google?", isPresented: $showingGoogleSignOutConfirm) {
+            Button("Sign Out", role: .destructive) {
+                Task {
+                    await calendarSyncManager?.googleService.signOut()
+                    isGoogleConnected = false
+                    calendarSyncManager?.googleCalendars = []
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your Google Calendar events will no longer sync.")
         }
     }
 

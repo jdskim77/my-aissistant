@@ -169,5 +169,8 @@ struct APIKeySettingsView: View {
         }
 
         saveStatus = results.isEmpty ? "Keys cleared" : results.joined(separator: ", ")
+
+        // Sync API key to Watch
+        WatchSyncManager.shared.syncAPIKey()
     }
 }

@@ -3,127 +3,158 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
+		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
+		4583C2E92F7A1EFB00603B08 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4583C2E82F7A1EFB00603B08 /* Assets.xcassets */; };
+		45D328A72F7AE94900293A7A /* TextSizeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D328A62F7AE94900293A7A /* TextSizeManager.swift */; };
+		45D328A82F7AE94900293A7A /* TextSizeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D328A62F7AE94900293A7A /* TextSizeManager.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
 		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
-		'A100000001000000' = {isa = PBXBuildFile; fileRef = B100000001000000; };
-		'A100000002000000' = {isa = PBXBuildFile; fileRef = B100000002000000; };
-		'A100000005000000' = {isa = PBXBuildFile; fileRef = B100000005000000; };
-		'A100000006000000' = {isa = PBXBuildFile; fileRef = B100000006000000; };
-		'A100000009000000' = {isa = PBXBuildFile; fileRef = B100000009000000; };
-		'A100000010000000' = {isa = PBXBuildFile; fileRef = B100000010000000; };
-		'A100000012000000' = {isa = PBXBuildFile; fileRef = B100000012000000; };
-		'A100000013000000' = {isa = PBXBuildFile; fileRef = B100000013000000; };
-		'A100000014000000' = {isa = PBXBuildFile; fileRef = B100000014000000; };
-		'A100000015000000' = {isa = PBXBuildFile; fileRef = B100000015000000; };
-		'A100000016000000' = {isa = PBXBuildFile; fileRef = B100000016000000; };
-		'A100000017000000' = {isa = PBXBuildFile; fileRef = B100000017000000; };
-		'A100000018000000' = {isa = PBXBuildFile; fileRef = B100000018000000; };
-		'A200000001000000' = {isa = PBXBuildFile; fileRef = B200000001000000; };
-		'A200000002000000' = {isa = PBXBuildFile; fileRef = B200000002000000; };
-		'A200000003000000' = {isa = PBXBuildFile; fileRef = B200000003000000; };
-		'A200000004000000' = {isa = PBXBuildFile; fileRef = B200000004000000; };
-		'A200000005000000' = {isa = PBXBuildFile; fileRef = B200000005000000; };
-		'A200000006000000' = {isa = PBXBuildFile; fileRef = B200000006000000; };
-		'A200000007000000' = {isa = PBXBuildFile; fileRef = B200000007000000; };
-		'A200000008000000' = {isa = PBXBuildFile; fileRef = B200000008000000; };
-		'A200000009000000' = {isa = PBXBuildFile; fileRef = B200000009000000; };
-		'A200000010000000' = {isa = PBXBuildFile; fileRef = B200000010000000; };
-		'A200000011000000' = {isa = PBXBuildFile; fileRef = B200000011000000; };
-		'A200000012000000' = {isa = PBXBuildFile; fileRef = B200000012000000; };
-		'A200000013000000' = {isa = PBXBuildFile; fileRef = B200000013000000; };
-		'A300000001000000' = {isa = PBXBuildFile; fileRef = B300000001000000; };
-		'A300000002000000' = {isa = PBXBuildFile; fileRef = B300000002000000; };
-		'A300000003000000' = {isa = PBXBuildFile; fileRef = B300000003000000; };
-		'A300000004000000' = {isa = PBXBuildFile; fileRef = B300000004000000; };
-		'A300000005000000' = {isa = PBXBuildFile; fileRef = B300000005000000; };
-		'A300000006000000' = {isa = PBXBuildFile; fileRef = B300000006000000; };
-		'A300000007000000' = {isa = PBXBuildFile; fileRef = B300000007000000; };
-		'A300000008000000' = {isa = PBXBuildFile; fileRef = B300000008000000; };
-		'A400000001000000' = {isa = PBXBuildFile; fileRef = B400000001000000; };
-		'A400000002000000' = {isa = PBXBuildFile; fileRef = B400000002000000; };
-		'A400000003000000' = {isa = PBXBuildFile; fileRef = B400000003000000; };
-		'A400000004000000' = {isa = PBXBuildFile; fileRef = B400000004000000; };
-		'A400000005000000' = {isa = PBXBuildFile; fileRef = B400000005000000; };
-		'A400000006000000' = {isa = PBXBuildFile; fileRef = B400000006000000; };
-		'A400000007000000' = {isa = PBXBuildFile; fileRef = B400000007000000; };
-		'A400000008000000' = {isa = PBXBuildFile; fileRef = B400000008000000; };
-		'A400000009000000' = {isa = PBXBuildFile; fileRef = B400000009000000; };
-		'A400000010000000' = {isa = PBXBuildFile; fileRef = B400000010000000; };
-		'A500000001000000' = {isa = PBXBuildFile; fileRef = B500000001000000; };
-		'A500000002000000' = {isa = PBXBuildFile; fileRef = B500000002000000; };
-		'A500000003000000' = {isa = PBXBuildFile; fileRef = B500000003000000; };
-		'A500000004000000' = {isa = PBXBuildFile; fileRef = B500000004000000; };
-		'A500000005000000' = {isa = PBXBuildFile; fileRef = B500000005000000; };
-		'A500000006000000' = {isa = PBXBuildFile; fileRef = B500000006000000; };
-		'A600000001000000' = {isa = PBXBuildFile; fileRef = B600000001000000; };
-		'A600000002000000' = {isa = PBXBuildFile; fileRef = B600000002000000; };
-		'A600000003000000' = {isa = PBXBuildFile; fileRef = B600000003000000; };
-		'A600000004000000' = {isa = PBXBuildFile; fileRef = B600000004000000; };
-		'A600000005000000' = {isa = PBXBuildFile; fileRef = B600000005000000; };
-		'A600000006000000' = {isa = PBXBuildFile; fileRef = B600000006000000; };
-		'A600000007000000' = {isa = PBXBuildFile; fileRef = B600000007000000; };
-		'A600000008000000' = {isa = PBXBuildFile; fileRef = B600000008000000; };
-		'A700000001000000' = {isa = PBXBuildFile; fileRef = B700000001000000; };
-		'A700000002000000' = {isa = PBXBuildFile; fileRef = B700000002000000; };
-		'A700000003000000' = {isa = PBXBuildFile; fileRef = B700000003000000; };
-		'A700000004000000' = {isa = PBXBuildFile; fileRef = B700000004000000; };
-		'A800000001000000' = {isa = PBXBuildFile; fileRef = B800000001000000; };
-		'A800000002000000' = {isa = PBXBuildFile; fileRef = B800000002000000; };
-		'A800000003000000' = {isa = PBXBuildFile; fileRef = B800000003000000; };
-		'A800000004000000' = {isa = PBXBuildFile; fileRef = B800000004000000; };
-		'A800000005000000' = {isa = PBXBuildFile; fileRef = B800000005000000; };
-		'A800000006000000' = {isa = PBXBuildFile; fileRef = B800000006000000; };
-		'A800000007000000' = {isa = PBXBuildFile; fileRef = B800000007000000; };
-		'A900000001000000' = {isa = PBXBuildFile; fileRef = B900000001000000; };
-		'A900000002000000' = {isa = PBXBuildFile; fileRef = B900000002000000; };
-		'A900000003000000' = {isa = PBXBuildFile; fileRef = B900000003000000; };
-		'A900000004000000' = {isa = PBXBuildFile; fileRef = B900000004000000; };
-		'A900000005000000' = {isa = PBXBuildFile; fileRef = B900000005000000; };
-		'A900000006000000' = {isa = PBXBuildFile; fileRef = B900000006000000; };
-		'A900000007000000' = {isa = PBXBuildFile; fileRef = B900000007000000; };
-		'A900000008000000' = {isa = PBXBuildFile; fileRef = B900000008000000; };
-		'AA00000001000000' = {isa = PBXBuildFile; fileRef = BA00000001000000; };
-		'AC00000001000000' = {isa = PBXBuildFile; fileRef = BC00000001000000; };
-		'AC00000002000000' = {isa = PBXBuildFile; fileRef = BC00000002000000; };
-		'AC00000003000000' = {isa = PBXBuildFile; fileRef = BC00000003000000; };
-		'AC00000005000000' = {isa = PBXBuildFile; fileRef = BC00000005000000; };
-		'AC00000006000000' = {isa = PBXBuildFile; fileRef = BC00000006000000; };
-		'AC00000007000000' = {isa = PBXBuildFile; fileRef = BC00000007000000; };
-		'AC00000008000000' = {isa = PBXBuildFile; fileRef = BC00000008000000; };
-		'AC00000009000000' = {isa = PBXBuildFile; fileRef = BC00000009000000; };
-		'AC00000010000000' = {isa = PBXBuildFile; fileRef = BC00000010000000; };
-		'AD00000001000000' = {isa = PBXBuildFile; fileRef = BD00000001000000; };
-		'AD00000002000000' = {isa = PBXBuildFile; fileRef = BD00000002000000; };
-		'AD00000003000000' = {isa = PBXBuildFile; fileRef = BD00000003000000; };
-		'AD00000004000000' = {isa = PBXBuildFile; fileRef = BD00000004000000; };
-		'AE00000001000000' = {isa = PBXBuildFile; fileRef = BE00000001000000; };
-		'AE00000002000000' = {isa = PBXBuildFile; fileRef = BE00000002000000; };
-		'AF00000001000000' = {isa = PBXBuildFile; fileRef = BF00000001000000; };
-		'AF00000002000000' = {isa = PBXBuildFile; fileRef = BF00000002000000; };
-		'AW00000001000000' = {isa = PBXBuildFile; fileRef = BW00000001000000; };
-		'AW00000002000000' = {isa = PBXBuildFile; fileRef = BW00000002000000; };
-		'AW00000003000000' = {isa = PBXBuildFile; fileRef = BW00000003000000; };
-		'AW00000004000000' = {isa = PBXBuildFile; fileRef = BW00000004000000; };
-		'WDTA00000001000' = {isa = PBXBuildFile; fileRef = BW00000005000000; };
-		'AW00000005000000' = {isa = PBXBuildFile; fileRef = BA00000001000000; };
-		'AW00000006000000' = {isa = PBXBuildFile; fileRef = EW00000001000000; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000 /* MyAIssistantApp.swift */; };
+		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000 /* ContentView.swift */; };
+		A100000005000000 /* CheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005000000 /* CheckIn.swift */; };
+		A100000006000000 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006000000 /* ChatMessage.swift */; };
+		A100000009000000 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009000000 /* AppColors.swift */; };
+		A100000010000000 /* AppFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010000000 /* AppFonts.swift */; };
+		A100000012000000 /* TaskCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000012000000 /* TaskCard.swift */; };
+		A100000013000000 /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000013000000 /* StatCard.swift */; };
+		A100000014000000 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014000000 /* HomeView.swift */; };
+		A100000015000000 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015000000 /* ScheduleView.swift */; };
+		A100000016000000 /* CheckInsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016000000 /* CheckInsView.swift */; };
+		A100000017000000 /* PatternsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000017000000 /* PatternsView.swift */; };
+		A100000018000000 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018000000 /* ChatView.swift */; };
+		A200000001000000 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001000000 /* AppConstants.swift */; };
+		A200000002000000 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002000000 /* DependencyContainer.swift */; };
+		A200000003000000 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003000000 /* TaskItem.swift */; };
+		A200000004000000 /* TaskCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004000000 /* TaskCategory.swift */; };
+		A200000005000000 /* TaskPriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005000000 /* TaskPriority.swift */; };
+		A200000006000000 /* CheckInRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006000000 /* CheckInRecord.swift */; };
+		A200000007000000 /* DailySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000007000000 /* DailySnapshot.swift */; };
+		A200000008000000 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000008000000 /* UserProfile.swift */; };
+		A200000009000000 /* TaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000009000000 /* TaskManager.swift */; };
+		A200000010000000 /* PatternEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000010000000 /* PatternEngine.swift */; };
+		A200000011000000 /* DateHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000011000000 /* DateHelpers.swift */; };
+		A200000012000000 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000012000000 /* DataSeeder.swift */; };
+		A200000013000000 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000013000000 /* PreviewHelpers.swift */; };
+		A200000014000000 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000014000000 /* Haptics.swift */; };
+		A300000001000000 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001000000 /* AIProvider.swift */; };
+		A300000002000000 /* AIPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002000000 /* AIPromptBuilder.swift */; };
+		A300000003000000 /* AnthropicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003000000 /* AnthropicProvider.swift */; };
+		A300000004000000 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000004000000 /* OpenAIProvider.swift */; };
+		A300000005000000 /* AIProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005000000 /* AIProviderFactory.swift */; };
+		A300000006000000 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006000000 /* KeychainService.swift */; };
+		A300000007000000 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007000000 /* APIClient.swift */; };
+		A300000008000000 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008000000 /* UsageTracker.swift */; };
+		A400000001000000 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001000000 /* NotificationManager.swift */; };
+		A400000002000000 /* CheckInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002000000 /* CheckInManager.swift */; };
+		A400000003000000 /* MoodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000003000000 /* MoodPicker.swift */; };
+		A400000004000000 /* CheckInDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000004000000 /* CheckInDetailView.swift */; };
+		A400000005000000 /* CheckInHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000000 /* CheckInHistoryView.swift */; };
+		A400000006000000 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000006000000 /* OnboardingContainerView.swift */; };
+		A400000007000000 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000007000000 /* WelcomeView.swift */; };
+		A400000008000000 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000008000000 /* PermissionsView.swift */; };
+		A400000009000000 /* SubscriptionOfferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000009000000 /* SubscriptionOfferView.swift */; };
+		A400000010000000 /* OnboardingCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000010000000 /* OnboardingCompleteView.swift */; };
+		A500000001000000 /* CalendarLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000001000000 /* CalendarLink.swift */; };
+		A500000002000000 /* EventKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000002000000 /* EventKitService.swift */; };
+		A500000003000000 /* GoogleCalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000003000000 /* GoogleCalendarService.swift */; };
+		A500000004000000 /* CalendarSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000004000000 /* CalendarSyncManager.swift */; };
+		A500000005000000 /* CalendarImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000005000000 /* CalendarImportView.swift */; };
+		A500000006000000 /* CalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000006000000 /* CalendarSettingsView.swift */; };
+		A500000007000000 /* EventScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000007000000 /* EventScannerView.swift */; };
+		A500000008000000 /* DayTickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000008000000 /* DayTickerView.swift */; };
+		A600000001000000 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000001000000 /* SubscriptionTier.swift */; };
+		A600000002000000 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000002000000 /* SubscriptionManager.swift */; };
+		A600000003000000 /* UsageGateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000003000000 /* UsageGateManager.swift */; };
+		A600000004000000 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000004000000 /* SettingsView.swift */; };
+		A600000005000000 /* SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000005000000 /* SubscriptionView.swift */; };
+		A600000006000000 /* APIKeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000006000000 /* APIKeySettingsView.swift */; };
+		A600000007000000 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000007000000 /* NotificationSettingsView.swift */; };
+		A600000008000000 /* PaywallCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B600000008000000 /* PaywallCard.swift */; };
+		A700000001000000 /* WeeklyAIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000001000000 /* WeeklyAIReviewView.swift */; };
+		A700000002000000 /* MoodTrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000002000000 /* MoodTrendView.swift */; };
+		A700000003000000 /* WeeklyChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000003000000 /* WeeklyChartView.swift */; };
+		A700000004000000 /* CategoryBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B700000004000000 /* CategoryBreakdownView.swift */; };
+		A800000001000000 /* BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000001000000 /* BackgroundTaskManager.swift */; };
+		A800000002000000 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000002000000 /* EmptyStateView.swift */; };
+		A800000003000000 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000003000000 /* LoadingView.swift */; };
+		A800000004000000 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000004000000 /* TaskDetailView.swift */; };
+		A800000005000000 /* ChatBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000005000000 /* ChatBubble.swift */; };
+		A800000006000000 /* QuickActionsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000006000000 /* QuickActionsBar.swift */; };
+		A800000007000000 /* ConversationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800000007000000 /* ConversationListView.swift */; };
+		A900000001000000 /* TestModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000001000000 /* TestModelContainer.swift */; };
+		A900000002000000 /* MockAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000002000000 /* MockAIProvider.swift */; };
+		A900000003000000 /* MockKeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000003000000 /* MockKeychainService.swift */; };
+		A900000004000000 /* TaskManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000004000000 /* TaskManagerTests.swift */; };
+		A900000005000000 /* PatternEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000005000000 /* PatternEngineTests.swift */; };
+		A900000006000000 /* UsageGateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000006000000 /* UsageGateManagerTests.swift */; };
+		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000 /* AIProviderFactoryTests.swift */; };
+		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
+		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
+		AC00000001000000 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000001000000 /* SpeechRecognizer.swift */; };
+		AC00000002000000 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000002000000 /* CustomTabBar.swift */; };
+		AC00000003000000 /* SpeechSynthesizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000003000000 /* SpeechSynthesizer.swift */; };
+		AC00000005000000 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000005000000 /* VoiceSettingsView.swift */; };
+		AC00000006000000 /* VoiceModeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000006000000 /* VoiceModeSelectionView.swift */; };
+		AC00000007000000 /* CalendarEventRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000007000000 /* CalendarEventRow.swift */; };
+		AC00000008000000 /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000008000000 /* ColorTheme.swift */; };
+		AC00000011000000 /* TextSizeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000011000000 /* TextSizeSettingsView.swift */; };
+		AC00000009000000 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
+		AC00000010000000 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000010000000 /* ThemePickerView.swift */; };
+		AD00000001000000 /* AIActivityOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000001000000 /* AIActivityOrb.swift */; };
+		AD00000002000000 /* VariedGreetingBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000002000000 /* VariedGreetingBuilder.swift */; };
+		AD00000003000000 /* GreetingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000003000000 /* GreetingManager.swift */; };
+		AD00000004000000 /* AIGreetingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000004000000 /* AIGreetingCard.swift */; };
+		AE00000001000000 /* ActivityEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000001000000 /* ActivityEntry.swift */; };
+		AE00000002000000 /* ActivityTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000002000000 /* ActivityTimelineView.swift */; };
+		AF00000001000000 /* AlarmEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000001000000 /* AlarmEntry.swift */; };
+		AF00000002000000 /* SchemaVersioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000002000000 /* SchemaVersioning.swift */; };
+		AW00000001000000 /* WidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000001000000 /* WidgetBundle.swift */; };
+		AW00000002000000 /* NextCheckInWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000002000000 /* NextCheckInWidget.swift */; };
+		AW00000003000000 /* TodayProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000003000000 /* TodayProgressWidget.swift */; };
+		AW00000004000000 /* StreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000004000000 /* StreakWidget.swift */; };
+		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
+		AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000 /* MyAIssistantWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		'G900000001000000' = {
+		4583C2B92F79D1BE00603B08 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = F200000001000000;
+			containerPortal = F200000001000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4583C2AB2F79D1BB00603B08;
+			remoteInfo = "MyAIssistantWatch Watch App";
+		};
+		4583C2C32F79D1BE00603B08 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4583C2AB2F79D1BB00603B08;
+			remoteInfo = "MyAIssistantWatch Watch App";
+		};
+		4583C2CA2F79D1BE00603B08 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4583C2AB2F79D1BB00603B08;
+			remoteInfo = "MyAIssistantWatch Watch App";
+		};
+		G900000001000000 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F200000001000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F100000001000000;
 			remoteInfo = MyAIssistant;
 		};
-		'GW00000001000000' = {
+		GW00000001000000 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = F200000001000000;
+			containerPortal = F200000001000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = FW00000001000000;
 			remoteInfo = MyAIssistantWidgets;
@@ -131,143 +162,192 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		'CW00000004000000' = {
+		4583C2CD2F79D1BE00603B08 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CW00000004000000 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				AW00000006000000,
+				AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
-		'B100000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
-		'B100000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		'B100000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckIn.swift; sourceTree = "<group>"; };
-		'B100000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
-		'B100000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
-		'B100000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
-		'B100000012000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCard.swift; sourceTree = "<group>"; };
-		'B100000013000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
-		'B100000014000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		'B100000015000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
-		'B100000016000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInsView.swift; sourceTree = "<group>"; };
-		'B100000017000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
-		'B100000018000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		'B200000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
-		'B200000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
-		'B200000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
-		'B200000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCategory.swift; sourceTree = "<group>"; };
-		'B200000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPriority.swift; sourceTree = "<group>"; };
-		'B200000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
-		'B200000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
-		'B200000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
-		'B200000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
-		'B200000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngine.swift; sourceTree = "<group>"; };
-		'B200000011000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelpers.swift; sourceTree = "<group>"; };
-		'B200000012000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
-		'B200000013000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
-		'B300000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
-		'B300000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
-		'B300000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicProvider.swift; sourceTree = "<group>"; };
-		'B300000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
-		'B300000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
-		'B300000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		'B300000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		'B300000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
-		'B400000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		'B400000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
-		'B400000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
-		'B400000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInDetailView.swift; sourceTree = "<group>"; };
-		'B400000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
-		'B400000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
-		'B400000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		'B400000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
-		'B400000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferView.swift; sourceTree = "<group>"; };
-		'B400000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompleteView.swift; sourceTree = "<group>"; };
-		'B500000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarLink.swift; sourceTree = "<group>"; };
-		'B500000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitService.swift; sourceTree = "<group>"; };
-		'B500000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
-		'B500000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncManager.swift; sourceTree = "<group>"; };
-		'B500000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarImportView.swift; sourceTree = "<group>"; };
-		'B500000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
-		'B600000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
-		'B600000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
-		'B600000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManager.swift; sourceTree = "<group>"; };
-		'B600000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		'B600000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionView.swift; sourceTree = "<group>"; };
-		'B600000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsView.swift; sourceTree = "<group>"; };
-		'B600000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
-		'B600000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallCard.swift; sourceTree = "<group>"; };
-		'B700000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyAIReviewView.swift; sourceTree = "<group>"; };
-		'B700000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrendView.swift; sourceTree = "<group>"; };
-		'B700000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyChartView.swift; sourceTree = "<group>"; };
-		'B700000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownView.swift; sourceTree = "<group>"; };
-		'B800000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
-		'B800000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
-		'B800000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
-		'B800000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
-		'B800000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubble.swift; sourceTree = "<group>"; };
-		'B800000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsBar.swift; sourceTree = "<group>"; };
-		'B800000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
-		'B900000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
-		'B900000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIProvider.swift; sourceTree = "<group>"; };
-		'B900000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKeychainService.swift; sourceTree = "<group>"; };
-		'B900000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
-		'B900000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngineTests.swift; sourceTree = "<group>"; };
-		'B900000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
-		'B900000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
-		'B900000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
-		'BA00000001000000' = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		'BC00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
-		'BC00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
-		'BC00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
-		'BC00000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
-		'BC00000006000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeSelectionView.swift; sourceTree = "<group>"; };
-		'BC00000007000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventRow.swift; sourceTree = "<group>"; };
-		'BC00000008000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
-		'BC00000009000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		'BC00000010000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
-		'BD00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActivityOrb.swift; sourceTree = "<group>"; };
-		'BD00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
-		'BD00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
-		'BD00000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGreetingCard.swift; sourceTree = "<group>"; };
-		'BE00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEntry.swift; sourceTree = "<group>"; };
-		'BE00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
-		'BF00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
-		'BF00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
-		'BW00000001000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
-		'BW00000002000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
-		'BW00000003000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
-		'BW00000004000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
-		'BW00000005000000' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
+		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4583C2E42F7A137700603B08 /* WatchSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManager.swift; sourceTree = "<group>"; };
+		4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchScheduleData.swift; sourceTree = "<group>"; };
+		4583C2E82F7A1EFB00603B08 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		45D328A62F7AE94900293A7A /* TextSizeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeManager.swift; sourceTree = "<group>"; };
+		B100000001000000 /* MyAIssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
+		B100000002000000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B100000005000000 /* CheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckIn.swift; sourceTree = "<group>"; };
+		B100000006000000 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		B100000009000000 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		B100000010000000 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
+		B100000012000000 /* TaskCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCard.swift; sourceTree = "<group>"; };
+		B100000013000000 /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+		B100000014000000 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B100000015000000 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		B100000016000000 /* CheckInsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInsView.swift; sourceTree = "<group>"; };
+		B100000017000000 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
+		B100000018000000 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		B200000001000000 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		B200000002000000 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		B200000003000000 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		B200000004000000 /* TaskCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCategory.swift; sourceTree = "<group>"; };
+		B200000005000000 /* TaskPriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPriority.swift; sourceTree = "<group>"; };
+		B200000006000000 /* CheckInRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
+		B200000007000000 /* DailySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
+		B200000008000000 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		B200000009000000 /* TaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
+		B200000010000000 /* PatternEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngine.swift; sourceTree = "<group>"; };
+		B200000011000000 /* DateHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelpers.swift; sourceTree = "<group>"; };
+		B200000012000000 /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
+		B200000013000000 /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
+		B200000014000000 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		B300000001000000 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
+		B300000002000000 /* AIPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
+		B300000003000000 /* AnthropicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicProvider.swift; sourceTree = "<group>"; };
+		B300000004000000 /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
+		B300000005000000 /* AIProviderFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
+		B300000006000000 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B300000007000000 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		B300000008000000 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
+		B400000001000000 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		B400000002000000 /* CheckInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
+		B400000003000000 /* MoodPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
+		B400000004000000 /* CheckInDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInDetailView.swift; sourceTree = "<group>"; };
+		B400000005000000 /* CheckInHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
+		B400000006000000 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
+		B400000007000000 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		B400000008000000 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		B400000009000000 /* SubscriptionOfferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferView.swift; sourceTree = "<group>"; };
+		B400000010000000 /* OnboardingCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompleteView.swift; sourceTree = "<group>"; };
+		B500000001000000 /* CalendarLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarLink.swift; sourceTree = "<group>"; };
+		B500000002000000 /* EventKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitService.swift; sourceTree = "<group>"; };
+		B500000003000000 /* GoogleCalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
+		B500000004000000 /* CalendarSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncManager.swift; sourceTree = "<group>"; };
+		B500000005000000 /* CalendarImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarImportView.swift; sourceTree = "<group>"; };
+		B500000006000000 /* CalendarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
+		B500000007000000 /* EventScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventScannerView.swift; sourceTree = "<group>"; };
+		B500000008000000 /* DayTickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayTickerView.swift; sourceTree = "<group>"; };
+		B600000001000000 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
+		B600000002000000 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		B600000003000000 /* UsageGateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManager.swift; sourceTree = "<group>"; };
+		B600000004000000 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B600000005000000 /* SubscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionView.swift; sourceTree = "<group>"; };
+		B600000006000000 /* APIKeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsView.swift; sourceTree = "<group>"; };
+		B600000007000000 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		B600000008000000 /* PaywallCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallCard.swift; sourceTree = "<group>"; };
+		B700000001000000 /* WeeklyAIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyAIReviewView.swift; sourceTree = "<group>"; };
+		B700000002000000 /* MoodTrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrendView.swift; sourceTree = "<group>"; };
+		B700000003000000 /* WeeklyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyChartView.swift; sourceTree = "<group>"; };
+		B700000004000000 /* CategoryBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryBreakdownView.swift; sourceTree = "<group>"; };
+		B800000001000000 /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
+		B800000002000000 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B800000003000000 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		B800000004000000 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
+		B800000005000000 /* ChatBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubble.swift; sourceTree = "<group>"; };
+		B800000006000000 /* QuickActionsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsBar.swift; sourceTree = "<group>"; };
+		B800000007000000 /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
+		B900000001000000 /* TestModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestModelContainer.swift; sourceTree = "<group>"; };
+		B900000002000000 /* MockAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIProvider.swift; sourceTree = "<group>"; };
+		B900000003000000 /* MockKeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKeychainService.swift; sourceTree = "<group>"; };
+		B900000004000000 /* TaskManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
+		B900000005000000 /* PatternEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngineTests.swift; sourceTree = "<group>"; };
+		B900000006000000 /* UsageGateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
+		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
+		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
+		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BC00000001000000 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		BC00000002000000 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
+		BC00000003000000 /* SpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
+		BC00000005000000 /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
+		BC00000006000000 /* VoiceModeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeSelectionView.swift; sourceTree = "<group>"; };
+		BC00000007000000 /* CalendarEventRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventRow.swift; sourceTree = "<group>"; };
+		BC00000008000000 /* ColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
+		BC00000009000000 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		BC00000010000000 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
+		BC00000011000000 /* TextSizeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeSettingsView.swift; sourceTree = "<group>"; };
+		BD00000001000000 /* AIActivityOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActivityOrb.swift; sourceTree = "<group>"; };
+		BD00000002000000 /* VariedGreetingBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
+		BD00000003000000 /* GreetingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
+		BD00000004000000 /* AIGreetingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGreetingCard.swift; sourceTree = "<group>"; };
+		BE00000001000000 /* ActivityEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEntry.swift; sourceTree = "<group>"; };
+		BE00000002000000 /* ActivityTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
+		BF00000001000000 /* AlarmEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
+		BF00000002000000 /* SchemaVersioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
+		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
+		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
+		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
+		BW00000004000000 /* StreakWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
+		BW00000005000000 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		C85E40C1975819FFCA2410F6 /* DailyWisdom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = DailyWisdom.json; path = MyAIssistant/Resources/DailyWisdom.json; sourceTree = SOURCE_ROOT; };
-		'E100000001000000' = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		'E900000001000000' = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		'EW00000001000000' = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
-		'C100000001000000' = {
+		4583C2A92F79D1BB00603B08 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		'C900000001000000' = {
+		4583C2B52F79D1BE00603B08 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		'CW00000001000000' = {
+		4583C2BF2F79D1BE00603B08 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C100000001000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C900000001000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CW00000001000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,345 +357,367 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		'D100000001000000' = {
+		4532A6E62F7A4B8D00739994 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D100000002000000,
-				DW00000001000000,
-				D900000001000000,
-				D100000010000000,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D100000001000000 = {
+			isa = PBXGroup;
+			children = (
+				D100000002000000 /* MyAIssistant */,
+				DW00000001000000 /* MyAIssistantWidgets */,
+				D900000001000000 /* MyAIssistantTests */,
+				4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */,
+				4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */,
+				4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
+				D100000010000000 /* Products */,
 				12CC4D3DBACA141D3B64244D /* WisdomManager.swift */,
 				C85E40C1975819FFCA2410F6 /* DailyWisdom.json */,
+				4532A6E62F7A4B8D00739994 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
-		'D100000002000000' = {
+		D100000002000000 /* MyAIssistant */ = {
 			isa = PBXGroup;
 			children = (
-				B100000001000000,
-				B100000002000000,
-				BA00000001000000,
-				D200000001000000,
-				D100000003000000,
-				D200000002000000,
-				D100000004000000,
-				D100000005000000,
-				D100000006000000,
-				D200000003000000,
+				B100000001000000 /* MyAIssistantApp.swift */,
+				B100000002000000 /* ContentView.swift */,
+				BA00000001000000 /* Assets.xcassets */,
+				D200000001000000 /* Core */,
+				D100000003000000 /* Models */,
+				D200000002000000 /* Managers */,
+				D100000004000000 /* Theme */,
+				D100000005000000 /* Services */,
+				D100000006000000 /* Views */,
+				D200000003000000 /* Utilities */,
 			);
 			path = MyAIssistant;
 			sourceTree = "<group>";
 		};
-		'D100000003000000' = {
+		D100000003000000 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B200000003000000,
-				B200000004000000,
-				B200000005000000,
-				B100000005000000,
-				B100000006000000,
-				B200000006000000,
-				B200000007000000,
-				B200000008000000,
-				B300000008000000,
-				B500000001000000,
-				BE00000001000000,
-				BF00000001000000,
-				BF00000002000000,
+				4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */,
+				B200000003000000 /* TaskItem.swift */,
+				B200000004000000 /* TaskCategory.swift */,
+				B200000005000000 /* TaskPriority.swift */,
+				B100000005000000 /* CheckIn.swift */,
+				B100000006000000 /* ChatMessage.swift */,
+				B200000006000000 /* CheckInRecord.swift */,
+				B200000007000000 /* DailySnapshot.swift */,
+				B200000008000000 /* UserProfile.swift */,
+				B300000008000000 /* UsageTracker.swift */,
+				B500000001000000 /* CalendarLink.swift */,
+				BE00000001000000 /* ActivityEntry.swift */,
+				BF00000001000000 /* AlarmEntry.swift */,
+				BF00000002000000 /* SchemaVersioning.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		'D100000004000000' = {
+		D100000004000000 /* Theme */ = {
 			isa = PBXGroup;
 			children = (
-				B100000009000000,
-				B100000010000000,
-				BC00000008000000,
-				BC00000009000000,
+				45D328A62F7AE94900293A7A /* TextSizeManager.swift */,
+				B100000009000000 /* AppColors.swift */,
+				B100000010000000 /* AppFonts.swift */,
+				BC00000008000000 /* ColorTheme.swift */,
+				BC00000009000000 /* ThemeManager.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
 		};
-		'D100000005000000' = {
+		D100000005000000 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				D300000001000000,
-				D300000002000000,
-				D300000003000000,
-				D500000001000000,
-				D600000001000000,
-				DC00000001000000,
+				D300000001000000 /* AI */,
+				D300000002000000 /* Keychain */,
+				D300000003000000 /* Networking */,
+				D500000001000000 /* Calendar */,
+				D600000001000000 /* StoreKit */,
+				DC00000001000000 /* Speech */,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
-		'D100000006000000' = {
+		D100000006000000 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				D100000007000000,
-				D100000008000000,
-				D100000009000000,
-				D100000011000000,
-				D100000012000000,
-				D100000013000000,
-				D400000001000000,
-				D500000002000000,
+				D100000007000000 /* Components */,
+				D100000008000000 /* Home */,
+				D100000009000000 /* Schedule */,
+				D100000011000000 /* CheckIns */,
+				D100000012000000 /* Patterns */,
+				D100000013000000 /* Chat */,
+				D400000001000000 /* Onboarding */,
+				D500000002000000 /* Settings */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		'D100000007000000' = {
+		D100000007000000 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				B100000012000000,
-				B100000013000000,
-				B600000008000000,
-				B800000002000000,
-				B800000003000000,
-				BC00000002000000,
-				BD00000001000000,
+				B100000012000000 /* TaskCard.swift */,
+				B100000013000000 /* StatCard.swift */,
+				B600000008000000 /* PaywallCard.swift */,
+				B800000002000000 /* EmptyStateView.swift */,
+				B800000003000000 /* LoadingView.swift */,
+				BC00000002000000 /* CustomTabBar.swift */,
+				BD00000001000000 /* AIActivityOrb.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
 		};
-		'D100000008000000' = {
+		D100000008000000 /* Home */ = {
 			isa = PBXGroup;
 			children = (
-				B100000014000000,
-				BC00000007000000,
-				BD00000004000000,
+				B100000014000000 /* HomeView.swift */,
+				BC00000007000000 /* CalendarEventRow.swift */,
+				BD00000004000000 /* AIGreetingCard.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
 		};
-		'D100000009000000' = {
+		D100000009000000 /* Schedule */ = {
 			isa = PBXGroup;
 			children = (
-				B100000015000000,
-				B500000005000000,
-				B800000004000000,
+				B100000015000000 /* ScheduleView.swift */,
+				B500000005000000 /* CalendarImportView.swift */,
+				B500000007000000 /* EventScannerView.swift */,
+				B500000008000000 /* DayTickerView.swift */,
+				B800000004000000 /* TaskDetailView.swift */,
 			);
 			path = Schedule;
 			sourceTree = "<group>";
 		};
-		'D100000010000000' = {
+		D100000010000000 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E100000001000000,
-				E900000001000000,
-				EW00000001000000,
+				E100000001000000 /* MyAIssistant.app */,
+				E900000001000000 /* MyAIssistantTests.xctest */,
+				EW00000001000000 /* MyAIssistantWidgets.appex */,
+				4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */,
+				4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */,
+				4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		'D100000011000000' = {
+		D100000011000000 /* CheckIns */ = {
 			isa = PBXGroup;
 			children = (
-				B100000016000000,
-				B400000003000000,
-				B400000004000000,
-				B400000005000000,
+				B100000016000000 /* CheckInsView.swift */,
+				B400000003000000 /* MoodPicker.swift */,
+				B400000004000000 /* CheckInDetailView.swift */,
+				B400000005000000 /* CheckInHistoryView.swift */,
 			);
 			path = CheckIns;
 			sourceTree = "<group>";
 		};
-		'D100000012000000' = {
+		D100000012000000 /* Patterns */ = {
 			isa = PBXGroup;
 			children = (
-				B100000017000000,
-				B700000001000000,
-				B700000002000000,
-				B700000003000000,
-				B700000004000000,
-				BE00000002000000,
+				B100000017000000 /* PatternsView.swift */,
+				B700000001000000 /* WeeklyAIReviewView.swift */,
+				B700000002000000 /* MoodTrendView.swift */,
+				B700000003000000 /* WeeklyChartView.swift */,
+				B700000004000000 /* CategoryBreakdownView.swift */,
+				BE00000002000000 /* ActivityTimelineView.swift */,
 			);
 			path = Patterns;
 			sourceTree = "<group>";
 		};
-		'D100000013000000' = {
+		D100000013000000 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
-				B100000018000000,
-				B800000005000000,
-				B800000006000000,
-				B800000007000000,
+				B100000018000000 /* ChatView.swift */,
+				B800000005000000 /* ChatBubble.swift */,
+				B800000006000000 /* QuickActionsBar.swift */,
+				B800000007000000 /* ConversationListView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
 		};
-		'D200000001000000' = {
+		D200000001000000 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				B200000001000000,
-				B200000002000000,
+				B200000001000000 /* AppConstants.swift */,
+				B200000002000000 /* DependencyContainer.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
 		};
-		'D200000002000000' = {
+		D200000002000000 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
-				B200000009000000,
-				B200000010000000,
-				B400000001000000,
-				B400000002000000,
-				B500000004000000,
-				B600000003000000,
-				B800000001000000,
-				BD00000003000000,
+				4583C2E42F7A137700603B08 /* WatchSyncManager.swift */,
+				B200000009000000 /* TaskManager.swift */,
+				B200000010000000 /* PatternEngine.swift */,
+				B400000001000000 /* NotificationManager.swift */,
+				B400000002000000 /* CheckInManager.swift */,
+				B500000004000000 /* CalendarSyncManager.swift */,
+				B600000003000000 /* UsageGateManager.swift */,
+				B800000001000000 /* BackgroundTaskManager.swift */,
+				BD00000003000000 /* GreetingManager.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
 		};
-		'D200000003000000' = {
+		D200000003000000 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				B200000011000000,
-				B200000012000000,
-				B200000013000000,
+				B200000011000000 /* DateHelpers.swift */,
+				B200000012000000 /* DataSeeder.swift */,
+				B200000013000000 /* PreviewHelpers.swift */,
+				B200000014000000 /* Haptics.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		'D300000001000000' = {
+		D300000001000000 /* AI */ = {
 			isa = PBXGroup;
 			children = (
-				B300000001000000,
-				B300000002000000,
-				B300000003000000,
-				B300000004000000,
-				B300000005000000,
+				B300000001000000 /* AIProvider.swift */,
+				B300000002000000 /* AIPromptBuilder.swift */,
+				B300000003000000 /* AnthropicProvider.swift */,
+				B300000004000000 /* OpenAIProvider.swift */,
+				B300000005000000 /* AIProviderFactory.swift */,
 			);
 			path = AI;
 			sourceTree = "<group>";
 		};
-		'D300000002000000' = {
+		D300000002000000 /* Keychain */ = {
 			isa = PBXGroup;
 			children = (
-				B300000006000000,
+				B300000006000000 /* KeychainService.swift */,
 			);
 			path = Keychain;
 			sourceTree = "<group>";
 		};
-		'D300000003000000' = {
+		D300000003000000 /* Networking */ = {
 			isa = PBXGroup;
 			children = (
-				B300000007000000,
+				B300000007000000 /* APIClient.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
 		};
-		'D400000001000000' = {
+		D400000001000000 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				B400000006000000,
-				B400000007000000,
-				B400000008000000,
-				B400000009000000,
-				B400000010000000,
-				BC00000006000000,
+				B400000006000000 /* OnboardingContainerView.swift */,
+				B400000007000000 /* WelcomeView.swift */,
+				B400000008000000 /* PermissionsView.swift */,
+				B400000009000000 /* SubscriptionOfferView.swift */,
+				B400000010000000 /* OnboardingCompleteView.swift */,
+				BC00000006000000 /* VoiceModeSelectionView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
-		'D500000001000000' = {
+		D500000001000000 /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
-				B500000002000000,
-				B500000003000000,
+				B500000002000000 /* EventKitService.swift */,
+				B500000003000000 /* GoogleCalendarService.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
 		};
-		'D500000002000000' = {
+		D500000002000000 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				B600000004000000,
-				B600000005000000,
-				B600000006000000,
-				B600000007000000,
-				B500000006000000,
-				BC00000005000000,
-				BC00000010000000,
+				B600000004000000 /* SettingsView.swift */,
+				B600000005000000 /* SubscriptionView.swift */,
+				B600000006000000 /* APIKeySettingsView.swift */,
+				B600000007000000 /* NotificationSettingsView.swift */,
+				B500000006000000 /* CalendarSettingsView.swift */,
+				BC00000005000000 /* VoiceSettingsView.swift */,
+				BC00000010000000 /* ThemePickerView.swift */,
+				BC00000011000000 /* TextSizeSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
 		};
-		'D600000001000000' = {
+		D600000001000000 /* StoreKit */ = {
 			isa = PBXGroup;
 			children = (
-				B600000001000000,
-				B600000002000000,
+				B600000001000000 /* SubscriptionTier.swift */,
+				B600000002000000 /* SubscriptionManager.swift */,
 			);
 			path = StoreKit;
 			sourceTree = "<group>";
 		};
-		'D900000001000000' = {
+		D900000001000000 /* MyAIssistantTests */ = {
 			isa = PBXGroup;
 			children = (
-				D900000002000000,
-				D900000003000000,
-				D900000004000000,
-				D900000005000000,
+				D900000002000000 /* Managers */,
+				D900000003000000 /* Services */,
+				D900000004000000 /* Mocks */,
+				D900000005000000 /* Utilities */,
 			);
 			path = MyAIssistantTests;
 			sourceTree = "<group>";
 		};
-		'D900000002000000' = {
+		D900000002000000 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
-				B900000004000000,
-				B900000005000000,
-				B900000006000000,
+				B900000004000000 /* TaskManagerTests.swift */,
+				B900000005000000 /* PatternEngineTests.swift */,
+				B900000006000000 /* UsageGateManagerTests.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
 		};
-		'D900000003000000' = {
+		D900000003000000 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				B900000007000000,
-				B900000008000000,
+				B900000007000000 /* AIProviderFactoryTests.swift */,
+				B900000008000000 /* AIPromptBuilderTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
-		'D900000004000000' = {
+		D900000004000000 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				B900000002000000,
-				B900000003000000,
+				B900000002000000 /* MockAIProvider.swift */,
+				B900000003000000 /* MockKeychainService.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
 		};
-		'D900000005000000' = {
+		D900000005000000 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				B900000001000000,
+				B900000001000000 /* TestModelContainer.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		'DC00000001000000' = {
+		DC00000001000000 /* Speech */ = {
 			isa = PBXGroup;
 			children = (
-				BC00000001000000,
-				BC00000003000000,
-				BD00000002000000,
+				BC00000001000000 /* SpeechRecognizer.swift */,
+				BC00000003000000 /* SpeechSynthesizer.swift */,
+				BD00000002000000 /* VariedGreetingBuilder.swift */,
 			);
 			path = Speech;
 			sourceTree = "<group>";
 		};
-		'DW00000001000000' = {
+		DW00000001000000 /* MyAIssistantWidgets */ = {
 			isa = PBXGroup;
 			children = (
-				BW00000001000000,
-				BW00000002000000,
-				BW00000003000000,
-				BW00000004000000,
-				BW00000005000000,
+				4583C2E82F7A1EFB00603B08 /* Assets.xcassets */,
+				BW00000001000000 /* WidgetBundle.swift */,
+				BW00000002000000 /* NextCheckInWidget.swift */,
+				BW00000003000000 /* TodayProgressWidget.swift */,
+				BW00000004000000 /* StreakWidget.swift */,
+				BW00000005000000 /* WidgetData.swift */,
 			);
 			path = MyAIssistantWidgets;
 			sourceTree = "<group>";
@@ -623,49 +725,119 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		'F100000001000000' = {
+		4583C2AB2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F300000002000000;
+			buildConfigurationList = 4583C2D42F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch App" */;
 			buildPhases = (
-				C100000002000000,
-				C100000001000000,
-				CA00000001000000,
-				CW00000004000000,
+				4583C2A82F79D1BB00603B08 /* Sources */,
+				4583C2A92F79D1BB00603B08 /* Frameworks */,
+				4583C2AA2F79D1BB00603B08 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				HW00000001000000,
+			);
+			fileSystemSynchronizedGroups = (
+				4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */,
+			);
+			name = "MyAIssistantWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "MyAIssistantWatch Watch App";
+			productReference = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4583C2B72F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4583C2D52F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch AppTests" */;
+			buildPhases = (
+				4583C2B42F79D1BE00603B08 /* Sources */,
+				4583C2B52F79D1BE00603B08 /* Frameworks */,
+				4583C2B62F79D1BE00603B08 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4583C2BA2F79D1BE00603B08 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */,
+			);
+			name = "MyAIssistantWatch Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "MyAIssistantWatch Watch AppTests";
+			productReference = 4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4583C2C12F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4583C2D62F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch AppUITests" */;
+			buildPhases = (
+				4583C2BE2F79D1BE00603B08 /* Sources */,
+				4583C2BF2F79D1BE00603B08 /* Frameworks */,
+				4583C2C02F79D1BE00603B08 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4583C2C42F79D1BE00603B08 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
+			);
+			name = "MyAIssistantWatch Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "MyAIssistantWatch Watch AppUITests";
+			productReference = 4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		F100000001000000 /* MyAIssistant */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F300000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistant" */;
+			buildPhases = (
+				C100000002000000 /* Sources */,
+				C100000001000000 /* Frameworks */,
+				CA00000001000000 /* Resources */,
+				CW00000004000000 /* Embed Foundation Extensions */,
+				4583C2CD2F79D1BE00603B08 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				HW00000001000000 /* PBXTargetDependency */,
+				4583C2CB2F79D1BE00603B08 /* PBXTargetDependency */,
 			);
 			name = MyAIssistant;
 			productName = MyAIssistant;
-			productReference = E100000001000000;
+			productReference = E100000001000000 /* MyAIssistant.app */;
 			productType = "com.apple.product-type.application";
 		};
-		'F100000002000000' = {
+		F100000002000000 /* MyAIssistantTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F300000003000000;
+			buildConfigurationList = F300000003000000 /* Build configuration list for PBXNativeTarget "MyAIssistantTests" */;
 			buildPhases = (
-				C900000002000000,
-				C900000001000000,
+				C900000002000000 /* Sources */,
+				C900000001000000 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				H900000001000000,
+				H900000001000000 /* PBXTargetDependency */,
 			);
 			name = MyAIssistantTests;
 			productName = MyAIssistantTests;
-			productReference = E900000001000000;
+			productReference = E900000001000000 /* MyAIssistantTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		'FW00000001000000' = {
+		FW00000001000000 /* MyAIssistantWidgets */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FW00000002000000;
+			buildConfigurationList = FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */;
 			buildPhases = (
-				CW00000002000000,
-				CW00000001000000,
-				CW00000003000000,
+				CW00000002000000 /* Sources */,
+				CW00000001000000 /* Frameworks */,
+				CW00000003000000 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -673,20 +845,34 @@
 			);
 			name = MyAIssistantWidgets;
 			productName = MyAIssistantWidgets;
-			productReference = EW00000001000000;
+			productReference = EW00000001000000 /* MyAIssistantWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		'F200000001000000' = {
+		F200000001000000 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = NO;
-				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					4583C2AB2F79D1BB00603B08 = {
+						CreatedOnToolsVersion = 26.2;
+						LastSwiftMigration = 2620;
+					};
+					4583C2B72F79D1BE00603B08 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 4583C2AB2F79D1BB00603B08;
+					};
+					4583C2C12F79D1BE00603B08 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 4583C2AB2F79D1BB00603B08;
+					};
+				};
 			};
-			buildConfigurationList = F300000001000000;
+			buildConfigurationList = F300000001000000 /* Build configuration list for PBXProject "MyAIssistant" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -695,176 +881,611 @@
 				Base,
 			);
 			mainGroup = D100000001000000;
-			productRefGroup = D100000010000000;
+			productRefGroup = D100000010000000 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F100000001000000,
-				F100000002000000,
-				FW00000001000000,
+				F100000001000000 /* MyAIssistant */,
+				F100000002000000 /* MyAIssistantTests */,
+				FW00000001000000 /* MyAIssistantWidgets */,
+				4583C2AB2F79D1BB00603B08 /* MyAIssistantWatch Watch App */,
+				4583C2B72F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */,
+				4583C2C12F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		'CA00000001000000' = {
+		4583C2AA2F79D1BB00603B08 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA00000001000000,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4583C2B62F79D1BE00603B08 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4583C2C02F79D1BE00603B08 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA00000001000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000001000000 /* Assets.xcassets in Resources */,
 				8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		'CW00000003000000' = {
+		CW00000003000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AW00000005000000,
+				4583C2E92F7A1EFB00603B08 /* Assets.xcassets in Resources */,
+				AW00000005000000 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		'C100000002000000' = {
+		4583C2A82F79D1BB00603B08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A100000001000000,
-				A100000002000000,
-				A200000001000000,
-				A200000002000000,
-				A200000003000000,
-				A200000004000000,
-				A200000005000000,
-				A100000005000000,
-				A100000006000000,
-				A200000006000000,
-				A200000007000000,
-				A200000008000000,
-				A300000008000000,
-				A200000009000000,
-				A200000010000000,
-				A100000009000000,
-				A100000010000000,
-				A300000001000000,
-				A300000002000000,
-				A300000003000000,
-				A300000004000000,
-				A300000005000000,
-				A300000006000000,
-				A300000007000000,
-				A100000012000000,
-				A100000013000000,
-				A100000014000000,
-				AC00000007000000,
-				A100000015000000,
-				A100000016000000,
-				A100000017000000,
-				A100000018000000,
-				A200000011000000,
-				A200000012000000,
-				A200000013000000,
-				A400000001000000,
-				A400000002000000,
-				A400000003000000,
-				A400000004000000,
-				A400000005000000,
-				A400000006000000,
-				A400000007000000,
-				A400000008000000,
-				A400000009000000,
-				A400000010000000,
-				A500000001000000,
-				A500000002000000,
-				A500000003000000,
-				A500000004000000,
-				A500000005000000,
-				A500000006000000,
-				A600000001000000,
-				A600000002000000,
-				A600000003000000,
-				A600000004000000,
-				A600000005000000,
-				A600000006000000,
-				A600000007000000,
-				A600000008000000,
-				A700000001000000,
-				A700000002000000,
-				A700000003000000,
-				A700000004000000,
-				A800000001000000,
-				A800000002000000,
-				A800000003000000,
-				A800000004000000,
-				A800000005000000,
-				A800000006000000,
-				A800000007000000,
-				AC00000001000000,
-				AC00000002000000,
-				AC00000003000000,
-				AC00000005000000,
-				AC00000006000000,
-				AC00000008000000,
-				AC00000009000000,
-				AC00000010000000,
-				AD00000001000000,
-				AD00000002000000,
-				AD00000003000000,
-				AD00000004000000,
-				AE00000001000000,
-				AE00000002000000,
-				AF00000001000000,
-				AF00000002000000,
+				45D328A82F7AE94900293A7A /* TextSizeManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4583C2B42F79D1BE00603B08 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4583C2BE2F79D1BE00603B08 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C100000002000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100000001000000 /* MyAIssistantApp.swift in Sources */,
+				A100000002000000 /* ContentView.swift in Sources */,
+				A200000001000000 /* AppConstants.swift in Sources */,
+				A200000002000000 /* DependencyContainer.swift in Sources */,
+				A200000003000000 /* TaskItem.swift in Sources */,
+				A200000004000000 /* TaskCategory.swift in Sources */,
+				A200000005000000 /* TaskPriority.swift in Sources */,
+				45D328A72F7AE94900293A7A /* TextSizeManager.swift in Sources */,
+				A100000005000000 /* CheckIn.swift in Sources */,
+				A100000006000000 /* ChatMessage.swift in Sources */,
+				A200000006000000 /* CheckInRecord.swift in Sources */,
+				A200000007000000 /* DailySnapshot.swift in Sources */,
+				A200000008000000 /* UserProfile.swift in Sources */,
+				A300000008000000 /* UsageTracker.swift in Sources */,
+				A200000009000000 /* TaskManager.swift in Sources */,
+				A200000010000000 /* PatternEngine.swift in Sources */,
+				A100000009000000 /* AppColors.swift in Sources */,
+				4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */,
+				A100000010000000 /* AppFonts.swift in Sources */,
+				A300000001000000 /* AIProvider.swift in Sources */,
+				A300000002000000 /* AIPromptBuilder.swift in Sources */,
+				A300000003000000 /* AnthropicProvider.swift in Sources */,
+				A300000004000000 /* OpenAIProvider.swift in Sources */,
+				A300000005000000 /* AIProviderFactory.swift in Sources */,
+				A300000006000000 /* KeychainService.swift in Sources */,
+				A300000007000000 /* APIClient.swift in Sources */,
+				A100000012000000 /* TaskCard.swift in Sources */,
+				A100000013000000 /* StatCard.swift in Sources */,
+				A100000014000000 /* HomeView.swift in Sources */,
+				AC00000007000000 /* CalendarEventRow.swift in Sources */,
+				A100000015000000 /* ScheduleView.swift in Sources */,
+				A100000016000000 /* CheckInsView.swift in Sources */,
+				A100000017000000 /* PatternsView.swift in Sources */,
+				A100000018000000 /* ChatView.swift in Sources */,
+				A200000011000000 /* DateHelpers.swift in Sources */,
+				A200000012000000 /* DataSeeder.swift in Sources */,
+				A200000013000000 /* PreviewHelpers.swift in Sources */,
+				A200000014000000 /* Haptics.swift in Sources */,
+				A400000001000000 /* NotificationManager.swift in Sources */,
+				A400000002000000 /* CheckInManager.swift in Sources */,
+				A400000003000000 /* MoodPicker.swift in Sources */,
+				A400000004000000 /* CheckInDetailView.swift in Sources */,
+				A400000005000000 /* CheckInHistoryView.swift in Sources */,
+				A400000006000000 /* OnboardingContainerView.swift in Sources */,
+				A400000007000000 /* WelcomeView.swift in Sources */,
+				A400000008000000 /* PermissionsView.swift in Sources */,
+				A400000009000000 /* SubscriptionOfferView.swift in Sources */,
+				A400000010000000 /* OnboardingCompleteView.swift in Sources */,
+				A500000001000000 /* CalendarLink.swift in Sources */,
+				A500000002000000 /* EventKitService.swift in Sources */,
+				A500000003000000 /* GoogleCalendarService.swift in Sources */,
+				A500000004000000 /* CalendarSyncManager.swift in Sources */,
+				A500000005000000 /* CalendarImportView.swift in Sources */,
+				A500000007000000 /* EventScannerView.swift in Sources */,
+				4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */,
+				A500000008000000 /* DayTickerView.swift in Sources */,
+				A500000006000000 /* CalendarSettingsView.swift in Sources */,
+				A600000001000000 /* SubscriptionTier.swift in Sources */,
+				A600000002000000 /* SubscriptionManager.swift in Sources */,
+				A600000003000000 /* UsageGateManager.swift in Sources */,
+				A600000004000000 /* SettingsView.swift in Sources */,
+				A600000005000000 /* SubscriptionView.swift in Sources */,
+				A600000006000000 /* APIKeySettingsView.swift in Sources */,
+				A600000007000000 /* NotificationSettingsView.swift in Sources */,
+				A600000008000000 /* PaywallCard.swift in Sources */,
+				A700000001000000 /* WeeklyAIReviewView.swift in Sources */,
+				A700000002000000 /* MoodTrendView.swift in Sources */,
+				A700000003000000 /* WeeklyChartView.swift in Sources */,
+				A700000004000000 /* CategoryBreakdownView.swift in Sources */,
+				A800000001000000 /* BackgroundTaskManager.swift in Sources */,
+				A800000002000000 /* EmptyStateView.swift in Sources */,
+				A800000003000000 /* LoadingView.swift in Sources */,
+				A800000004000000 /* TaskDetailView.swift in Sources */,
+				A800000005000000 /* ChatBubble.swift in Sources */,
+				A800000006000000 /* QuickActionsBar.swift in Sources */,
+				A800000007000000 /* ConversationListView.swift in Sources */,
+				AC00000001000000 /* SpeechRecognizer.swift in Sources */,
+				AC00000002000000 /* CustomTabBar.swift in Sources */,
+				AC00000003000000 /* SpeechSynthesizer.swift in Sources */,
+				AC00000005000000 /* VoiceSettingsView.swift in Sources */,
+				AC00000006000000 /* VoiceModeSelectionView.swift in Sources */,
+				AC00000008000000 /* ColorTheme.swift in Sources */,
+				AC00000009000000 /* ThemeManager.swift in Sources */,
+				AC00000010000000 /* ThemePickerView.swift in Sources */,
+				AC00000011000000 /* TextSizeSettingsView.swift in Sources */,
+				AD00000001000000 /* AIActivityOrb.swift in Sources */,
+				AD00000002000000 /* VariedGreetingBuilder.swift in Sources */,
+				AD00000003000000 /* GreetingManager.swift in Sources */,
+				AD00000004000000 /* AIGreetingCard.swift in Sources */,
+				AE00000001000000 /* ActivityEntry.swift in Sources */,
+				AE00000002000000 /* ActivityTimelineView.swift in Sources */,
+				AF00000001000000 /* AlarmEntry.swift in Sources */,
+				AF00000002000000 /* SchemaVersioning.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		'C900000002000000' = {
+		C900000002000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A900000001000000,
-				A900000002000000,
-				A900000003000000,
-				A900000004000000,
-				A900000005000000,
-				A900000006000000,
-				A900000007000000,
-				A900000008000000,
+				A900000001000000 /* TestModelContainer.swift in Sources */,
+				A900000002000000 /* MockAIProvider.swift in Sources */,
+				A900000003000000 /* MockKeychainService.swift in Sources */,
+				A900000004000000 /* TaskManagerTests.swift in Sources */,
+				A900000005000000 /* PatternEngineTests.swift in Sources */,
+				A900000006000000 /* UsageGateManagerTests.swift in Sources */,
+				A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
+				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		'CW00000002000000' = {
+		CW00000002000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AW00000001000000,
-				AW00000002000000,
-				AW00000003000000,
-				AW00000004000000,
-				WDTA00000001000,
+				AW00000001000000 /* WidgetBundle.swift in Sources */,
+				AW00000002000000 /* NextCheckInWidget.swift in Sources */,
+				AW00000003000000 /* TodayProgressWidget.swift in Sources */,
+				AW00000004000000 /* StreakWidget.swift in Sources */,
+				WDTA00000001000 /* WidgetData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		'H900000001000000' = {
+		4583C2BA2F79D1BE00603B08 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = F100000001000000;
-			targetProxy = G900000001000000;
+			target = 4583C2AB2F79D1BB00603B08 /* MyAIssistantWatch Watch App */;
+			targetProxy = 4583C2B92F79D1BE00603B08 /* PBXContainerItemProxy */;
 		};
-		'HW00000001000000' = {
+		4583C2C42F79D1BE00603B08 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FW00000001000000;
-			targetProxy = GW00000001000000;
+			target = 4583C2AB2F79D1BB00603B08 /* MyAIssistantWatch Watch App */;
+			targetProxy = 4583C2C32F79D1BE00603B08 /* PBXContainerItemProxy */;
+		};
+		4583C2CB2F79D1BE00603B08 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4583C2AB2F79D1BB00603B08 /* MyAIssistantWatch Watch App */;
+			targetProxy = 4583C2CA2F79D1BE00603B08 /* PBXContainerItemProxy */;
+		};
+		H900000001000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F100000001000000 /* MyAIssistant */;
+			targetProxy = G900000001000000 /* PBXContainerItemProxy */;
+		};
+		HW00000001000000 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FW00000001000000 /* MyAIssistantWidgets */;
+			targetProxy = GW00000001000000 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		'F400000001000000' = {
+		4583C2CE2F79D1BE00603B08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		4583C2CF2F79D1BE00603B08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		4583C2D02F79D1BE00603B08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.myaissistant.app.MyAIssistantWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyAIssistantWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyAIssistantWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		4583C2D12F79D1BE00603B08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.myaissistant.app.MyAIssistantWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyAIssistantWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyAIssistantWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		4583C2D22F79D1BE00603B08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.myaissistant.app.MyAIssistantWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "MyAIssistantWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		4583C2D32F79D1BE00603B08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.myaissistant.app.MyAIssistantWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "MyAIssistantWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		F400000001000000 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -873,25 +1494,50 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		'F400000002000000' = {
+		F400000002000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -900,29 +1546,52 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		'F400000003000000' = {
+		F400000003000000 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -943,15 +1612,13 @@
 			};
 			name = Debug;
 		};
-		'F400000004000000' = {
+		F400000004000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -972,13 +1639,12 @@
 			};
 			name = Release;
 		};
-		'F400000005000000' = {
+		F400000005000000 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -991,13 +1657,12 @@
 			};
 			name = Debug;
 		};
-		'F400000006000000' = {
+		F400000006000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -1010,7 +1675,7 @@
 			};
 			name = Release;
 		};
-		'FW00000003000000' = {
+		FW00000003000000 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -1018,7 +1683,6 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
@@ -1039,7 +1703,7 @@
 			};
 			name = Debug;
 		};
-		'FW00000004000000' = {
+		FW00000004000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -1047,7 +1711,6 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
@@ -1071,43 +1734,70 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		'F300000001000000' = {
+		4583C2D42F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000001000000,
-				F400000002000000,
+				4583C2CE2F79D1BE00603B08 /* Debug */,
+				4583C2CF2F79D1BE00603B08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		'F300000002000000' = {
+		4583C2D52F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch AppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000003000000,
-				F400000004000000,
+				4583C2D02F79D1BE00603B08 /* Debug */,
+				4583C2D12F79D1BE00603B08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		'F300000003000000' = {
+		4583C2D62F79D1E400603B08 /* Build configuration list for PBXNativeTarget "MyAIssistantWatch Watch AppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F400000005000000,
-				F400000006000000,
+				4583C2D22F79D1BE00603B08 /* Debug */,
+				4583C2D32F79D1BE00603B08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		'FW00000002000000' = {
+		F300000001000000 /* Build configuration list for PBXProject "MyAIssistant" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FW00000003000000,
-				FW00000004000000,
+				F400000001000000 /* Debug */,
+				F400000002000000 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F300000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistant" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F400000003000000 /* Debug */,
+				F400000004000000 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F300000003000000 /* Build configuration list for PBXNativeTarget "MyAIssistantTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F400000005000000 /* Debug */,
+				F400000006000000 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FW00000002000000 /* Build configuration list for PBXNativeTarget "MyAIssistantWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FW00000003000000 /* Debug */,
+				FW00000004000000 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = F200000001000000;
+	rootObject = F200000001000000 /* Project object */;
 }

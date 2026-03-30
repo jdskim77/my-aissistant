@@ -34,6 +34,9 @@ enum AppConstants {
     // MARK: - UserDefaults Keys (Theme)
     static let appThemeKey = "appTheme"
 
+    // MARK: - UserDefaults Keys (Text Size)
+    static let textSizeKey = "textSize"
+
     // MARK: - UserDefaults Keys (Google Calendar)
     static let googleClientIDKey = "googleClientID"
 

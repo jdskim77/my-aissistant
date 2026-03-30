@@ -40,11 +40,17 @@ struct ChatView: View {
             // Header
             chatHeader
 
-            // Messages
+            // Messages — tap to stop AI speech
             ConversationMessages(
                 conversationID: conversationID,
                 isAITyping: isAITyping
             )
+            .onTapGesture {
+                if speechSynthesizer.isSpeaking {
+                    Haptics.light()
+                    speechSynthesizer.stop()
+                }
+            }
 
             Divider()
                 .background(AppColors.border)
@@ -458,11 +464,19 @@ struct ChatView: View {
                             conversationID: conversationID
                         )
                         modelContext.insert(msg)
-                    } else {
-                        errorMessage = error.localizedDescription
+                    } else if let aiError = error as? AIError, case .rateLimited = aiError {
+                        errorMessage = "Too many requests — please wait a moment."
                         let msg = ChatMessage(
                             role: .assistant,
-                            content: "I'm having trouble connecting right now. Error: \(error.localizedDescription)",
+                            content: "I'm getting a lot of requests right now. Give me a moment and try again!",
+                            conversationID: conversationID
+                        )
+                        modelContext.insert(msg)
+                    } else {
+                        errorMessage = "Connection issue — please try again."
+                        let msg = ChatMessage(
+                            role: .assistant,
+                            content: "I'm having trouble connecting right now. Please check your internet connection and try again.",
                             conversationID: conversationID
                         )
                         modelContext.insert(msg)

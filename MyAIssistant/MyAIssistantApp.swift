@@ -91,6 +91,10 @@ struct MyAIssistantApp: App {
                     backgroundTaskManager?.scheduleDailySnapshot()
                     backgroundTaskManager?.scheduleWeeklyReview()
                     backgroundTaskManager?.scheduleCalendarSync()
+
+                    // Sync schedule + API key to Watch on every launch
+                    taskManager.updateWidgetData()
+                    WatchSyncManager.shared.syncAPIKey()
                 }
         }
         .modelContainer(modelContainer)
@@ -169,6 +173,11 @@ extension ModelContainer {
     /// Last-resort in-memory container so the app can at least launch.
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
         let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
-        return try! ModelContainer(for: schema, configurations: [inMemory])
+        // This is the absolute last resort — if even in-memory fails, the app cannot function
+        do {
+            return try ModelContainer(for: schema, configurations: [inMemory])
+        } catch {
+            fatalError("Cannot create even an in-memory ModelContainer: \(error)")
+        }
     }
 }

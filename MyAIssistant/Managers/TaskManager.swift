@@ -210,9 +210,12 @@ final class TaskManager: ObservableObject {
     // MARK: - Widget Data
 
     /// Snapshots current state to the shared App Group container for widgets to read.
-    func updateWidgetData(streak: Int = 0) {
+    func updateWidgetData() {
         let today = todayTasks()
         let completed = today.filter(\.done).count
+
+        // Compute streak from task data
+        let streak = computeStreak()
         let pending = today.filter { !$0.done }
             .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
             .prefix(3)
@@ -242,6 +245,34 @@ final class TaskManager: ObservableObject {
         )
         data.save()
         WidgetCenter.shared.reloadAllTimelines()
+
+        // Sync to Apple Watch
+        WatchSyncManager.shared.syncSchedule(
+            tasks: allTasks(),
+            streak: streak,
+            quoteText: quote?.text,
+            quoteAuthor: quote?.author
+        )
+    }
+
+    private func computeStreak() -> Int {
+        let calendar = Calendar.current
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: Date())
+        while true {
+            let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: checkDate)
+            let descriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay && $0.done == true }
+            )
+            let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+            if count > 0 {
+                streak += 1
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+            } else {
+                break
+            }
+        }
+        return streak
     }
 }
 

@@ -320,7 +320,7 @@ struct CalendarImportView: View {
                 callbackURLScheme: "com.myaissistant"
             ) { callbackURL, error in
                 if let error {
-                    print("Google auth error: \(error.localizedDescription)")
+                    _ = error // auth error handled by caller
                     continuation.resume(returning: nil)
                 } else {
                     continuation.resume(returning: callbackURL)

@@ -16,6 +16,10 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>My AIssistant uses speech recognition to let you talk to your AI assistant hands-free.</string>
 
+	<!-- Camera Access -->
+	<key>NSCameraUsageDescription</key>
+	<string>My AIssistant uses the camera to scan event flyers and posters to add them to your schedule.</string>
+
 	<!-- Microphone Access -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>My AIssistant needs microphone access to transcribe your voice into text for the AI assistant.</string>

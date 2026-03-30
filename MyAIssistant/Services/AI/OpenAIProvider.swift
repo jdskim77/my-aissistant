@@ -50,6 +50,10 @@ actor OpenAIProvider: AIProvider {
         return try parseResponse(response.data)
     }
 
+    func sendVisionMessage(prompt: String, imageData: Data, mediaType: String) async throws -> AIResponse {
+        throw AIError.apiError(statusCode: 0, message: "Vision is only supported with the Anthropic provider.")
+    }
+
     // MARK: - Request Building
 
     private func buildMessages(

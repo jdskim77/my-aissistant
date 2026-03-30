@@ -15,6 +15,15 @@ enum Tab: Int, CaseIterable {
         }
     }
 
+    var selectedIcon: String {
+        switch self {
+        case .home: return "checklist"
+        case .schedule: return "calendar"
+        case .patterns: return "chart.bar.fill"
+        case .settings: return "gearshape.fill"
+        }
+    }
+
     var label: String {
         switch self {
         case .home: return "Today"
@@ -50,10 +59,12 @@ struct CustomTabBar: View {
                 .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: -4)
                 .ignoresSafeArea(edges: .bottom)
         )
+        .accessibilityElement(children: .contain)
     }
 
     private func tabButton(for tab: Tab, badge: Int = 0) -> some View {
         Button {
+            Haptics.selection()
             withAnimation(.spring(response: 0.3)) {
                 selectedTab = tab
             }
@@ -71,6 +82,7 @@ struct CustomTabBar: View {
                             .background(AppColors.coral)
                             .cornerRadius(8)
                             .offset(x: 8, y: -6)
+                            .accessibilityLabel("\(badge) pending tasks")
                     }
                 }
 
@@ -79,12 +91,16 @@ struct CustomTabBar: View {
             }
             .foregroundColor(selectedTab == tab ? AppColors.accent : AppColors.textMuted)
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(tab.label)
+        .accessibilityAddTraits(selectedTab == tab ? [.isSelected] : [])
     }
 
     private var aiCenterButton: some View {
         Button {
+            Haptics.medium()
             onAITap()
         } label: {
             ZStack {
@@ -106,5 +122,6 @@ struct CustomTabBar: View {
             .offset(y: -20)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("AI Assistant")
     }
 }

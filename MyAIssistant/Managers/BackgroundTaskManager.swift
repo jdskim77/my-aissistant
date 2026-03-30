@@ -26,7 +26,8 @@ final class BackgroundTaskManager {
             using: nil
         ) { task in
             Task { @MainActor in
-                await self.handleDailySnapshot(task as! BGProcessingTask)
+                guard let bgTask = task as? BGProcessingTask else { task.setTaskCompleted(success: false); return }
+                await self.handleDailySnapshot(bgTask)
             }
         }
 
@@ -35,7 +36,8 @@ final class BackgroundTaskManager {
             using: nil
         ) { task in
             Task { @MainActor in
-                await self.handleWeeklyReview(task as! BGProcessingTask)
+                guard let bgTask = task as? BGProcessingTask else { task.setTaskCompleted(success: false); return }
+                await self.handleWeeklyReview(bgTask)
             }
         }
 
@@ -44,7 +46,8 @@ final class BackgroundTaskManager {
             using: nil
         ) { task in
             Task { @MainActor in
-                await self.handleCalendarSync(task as! BGAppRefreshTask)
+                guard let bgTask = task as? BGAppRefreshTask else { task.setTaskCompleted(success: false); return }
+                await self.handleCalendarSync(bgTask)
             }
         }
     }

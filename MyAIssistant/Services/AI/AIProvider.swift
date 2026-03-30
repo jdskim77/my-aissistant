@@ -16,6 +16,13 @@ protocol AIProvider: Sendable {
         conversationHistory: [ChatMessage],
         systemPrompt: String
     ) async throws -> AIResponse
+
+    /// Send a message with an image attachment (vision).
+    func sendVisionMessage(
+        prompt: String,
+        imageData: Data,
+        mediaType: String
+    ) async throws -> AIResponse
 }
 
 // MARK: - AI Errors

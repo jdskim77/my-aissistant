@@ -97,7 +97,7 @@ struct TodayProgressWidgetView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.green)
                 } else {
-                    ForEach(entry.topPending.prefix(3), id: \.title) { task in
+                    ForEach(Array(entry.topPending.prefix(3).enumerated()), id: \.offset) { _, task in
                         taskRow(task)
                     }
                 }
@@ -144,7 +144,7 @@ struct TodayProgressWidgetView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(entry.topPending.prefix(5), id: \.title) { task in
+                    ForEach(Array(entry.topPending.prefix(5).enumerated()), id: \.offset) { _, task in
                         taskRow(task)
                     }
                 }

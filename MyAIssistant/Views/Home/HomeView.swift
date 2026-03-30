@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var completedExpanded = false
     @State private var tomorrowExpanded = false
     @State private var taskToReschedule: TaskItem?
+    @State private var taskToDelete: TaskItem?
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
@@ -114,7 +115,7 @@ struct HomeView: View {
             if let quote = WisdomManager.todayQuote() {
                 Section {
                     wisdomCard(quote: quote)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
@@ -123,7 +124,7 @@ struct HomeView: View {
             // Stats bar
             Section {
                 statsBar
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 0, trailing: 16))
                     .listRowBackground(Color.clear)
             }
 
@@ -133,22 +134,20 @@ struct HomeView: View {
                     if overdueExpanded {
                         ForEach(overdueTasks, id: \.id) { task in
                             TaskCard(task: task, isOverdue: true) {
+                                Haptics.success()
                                 withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    withAnimation {
-                                        if task.externalCalendarID != nil {
-                                            Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
-                                        }
-                                        taskManager?.deleteTask(task)
-                                    }
+                                    Haptics.medium()
+                                    taskToDelete = task
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
                                 Button {
+                                    Haptics.light()
                                     taskToReschedule = task
                                     rescheduleDate = Date()
                                 } label: {
@@ -158,6 +157,7 @@ struct HomeView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
+                                    Haptics.success()
                                     withAnimation(.spring(response: 0.3)) {
                                         taskManager?.toggleCompletion(task)
                                     }
@@ -205,12 +205,14 @@ struct HomeView: View {
                 } else {
                     ForEach(todayActiveTasks, id: \.id) { task in
                         TaskCard(task: task) {
+                            Haptics.success()
                             withAnimation(.spring(response: 0.3)) {
                                 taskManager?.toggleCompletion(task)
                             }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
+                                Haptics.heavy()
                                 withAnimation {
                                     if task.externalCalendarID != nil {
                                         Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
@@ -221,6 +223,7 @@ struct HomeView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                             Button {
+                                Haptics.light()
                                 taskToReschedule = task
                                 rescheduleDate = Date()
                             } label: {
@@ -230,6 +233,7 @@ struct HomeView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
+                                Haptics.success()
                                 withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
@@ -397,6 +401,25 @@ struct HomeView: View {
         .sheet(item: $taskToReschedule) { task in
             rescheduleSheet(for: task)
         }
+        .alert("Delete Task", isPresented: Binding(
+            get: { taskToDelete != nil },
+            set: { if !$0 { taskToDelete = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                guard let task = taskToDelete else { return }
+                Haptics.heavy()
+                withAnimation {
+                    if task.externalCalendarID != nil {
+                        Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                    }
+                    taskManager?.deleteTask(task)
+                }
+                taskToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { taskToDelete = nil }
+        } message: {
+            Text("Are you sure you want to delete \"\(taskToDelete?.title ?? "")\"?")
+        }
     }
 
     // MARK: - Daily Wisdom Card
@@ -425,11 +448,12 @@ struct HomeView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(AppColors.card)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 16)
                 .stroke(AppColors.accentWarm.opacity(0.2), lineWidth: 1)
         )
     }
@@ -525,12 +549,11 @@ struct HomeView: View {
                 .cornerRadius(12)
             }
         }
-        .padding(14)
-        .background(AppColors.card)
-        .cornerRadius(14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppColors.card)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
         .offset(y: appeared ? 0 : 15)
         .opacity(appeared ? 1 : 0)
@@ -565,24 +588,26 @@ struct HomeView: View {
     // MARK: - Empty States
 
     private var emptyActiveState: some View {
-        VStack(spacing: 12) {
-            Text("☀️")
+        VStack(spacing: 16) {
+            Image(systemName: "sun.max")
                 .font(.system(size: 40))
+                .foregroundColor(AppColors.accentWarm)
             Text("No tasks today")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
-            Text("Add tasks from the Schedule tab")
+            Text("Head to Schedule to add tasks")
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textMuted)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 24)
     }
 
     private var allDoneState: some View {
-        VStack(spacing: 12) {
-            Text("🎉")
+        VStack(spacing: 16) {
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 40))
+                .foregroundColor(AppColors.completionGreen)
             Text("All done for today!")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
@@ -591,7 +616,7 @@ struct HomeView: View {
                 .foregroundColor(AppColors.textMuted)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 24)
     }
 
     // MARK: - Reschedule Sheet
