@@ -20,12 +20,14 @@ struct ChatView: View {
     @State private var showingConversations = false
     @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = true
     @AppStorage(AppConstants.selectedVoiceIDKey) private var selectedVoiceID = ""
+    @AppStorage(AppConstants.voiceProviderKey) private var voiceProviderRaw = VoiceProviderType.apple.rawValue
     @State private var speechRecognizer = SpeechRecognizer()
     @State private var speechSynthesizer = SpeechSynthesizer()
     @State private var voiceModeEnabled = false
     @State private var hasPlayedGreeting = false
     @State private var showingMicPermissionAlert = false
     @State private var showClockAppPrompt = false
+    @State private var pendingCalendarActions: [CalendarAction] = []
     @FocusState private var isInputFocused: Bool
 
     private let quickActions = [
@@ -113,6 +115,11 @@ struct ChatView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
+            // Pending calendar action confirmation
+            if !pendingCalendarActions.isEmpty {
+                calendarConfirmationBanner
+            }
+
             // Quick actions
             QuickActionsBar(actions: quickActions) { action in
                 sendMessage(action)
@@ -130,6 +137,7 @@ struct ChatView: View {
             // Initialize voice mode from user preference
             voiceModeEnabled = voiceModeDefault
             speechSynthesizer.selectedVoiceIdentifier = selectedVoiceID.isEmpty ? nil : selectedVoiceID
+            speechSynthesizer.selectedProviderType = VoiceProviderType(rawValue: voiceProviderRaw) ?? .apple
 
             // Wire auto-listen loop: after AI finishes speaking, start recording
             speechSynthesizer.onFinishedSpeaking = {
@@ -417,9 +425,11 @@ struct ChatView: View {
                     // Track usage
                     usageGateManager?.recordChatMessage(inputTokens: aiResponse.inputTokens, outputTokens: aiResponse.outputTokens)
 
-                    // Execute calendar actions
+                    // Queue calendar actions for user confirmation
                     if !parsed.calendarActions.isEmpty {
-                        Task { await executeCalendarActions(parsed.calendarActions) }
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            pendingCalendarActions = parsed.calendarActions
+                        }
                     }
 
                     // Store tracked activities
@@ -583,6 +593,81 @@ struct ChatView: View {
             return
         }
         sendMessage(text)
+    }
+
+    // MARK: - Calendar Confirmation Banner
+
+    private var calendarConfirmationBanner: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.exclamationmark")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("Calendar changes requested")
+                    .font(AppFonts.bodyMedium(13))
+                Spacer()
+            }
+            .foregroundColor(AppColors.accent)
+
+            ForEach(Array(pendingCalendarActions.enumerated()), id: \.offset) { _, action in
+                HStack(spacing: 6) {
+                    switch action {
+                    case .create(let title, let start, _, _, _):
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(AppColors.completionGreen)
+                            .font(.system(size: 12))
+                        Text("Create: \(title)")
+                            .font(AppFonts.body(12))
+                        Text("(\(start.formatted(as: "MMM d, h:mm a")))")
+                            .font(AppFonts.caption(11))
+                            .foregroundColor(AppColors.textMuted)
+                    case .delete(let eventID):
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundColor(AppColors.coral)
+                            .font(.system(size: 12))
+                        Text("Delete event: \(eventID)")
+                            .font(AppFonts.body(12))
+                    }
+                    Spacer()
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        pendingCalendarActions = []
+                    }
+                } label: {
+                    Text("Dismiss")
+                        .font(AppFonts.bodyMedium(13))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(AppColors.surface)
+                        .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.border, lineWidth: 1))
+                }
+
+                Button {
+                    let actions = pendingCalendarActions
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        pendingCalendarActions = []
+                    }
+                    Task { await executeCalendarActions(actions) }
+                } label: {
+                    Text("Approve")
+                        .font(AppFonts.bodyMedium(13))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(AppColors.accent)
+                        .cornerRadius(10)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(AppColors.accentLight)
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     // MARK: - Calendar Action Parsing

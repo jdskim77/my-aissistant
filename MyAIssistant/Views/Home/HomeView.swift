@@ -5,7 +5,9 @@ struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
+    @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
 
     @State private var appeared = false
     @State private var showingCheckIn = false
@@ -14,6 +16,7 @@ struct HomeView: View {
     @State private var tomorrowExpanded = false
     @State private var taskToReschedule: TaskItem?
     @State private var taskToDelete: TaskItem?
+    @State private var showingHabits = false
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
@@ -50,7 +53,7 @@ struct HomeView: View {
     }
 
     private var todayCalendarEvents: [TaskItem] {
-        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && $0.externalCalendarID != nil }
+        allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && $0.externalCalendarID != nil && !$0.done }
             .sorted { $0.date < $1.date }
     }
 
@@ -79,6 +82,10 @@ struct HomeView: View {
 
     private var endOfTomorrow: Date {
         Calendar.current.safeDate(byAdding: .day, value: 2, to: startOfToday)
+    }
+
+    private var activeHabits: [HabitItem] {
+        allHabits.filter { !$0.isArchived }
     }
 
     private var tomorrowTasks: [TaskItem] {
@@ -126,6 +133,38 @@ struct HomeView: View {
                 statsBar
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 0, trailing: 16))
                     .listRowBackground(Color.clear)
+            }
+
+            // Habits section
+            if !activeHabits.isEmpty {
+                Section {
+                    habitsCard
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } header: {
+                    Button {
+                        showingHabits = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "leaf.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(AppColors.accent)
+                            Text("Habits")
+                                .font(AppFonts.heading(15))
+                                .foregroundColor(AppColors.textPrimary)
+                                .textCase(nil)
+                            Spacer()
+                            Text("See all")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.accent)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             // Overdue section
@@ -183,18 +222,34 @@ struct HomeView: View {
             Section {
                 // Calendar events inline
                 ForEach(todayCalendarEvents, id: \.id) { event in
-                    CalendarEventRow(task: event)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                withAnimation {
-                                    Task { await calendarSyncManager?.deleteCalendarEvent(for: event) }
-                                    taskManager?.deleteTask(event)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                    CalendarEventRow(task: event) {
+                        Haptics.success()
+                        withAnimation(.spring(response: 0.3)) {
+                            taskManager?.toggleCompletion(event)
                         }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            withAnimation {
+                                Task { await calendarSyncManager?.deleteCalendarEvent(for: event) }
+                                taskManager?.deleteTask(event)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            Haptics.success()
+                            withAnimation(.spring(response: 0.3)) {
+                                taskManager?.toggleCompletion(event)
+                            }
+                        } label: {
+                            Label("Complete", systemImage: "checkmark.circle.fill")
+                        }
+                        .tint(AppColors.completionGreen)
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
 
                 // Active tasks
@@ -397,6 +452,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingCheckIn) {
             CheckInDetailView(timeSlot: CheckInTime.next())
+        }
+        .sheet(isPresented: $showingHabits) {
+            HabitsView()
         }
         .sheet(item: $taskToReschedule) { task in
             rescheduleSheet(for: task)
@@ -617,6 +675,77 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
+    }
+
+    // MARK: - Habits Card
+
+    private var habitsCard: some View {
+        let today = Calendar.current.startOfDay(for: Date())
+        let doneCount = activeHabits.filter { $0.isCompletedOn(today) }.count
+
+        return VStack(spacing: 10) {
+            ForEach(activeHabits.prefix(4)) { habit in
+                let isDone = habit.isCompletedOn(today)
+                HStack(spacing: 10) {
+                    Button {
+                        Haptics.success()
+                        withAnimation(.spring(response: 0.3)) {
+                            habit.toggleCompletion(for: today)
+                            try? modelContext.save()
+                        }
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .stroke(isDone ? AppColors.completionGreen : Color(hex: habit.colorHex), lineWidth: 2)
+                                .frame(width: 22, height: 22)
+                            if isDone {
+                                Circle()
+                                    .fill(AppColors.completionGreen)
+                                    .frame(width: 22, height: 22)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Text(habit.icon)
+                        .font(.system(size: 16))
+                    Text(habit.title)
+                        .font(AppFonts.body(14))
+                        .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                        .strikethrough(isDone)
+                    Spacer()
+
+                    let streak = habit.currentStreak()
+                    if streak > 0 {
+                        Text("\(streak)🔥")
+                            .font(AppFonts.caption(11))
+                            .foregroundColor(AppColors.accentWarm)
+                    }
+                }
+            }
+
+            if activeHabits.count > 4 {
+                Button {
+                    showingHabits = true
+                } label: {
+                    Text("+\(activeHabits.count - 4) more")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(AppColors.card)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        )
     }
 
     // MARK: - Reschedule Sheet

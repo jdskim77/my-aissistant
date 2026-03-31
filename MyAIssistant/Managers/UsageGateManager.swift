@@ -26,11 +26,15 @@ final class UsageGateManager: ObservableObject {
     // MARK: - Gate Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
-        tracker().canSendChat(tier: tier)
+        let t = tracker()
+        guard t.verifyIntegrity() else { return false }
+        return t.canSendChat(tier: tier)
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
-        tracker().canDoCheckIn(tier: tier)
+        let t = tracker()
+        guard t.verifyIntegrity() else { return false }
+        return t.canDoCheckIn(tier: tier)
     }
 
     // MARK: - Usage Info

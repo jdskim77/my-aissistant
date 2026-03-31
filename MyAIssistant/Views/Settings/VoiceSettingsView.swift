@@ -4,28 +4,28 @@ import AVFoundation
 struct VoiceSettingsView: View {
     @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = true
     @AppStorage(AppConstants.selectedVoiceIDKey) private var selectedVoiceID = ""
-    @State private var previewSynthesizer = AVSpeechSynthesizer()
+    @AppStorage(AppConstants.voiceProviderKey) private var voiceProviderRaw = VoiceProviderType.apple.rawValue
 
-    private var availableVoices: [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix("en") }
-            .sorted { qualityRank($0.quality) > qualityRank($1.quality) }
+    @State private var previewSynthesizer = SpeechSynthesizer()
+
+    private var selectedProvider: VoiceProviderType {
+        VoiceProviderType(rawValue: voiceProviderRaw) ?? .apple
     }
 
-    private var femaleVoices: [AVSpeechSynthesisVoice] {
-        availableVoices.filter { $0.gender == .female }
-    }
-
-    private var maleVoices: [AVSpeechSynthesisVoice] {
-        availableVoices.filter { $0.gender == .male }
-    }
-
-    private func qualityRank(_ quality: AVSpeechSynthesisVoiceQuality) -> Int {
-        switch quality {
-        case .premium: return 2
-        case .enhanced: return 1
-        default: return 0
+    private var voices: [VoiceOption] {
+        switch selectedProvider {
+        case .apple:
+            return AppleVoiceProvider().availableVoices()
+        case .edge:
+            return EdgeVoiceProvider.edgeVoices
         }
+    }
+
+    private var femaleVoices: [VoiceOption] { voices.filter { $0.gender == .female } }
+    private var maleVoices: [VoiceOption] { voices.filter { $0.gender == .male } }
+
+    private var accentGroups: [String] {
+        Array(Set(voices.map(\.accent))).sorted()
     }
 
     var body: some View {
@@ -52,19 +52,82 @@ struct VoiceSettingsView: View {
             }
 
             Section {
-                ForEach(femaleVoices, id: \.identifier) { voice in
-                    voiceRow(voice)
+                ForEach(VoiceProviderType.allCases) { provider in
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(provider.rawValue)
+                                .font(AppFonts.bodyMedium(15))
+                                .foregroundColor(AppColors.textPrimary)
+                            Text(provider.description)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                        }
+                        Spacer()
+                        if selectedProvider == provider {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        voiceProviderRaw = provider.rawValue
+                        selectedVoiceID = "" // Reset voice when switching provider
+                    }
+                    .padding(.vertical, 2)
                 }
             } header: {
-                Text("Female Voices")
+                Text("Voice Engine")
+            } footer: {
+                if selectedProvider == .edge {
+                    Text("Edge voices sound more natural but require an internet connection.")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
+                }
             }
 
-            Section {
-                ForEach(maleVoices, id: \.identifier) { voice in
-                    voiceRow(voice)
+            if selectedProvider == .edge {
+                // Group Edge voices by accent
+                ForEach(accentGroups, id: \.self) { accent in
+                    let accentFemale = femaleVoices.filter { $0.accent == accent }
+                    let accentMale = maleVoices.filter { $0.accent == accent }
+
+                    if !accentFemale.isEmpty {
+                        Section {
+                            ForEach(accentFemale) { voice in
+                                voiceRow(voice)
+                            }
+                        } header: {
+                            Text("\(accent) — Female")
+                        }
+                    }
+
+                    if !accentMale.isEmpty {
+                        Section {
+                            ForEach(accentMale) { voice in
+                                voiceRow(voice)
+                            }
+                        } header: {
+                            Text("\(accent) — Male")
+                        }
+                    }
                 }
-            } header: {
-                Text("Male Voices")
+            } else {
+                Section {
+                    ForEach(femaleVoices) { voice in
+                        voiceRow(voice)
+                    }
+                } header: {
+                    Text("Female Voices")
+                }
+
+                Section {
+                    ForEach(maleVoices) { voice in
+                        voiceRow(voice)
+                    }
+                } header: {
+                    Text("Male Voices")
+                }
             }
         }
         .scrollContentBackground(.hidden)
@@ -72,21 +135,28 @@ struct VoiceSettingsView: View {
         .navigationTitle("Voice")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            previewSynthesizer.stopSpeaking(at: .immediate)
+            previewSynthesizer.stop()
         }
     }
 
-    private func voiceRow(_ voice: AVSpeechSynthesisVoice) -> some View {
+    private func voiceRow(_ voice: VoiceOption) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(voice.name)
                     .font(AppFonts.bodyMedium(15))
                     .foregroundColor(AppColors.textPrimary)
-                Text(qualityLabel(voice.quality))
-                    .font(AppFonts.caption(12))
-                    .foregroundColor(voice.quality == .premium ? AppColors.gold :
-                                     voice.quality == .enhanced ? AppColors.accent :
-                                     AppColors.textMuted)
+                HStack(spacing: 6) {
+                    Text(qualityLabel(voice.quality))
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(voice.quality == .premium ? AppColors.gold :
+                                         voice.quality == .enhanced ? AppColors.accent :
+                                         AppColors.textMuted)
+                    if selectedProvider == .edge {
+                        Text("· \(voice.accent)")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                }
             }
 
             Spacer()
@@ -100,7 +170,7 @@ struct VoiceSettingsView: View {
             }
             .buttonStyle(.plain)
 
-            if selectedVoiceID == voice.identifier {
+            if selectedVoiceID == voice.id {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 22))
                     .foregroundColor(AppColors.accent)
@@ -108,26 +178,23 @@ struct VoiceSettingsView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            selectedVoiceID = voice.identifier
+            selectedVoiceID = voice.id
         }
         .padding(.vertical, 2)
     }
 
-    private func qualityLabel(_ quality: AVSpeechSynthesisVoiceQuality) -> String {
+    private func qualityLabel(_ quality: VoiceOption.VoiceQuality) -> String {
         switch quality {
         case .premium: return "Premium"
         case .enhanced: return "Enhanced"
-        default: return "Default"
+        case .standard: return "Default"
         }
     }
 
-    private func previewVoice(_ voice: AVSpeechSynthesisVoice) {
-        previewSynthesizer.stopSpeaking(at: .immediate)
-        let utterance = AVSpeechUtterance(string: "Hi, I'm your AI assistant. How can I help you today?")
-        utterance.voice = voice
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.92
-        utterance.pitchMultiplier = 1.05
-        utterance.preUtteranceDelay = 0.1
-        previewSynthesizer.speak(utterance)
+    private func previewVoice(_ voice: VoiceOption) {
+        previewSynthesizer.stop()
+        previewSynthesizer.selectedProviderType = selectedProvider
+        previewSynthesizer.selectedVoiceIdentifier = voice.id
+        previewSynthesizer.speak("Hi, I'm your AI assistant. How can I help you today?")
     }
 }

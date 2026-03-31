@@ -160,6 +160,39 @@ enum AIPromptBuilder {
         return prompt
     }
 
+    // MARK: - Natural Language Task Parsing Prompt
+
+    static func taskParsingPrompt() -> String {
+        """
+        You are a task parser. The user will describe a task or event in natural language. \
+        Extract structured data and respond with ONLY a JSON object — no other text.
+
+        Today is \(formattedToday()).
+
+        JSON format:
+        {
+          "title": "string — concise task title",
+          "category": "Travel" | "Errand" | "Personal" | "Work" | "Health",
+          "priority": "High" | "Medium" | "Low",
+          "date": "YYYY-MM-DD",
+          "time": "HH:mm" (24-hour, or null if no time specified),
+          "icon": "single emoji that fits the task",
+          "notes": "any extra details from the input, or empty string",
+          "recurrence": "None" | "Daily" | "Weekly" | "Biweekly" | "Monthly"
+        }
+
+        Rules:
+        - Infer category from context (e.g. "gym" → Health, "meeting" → Work, "groceries" → Errand)
+        - Infer priority: deadlines/appointments → High, routine → Medium, nice-to-have → Low
+        - Resolve relative dates: "tomorrow" → tomorrow's date, "next Monday" → next Monday, "in 3 days" → 3 days from today
+        - If no date is given, use today's date
+        - If no time is given, set time to null
+        - Pick a fitting emoji icon
+        - Detect recurrence keywords: "every day", "weekly", "every month", etc.
+        - Respond with ONLY the JSON object, no markdown, no explanation
+        """
+    }
+
     // MARK: - Helpers
 
     private static func formattedToday() -> String {

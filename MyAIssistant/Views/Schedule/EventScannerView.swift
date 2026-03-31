@@ -284,9 +284,37 @@ struct EventScannerView: View {
         scanImage(data: data, mediaType: mediaType)
     }
 
+    /// Maximum image dimension and file size for Vision API calls.
+    /// Keeps API costs reasonable and prevents OOM on large photos.
+    private static let maxImageDimension: CGFloat = 1568
+    private static let maxImageBytes = 4 * 1024 * 1024 // 4 MB
+
+    private func constrainedImageData(_ data: Data, mediaType: String) -> (Data, String)? {
+        guard let image = UIImage(data: data) else { return nil }
+
+        let size = image.size
+        let needsResize = max(size.width, size.height) > Self.maxImageDimension || data.count > Self.maxImageBytes
+
+        guard needsResize else { return (data, mediaType) }
+
+        let scale = Self.maxImageDimension / max(size.width, size.height)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        guard let jpeg = resized.jpegData(compressionQuality: 0.7) else { return nil }
+        return (jpeg, "image/jpeg")
+    }
+
     private func scanImage(data: Data, mediaType: String) {
         guard let apiKey = keychainService.anthropicAPIKey(), !apiKey.isEmpty else {
             scanError = "No API key configured. Add your Claude API key in Settings."
+            return
+        }
+
+        guard let (constrainedData, constrainedType) = constrainedImageData(data, mediaType: mediaType) else {
+            scanError = "Could not process the image. Try a different one."
             return
         }
 
@@ -317,8 +345,8 @@ struct EventScannerView: View {
                     If the year is ambiguous, assume the next occurrence from today.
                     If no end time is clear, assume 1 hour after start.
                     """,
-                    imageData: data,
-                    mediaType: mediaType
+                    imageData: constrainedData,
+                    mediaType: constrainedType
                 )
 
                 await MainActor.run {

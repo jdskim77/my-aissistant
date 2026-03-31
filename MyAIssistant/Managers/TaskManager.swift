@@ -97,6 +97,13 @@ final class TaskManager: ObservableObject {
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
+    func findTask(byID id: String) -> TaskItem? {
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
     func allTasks() -> [TaskItem] {
         let descriptor = FetchDescriptor<TaskItem>(
             sortBy: [SortDescriptor(\TaskItem.date)]

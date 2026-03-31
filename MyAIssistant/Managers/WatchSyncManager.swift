@@ -105,14 +105,25 @@ extension WatchSyncManager: WCSessionDelegate {
         session.activate()
     }
 
-    /// Handle Watch requesting a fresh schedule update
+    /// Handle Watch requesting a fresh schedule update or toggling a task
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         if message["request"] as? String == "scheduleUpdate" {
             Task { @MainActor in
-                // Trigger a fresh sync — WatchSyncManager.shared is @MainActor
-                // The caller (e.g. app delegate or TaskManager) should call syncSchedule
-                // For now, post a notification that the app can observe
                 NotificationCenter.default.post(name: .watchRequestedUpdate, object: nil)
+            }
+        }
+        if let taskID = message["toggleTask"] as? String {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
+            }
+        }
+    }
+
+    /// Handle queued task toggles sent via transferUserInfo (when iPhone wasn't reachable)
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        if let taskID = userInfo["toggleTask"] as? String {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
     }
@@ -120,4 +131,5 @@ extension WatchSyncManager: WCSessionDelegate {
 
 extension Notification.Name {
     static let watchRequestedUpdate = Notification.Name("watchRequestedUpdate")
+    static let watchToggledTask = Notification.Name("watchToggledTask")
 }

@@ -1,8 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.subscriptionTier) private var tier
+    @Environment(\.modelContext) private var modelContext
     @State private var appeared = false
+    @State private var exportURL: URL?
+    @State private var showingExportShare = false
+    @State private var exportError: String?
 
     var body: some View {
         NavigationStack {
@@ -96,6 +101,17 @@ struct SettingsView: View {
                             subtitle: "Manage calendar connections"
                         )
                     }
+
+                    NavigationLink {
+                        HabitsView()
+                    } label: {
+                        settingsRow(
+                            icon: "leaf.fill",
+                            color: AppColors.completionGreen,
+                            title: "Habits",
+                            subtitle: "Track daily habits & streaks"
+                        )
+                    }
                 } header: {
                     Text("Preferences")
                 }
@@ -126,6 +142,30 @@ struct SettingsView: View {
                     Text("Opens iOS Settings to manage microphone, calendar, notification, and camera access.")
                 }
 
+                // Data & Privacy
+                Section {
+                    Button {
+                        do {
+                            let service = DataExportService(modelContext: modelContext)
+                            exportURL = try service.exportFileURL()
+                            showingExportShare = true
+                        } catch {
+                            exportError = error.localizedDescription
+                        }
+                    } label: {
+                        settingsRow(
+                            icon: "square.and.arrow.up",
+                            color: AppColors.completionGreen,
+                            title: "Export Data",
+                            subtitle: "Back up tasks, check-ins & chats"
+                        )
+                    }
+                } header: {
+                    Text("Data & Privacy")
+                } footer: {
+                    Text("Exports all your data as a JSON file you can save or share.")
+                }
+
                 // About
                 Section {
                     HStack {
@@ -152,7 +192,28 @@ struct SettingsView: View {
                     appeared = true
                 }
             }
+            .sheet(isPresented: $showingExportShare) {
+                if let url = exportURL {
+                    ShareSheet(items: [url])
+                }
+            }
+            .alert("Export Failed", isPresented: .init(
+                get: { exportError != nil },
+                set: { if !$0 { exportError = nil } }
+            )) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(exportError ?? "")
+            }
         }
+    }
+
+    private struct ShareSheet: UIViewControllerRepresentable {
+        let items: [Any]
+        func makeUIViewController(context: Context) -> UIActivityViewController {
+            UIActivityViewController(activityItems: items, applicationActivities: nil)
+        }
+        func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
     }
 
     private func settingsRow(icon: String, color: Color, title: String, subtitle: String) -> some View {

@@ -9,10 +9,12 @@ struct ScheduleView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var showingCalendarImport = false
     @State private var showingEventScanner = false
+    @State private var showingNLParser = false
     @State private var showingCheckIn = false
     @State private var checkInSlot: CheckInTime = .morning
     @State private var taskToReschedule: TaskItem?
     @State private var taskToDelete: TaskItem?
+    @State private var taskToFocus: TaskItem?
     @State private var rescheduleDate = Date()
 
     // Quick-add
@@ -126,6 +128,12 @@ struct ScheduleView: View {
         .sheet(isPresented: $showingEventScanner) {
             EventScannerView()
         }
+        .sheet(isPresented: $showingNLParser) {
+            NLTaskParserView()
+        }
+        .sheet(item: $taskToFocus) { task in
+            FocusTimerView(task: task)
+        }
         .sheet(item: $taskToReschedule) { task in
             rescheduleSheet(for: task)
         }
@@ -167,6 +175,19 @@ struct ScheduleView: View {
             }
 
             Spacer()
+
+            Button {
+                Haptics.light()
+                showingNLParser = true
+            } label: {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 44, height: 44)
+                    .background(AppColors.accentLight)
+                    .cornerRadius(12)
+            }
+            .accessibilityLabel("Add task with AI")
 
             Button {
                 Haptics.light()
@@ -276,37 +297,33 @@ struct ScheduleView: View {
             // Content
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    if !isCalendarEvent {
-                        // Checkbox
-                        Button {
-                            Haptics.success()
-                            withAnimation(.spring(response: 0.3)) {
-                                taskManager?.toggleCompletion(task)
-                            }
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .stroke(task.done ? AppColors.completionGreen : AppColors.checkboxColor(task.priority), lineWidth: 2)
-                                    .frame(width: 22, height: 22)
-                                if task.done {
-                                    Circle()
-                                        .fill(AppColors.completionGreen)
-                                        .frame(width: 22, height: 22)
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .frame(width: 36, height: 36)
-                            .contentShape(Rectangle())
+                    // Checkbox (tasks and calendar events)
+                    Button {
+                        Haptics.success()
+                        withAnimation(.spring(response: 0.3)) {
+                            taskManager?.toggleCompletion(task)
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(AppColors.skyBlue)
-                            .frame(width: 36, height: 36)
+                    } label: {
+                        ZStack {
+                            let color = isCalendarEvent
+                                ? (task.done ? AppColors.completionGreen : AppColors.skyBlue)
+                                : (task.done ? AppColors.completionGreen : AppColors.checkboxColor(task.priority))
+                            Circle()
+                                .stroke(color, lineWidth: 2)
+                                .frame(width: 22, height: 22)
+                            if task.done {
+                                Circle()
+                                    .fill(color)
+                                    .frame(width: 22, height: 22)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(task.title)
@@ -360,6 +377,15 @@ struct ScheduleView: View {
                 Label("Reschedule", systemImage: "calendar.badge.clock")
             }
             .tint(AppColors.skyBlue)
+            if !task.done {
+                Button {
+                    Haptics.light()
+                    taskToFocus = task
+                } label: {
+                    Label("Focus", systemImage: "timer")
+                }
+                .tint(AppColors.accentWarm)
+            }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {

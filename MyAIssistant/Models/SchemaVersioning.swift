@@ -21,7 +21,9 @@ enum SchemaV1: VersionedSchema {
             UsageTracker.self,
             CalendarLink.self,
             ActivityEntry.self,
-            AlarmEntry.self
+            AlarmEntry.self,
+            FocusSession.self,
+            HabitItem.self
         ]
     }
 }

@@ -30,6 +30,7 @@ enum AppConstants {
     // MARK: - UserDefaults Keys (Voice)
     static let voiceModeDefaultKey = "voiceModeDefault"
     static let selectedVoiceIDKey = "selectedVoiceID"
+    static let voiceProviderKey = "voiceProvider"
 
     // MARK: - UserDefaults Keys (Theme)
     static let appThemeKey = "appTheme"

@@ -1,5 +1,6 @@
 #if os(watchOS)
 import SwiftUI
+import WatchKit
 
 struct WatchTodayView: View {
     var connectivity: WatchConnectivityManager
@@ -133,14 +134,39 @@ struct WatchTodayView: View {
                     .foregroundColor(.accentColor)
             }
 
-            Text(task.title)
-                .font(.headline)
-                .lineLimit(2)
+            HStack(spacing: 8) {
+                Button {
+                    WKInterfaceDevice.current().play(.success)
+                    connectivity.toggleTaskCompletion(task.id)
+                } label: {
+                    ZStack {
+                        Circle()
+                            .stroke(task.done ? Color.green : Color.accentColor, lineWidth: 2)
+                            .frame(width: 22, height: 22)
+                        if task.done {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 22, height: 22)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
 
-            if task.hasTime {
-                Text(task.timeString)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title)
+                        .font(.headline)
+                        .lineLimit(2)
+                        .strikethrough(task.done)
+
+                    if task.hasTime {
+                        Text(task.timeString)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
         }
         .padding(10)
@@ -155,9 +181,25 @@ struct WatchTodayView: View {
 
     private func taskRow(_ task: WatchScheduleData.WatchTask) -> some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(priorityColor(task.priorityRaw))
-                .frame(width: 8, height: 8)
+            Button {
+                WKInterfaceDevice.current().play(.success)
+                connectivity.toggleTaskCompletion(task.id)
+            } label: {
+                ZStack {
+                    Circle()
+                        .stroke(task.done ? Color.green : priorityColor(task.priorityRaw), lineWidth: 2)
+                        .frame(width: 20, height: 20)
+                    if task.done {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 20, height: 20)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)

@@ -72,6 +72,7 @@ struct MyAIssistantApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .withErrorBoundary()
                 .id(themeManager.themeID)
                 .preferredColorScheme(themeManager.selectedTheme.isDark ? .dark : .light)
                 .environment(\.taskManager, taskManager)
@@ -95,6 +96,12 @@ struct MyAIssistantApp: App {
                     // Sync schedule + API key to Watch on every launch
                     taskManager.updateWidgetData()
                     WatchSyncManager.shared.syncAPIKey()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchToggledTask)) { notification in
+                    guard let taskID = notification.userInfo?["taskID"] as? String else { return }
+                    if let task = taskManager.findTask(byID: taskID) {
+                        taskManager.toggleCompletion(task)
+                    }
                 }
         }
         .modelContainer(modelContainer)

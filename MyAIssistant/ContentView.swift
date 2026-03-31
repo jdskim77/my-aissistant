@@ -10,6 +10,8 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .home
     @State private var onboardingComplete = false
     @State private var showingChat = false
+    @State private var showingFocusTimer = false
+    @State private var focusDuration = 25
 
     private var hasCompletedOnboarding: Bool {
         profiles.first?.onboardingCompleted ?? false
@@ -53,6 +55,15 @@ struct ContentView: View {
         .tint(AppColors.accent)
         .fullScreenCover(isPresented: $showingChat) {
             ChatView(onDismiss: { showingChat = false })
+        }
+        .sheet(isPresented: $showingFocusTimer) {
+            FocusTimerView(workMinutes: focusDuration)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .startFocusSession)) { notification in
+            if let duration = notification.userInfo?["duration"] as? Int {
+                focusDuration = duration
+            }
+            showingFocusTimer = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .didTapNotification)) { notification in
             guard let destination = notification.userInfo?["destination"] as? String else { return }

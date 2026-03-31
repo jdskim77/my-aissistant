@@ -11,7 +11,12 @@ enum TestModelContainer {
             CheckInRecord.self,
             DailySnapshot.self,
             UserProfile.self,
-            UsageTracker.self
+            UsageTracker.self,
+            CalendarLink.self,
+            ActivityEntry.self,
+            AlarmEntry.self,
+            FocusSession.self,
+            HabitItem.self
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])

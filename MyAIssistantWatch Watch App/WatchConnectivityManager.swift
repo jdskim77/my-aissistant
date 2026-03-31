@@ -52,6 +52,48 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         WCSession.default.sendMessage(["request": "scheduleUpdate"], replyHandler: nil)
     }
 
+    /// Send a task completion toggle to the iPhone for processing.
+    func toggleTaskCompletion(_ taskID: String) {
+        // Optimistically update local state
+        if var data = scheduleData {
+            let updatedTasks = data.tasks.map { task -> WatchScheduleData.WatchTask in
+                guard task.id == taskID else { return task }
+                return WatchScheduleData.WatchTask(
+                    id: task.id,
+                    title: task.title,
+                    date: task.date,
+                    priorityRaw: task.priorityRaw,
+                    categoryRaw: task.categoryRaw,
+                    done: !task.done,
+                    isCalendarEvent: task.isCalendarEvent,
+                    recurrenceRaw: task.recurrenceRaw
+                )
+            }
+            let toggled = updatedTasks.first { $0.id == taskID }
+            let completedDelta = (toggled?.done == true) ? 1 : -1
+            let updated = WatchScheduleData(
+                tasks: updatedTasks,
+                streakDays: data.streakDays,
+                completedToday: max(0, data.completedToday + completedDelta),
+                totalToday: data.totalToday,
+                quoteText: data.quoteText,
+                quoteAuthor: data.quoteAuthor,
+                nextCheckIn: data.nextCheckIn,
+                updatedAt: Date()
+            )
+            persistAndUpdate(updated)
+        }
+
+        // Send to iPhone
+        let message: [String: Any] = ["toggleTask": taskID]
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        } else {
+            // Use transferUserInfo as fallback for when iPhone isn't reachable
+            WCSession.default.transferUserInfo(message)
+        }
+    }
+
     // MARK: - Persistence
 
     private static let apiKeyAccount = "com.myaissistant.watch-api-key"
