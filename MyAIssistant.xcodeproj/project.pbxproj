@@ -121,6 +121,24 @@
 		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
 		AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000 /* MyAIssistantWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
+		7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
+		51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B94FBDE7397641F976C27E /* HabitItem.swift */; };
+		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
+		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
+		00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */; };
+		A7DACD21E9452B2DEA4328EC /* VoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40918E7E964CE5CEC38F191B /* VoiceProvider.swift */; };
+		6BA75D17B68D641674ADDAC5 /* ErrorBoundary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B926BB655C77BB678211F85 /* ErrorBoundary.swift */; };
+		0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C847075057F68B9E39C52A /* NLTaskParserView.swift */; };
+		6E36D169BBE4C9EC99A2444B /* AddTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */; };
+		A7738B37A1572A605522039B /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */; };
+		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
+		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
+		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */; };
+		B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */; };
+		C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */; };
+		5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */; };
+		6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9C0B175716E6DC712AF766 /* HabitFormView.swift */; };
+		A8A62D0788AB8113AB70DB92 /* HabitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DAF4C57CDAFC86BF968C4F3 /* HabitsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -303,6 +321,24 @@
 		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C4EC24E793485FD28F82D50E /* FocusSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
+		34B94FBDE7397641F976C27E /* HabitItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitItem.swift; sourceTree = "<group>"; };
+		C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportService.swift; sourceTree = "<group>"; };
+		53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleVoiceProvider.swift; sourceTree = "<group>"; };
+		B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EdgeVoiceProvider.swift; sourceTree = "<group>"; };
+		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
+		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
+		C5C847075057F68B9E39C52A /* NLTaskParserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLTaskParserView.swift; sourceTree = "<group>"; };
+		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
+		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
+		9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentModelContainer.swift; sourceTree = "<group>"; };
+		B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyStatsIntent.swift; sourceTree = "<group>"; };
+		C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartFocusIntent.swift; sourceTree = "<group>"; };
+		C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayScheduleIntent.swift; sourceTree = "<group>"; };
+		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
+		E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusTimerView.swift; sourceTree = "<group>"; };
+		6A9C0B175716E6DC712AF766 /* HabitFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitFormView.swift; sourceTree = "<group>"; };
+		3DAF4C57CDAFC86BF968C4F3 /* HabitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -413,7 +449,10 @@
 				B500000001000000 /* CalendarLink.swift */,
 				BE00000001000000 /* ActivityEntry.swift */,
 				BF00000001000000 /* AlarmEntry.swift */,
+				C4EC24E793485FD28F82D50E /* FocusSession.swift */,
+				34B94FBDE7397641F976C27E /* HabitItem.swift */,
 				BF00000002000000 /* SchemaVersioning.swift */,
+				E736BF73938CEE64F4C4C6B5 /* Intents */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -439,6 +478,7 @@
 				D500000001000000 /* Calendar */,
 				D600000001000000 /* StoreKit */,
 				DC00000001000000 /* Speech */,
+				C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -454,6 +494,8 @@
 				D100000013000000 /* Chat */,
 				D400000001000000 /* Onboarding */,
 				D500000002000000 /* Settings */,
+				EFAC014373457DBAE7937331 /* Focus */,
+				3B4A6C51FA5F00EF5D88E395 /* Habits */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -463,6 +505,7 @@
 			children = (
 				B100000012000000 /* TaskCard.swift */,
 				B100000013000000 /* StatCard.swift */,
+				2B926BB655C77BB678211F85 /* ErrorBoundary.swift */,
 				B600000008000000 /* PaywallCard.swift */,
 				B800000002000000 /* EmptyStateView.swift */,
 				B800000003000000 /* LoadingView.swift */,
@@ -488,6 +531,7 @@
 				B100000015000000 /* ScheduleView.swift */,
 				B500000005000000 /* CalendarImportView.swift */,
 				B500000007000000 /* EventScannerView.swift */,
+				C5C847075057F68B9E39C52A /* NLTaskParserView.swift */,
 				B500000008000000 /* DayTickerView.swift */,
 				B800000004000000 /* TaskDetailView.swift */,
 			);
@@ -704,6 +748,9 @@
 			children = (
 				BC00000001000000 /* SpeechRecognizer.swift */,
 				BC00000003000000 /* SpeechSynthesizer.swift */,
+				53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */,
+				B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */,
+				40918E7E964CE5CEC38F191B /* VoiceProvider.swift */,
 				BD00000002000000 /* VariedGreetingBuilder.swift */,
 			);
 			path = Speech;
@@ -720,6 +767,37 @@
 				BW00000005000000 /* WidgetData.swift */,
 			);
 			path = MyAIssistantWidgets;
+			sourceTree = "<group>";
+		};
+		E736BF73938CEE64F4C4C6B5 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */,
+				1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */,
+				9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */,
+				B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */,
+				C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */,
+				C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */,
+				0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		EFAC014373457DBAE7937331 /* Focus */ = {
+			isa = PBXGroup;
+			children = (
+				E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */,
+			);
+			path = Focus;
+			sourceTree = "<group>";
+		};
+		3B4A6C51FA5F00EF5D88E395 /* Habits */ = {
+			isa = PBXGroup;
+			children = (
+				6A9C0B175716E6DC712AF766 /* HabitFormView.swift */,
+				3DAF4C57CDAFC86BF968C4F3 /* HabitsView.swift */,
+			);
+			path = Habits;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1058,6 +1136,25 @@
 				AF00000001000000 /* AlarmEntry.swift in Sources */,
 				AF00000002000000 /* SchemaVersioning.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
+			
+				7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */,
+				51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */,
+				7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */,
+				820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */,
+				00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */,
+				A7DACD21E9452B2DEA4328EC /* VoiceProvider.swift in Sources */,
+				6BA75D17B68D641674ADDAC5 /* ErrorBoundary.swift in Sources */,
+				0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */,
+				6E36D169BBE4C9EC99A2444B /* AddTaskIntent.swift in Sources */,
+				A7738B37A1572A605522039B /* AppShortcuts.swift in Sources */,
+				E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */,
+				1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */,
+				A95B541D257444769356150C /* StartFocusIntent.swift in Sources */,
+				B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */,
+				C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */,
+				5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */,
+				6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */,
+				A8A62D0788AB8113AB70DB92 /* HabitsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
