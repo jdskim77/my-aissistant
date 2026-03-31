@@ -9,29 +9,32 @@ struct AddTaskIntent: AppIntent {
     @Parameter(title: "Title")
     var title: String
 
-    @Parameter(title: "Date", default: Date())
-    var date: Date
+    @Parameter(title: "Date")
+    var date: Date?
 
-    @Parameter(title: "Priority", default: .medium)
-    var priority: TaskPriorityEnum
+    @Parameter(title: "Priority")
+    var priority: TaskPriorityEnum?
 
-    @Parameter(title: "Category", default: .personal)
-    var category: TaskCategoryEnum
+    @Parameter(title: "Category")
+    var category: TaskCategoryEnum?
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let context = IntentModelContainer.shared.mainContext
+        let resolvedDate = date ?? Date()
+        let resolvedPriority = (priority ?? .medium).toModel
+        let resolvedCategory = (category ?? .personal).toModel
         let task = TaskItem(
             title: title,
-            category: category.toModel,
-            priority: priority.toModel,
-            date: date,
-            icon: category.toModel.icon
+            category: resolvedCategory,
+            priority: resolvedPriority,
+            date: resolvedDate,
+            icon: resolvedCategory.icon
         )
         context.insert(task)
         try? context.save()
 
-        let dateStr = date.formatted(date: .abbreviated, time: .shortened)
+        let dateStr = resolvedDate.formatted(date: .abbreviated, time: .shortened)
         return .result(dialog: "Added \"\(title)\" on \(dateStr).")
     }
 }

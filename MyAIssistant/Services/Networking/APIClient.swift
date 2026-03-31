@@ -56,7 +56,7 @@ actor APIClient {
 
     // MARK: - Rate Limiting
 
-    private mutating func consumeToken() async throws {
+    private func consumeToken() async throws {
         refillTokens()
         if tokens > 0 {
             tokens -= 1
@@ -71,7 +71,7 @@ actor APIClient {
         tokens -= 1
     }
 
-    private mutating func refillTokens() {
+    private func refillTokens() {
         let now = Date()
         let elapsed = now.timeIntervalSince(lastRefill)
         let refillCount = Int(elapsed / refillInterval)
