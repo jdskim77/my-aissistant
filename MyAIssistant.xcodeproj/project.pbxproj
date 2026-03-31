@@ -429,6 +429,7 @@
 				D100000005000000 /* Services */,
 				D100000006000000 /* Views */,
 				D200000003000000 /* Utilities */,
+				E736BF73938CEE64F4C4C6B5 /* Intents */,
 			);
 			path = MyAIssistant;
 			sourceTree = "<group>";
@@ -452,7 +453,6 @@
 				C4EC24E793485FD28F82D50E /* FocusSession.swift */,
 				34B94FBDE7397641F976C27E /* HabitItem.swift */,
 				BF00000002000000 /* SchemaVersioning.swift */,
-				E736BF73938CEE64F4C4C6B5 /* Intents */,
 			);
 			path = Models;
 			sourceTree = "<group>";
