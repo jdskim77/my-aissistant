@@ -3,53 +3,70 @@ import SwiftData
 
 struct DataSeeder {
     static func seedIfEmpty(context: ModelContext) {
-        #if !DEBUG
-        // Only seed sample data in debug builds — real users start with a clean slate
-        return
-        #else
         let descriptor = FetchDescriptor<TaskItem>()
         let existingCount = (try? context.fetchCount(descriptor)) ?? 0
         guard existingCount == 0 else { return }
 
-        // Seed sample tasks centered around February 2026 Dubai trip
+        seedStarterData(context: context)
+    }
+
+    // MARK: - Starter Data
+    // Give new users clearly-labelled example tasks so the app feels alive
+    // but they know these are samples they can delete.
+
+    private static func seedStarterData(context: ModelContext) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
+
         let tasks = [
-            // Completed
-            TaskItem(title: "Book flights", category: .travel, priority: .high, date: Date.from(month: 2, day: 3), done: true, icon: "✈️", notes: "LAX to DXB, Emirates"),
-            TaskItem(title: "Renew passport", category: .errand, priority: .high, date: Date.from(month: 2, day: 5), done: true, icon: "📘", notes: "Expedited processing"),
-            TaskItem(title: "Book hotel", category: .travel, priority: .high, date: Date.from(month: 2, day: 6), done: true, icon: "🏨", notes: "Atlantis The Palm, 5 nights"),
-
-            // Today-ish
-            TaskItem(title: "Book airport transfer", category: .travel, priority: .high, date: Date.from(month: 2, day: 16), icon: "🚐", notes: "Private car to LAX"),
-            TaskItem(title: "Pick up travel insurance", category: .errand, priority: .high, date: Date.from(month: 2, day: 16), icon: "📋", notes: "Coverage for Feb 15-20"),
-
-            // Upcoming
-            TaskItem(title: "Exchange currency", category: .errand, priority: .high, date: Date.from(month: 2, day: 17), icon: "💱", notes: "USD to AED, ~2000"),
-            TaskItem(title: "Pack luggage", category: .travel, priority: .high, date: Date.from(month: 2, day: 18), icon: "🧳", notes: "Check weather forecast first"),
-            TaskItem(title: "Depart for Dubai", category: .travel, priority: .high, date: Date.from(month: 2, day: 19), icon: "🛫", notes: "Flight EK 216, 4:25 PM"),
-            TaskItem(title: "Desert safari", category: .travel, priority: .medium, date: Date.from(month: 2, day: 21), icon: "🏜️", notes: "Evening tour with dinner"),
-            TaskItem(title: "Return flight", category: .travel, priority: .high, date: Date.from(month: 2, day: 24), icon: "🛬", notes: "Flight EK 215, 2:10 AM"),
-            TaskItem(title: "Grocery run", category: .errand, priority: .medium, date: Date.from(month: 2, day: 25), icon: "🛒", notes: "Restock after trip"),
-            TaskItem(title: "Pay bills", category: .errand, priority: .high, date: Date.from(month: 2, day: 27), icon: "💳", notes: "Rent + utilities"),
-            TaskItem(title: "Car service", category: .errand, priority: .medium, date: Date.from(month: 3, day: 1), icon: "🔧", notes: "Oil change + inspection"),
+            // Today — mix of priorities and times
+            TaskItem(
+                title: "Example: Morning workout",
+                category: .health,
+                priority: .medium,
+                date: calendar.date(bySettingHour: 7, minute: 30, second: 0, of: today) ?? today,
+                icon: "🏃",
+                notes: "This is a sample task — swipe left to delete it, or tap to edit."
+            ),
+            TaskItem(
+                title: "Example: Team standup",
+                category: .work,
+                priority: .high,
+                date: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: today) ?? today,
+                icon: "💼",
+                notes: "Sample task. Try checking it off with the circle on the left!"
+            ),
+            TaskItem(
+                title: "Example: Pick up groceries",
+                category: .errand,
+                priority: .low,
+                date: calendar.date(bySettingHour: 17, minute: 0, second: 0, of: today) ?? today,
+                icon: "🛒",
+                notes: "Sample task. Add your own tasks using the + button in Schedule."
+            ),
+            // Tomorrow — so the schedule isn't empty when they swipe
+            TaskItem(
+                title: "Example: Project deadline",
+                category: .work,
+                priority: .high,
+                date: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: tomorrow) ?? tomorrow,
+                icon: "📋",
+                notes: "Sample task for tomorrow. Try the AI assistant — tap the mic on your tab bar!"
+            ),
+            TaskItem(
+                title: "Example: Call dentist",
+                category: .errand,
+                priority: .medium,
+                date: calendar.date(bySettingHour: 14, minute: 0, second: 0, of: tomorrow) ?? tomorrow,
+                icon: "📞",
+                notes: "Sample task. Connect your calendar in Settings to import real events."
+            ),
         ]
 
         for task in tasks {
             context.insert(task)
         }
-
-        // Seed some check-in records for pattern display
-        let calendar = Calendar.current
-        for dayOffset in 1...6 {
-            let date = calendar.safeDate(byAdding: .day, value: -dayOffset, to: Date())
-            let record = CheckInRecord(
-                timeSlot: .morning,
-                date: date,
-                completed: dayOffset != 3  // skip one day for variety
-            )
-            context.insert(record)
-        }
-
         try? context.save()
-        #endif
     }
 }
