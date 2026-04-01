@@ -8,7 +8,7 @@ import SwiftUI
 final class CalendarSyncManager: ObservableObject {
     private let modelContext: ModelContext
     let eventKitService = EventKitService()
-    let googleService = GoogleCalendarService()
+    let googleService: GoogleCalendarService
 
     @Published var appleCalendars: [EKCalendar] = []
     @Published var googleCalendars: [GoogleCalendar] = []
@@ -17,10 +17,9 @@ final class CalendarSyncManager: ObservableObject {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        // Load stored Google client ID
-        if let storedID = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey), !storedID.isEmpty {
-            Task { await googleService.updateClientID(storedID) }
-        }
+        // Load stored Google client ID synchronously at init — no race condition
+        let storedID = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
+        self.googleService = GoogleCalendarService(clientID: storedID)
     }
 
     func setGoogleClientID(_ clientID: String) {
