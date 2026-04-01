@@ -17,9 +17,10 @@ final class CalendarSyncManager: ObservableObject {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        // Load stored Google client ID synchronously at init — no race condition
+        // Use stored client ID if user set one, otherwise fall back to bundled default
         let storedID = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
-        self.googleService = GoogleCalendarService(clientID: storedID)
+        let clientID = storedID.isEmpty ? AppConstants.googleClientID : storedID
+        self.googleService = GoogleCalendarService(clientID: clientID)
     }
 
     func setGoogleClientID(_ clientID: String) {

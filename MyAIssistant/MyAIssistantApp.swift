@@ -93,15 +93,39 @@ struct MyAIssistantApp: App {
                     backgroundTaskManager?.scheduleWeeklyReview()
                     backgroundTaskManager?.scheduleCalendarSync()
 
-                    // Sync schedule + API key to Watch on every launch
-                    taskManager.updateWidgetData()
+                    // Initialize WatchSyncManager early so WCSession can activate
+                    _ = WatchSyncManager.shared
+                    // Short delay to let WCSession finish activating before sending data
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    // Sync schedule + API key to Watch
                     WatchSyncManager.shared.syncAPIKey()
+                    taskManager.updateWidgetData()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .watchToggledTask)) { notification in
                     guard let taskID = notification.userInfo?["taskID"] as? String else { return }
                     if let task = taskManager.findTask(byID: taskID) {
                         taskManager.toggleCompletion(task)
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchRequestedUpdate)) { _ in
+                    taskManager.updateWidgetData()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchAddedTask)) { notification in
+                    guard let info = notification.userInfo,
+                          let title = info["title"] as? String,
+                          let priorityRaw = info["priority"] as? String,
+                          let dateInterval = info["date"] as? TimeInterval else { return }
+
+                    let date = Date(timeIntervalSince1970: dateInterval)
+                    let priority = TaskPriority(rawValue: priorityRaw) ?? .medium
+                    let task = TaskItem(
+                        title: title,
+                        category: .personal,
+                        priority: priority,
+                        date: date,
+                        icon: "📝"
+                    )
+                    taskManager.addTask(task)
                 }
         }
         .modelContainer(modelContainer)

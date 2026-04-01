@@ -52,6 +52,47 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         WCSession.default.sendMessage(["request": "scheduleUpdate"], replyHandler: nil)
     }
 
+    /// Send a new task to iPhone for creation.
+    func addTask(title: String, priority: String, date: Date, hasTime: Bool) {
+        let message: [String: Any] = [
+            "addTask": true,
+            "title": title,
+            "priority": priority,
+            "date": date.timeIntervalSince1970,
+            "hasTime": hasTime
+        ]
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        } else {
+            WCSession.default.transferUserInfo(message)
+        }
+
+        // Optimistically add to local schedule
+        if var data = scheduleData {
+            let newTask = WatchScheduleData.WatchTask(
+                id: UUID().uuidString,
+                title: title,
+                date: date,
+                priorityRaw: priority,
+                categoryRaw: "Personal",
+                done: false,
+                isCalendarEvent: false,
+                recurrenceRaw: nil
+            )
+            let updated = WatchScheduleData(
+                tasks: (data.tasks + [newTask]).sorted { $0.date < $1.date },
+                streakDays: data.streakDays,
+                completedToday: data.completedToday,
+                totalToday: data.totalToday + 1,
+                quoteText: data.quoteText,
+                quoteAuthor: data.quoteAuthor,
+                nextCheckIn: data.nextCheckIn,
+                updatedAt: Date()
+            )
+            persistAndUpdate(updated)
+        }
+    }
+
     /// Send a task completion toggle to the iPhone for processing.
     func toggleTaskCompletion(_ taskID: String) {
         // Optimistically update local state

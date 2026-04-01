@@ -257,7 +257,7 @@ struct WatchTodayView: View {
                 .foregroundColor(.orange)
             Text("No tasks today")
                 .font(.headline)
-            Text("Add tasks on your iPhone")
+            Text("Tap + to add a task")
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }

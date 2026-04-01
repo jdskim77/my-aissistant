@@ -7,6 +7,9 @@ import WatchConnectivity
 final class WatchSyncManager: NSObject, ObservableObject {
     static let shared = WatchSyncManager()
     private var session: WCSession?
+    private var isActivated = false
+    /// Pending sync to fire once session activates
+    private var pendingSync: (() -> Void)?
 
     override init() {
         super.init()
@@ -19,7 +22,8 @@ final class WatchSyncManager: NSObject, ObservableObject {
 
     /// Send API key to Watch so it can make direct Claude API calls.
     func syncAPIKey() {
-        guard let session, session.isPaired, session.isWatchAppInstalled else { return }
+        guard let session else { return }
+        guard isActivated, session.isPaired, session.isWatchAppInstalled else { return }
         let keychain = KeychainService()
         guard let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty else { return }
         let message = ["apiKey": apiKey]
@@ -41,7 +45,17 @@ final class WatchSyncManager: NSObject, ObservableObject {
         quoteText: String?,
         quoteAuthor: String?
     ) {
-        guard let session, session.isPaired, session.isWatchAppInstalled else { return }
+        guard let session else { return }
+
+        // If session hasn't activated yet, queue this sync for later
+        guard isActivated else {
+            pendingSync = { [weak self] in
+                self?.syncSchedule(tasks: tasks, streak: streak, quoteText: quoteText, quoteAuthor: quoteAuthor)
+            }
+            return
+        }
+
+        guard session.isPaired, session.isWatchAppInstalled else { return }
 
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: Date())
@@ -99,13 +113,21 @@ final class WatchSyncManager: NSObject, ObservableObject {
 // MARK: - WCSessionDelegate
 
 extension WatchSyncManager: WCSessionDelegate {
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if activationState == .activated {
+            Task { @MainActor in
+                self.isActivated = true
+                self.pendingSync?()
+                self.pendingSync = nil
+            }
+        }
+    }
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
     }
 
-    /// Handle Watch requesting a fresh schedule update or toggling a task
+    /// Handle Watch requesting a fresh schedule update, toggling a task, or adding a task
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         if message["request"] as? String == "scheduleUpdate" {
             Task { @MainActor in
@@ -117,13 +139,23 @@ extension WatchSyncManager: WCSessionDelegate {
                 NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
+        if message["addTask"] as? Bool == true {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: message)
+            }
+        }
     }
 
-    /// Handle queued task toggles sent via transferUserInfo (when iPhone wasn't reachable)
+    /// Handle queued messages sent via transferUserInfo (when iPhone wasn't reachable)
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         if let taskID = userInfo["toggleTask"] as? String {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
+            }
+        }
+        if userInfo["addTask"] as? Bool == true {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: userInfo)
             }
         }
     }
@@ -132,4 +164,5 @@ extension WatchSyncManager: WCSessionDelegate {
 extension Notification.Name {
     static let watchRequestedUpdate = Notification.Name("watchRequestedUpdate")
     static let watchToggledTask = Notification.Name("watchToggledTask")
+    static let watchAddedTask = Notification.Name("watchAddedTask")
 }

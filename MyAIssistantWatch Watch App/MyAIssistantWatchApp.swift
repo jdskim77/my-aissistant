@@ -7,12 +7,23 @@ import AppIntents
 struct MyAIssistantWatchApp: App {
     private var connectivityManager = WatchConnectivityManager.shared
     @State private var showVoiceChat = false
+    @State private var showAddTask = false
 
     var body: some Scene {
         WindowGroup {
             NavigationStack {
                 WatchTodayView(connectivity: connectivityManager)
                     .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                showAddTask = true
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.green)
+                            }
+                            .accessibilityLabel("Add Task")
+                        }
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 showVoiceChat = true
@@ -26,6 +37,9 @@ struct MyAIssistantWatchApp: App {
                     }
                     .navigationDestination(isPresented: $showVoiceChat) {
                         WatchVoiceChatView(connectivity: connectivityManager)
+                    }
+                    .navigationDestination(isPresented: $showAddTask) {
+                        WatchAddTaskView(connectivity: connectivityManager)
                     }
             }
             .onChange(of: connectivityManager.shouldOpenVoiceChat) { _, shouldOpen in

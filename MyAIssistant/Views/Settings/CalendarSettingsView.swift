@@ -4,13 +4,24 @@ import AuthenticationServices
 struct CalendarSettingsView: View {
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @State private var showingImport = false
-    @State private var googleClientID: String = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
+    @State private var googleClientID: String = {
+        let stored = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
+        return stored.isEmpty ? AppConstants.googleClientID : stored
+    }()
     @State private var showClientID = false
     @State private var clientIDSaved = false
     @State private var isGoogleConnected = false
     @State private var isSigningInGoogle = false
     @State private var googleAuthError: String?
     @State private var showingGoogleSignOutConfirm = false
+    @State private var showingGoogleDisconnectConfirm = false
+    @State private var syncResult: SyncResult?
+    @State private var syncStartTime: Date?
+
+    private enum SyncResult: Equatable {
+        case success(String)
+        case error(String)
+    }
 
     var body: some View {
         List {
@@ -234,7 +245,7 @@ struct CalendarSettingsView: View {
                 }
 
                 Button {
-                    Task { await calendarSyncManager?.syncAll() }
+                    Task { await performSync() }
                 } label: {
                     HStack(spacing: 10) {
                         if calendarSyncManager?.isSyncing == true {
@@ -244,14 +255,54 @@ struct CalendarSettingsView: View {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .foregroundColor(AppColors.accent)
                         }
-                        Text("Sync Now")
+                        Text(calendarSyncManager?.isSyncing == true ? "Syncing…" : "Sync Now")
                             .font(AppFonts.bodyMedium(15))
                             .foregroundColor(AppColors.accent)
                     }
                 }
                 .disabled(calendarSyncManager?.isSyncing == true)
+
+                if let syncResult {
+                    HStack(spacing: 8) {
+                        switch syncResult {
+                        case .success(let message):
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(AppColors.accentWarm)
+                            Text(message)
+                                .font(AppFonts.caption(13))
+                                .foregroundColor(AppColors.accentWarm)
+                        case .error(let message):
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.coral)
+                            Text(message)
+                                .font(AppFonts.caption(13))
+                                .foregroundColor(AppColors.coral)
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             } header: {
                 Text("Actions")
+            }
+
+            // Disconnect Google
+            if isGoogleConnected || !googleClientID.isEmpty {
+                Section {
+                    Button(role: .destructive) {
+                        showingGoogleDisconnectConfirm = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "xmark.circle")
+                                .foregroundColor(AppColors.coral)
+                            Text("Disconnect Google Calendar")
+                                .font(AppFonts.bodyMedium(15))
+                                .foregroundColor(AppColors.coral)
+                        }
+                    }
+                } footer: {
+                    Text("Signs out, removes linked Google calendars, and clears your Client ID. Synced events already in the app are kept.")
+                        .font(AppFonts.caption(11))
+                }
             }
 
             // Info
@@ -290,6 +341,79 @@ struct CalendarSettingsView: View {
         } message: {
             Text("Your Google Calendar events will no longer sync.")
         }
+        .alert("Disconnect Google Calendar?", isPresented: $showingGoogleDisconnectConfirm) {
+            Button("Disconnect", role: .destructive) {
+                Task { await disconnectGoogle() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will sign out, remove all linked Google calendars, and clear your Client ID. Events already synced to your schedule will be kept.")
+        }
+    }
+
+    // MARK: - Sync
+
+    private func performSync() async {
+        guard let syncManager = calendarSyncManager else { return }
+
+        syncResult = nil
+        Haptics.light()
+
+        let enabledCount = syncManager.enabledCalendarLinks().count
+        guard enabledCount > 0 else {
+            syncResult = .error("No calendars linked — tap Manage Calendars first")
+            Haptics.medium()
+            autoClearSyncResult()
+            return
+        }
+
+        await syncManager.syncAll()
+
+        if let error = syncManager.lastError {
+            syncResult = .error("Sync failed: \(error)")
+            Haptics.medium()
+        } else {
+            let plural = enabledCount == 1 ? "calendar" : "calendars"
+            syncResult = .success("Synced \(enabledCount) \(plural) just now")
+            Haptics.success()
+        }
+
+        withAnimation(.snappy(duration: 0.25)) {}
+        autoClearSyncResult()
+    }
+
+    private func autoClearSyncResult() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            withAnimation(.smooth(duration: 0.3)) {
+                syncResult = nil
+            }
+        }
+    }
+
+    // MARK: - Disconnect
+
+    private func disconnectGoogle() async {
+        guard let syncManager = calendarSyncManager else { return }
+
+        // Sign out of Google
+        await syncManager.googleService.signOut()
+
+        // Remove all linked Google calendars
+        let googleLinks = syncManager.linkedCalendars().filter { $0.source == CalendarSource.google.rawValue }
+        for link in googleLinks {
+            syncManager.unlinkCalendar(link)
+        }
+
+        // Clear the stored client ID
+        googleClientID = ""
+        UserDefaults.standard.removeObject(forKey: AppConstants.googleClientIDKey)
+        await syncManager.googleService.updateClientID("")
+
+        // Reset state
+        syncManager.googleCalendars = []
+        isGoogleConnected = false
+
+        Haptics.success()
     }
 
     // MARK: - Computed

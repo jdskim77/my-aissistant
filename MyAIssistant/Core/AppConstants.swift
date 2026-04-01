@@ -38,7 +38,8 @@ enum AppConstants {
     // MARK: - UserDefaults Keys (Text Size)
     static let textSizeKey = "textSize"
 
-    // MARK: - UserDefaults Keys (Google Calendar)
+    // MARK: - Google Calendar
+    static let googleClientID = "124674263612-m8h7hifl06m3ru01k3fvtbmmjleoatfp.apps.googleusercontent.com"
     static let googleClientIDKey = "googleClientID"
 
     // MARK: - Keychain Keys (Google Calendar)
