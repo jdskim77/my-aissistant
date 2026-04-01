@@ -4,11 +4,13 @@ import SwiftData
 struct ScheduleView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.subscriptionTier) private var tier
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var showingCalendarImport = false
     @State private var showingEventScanner = false
+    @State private var showScannerPaywall = false
     @State private var showingNLParser = false
     @State private var showingCheckIn = false
     @State private var checkInSlot: CheckInTime = .morning
@@ -128,6 +130,29 @@ struct ScheduleView: View {
         .sheet(isPresented: $showingEventScanner) {
             EventScannerView()
         }
+        .sheet(isPresented: $showScannerPaywall) {
+            NavigationStack {
+                VStack(spacing: 24) {
+                    PaywallCard(
+                        title: "Pro Feature",
+                        message: "Event Scanner uses AI vision to turn photos of flyers, emails, and screenshots into calendar events. Upgrade to Pro to unlock."
+                    ) {
+                        showScannerPaywall = false
+                    }
+                    Button {
+                        showScannerPaywall = false
+                    } label: {
+                        Text("Close")
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+                .padding(24)
+                .navigationTitle("Upgrade")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .presentationDetents([.medium])
+        }
         .sheet(isPresented: $showingNLParser) {
             NLTaskParserView()
         }
@@ -191,14 +216,26 @@ struct ScheduleView: View {
 
             Button {
                 Haptics.light()
-                showingEventScanner = true
+                if tier == .free {
+                    showScannerPaywall = true
+                } else {
+                    showingEventScanner = true
+                }
             } label: {
                 Image(systemName: "camera.viewfinder")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(AppColors.accent)
+                    .foregroundColor(tier == .free ? AppColors.textMuted : AppColors.accent)
                     .frame(width: 44, height: 44)
-                    .background(AppColors.accentLight)
+                    .background(tier == .free ? AppColors.surface : AppColors.accentLight)
                     .cornerRadius(12)
+                    .overlay {
+                        if tier == .free {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 8))
+                                .foregroundColor(AppColors.textMuted)
+                                .offset(x: 14, y: -14)
+                        }
+                    }
             }
             .accessibilityLabel("Scan event from image")
 

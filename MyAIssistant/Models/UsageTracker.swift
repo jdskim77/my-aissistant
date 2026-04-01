@@ -6,9 +6,11 @@ import CryptoKit
 final class UsageTracker {
     var id: String
     var monthKey: String          // "2026-02" format for monthly reset
-    var weekKey: String            // "2026-W07" format for weekly reset
+    var weekKey: String            // "2026-W07" format for weekly reset (legacy, kept for schema)
+    var dayKey: String             // "2026-04-01" format for daily reset
     var chatMessagesThisMonth: Int
-    var checkInsThisWeek: Int
+    var checkInsThisWeek: Int      // legacy — kept for schema compatibility
+    var checkInsToday: Int
     var totalInputTokens: Int
     var totalOutputTokens: Int
     var lastUpdated: Date
@@ -20,8 +22,10 @@ final class UsageTracker {
         let now = Date()
         self.monthKey = UsageTracker.monthKey(for: now)
         self.weekKey = UsageTracker.weekKey(for: now)
+        self.dayKey = UsageTracker.dayKey(for: now)
         self.chatMessagesThisMonth = 0
         self.checkInsThisWeek = 0
+        self.checkInsToday = 0
         self.totalInputTokens = 0
         self.totalOutputTokens = 0
         self.lastUpdated = now
@@ -43,12 +47,18 @@ final class UsageTracker {
         return String(format: "%04d-W%02d", year, week)
     }
 
+    static func dayKey(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
     // MARK: - Reset if Needed
 
     func resetIfNeeded() {
         let now = Date()
         let currentMonth = UsageTracker.monthKey(for: now)
-        let currentWeek = UsageTracker.weekKey(for: now)
+        let currentDay = UsageTracker.dayKey(for: now)
         var didReset = false
 
         if monthKey != currentMonth {
@@ -57,9 +67,9 @@ final class UsageTracker {
             didReset = true
         }
 
-        if weekKey != currentWeek {
-            weekKey = currentWeek
-            checkInsThisWeek = 0
+        if dayKey != currentDay {
+            dayKey = currentDay
+            checkInsToday = 0
             didReset = true
         }
 
@@ -79,7 +89,7 @@ final class UsageTracker {
 
     func recordCheckIn() {
         resetIfNeeded()
-        checkInsThisWeek += 1
+        checkInsToday += 1
         updateIntegrityHash()
     }
 
@@ -99,7 +109,7 @@ final class UsageTracker {
         resetIfNeeded()
         switch tier {
         case .free:
-            return checkInsThisWeek < AppConstants.freeCheckInsPerWeek
+            return checkInsToday < AppConstants.freeCheckInsPerDay
         case .pro, .student, .powerUser:
             return true
         }
@@ -110,7 +120,7 @@ final class UsageTracker {
     }
 
     var remainingCheckIns: Int {
-        max(0, AppConstants.freeCheckInsPerWeek - checkInsThisWeek)
+        max(0, AppConstants.freeCheckInsPerDay - checkInsToday)
     }
 
     // MARK: - Integrity Verification
@@ -120,24 +130,24 @@ final class UsageTracker {
     func updateIntegrityHash() {
         integrityHash = Self.computeHash(
             monthKey: monthKey,
-            weekKey: weekKey,
+            dayKey: dayKey,
             chat: chatMessagesThisMonth,
-            checkIns: checkInsThisWeek
+            checkIns: checkInsToday
         )
     }
 
     func verifyIntegrity() -> Bool {
         let expected = Self.computeHash(
             monthKey: monthKey,
-            weekKey: weekKey,
+            dayKey: dayKey,
             chat: chatMessagesThisMonth,
-            checkIns: checkInsThisWeek
+            checkIns: checkInsToday
         )
         return integrityHash == expected
     }
 
-    private static func computeHash(monthKey: String, weekKey: String, chat: Int, checkIns: Int) -> String {
-        let payload = "\(monthKey)|\(weekKey)|\(chat)|\(checkIns)"
+    private static func computeHash(monthKey: String, dayKey: String, chat: Int, checkIns: Int) -> String {
+        let payload = "\(monthKey)|\(dayKey)|\(chat)|\(checkIns)"
         guard let payloadData = payload.data(using: .utf8) else { return "" }
         let key = integrityKey()
         let signature = HMAC<SHA256>.authenticationCode(for: payloadData, using: key)

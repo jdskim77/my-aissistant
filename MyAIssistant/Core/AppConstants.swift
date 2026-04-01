@@ -11,7 +11,7 @@ enum AppConstants {
     static let defaultMaxTokens = 1000
 
     // MARK: - Free Tier Limits
-    static let freeCheckInsPerWeek = 5
+    static let freeCheckInsPerDay = 4
     static let freeChatMessagesPerMonth = 10
 
     // MARK: - Check-in Defaults

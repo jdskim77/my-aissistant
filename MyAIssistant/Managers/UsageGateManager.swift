@@ -19,7 +19,7 @@ final class UsageGateManager: ObservableObject {
         }
         let new = UsageTracker()
         modelContext.insert(new)
-        try? modelContext.save()
+        modelContext.safeSave()
         return new
     }
 
@@ -51,8 +51,8 @@ final class UsageGateManager: ObservableObject {
         tracker().chatMessagesThisMonth
     }
 
-    var checkInsUsedThisWeek: Int {
-        tracker().checkInsThisWeek
+    var checkInsUsedToday: Int {
+        tracker().checkInsToday
     }
 
     // MARK: - Recording
@@ -60,12 +60,12 @@ final class UsageGateManager: ObservableObject {
     func recordChatMessage(inputTokens: Int, outputTokens: Int) {
         let t = tracker()
         t.recordChatMessage(inputTokens: inputTokens, outputTokens: outputTokens)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     func recordCheckIn() {
         let t = tracker()
         t.recordCheckIn()
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 }

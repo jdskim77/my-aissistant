@@ -27,6 +27,7 @@ struct ChatView: View {
     @State private var hasPlayedGreeting = false
     @State private var showingMicPermissionAlert = false
     @State private var showClockAppPrompt = false
+    @State private var showChatPaywall = false
     @State private var pendingCalendarActions: [CalendarAction] = []
     @FocusState private var isInputFocused: Bool
 
@@ -187,6 +188,37 @@ struct ChatView: View {
         .sheet(isPresented: $showingConversations) {
             ConversationListView(selectedConversationID: $conversationID)
         }
+        .sheet(isPresented: $showChatPaywall) {
+            NavigationStack {
+                VStack(spacing: 24) {
+                    PaywallCard(
+                        title: "Chat limit reached",
+                        message: "You've used all \(AppConstants.freeChatMessagesPerMonth) free messages this month. Upgrade to Pro for unlimited AI chat."
+                    ) {
+                        showChatPaywall = false
+                        // Navigate to subscription view
+                    }
+
+                    if let gate = usageGateManager {
+                        Text("Next reset: start of next month")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+
+                    Button {
+                        showChatPaywall = false
+                    } label: {
+                        Text("Close")
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+                .padding(24)
+                .navigationTitle("Upgrade")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .presentationDetents([.medium])
+        }
     }
 
     // MARK: - Header
@@ -282,6 +314,26 @@ struct ChatView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
+            // Free tier remaining messages indicator
+            if tier == .free, let gate = usageGateManager {
+                let remaining = gate.remainingChatMessages
+                if remaining <= 5 {
+                    HStack(spacing: 6) {
+                        Image(systemName: remaining == 0 ? "exclamationmark.circle.fill" : "info.circle.fill")
+                            .font(.system(size: 12))
+                        Text(remaining == 0
+                            ? "No messages remaining this month"
+                            : "\(remaining) message\(remaining == 1 ? "" : "s") remaining this month")
+                            .font(AppFonts.caption(11))
+                    }
+                    .foregroundColor(remaining <= 2 ? AppColors.coral : AppColors.textMuted)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(remaining <= 2 ? AppColors.coral.opacity(0.06) : AppColors.surface.opacity(0.5))
+                }
+            }
+
             // Recording indicator banner
             if speechRecognizer.isRecording {
                 HStack(spacing: 8) {
@@ -369,6 +421,12 @@ struct ChatView: View {
     private func sendMessage(_ text: String) {
         errorMessage = nil
 
+        // Enforce free tier chat limit
+        if let gate = usageGateManager, !gate.canSendChat(tier: tier) {
+            showChatPaywall = true
+            return
+        }
+
         // Fetch prior history BEFORE inserting the new message to avoid duplicate
         let convoID = conversationID
         let descriptor = FetchDescriptor<ChatMessage>(
@@ -379,7 +437,7 @@ struct ChatView: View {
 
         let userMessage = ChatMessage(role: .user, content: text, conversationID: conversationID)
         modelContext.insert(userMessage)
-        try? modelContext.save()
+        modelContext.safeSave()
         inputText = ""
         speechRecognizer.transcript = ""
         isInputFocused = false
@@ -446,7 +504,7 @@ struct ChatView: View {
                         speechSynthesizer.speak(parsed.displayText)
                     }
 
-                    try? modelContext.save()
+                    modelContext.safeSave()
                 }
 
                 // Schedule alarms async (requires auth check) — only show banner if at least one succeeded
@@ -491,7 +549,7 @@ struct ChatView: View {
                         )
                         modelContext.insert(msg)
                     }
-                    try? modelContext.save()
+                    modelContext.safeSave()
                 }
             }
         }
@@ -561,7 +619,7 @@ struct ChatView: View {
             conversationID: conversationID
         )
         modelContext.insert(greetingMessage)
-        try? modelContext.save()
+        modelContext.safeSave()
 
         speechSynthesizer.speak(greeting)
     }
@@ -823,7 +881,7 @@ struct ChatView: View {
                     )
                     task.externalCalendarID = calendarID
                     modelContext.insert(task)
-                    try? modelContext.save()
+                    modelContext.safeSave()
                 }
 
             case .delete(let eventID):
@@ -857,7 +915,7 @@ struct ChatView: View {
                         for task in tasks {
                             modelContext.delete(task)
                         }
-                        try? modelContext.save()
+                        modelContext.safeSave()
                     }
                 }
             }

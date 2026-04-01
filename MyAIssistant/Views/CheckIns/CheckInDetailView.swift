@@ -38,7 +38,7 @@ struct CheckInDetailView: View {
                         if isGated {
                             PaywallCard(
                                 title: "Check-in limit reached",
-                                message: "You've used all \(AppConstants.freeCheckInsPerWeek) free check-ins this week. Upgrade for unlimited."
+                                message: "You've used all \(AppConstants.freeCheckInsPerDay) free check-ins today. Upgrade for unlimited check-ins."
                             )
 
                             Button {
