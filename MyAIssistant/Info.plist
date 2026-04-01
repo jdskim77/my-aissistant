@@ -44,5 +44,14 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+
+	<!-- Launch Screen -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>AppIcon</string>
+	</dict>
 </dict>
 </plist>

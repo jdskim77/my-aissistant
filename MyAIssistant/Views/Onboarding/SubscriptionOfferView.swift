@@ -94,6 +94,18 @@ struct SubscriptionOfferView: View {
                 Text("You can upgrade anytime in Settings")
                     .font(AppFonts.caption(12))
                     .foregroundColor(AppColors.textMuted)
+
+                Text("Subscriptions auto-renew unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted.opacity(0.7))
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 16) {
+                    NavigationLink("Privacy Policy") { PrivacyPolicyView() }
+                    NavigationLink("Terms of Service") { TermsOfServiceView() }
+                }
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.accent)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)

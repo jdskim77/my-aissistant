@@ -40,6 +40,22 @@ struct SubscriptionView: View {
                         .foregroundColor(AppColors.coral)
                         .padding(.horizontal, 20)
                 }
+
+                // Auto-renewal disclosure (required by Apple)
+                Text("Payment is charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+
+                HStack(spacing: 16) {
+                    NavigationLink("Privacy Policy") { PrivacyPolicyView() }
+                    NavigationLink("Terms of Service") { TermsOfServiceView() }
+                }
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.accent)
+                .padding(.top, 8)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 30)

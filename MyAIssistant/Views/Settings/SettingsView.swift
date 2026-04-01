@@ -166,6 +166,33 @@ struct SettingsView: View {
                     Text("Exports all your data as a JSON file you can save or share.")
                 }
 
+                // Legal
+                Section {
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        settingsRow(
+                            icon: "hand.raised.fill",
+                            color: AppColors.skyBlue,
+                            title: "Privacy Policy",
+                            subtitle: "How your data is handled"
+                        )
+                    }
+
+                    NavigationLink {
+                        TermsOfServiceView()
+                    } label: {
+                        settingsRow(
+                            icon: "doc.text.fill",
+                            color: AppColors.textMuted,
+                            title: "Terms of Service",
+                            subtitle: "Usage terms and conditions"
+                        )
+                    }
+                } header: {
+                    Text("Legal")
+                }
+
                 // About
                 Section {
                     HStack {
