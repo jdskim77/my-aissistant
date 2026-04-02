@@ -49,7 +49,41 @@ struct HomeView: View {
 
     private var todayActiveTasks: [TaskItem] {
         allTasks.filter { $0.date >= startOfToday && $0.date < endOfToday && !$0.done && $0.externalCalendarID == nil }
-            .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
+            .sorted {
+                if $0.priority.sortOrder != $1.priority.sortOrder {
+                    return $0.priority.sortOrder < $1.priority.sortOrder
+                }
+                return $0.date < $1.date
+            }
+    }
+
+    /// Tasks grouped by priority tier for the Today section.
+    private var mustDoTasks: [TaskItem] {
+        todayActiveTasks.filter { $0.priority == .high }
+    }
+
+    private var shouldDoTasks: [TaskItem] {
+        todayActiveTasks.filter { $0.priority == .medium }
+    }
+
+    private var couldDoTasks: [TaskItem] {
+        todayActiveTasks.filter { $0.priority == .low }
+    }
+
+    /// The "frog" — the single toughest/most important task to tackle first.
+    private var frogTask: TaskItem? {
+        mustDoTasks.first ?? shouldDoTasks.first
+    }
+
+    /// True when today's task count exceeds the recommended daily cap.
+    private var isDayOverloaded: Bool {
+        todayActiveTasks.count + todayCalendarEvents.count > 9
+    }
+
+    /// Tasks that have been sitting undone for 3+ days.
+    private var staleTasks: [TaskItem] {
+        let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
+        return todayActiveTasks.filter { $0.createdAt <= threeDaysAgo }
     }
 
     private var todayCalendarEvents: [TaskItem] {
@@ -252,53 +286,70 @@ struct HomeView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 }
 
-                // Active tasks
+                // Active tasks grouped by priority
                 if todayActiveTasks.isEmpty && todayCalendarEvents.isEmpty && overdueTasks.isEmpty {
                     emptyActiveState
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
                 } else {
-                    ForEach(todayActiveTasks, id: \.id) { task in
-                        TaskCard(task: task) {
-                            Haptics.success()
-                            withAnimation(.spring(response: 0.3)) {
-                                taskManager?.toggleCompletion(task)
-                            }
+                    // Must Do section
+                    if !mustDoTasks.isEmpty {
+                        priorityGroupHeader(.high)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                        ForEach(mustDoTasks, id: \.id) { task in
+                            swipeableTaskCard(task)
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                Haptics.heavy()
-                                withAnimation {
-                                    if task.externalCalendarID != nil {
-                                        Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
-                                    }
-                                    taskManager?.deleteTask(task)
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            Button {
-                                Haptics.light()
-                                taskToReschedule = task
-                                rescheduleDate = Date()
-                            } label: {
-                                Label("Reschedule", systemImage: "calendar.badge.clock")
-                            }
-                            .tint(AppColors.skyBlue)
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            Button {
-                                Haptics.success()
-                                withAnimation(.spring(response: 0.3)) {
-                                    taskManager?.toggleCompletion(task)
-                                }
-                            } label: {
-                                Label("Complete", systemImage: "checkmark.circle.fill")
-                            }
-                            .tint(AppColors.completionGreen)
-                        }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     }
+
+                    // Should Do section
+                    if !shouldDoTasks.isEmpty {
+                        priorityGroupHeader(.medium)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                        ForEach(shouldDoTasks, id: \.id) { task in
+                            swipeableTaskCard(task)
+                        }
+                    }
+
+                    // Could Do section
+                    if !couldDoTasks.isEmpty {
+                        priorityGroupHeader(.low)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                        ForEach(couldDoTasks, id: \.id) { task in
+                            swipeableTaskCard(task)
+                        }
+                    }
+                }
+
+                // Overloaded day nudge
+                if isDayOverloaded {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(AppColors.gold)
+                        Text("That's an ambitious day — \(todayActiveTasks.count + todayCalendarEvents.count) tasks. Consider moving some to tomorrow.")
+                            .font(AppFonts.caption(13))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    .padding(12)
+                    .background(AppColors.gold.opacity(0.08))
+                    .cornerRadius(10)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                }
+
+                // Stale task nudge
+                if let staleTask = staleTasks.first {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundColor(AppColors.textMuted)
+                        Text("\"\(staleTask.title)\" has been on your list for a while. Break it down, reschedule, or drop it?")
+                            .font(AppFonts.caption(13))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    .padding(12)
+                    .background(AppColors.surface)
+                    .cornerRadius(10)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
                 }
             } header: {
                 Text("Today")
@@ -643,6 +694,65 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Priority Group Header
+
+    private func priorityGroupHeader(_ priority: TaskPriority) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: priority.icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.priorityColor(priority))
+            Text(priority.displayName)
+                .font(AppFonts.label(12))
+                .foregroundColor(AppColors.priorityColor(priority))
+            Spacer()
+        }
+        .listRowBackground(Color.clear)
+    }
+
+    // MARK: - Swipeable Task Card
+
+    private func swipeableTaskCard(_ task: TaskItem) -> some View {
+        TaskCard(task: task) {
+            Haptics.success()
+            withAnimation(.spring(response: 0.3)) {
+                taskManager?.toggleCompletion(task)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                Haptics.heavy()
+                withAnimation {
+                    if task.externalCalendarID != nil {
+                        Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
+                    }
+                    taskManager?.deleteTask(task)
+                }
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                Haptics.light()
+                taskToReschedule = task
+                rescheduleDate = Date()
+            } label: {
+                Label("Reschedule", systemImage: "calendar.badge.clock")
+            }
+            .tint(AppColors.skyBlue)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                Haptics.success()
+                withAnimation(.spring(response: 0.3)) {
+                    taskManager?.toggleCompletion(task)
+                }
+            } label: {
+                Label("Complete", systemImage: "checkmark.circle.fill")
+            }
+            .tint(AppColors.completionGreen)
+        }
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+    }
+
     // MARK: - Empty States
 
     private var emptyActiveState: some View {
@@ -691,7 +801,7 @@ struct HomeView: View {
                         Haptics.success()
                         withAnimation(.spring(response: 0.3)) {
                             habit.toggleCompletion(for: today)
-                            try? modelContext.save()
+                            modelContext.safeSave()
                         }
                     } label: {
                         ZStack {

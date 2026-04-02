@@ -195,6 +195,18 @@ struct SettingsView: View {
 
                 // About
                 Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Find your rhythm. Balance your day.")
+                            .font(AppFonts.bodyMedium(16))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        Text("An AI companion that learns your patterns and helps you find balance across mind, body, heart, and soul \u{2014} one day at a time.")
+                            .font(AppFonts.body(14))
+                            .foregroundColor(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+
                     HStack {
                         Text("Version")
                             .font(AppFonts.body(15))

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Option A: Warm Intelligence — DM Serif Display style, cream on warm charcoal, gold checkmark -->
+  <rect width="1024" height="1024" rx="224" fill="#2A2520"/>
+
+  <!-- Letter "a" — serif style -->
+  <text x="235" y="700" font-family="'DM Serif Display', Georgia, 'Times New Roman', serif" font-size="520" font-weight="400" fill="#F5F0E8">a</text>
+
+  <!-- Letter "i" stem -->
+  <rect x="620" y="410" width="70" height="290" rx="6" fill="#F5F0E8"/>
+  <!-- Serif top -->
+  <rect x="598" y="410" width="114" height="13" rx="6" fill="#F5F0E8"/>
+  <!-- Serif bottom -->
+  <rect x="598" y="688" width="114" height="13" rx="6" fill="#F5F0E8"/>
+
+  <!-- Gold checkmark dot -->
+  <circle cx="655" cy="335" r="46" fill="#D4A654"/>
+  <g fill="none" stroke="#2A2520" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="633,337 649,355 679,319"/>
+  </g>
+</svg>

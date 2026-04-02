@@ -29,12 +29,25 @@ struct OnboardingCompleteView: View {
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
 
-                VStack(spacing: 12) {
-                    tipRow(icon: "💬", text: "Chat with your assistant to add tasks")
-                    tipRow(icon: "🔔", text: "Check in 4x daily to build your streak")
-                    tipRow(icon: "📊", text: "Review your patterns each week")
+                // Quick-start tips
+                VStack(spacing: 14) {
+                    tipRow(
+                        icon: "plus.circle.fill",
+                        color: AppColors.accent,
+                        text: "Tap + on the schedule tab to add your first task"
+                    )
+                    tipRow(
+                        icon: "sparkles",
+                        color: AppColors.accentWarm,
+                        text: "Ask the AI to manage your day — tap the center button"
+                    )
+                    tipRow(
+                        icon: "flame.fill",
+                        color: AppColors.coral,
+                        text: "Check in daily to build your streak"
+                    )
                 }
-                .padding(.top, 8)
+                .padding(.top, 4)
             }
             .offset(y: appeared ? 0 : 20)
             .opacity(appeared ? 1 : 0)
@@ -73,20 +86,22 @@ struct OnboardingCompleteView: View {
         }
     }
 
-    private func tipRow(icon: String, text: String) -> some View {
+    private func tipRow(icon: String, color: Color, text: String) -> some View {
         HStack(spacing: 12) {
-            Text(icon)
-                .font(.system(size: 22))
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(color)
+                .frame(width: 32)
             Text(text)
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
         .padding(.horizontal, 24)
     }
 
     private var confettiEffect: some View {
-        // Simple animated dots as confetti placeholder
         ZStack {
             ForEach(0..<12, id: \.self) { i in
                 Circle()

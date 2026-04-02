@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- iOS App Icon v3: "ai" with checkmark dot -->
+  <!-- Tighter spacing, bolder weight, more centered -->
+
+  <!-- Background: very light blue-white -->
+  <rect width="1024" height="1024" rx="224" fill="#F1F4F9"/>
+
+  <!-- Centered group -->
+  <g transform="translate(512, 512)">
+
+    <!-- === Letter "a" === -->
+    <!-- Counter (bowl) -->
+    <ellipse cx="-118" cy="78" rx="108" ry="114" fill="none" stroke="#2B5EA7" stroke-width="66"/>
+    <!-- Right stem -->
+    <rect x="-58" y="-36" width="66" height="294" rx="4" fill="#2B5EA7"/>
+
+    <!-- === Letter "i" === -->
+    <!-- Stem -->
+    <rect x="68" y="-36" width="66" height="294" rx="4" fill="#2B5EA7"/>
+
+    <!-- === Checkmark dot === -->
+    <g transform="translate(101, -112)">
+      <!-- Soft mint circle backing -->
+      <circle cx="0" cy="0" r="46" fill="#DFFBEA"/>
+
+      <!-- Checkmark -->
+      <g fill="none" stroke="#2EAA5E" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="-20,4 -6,20 22,-14"/>
+      </g>
+    </g>
+
+  </g>
+</svg>

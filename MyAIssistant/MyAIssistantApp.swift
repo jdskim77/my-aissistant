@@ -4,6 +4,10 @@ import UserNotifications
 
 @main
 struct MyAIssistantApp: App {
+    /// Set to true if the database was corrupted and had to be reset on launch.
+    static var databaseWasReset = false
+    @State private var showDatabaseResetAlert = false
+
     let modelContainer: ModelContainer
     @State private var taskManager: TaskManager
     @State private var patternEngine: PatternEngine
@@ -27,10 +31,12 @@ struct MyAIssistantApp: App {
                 configurations: [config]
             )
         } catch {
-            // Database corrupted — delete and recreate to prevent permanent launch crash
+            // Database corrupted — log and delete to prevent permanent launch crash
+            AppLogger.data.critical("Database corrupted, resetting: \(error.localizedDescription)")
+            Self.databaseWasReset = true
+
             let storeURL = config.url
             try? FileManager.default.removeItem(at: storeURL)
-            // Also remove WAL/SHM sidecar files
             try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
             try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
             container = (try? ModelContainer(
@@ -126,6 +132,17 @@ struct MyAIssistantApp: App {
                         icon: "📝"
                     )
                     taskManager.addTask(task)
+                }
+                .alert("Data Reset", isPresented: $showDatabaseResetAlert) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("The app's data was corrupted and had to be reset. Your tasks and check-ins have been cleared. We're sorry for the inconvenience.")
+                }
+                .onAppear {
+                    if Self.databaseWasReset {
+                        showDatabaseResetAlert = true
+                        Self.databaseWasReset = false
+                    }
                 }
         }
         .modelContainer(modelContainer)

@@ -532,7 +532,7 @@ struct ScheduleView: View {
                                 Haptics.selection()
                                 newPriority = pri
                             } label: {
-                                Text(pri.rawValue.prefix(1))
+                                Text(pri.shortLabel.prefix(1))
                                     .font(.system(size: 12, weight: .bold))
                                     .foregroundColor(newPriority == pri ? .white : AppColors.priorityColor(pri))
                                     .frame(width: 32, height: 32)

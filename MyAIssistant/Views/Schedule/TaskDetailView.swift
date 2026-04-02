@@ -149,7 +149,7 @@ struct TaskDetailView: View {
                                 Button {
                                     priority = pri
                                 } label: {
-                                    Text(pri.rawValue)
+                                    Text(pri.displayName)
                                         .font(AppFonts.bodyMedium(13))
                                         .foregroundColor(priority == pri ? .white : AppColors.priorityColor(pri))
                                         .padding(.horizontal, 12)

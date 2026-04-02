@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Option B: Modern Nature — Fraunces style, white on deep green, coral checkmark -->
+  <defs>
+    <linearGradient id="bgB" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#1F4432"/>
+      <stop offset="100%" stop-color="#1A3A2A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bgB)"/>
+
+  <!-- Letter "a" — rounded serif (Fraunces-inspired, organic curves) -->
+  <text x="230" y="700" font-family="'Fraunces', 'Palatino', Georgia, serif" font-size="520" font-weight="500" fill="#FFFFFF">a</text>
+
+  <!-- Letter "i" stem — slightly rounded for organic feel -->
+  <rect x="618" y="410" width="72" height="290" rx="12" fill="#FFFFFF"/>
+  <!-- Rounded serif top -->
+  <rect x="594" y="410" width="120" height="14" rx="7" fill="#FFFFFF"/>
+  <!-- Rounded serif bottom -->
+  <rect x="594" y="688" width="120" height="14" rx="7" fill="#FFFFFF"/>
+
+  <!-- Coral checkmark dot -->
+  <circle cx="654" cy="332" r="48" fill="#E8845C"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="631,334 648,354 680,316"/>
+  </g>
+</svg>

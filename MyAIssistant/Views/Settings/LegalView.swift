@@ -12,7 +12,7 @@ struct PrivacyPolicyView: View {
 
                 section("What We Collect") {
                     """
-                    My AIssistant collects and stores the following data locally on your device:
+                    Thrivn collects and stores the following data locally on your device:
 
                     • Tasks, check-ins, and schedule data you create
                     • Chat conversation history with the AI assistant
@@ -46,7 +46,7 @@ struct PrivacyPolicyView: View {
 
                 section("Analytics & Tracking") {
                     """
-                    My AIssistant does not include any third-party analytics, advertising SDKs, or tracking libraries. \
+                    Thrivn does not include any third-party analytics, advertising SDKs, or tracking libraries. \
                     We do not collect device identifiers, IP addresses, or location data.
                     """
                 }
@@ -61,7 +61,7 @@ struct PrivacyPolicyView: View {
 
                 section("Children's Privacy") {
                     """
-                    My AIssistant is not directed at children under 13. We do not knowingly collect \
+                    Thrivn is not directed at children under 13. We do not knowingly collect \
                     data from children.
                     """
                 }
@@ -112,14 +112,14 @@ struct TermsOfServiceView: View {
 
                 section("Acceptance") {
                     """
-                    By using My AIssistant, you agree to these Terms of Service. If you do not agree, \
+                    By using Thrivn, you agree to these Terms of Service. If you do not agree, \
                     do not use the app.
                     """
                 }
 
                 section("Description of Service") {
                     """
-                    My AIssistant is a personal productivity app that provides AI-powered scheduling, \
+                    Thrivn is a personal productivity app that provides AI-powered scheduling, \
                     check-ins, pattern tracking, and an AI chat assistant. The AI features are powered \
                     by third-party services (Anthropic Claude) and their availability depends on those services.
                     """
@@ -158,7 +158,7 @@ struct TermsOfServiceView: View {
 
                 section("Limitation of Liability") {
                     """
-                    My AIssistant is provided "as is" without warranty. We are not liable for any \
+                    Thrivn is provided "as is" without warranty. We are not liable for any \
                     damages arising from your use of the app, including data loss, missed appointments, \
                     or reliance on AI-generated content.
                     """

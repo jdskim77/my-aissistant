@@ -14,14 +14,8 @@ struct OnboardingContainerView: View {
             PermissionsView(onContinue: { currentPage = 2 })
                 .tag(1)
 
-            VoiceModeSelectionView(onContinue: { currentPage = 3 })
-                .tag(2)
-
-            SubscriptionOfferView(onContinue: { currentPage = 4 })
-                .tag(3)
-
             OnboardingCompleteView(onFinish: completeOnboarding)
-                .tag(4)
+                .tag(2)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -37,7 +31,7 @@ struct OnboardingContainerView: View {
             let profile = UserProfile(onboardingCompleted: true)
             modelContext.insert(profile)
         }
-        try? modelContext.save()
+        modelContext.safeSave()
 
         withAnimation(.easeInOut(duration: 0.4)) {
             onboardingComplete = true

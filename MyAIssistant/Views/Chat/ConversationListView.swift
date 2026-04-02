@@ -123,6 +123,6 @@ struct ConversationListView: View {
                 modelContext.delete(message)
             }
         }
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 }

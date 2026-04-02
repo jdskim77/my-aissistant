@@ -91,17 +91,17 @@ final class CalendarSyncManager: ObservableObject {
             color: color
         )
         modelContext.insert(link)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     func unlinkCalendar(_ link: CalendarLink) {
         modelContext.delete(link)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     func toggleCalendarLink(_ link: CalendarLink) {
         link.enabled.toggle()
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     // MARK: - Deduplication
@@ -192,7 +192,7 @@ final class CalendarSyncManager: ObservableObject {
             link.lastSynced = Date()
         }
 
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     // MARK: - Sync Google Calendar Events
@@ -253,7 +253,7 @@ final class CalendarSyncManager: ObservableObject {
             }
         }
 
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     // MARK: - Full Sync
@@ -275,7 +275,7 @@ final class CalendarSyncManager: ObservableObject {
             calendarID: calendarID
         )
         task.externalCalendarID = eventID
-        try? modelContext.save()
+        modelContext.safeSave()
         return eventID
     }
 
@@ -324,7 +324,7 @@ final class CalendarSyncManager: ObservableObject {
             description: task.notes.isEmpty ? nil : task.notes
         )
         task.externalCalendarID = "google:\(eventID)"
-        try? modelContext.save()
+        modelContext.safeSave()
         return eventID
     }
 

@@ -79,6 +79,10 @@ struct StreakWidget: Widget {
         }
         .configurationDisplayName("Streak")
         .description("Track your completion streak.")
+        #if os(watchOS)
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular])
+        #else
         .supportedFamilies([.systemSmall])
+        #endif
     }
 }

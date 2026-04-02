@@ -215,7 +215,7 @@ struct HabitFormView: View {
                 Button("Delete", role: .destructive) {
                     if let habit = existingHabit {
                         modelContext.delete(habit)
-                        try? modelContext.save()
+                        modelContext.safeSave()
                     }
                     dismiss()
                 }
@@ -265,7 +265,7 @@ struct HabitFormView: View {
             modelContext.insert(habit)
         }
 
-        try? modelContext.save()
+        modelContext.safeSave()
         Haptics.success()
         dismiss()
     }

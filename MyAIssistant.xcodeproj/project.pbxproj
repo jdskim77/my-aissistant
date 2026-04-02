@@ -121,6 +121,7 @@
 		AC00000009000000 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
 		AC00000010000000 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000010000000 /* ThemePickerView.swift */; };
 		AC00000011000000 /* TextSizeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000011000000 /* TextSizeSettingsView.swift */; };
+		AC00000012000000 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000012000000 /* LegalView.swift */; };
 		AD00000001000000 /* AIActivityOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000001000000 /* AIActivityOrb.swift */; };
 		AD00000002000000 /* VariedGreetingBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000002000000 /* VariedGreetingBuilder.swift */; };
 		AD00000003000000 /* GreetingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000003000000 /* GreetingManager.swift */; };
@@ -129,6 +130,8 @@
 		AE00000002000000 /* ActivityTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000002000000 /* ActivityTimelineView.swift */; };
 		AF00000001000000 /* AlarmEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000001000000 /* AlarmEntry.swift */; };
 		AF00000002000000 /* SchemaVersioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000002000000 /* SchemaVersioning.swift */; };
+		AF00000003000000 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000003000000 /* AppLogger.swift */; };
+		AF00000004000000 /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000004000000 /* ModelContext+SafeSave.swift */; };
 		AW00000001000000 /* WidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000001000000 /* WidgetBundle.swift */; };
 		AW00000002000000 /* NextCheckInWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000002000000 /* NextCheckInWidget.swift */; };
 		AW00000003000000 /* TodayProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000003000000 /* TodayProgressWidget.swift */; };
@@ -316,6 +319,7 @@
 		BC00000009000000 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		BC00000010000000 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
 		BC00000011000000 /* TextSizeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeSettingsView.swift; sourceTree = "<group>"; };
+		BC00000012000000 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		BD00000001000000 /* AIActivityOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActivityOrb.swift; sourceTree = "<group>"; };
 		BD00000002000000 /* VariedGreetingBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
 		BD00000003000000 /* GreetingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
@@ -324,6 +328,8 @@
 		BE00000002000000 /* ActivityTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
 		BF00000001000000 /* AlarmEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
 		BF00000002000000 /* SchemaVersioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
+		BF00000003000000 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		BF00000004000000 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
 		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
 		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
 		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
@@ -627,6 +633,8 @@
 				B200000012000000 /* DataSeeder.swift */,
 				B200000013000000 /* PreviewHelpers.swift */,
 				B200000014000000 /* Haptics.swift */,
+				BF00000003000000 /* AppLogger.swift */,
+				BF00000004000000 /* ModelContext+SafeSave.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -692,6 +700,7 @@
 				BC00000005000000 /* VoiceSettingsView.swift */,
 				BC00000010000000 /* ThemePickerView.swift */,
 				BC00000011000000 /* TextSizeSettingsView.swift */,
+				BC00000012000000 /* LegalView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1127,6 +1136,7 @@
 				AC00000009000000 /* ThemeManager.swift in Sources */,
 				AC00000010000000 /* ThemePickerView.swift in Sources */,
 				AC00000011000000 /* TextSizeSettingsView.swift in Sources */,
+				AC00000012000000 /* LegalView.swift in Sources */,
 				AD00000001000000 /* AIActivityOrb.swift in Sources */,
 				AD00000002000000 /* VariedGreetingBuilder.swift in Sources */,
 				AD00000003000000 /* GreetingManager.swift in Sources */,
@@ -1135,6 +1145,8 @@
 				AE00000002000000 /* ActivityTimelineView.swift in Sources */,
 				AF00000001000000 /* AlarmEntry.swift in Sources */,
 				AF00000002000000 /* SchemaVersioning.swift in Sources */,
+				AF00000003000000 /* AppLogger.swift in Sources */,
+				AF00000004000000 /* ModelContext+SafeSave.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
 				7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */,
 				51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */,
@@ -1260,9 +1272,9 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant on your wrist.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1329,9 +1341,9 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant on your wrist.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1690,7 +1702,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -1717,7 +1731,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -1781,7 +1797,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1809,7 +1825,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

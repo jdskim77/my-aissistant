@@ -14,7 +14,7 @@ final class CheckInManager: ObservableObject {
     func startCheckIn(timeSlot: CheckInTime) -> CheckInRecord {
         let record = CheckInRecord(timeSlot: timeSlot)
         modelContext.insert(record)
-        try? modelContext.save()
+        modelContext.safeSave()
         return record
     }
 
@@ -32,7 +32,7 @@ final class CheckInManager: ObservableObject {
         record.energyLevel = energyLevel
         record.notes = notes
         record.aiSummary = aiSummary
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     // MARK: - Generate AI Greeting

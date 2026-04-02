@@ -242,6 +242,10 @@ struct TodayProgressWidget: Widget {
         }
         .configurationDisplayName("Today's Progress")
         .description("Track your daily task completion.")
+        #if os(watchOS)
+        .supportedFamilies([.accessoryRectangular])
+        #else
         .supportedFamilies([.systemMedium, .systemLarge])
+        #endif
     }
 }

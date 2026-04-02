@@ -46,9 +46,9 @@ enum TaskPriorityEnum: String, AppEnum {
 
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Priority")
     static var caseDisplayRepresentations: [TaskPriorityEnum: DisplayRepresentation] = [
-        .high: "High",
-        .medium: "Medium",
-        .low: "Low"
+        .high: "Must Do",
+        .medium: "Should Do",
+        .low: "Could Do"
     ]
 
     var toModel: TaskPriority {

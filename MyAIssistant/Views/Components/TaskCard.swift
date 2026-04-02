@@ -179,7 +179,7 @@ struct PriorityBadge: View {
     let priority: TaskPriority
 
     var body: some View {
-        Text(priority.rawValue)
+        Text(priority.shortLabel)
             .font(AppFonts.label(11))
             .foregroundColor(AppColors.priorityColor(priority))
             .padding(.horizontal, 8)

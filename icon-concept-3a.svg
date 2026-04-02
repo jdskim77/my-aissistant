@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Rendition A: Classic — white serif "ai" on deep green, checkmark dot -->
+  <rect width="1024" height="1024" rx="224" fill="#2D5016"/>
+
+  <!-- Letter "a" — serif style -->
+  <text x="310" y="680" font-family="Georgia, 'Times New Roman', serif" font-size="520" font-weight="400" fill="#F8F5F0" letter-spacing="-10">a</text>
+
+  <!-- Letter "i" stem (no dot) -->
+  <rect x="628" y="430" width="72" height="270" rx="8" fill="#F8F5F0"/>
+
+  <!-- Serif feet on "i" -->
+  <rect x="608" y="688" width="112" height="12" rx="6" fill="#F8F5F0"/>
+  <rect x="608" y="430" width="112" height="12" rx="6" fill="#F8F5F0"/>
+
+  <!-- Checkmark as the dot of "i" -->
+  <g transform="translate(664, 360)" fill="none" stroke="#E8C547" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="-28,4 -10,24 28,-20"/>
+  </g>
+
+  <!-- Subtle circle around checkmark -->
+  <circle cx="664" cy="360" r="38" fill="none" stroke="#E8C547" stroke-width="6" opacity="0.5"/>
+</svg>

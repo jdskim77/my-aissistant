@@ -101,6 +101,10 @@ struct NextCheckInWidget: Widget {
         }
         .configurationDisplayName("Next Check-in")
         .description("Shows your next check-in time.")
+        #if os(watchOS)
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular])
+        #else
         .supportedFamilies([.systemSmall])
+        #endif
     }
 }

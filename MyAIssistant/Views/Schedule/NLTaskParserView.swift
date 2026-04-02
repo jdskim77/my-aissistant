@@ -200,7 +200,7 @@ struct NLTaskParserView: View {
                                     Haptics.selection()
                                     parsedPriority = pri
                                 } label: {
-                                    Text(pri.rawValue)
+                                    Text(pri.displayName)
                                         .font(AppFonts.label(13))
                                         .foregroundColor(parsedPriority == pri ? .white : AppColors.priorityColor(pri))
                                         .padding(.horizontal, 14)

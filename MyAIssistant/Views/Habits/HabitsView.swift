@@ -130,7 +130,7 @@ struct HabitsView: View {
                 Haptics.success()
                 withAnimation(.spring(response: 0.3)) {
                     habit.toggleCompletion(for: today)
-                    try? modelContext.save()
+                    modelContext.safeSave()
                 }
             } label: {
                 ZStack {

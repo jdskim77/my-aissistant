@@ -150,6 +150,6 @@ final class BackgroundTaskManager {
         )
 
         modelContext.insert(snapshot)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 }

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- iOS App Icon: "ai" with checkmark dot -->
+  <!-- Style: Geometric sans-serif, flat, minimal -->
+
+  <!-- Background: cool off-white -->
+  <rect width="1024" height="1024" rx="224" fill="#F3F5F9"/>
+
+  <!-- === Letter "a" === -->
+  <!-- Geometric sans-serif lowercase "a", semibold, Inter/Geist style -->
+  <!-- Built from basic shapes for consistency -->
+  <g fill="#2B5EA7">
+    <!-- "a" counter (bowl) — outer rounded rect -->
+    <rect x="230" y="418" width="240" height="248" rx="124" ry="124" fill="none" stroke="#2B5EA7" stroke-width="62"/>
+
+    <!-- "a" vertical stem (right side) -->
+    <rect x="408" y="418" width="62" height="290" rx="4" fill="#2B5EA7"/>
+  </g>
+
+  <!-- === Letter "i" === -->
+  <g fill="#2B5EA7">
+    <!-- "i" vertical stem -->
+    <rect x="548" y="418" width="62" height="290" rx="4" fill="#2B5EA7"/>
+  </g>
+
+  <!-- === Checkmark (replaces dot of "i") === -->
+  <g transform="translate(579, 340)">
+    <!-- Very subtle mint backing for visual weight at small sizes -->
+    <circle cx="0" cy="0" r="44" fill="#E6F7EE"/>
+
+    <!-- Crisp checkmark -->
+    <g fill="none" stroke="#38A169" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="-20,3 -6,20 22,-16"/>
+    </g>
+  </g>
+</svg>

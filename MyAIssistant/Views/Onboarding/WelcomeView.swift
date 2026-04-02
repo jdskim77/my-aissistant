@@ -8,33 +8,63 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 24) {
-                Text("✦")
-                    .font(.system(size: 64))
-                    .foregroundColor(AppColors.accent)
-                    .scaleEffect(appeared ? 1 : 0.5)
-                    .opacity(appeared ? 1 : 0)
+            VStack(spacing: 28) {
+                // App icon / brand
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [AppColors.accent, AppColors.accentWarm],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 88, height: 88)
+                        .scaleEffect(appeared ? 1 : 0.5)
+                        .opacity(appeared ? 1 : 0)
+
+                    Text("✦")
+                        .font(.system(size: 44))
+                        .foregroundColor(.white)
+                        .scaleEffect(appeared ? 1 : 0.5)
+                        .opacity(appeared ? 1 : 0)
+                }
 
                 VStack(spacing: 8) {
-                    Text("My AIssistant")
-                        .font(AppFonts.display(32))
+                    Text("Thrivn")
+                        .font(AppFonts.display(34))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Your AI-powered daily planner")
-                        .font(AppFonts.body(16))
+                    Text("Find your rhythm. Balance your day.")
+                        .font(AppFonts.body(17))
                         .foregroundColor(AppColors.textSecondary)
                 }
-                .offset(y: appeared ? 0 : 20)
+                .offset(y: appeared ? 0 : 16)
                 .opacity(appeared ? 1 : 0)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    featureRow(icon: "🌅", title: "Smart Check-ins", subtitle: "4 daily rituals to keep you on track")
-                    featureRow(icon: "✦", title: "AI Assistant", subtitle: "Chat naturally to manage your day")
-                    featureRow(icon: "📊", title: "Pattern Insights", subtitle: "Discover your productivity trends")
-                    featureRow(icon: "📅", title: "Calendar Sync", subtitle: "Connect your existing calendars")
+                // Three key value props — concise
+                VStack(alignment: .leading, spacing: 20) {
+                    featureRow(
+                        icon: "circle.grid.cross.fill",
+                        color: AppColors.accentWarm,
+                        title: "Balance mind, body, heart & soul",
+                        subtitle: "Track four dimensions of your daily life"
+                    )
+                    featureRow(
+                        icon: "sparkles",
+                        color: AppColors.accent,
+                        title: "AI that learns your patterns",
+                        subtitle: "Intelligent nudges to keep you in rhythm"
+                    )
+                    featureRow(
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: AppColors.coral,
+                        title: "Tune, don't judge",
+                        subtitle: "Supportive guidance toward your best balance"
+                    )
                 }
-                .padding(.top, 16)
-                .offset(y: appeared ? 0 : 30)
+                .padding(.top, 8)
+                .offset(y: appeared ? 0 : 24)
                 .opacity(appeared ? 1 : 0)
             }
 
@@ -46,7 +76,13 @@ struct WelcomeView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(AppColors.accent)
+                    .background(
+                        LinearGradient(
+                            colors: [AppColors.accent, AppColors.accentWarm],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .cornerRadius(14)
             }
             .padding(.horizontal, 24)
@@ -55,27 +91,36 @@ struct WelcomeView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
                 appeared = true
             }
         }
     }
 
-    private func featureRow(icon: String, title: String, subtitle: String) -> some View {
+    private func featureRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
-            Text(icon)
-                .font(.system(size: 28))
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(color)
                 .frame(width: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(AppFonts.bodyMedium(15))
+                    .font(AppFonts.bodyMedium(16))
                     .foregroundColor(AppColors.textPrimary)
                 Text(subtitle)
-                    .font(AppFonts.body(13))
+                    .font(AppFonts.body(14))
                     .foregroundColor(AppColors.textSecondary)
+                    .lineHeight(18)
             }
         }
         .padding(.horizontal, 24)
+    }
+}
+
+// Helper for line height on Text
+private extension Text {
+    func lineHeight(_ height: CGFloat) -> some View {
+        self.lineSpacing(height - 14)
     }
 }

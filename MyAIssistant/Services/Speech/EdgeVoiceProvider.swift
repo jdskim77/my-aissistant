@@ -83,11 +83,13 @@ final class EdgeVoiceProvider: VoiceProvider {
         let token = UUID().uuidString.replacingOccurrences(of: "-", with: "")
         let timestamp = ISO8601DateFormatter().string(from: Date())
 
-        let wsURL = URL(string:
+        guard let wsURL = URL(string:
             "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1"
             + "?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4"
             + "&ConnectionId=\(token)"
-        )!
+        ) else {
+            throw URLError(.badURL)
+        }
 
         let session = URLSession(configuration: .default)
         let wsTask = session.webSocketTask(with: wsURL)

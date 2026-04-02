@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Option C: Clean Intelligence — Montserrat style, near-black on off-white, teal checkmark -->
+  <defs>
+    <linearGradient id="bgC" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#F2EFE8"/>
+      <stop offset="100%" stop-color="#EBE7DE"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bgC)"/>
+
+  <!-- Letters "ai" — geometric sans-serif (Montserrat-inspired) -->
+  <text x="225" y="690" font-family="'Montserrat', 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="480" font-weight="500" fill="#1C1C1E" letter-spacing="10">a</text>
+
+  <!-- Letter "i" — geometric sans, no dot -->
+  <rect x="615" y="400" width="66" height="300" rx="4" fill="#1C1C1E"/>
+
+  <!-- Teal checkmark dot -->
+  <circle cx="648" cy="330" r="46" fill="#1D8A8A"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="626,332 642,352 672,312"/>
+  </g>
+
+  <!-- Subtle shadow under text for depth -->
+  <rect x="225" y="730" width="490" height="3" rx="1.5" fill="#1C1C1E" opacity="0.06"/>
+</svg>

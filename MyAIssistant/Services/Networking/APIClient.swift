@@ -26,32 +26,57 @@ actor APIClient {
         let statusCode: Int
     }
 
+    /// Maximum number of retry attempts for rate-limited (429) or server error (5xx) responses.
+    private let maxRetries = 3
+
     func post(
         url: URL,
         headers: [String: String],
         body: Data
     ) async throws -> Response {
-        try await consumeToken()
+        var lastResponse: Response?
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.httpBody = body
-        for (key, value) in headers {
-            request.setValue(value, forHTTPHeaderField: key)
+        for attempt in 0..<maxRetries {
+            try await consumeToken()
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.httpBody = body
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+
+            let (data, response): (Data, URLResponse)
+            do {
+                (data, response) = try await session.data(for: request)
+            } catch {
+                throw AIError.networkError(error)
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AIError.invalidResponse
+            }
+
+            let result = Response(data: data, statusCode: httpResponse.statusCode)
+
+            // Retry on 429 (rate limited) or 5xx (server error), with exponential backoff
+            if httpResponse.statusCode == 429 || (500...599).contains(httpResponse.statusCode) {
+                lastResponse = result
+                let delay = pow(2.0, Double(attempt)) // 1s, 2s, 4s
+                AppLogger.ai.warning("API returned \(httpResponse.statusCode), retrying in \(delay)s (attempt \(attempt + 1)/\(self.maxRetries))")
+                try await Task.sleep(for: .seconds(delay))
+                continue
+            }
+
+            return result
         }
 
-        let (data, response): (Data, URLResponse)
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw AIError.networkError(error)
+        // All retries exhausted — return the last response so caller can handle the error
+        if let lastResponse {
+            AppLogger.ai.error("API failed after \(self.maxRetries) retries with status \(lastResponse.statusCode)")
+            return lastResponse
         }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AIError.invalidResponse
-        }
-
-        return Response(data: data, statusCode: httpResponse.statusCode)
+        throw AIError.rateLimited
     }
 
     // MARK: - Rate Limiting

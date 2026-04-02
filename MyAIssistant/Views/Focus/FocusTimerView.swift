@@ -429,6 +429,6 @@ struct FocusTimerView: View {
 
     private func saveSession() {
         modelContext.insert(session)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 }

@@ -388,7 +388,7 @@ final class PatternEngine: ObservableObject {
                 conversationID: "weekly-review"
             )
             modelContext.insert(reviewMessage)
-            try? modelContext.save()
+            modelContext.safeSave()
         } catch {
             // Silently fail — user can retry via the refresh button
         }

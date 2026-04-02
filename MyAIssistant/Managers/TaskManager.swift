@@ -15,7 +15,7 @@ final class TaskManager: ObservableObject {
 
     func addTask(_ task: TaskItem) {
         modelContext.insert(task)
-        try? modelContext.save()
+        modelContext.safeSave()
         updateWidgetData()
     }
 
@@ -39,13 +39,13 @@ final class TaskManager: ObservableObject {
             modelContext.insert(next)
         }
 
-        try? modelContext.save()
+        modelContext.safeSave()
         updateWidgetData()
     }
 
     func deleteTask(_ task: TaskItem) {
         modelContext.delete(task)
-        try? modelContext.save()
+        modelContext.safeSave()
         updateWidgetData()
     }
 
@@ -56,7 +56,7 @@ final class TaskManager: ObservableObject {
         newComponents.hour = oldComponents.hour
         newComponents.minute = oldComponents.minute
         task.date = calendar.date(from: newComponents) ?? newDate
-        try? modelContext.save()
+        modelContext.safeSave()
         updateWidgetData()
     }
 

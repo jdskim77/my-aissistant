@@ -153,7 +153,7 @@ enum VariedGreetingBuilder {
 
         // Prefer unused greetings; fall back to any if all have been used
         let unused = options.filter { !used.contains($0) }
-        return (unused.isEmpty ? options : unused).randomElement()!
+        return (unused.isEmpty ? options : unused).randomElement() ?? ""
     }
 
     // MARK: - Schedule Snippet (Varied)
@@ -172,7 +172,7 @@ enum VariedGreetingBuilder {
                 "No tasks today, it's all yours!",
                 "A blank slate today!",
                 "Clear schedule — what would you like to do?"
-            ].randomElement()!
+            ].randomElement() ?? ""
         }
 
         if remaining == 0 {
@@ -182,7 +182,7 @@ enum VariedGreetingBuilder {
                 "Everything's checked off — \(todayTaskCount) for \(todayTaskCount)!",
                 "You finished everything on your list today!",
                 "All done! \(todayTaskCount) tasks completed."
-            ].randomElement()!
+            ].randomElement() ?? ""
         }
 
         var snippet: String
@@ -193,7 +193,7 @@ enum VariedGreetingBuilder {
                 "\(completedTodayCount) down, \(remaining) to go!",
                 "Making progress — \(completedTodayCount) of \(todayTaskCount) done.",
                 "Nice momentum — \(completedTodayCount) tasks completed so far."
-            ].randomElement()!
+            ].randomElement() ?? ""
         } else {
             snippet = [
                 "You have \(todayTaskCount) tasks lined up today.",
@@ -201,7 +201,7 @@ enum VariedGreetingBuilder {
                 "\(todayTaskCount) things to tackle today!",
                 "Today's lineup: \(todayTaskCount) tasks.",
                 "You've got \(todayTaskCount) tasks ahead of you."
-            ].randomElement()!
+            ].randomElement() ?? ""
         }
 
         if let top = highPriorityTitles.first {
@@ -210,7 +210,7 @@ enum VariedGreetingBuilder {
                 " First up: \(top).",
                 " Most important: \(top).",
                 " Focus on: \(top)."
-            ].randomElement()!
+            ].randomElement() ?? ""
         }
 
         return snippet
@@ -225,20 +225,20 @@ enum VariedGreetingBuilder {
                 "That's \(streak) days in a row. Incredible!",
                 "\(streak) days straight — unstoppable!",
                 "Wow, \(streak)-day streak! Keep it rolling!"
-            ].randomElement()!
+            ].randomElement() ?? ""
         } else if streak >= 3 {
             return [
                 "\(streak)-day streak, keep it going!",
                 "Nice \(streak)-day streak!",
                 "\(streak) days in a row — building a habit!",
                 "On a \(streak)-day roll!"
-            ].randomElement()!
+            ].randomElement() ?? ""
         } else if completionRate >= 80 {
             return [
                 "\(completionRate)% completion rate — impressive.",
                 "Running at \(completionRate)% — strong work!",
                 "\(completionRate)% completion — you're nailing it."
-            ].randomElement()!
+            ].randomElement() ?? ""
         }
         return ""
     }

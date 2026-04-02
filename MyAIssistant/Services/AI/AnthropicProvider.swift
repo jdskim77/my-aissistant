@@ -10,6 +10,7 @@ actor AnthropicProvider: AIProvider {
         self.apiKey = apiKey
         self.model = model
         self.client = APIClient()
+        // Static URL from constants — safe to force-unwrap as it's compile-time known
         self.endpoint = URL(string: AppConstants.anthropicEndpoint)!
     }
 

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Background: very light off-white with subtle cool tint -->
+  <rect width="1024" height="1024" rx="224" fill="#F4F6F8"/>
+
+  <!-- Letter "a" — geometric sans-serif (Inter/Geist inspired) -->
+  <!-- Constructed geometrically for clean, precise look -->
+  <g fill="#2C5282">
+    <!-- "a" bowl - outer -->
+    <path d="
+      M 350,588
+      C 350,518 310,460 258,430
+      C 230,414 196,406 160,406
+      C 90,406 34,456 34,520
+      C 34,584 90,620 170,636
+      C 220,646 280,650 350,650
+      Z
+    " transform="translate(148, 40) scale(0.82)" opacity="0"/>
+
+    <!-- Using text for precise geometric sans rendering -->
+    <text x="258" y="690"
+          font-family="'Inter', 'Geist', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+          font-size="480"
+          font-weight="600"
+          fill="#2C5282"
+          letter-spacing="20">a</text>
+  </g>
+
+  <!-- Letter "i" stem — geometric rectangle, no dot -->
+  <rect x="618" y="398" width="72" height="306" rx="4" fill="#2C5282"/>
+
+  <!-- Checkmark replacing the dot of "i" -->
+  <!-- Mint/green accent, slightly larger than a typical dot -->
+  <g transform="translate(654, 318)">
+    <!-- Subtle backing circle for visual weight at small sizes -->
+    <circle cx="0" cy="0" r="50" fill="#48BB78" opacity="0.12"/>
+    <!-- Checkmark -->
+    <g fill="none" stroke="#38A169" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="-24,4 -8,22 26,-18"/>
+    </g>
+  </g>
+</svg>

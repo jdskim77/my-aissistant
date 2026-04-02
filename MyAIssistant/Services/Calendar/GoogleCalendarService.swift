@@ -61,7 +61,7 @@ actor GoogleCalendarService {
 
         let bodyString = body.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
 
-        var request = URLRequest(url: URL(string: tokenURL)!)
+        var request = URLRequest(url: try makeTokenURL())
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyString.data(using: .utf8)
@@ -136,7 +136,7 @@ actor GoogleCalendarService {
 
         let bodyString = body.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
 
-        var request = URLRequest(url: URL(string: tokenURL)!)
+        var request = URLRequest(url: try makeTokenURL())
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyString.data(using: .utf8)
@@ -187,10 +187,27 @@ actor GoogleCalendarService {
         return (data, response)
     }
 
+    // MARK: - Safe URL Building
+
+    private func makeURL(_ path: String) throws -> URL {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
+            throw GoogleCalendarError.fetchFailed
+        }
+        return url
+    }
+
+    private func makeTokenURL() throws -> URL {
+        guard let url = URL(string: tokenURL) else {
+            throw GoogleCalendarError.authFailed
+        }
+        return url
+    }
+
     // MARK: - Calendars
 
     func fetchCalendars() async throws -> [GoogleCalendar] {
-        var request = URLRequest(url: URL(string: "\(baseURL)/users/me/calendarList")!)
+        let url = try makeURL("/users/me/calendarList")
+        let request = URLRequest(url: url)
 
         let (data, response) = try await authenticatedData(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -212,7 +229,9 @@ actor GoogleCalendarService {
         let formatter = ISO8601DateFormatter()
         let encodedID = calendarID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? calendarID
 
-        var components = URLComponents(string: "\(baseURL)/calendars/\(encodedID)/events")!
+        guard var components = URLComponents(string: "\(baseURL)/calendars/\(encodedID)/events") else {
+            throw GoogleCalendarError.fetchFailed
+        }
         components.queryItems = [
             URLQueryItem(name: "timeMin", value: formatter.string(from: startDate)),
             URLQueryItem(name: "timeMax", value: formatter.string(from: endDate)),
@@ -221,7 +240,10 @@ actor GoogleCalendarService {
             URLQueryItem(name: "maxResults", value: "250"),
         ]
 
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw GoogleCalendarError.fetchFailed
+        }
+        let request = URLRequest(url: url)
 
         let (data, response) = try await authenticatedData(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -254,7 +276,8 @@ actor GoogleCalendarService {
             eventBody["description"] = description
         }
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/calendars/\(encodedID)/events")!)
+        let url = try makeURL("/calendars/\(encodedID)/events")
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: eventBody)
@@ -292,7 +315,8 @@ actor GoogleCalendarService {
             eventBody["description"] = description
         }
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/calendars/\(encodedCalID)/events/\(encodedEventID)")!)
+        let url = try makeURL("/calendars/\(encodedCalID)/events/\(encodedEventID)")
+        var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: eventBody)
@@ -310,7 +334,8 @@ actor GoogleCalendarService {
         let encodedCalID = calendarID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? calendarID
         let encodedEventID = eventID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? eventID
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/calendars/\(encodedCalID)/events/\(encodedEventID)")!)
+        let url = try makeURL("/calendars/\(encodedCalID)/events/\(encodedEventID)")
+        var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
 
         let (_, response) = try await authenticatedData(for: request)

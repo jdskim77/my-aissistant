@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Rendition C: Minimal — centered "ai" with checkmark dot, inverted color scheme -->
+  <defs>
+    <linearGradient id="bgc" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#F8F5F0"/>
+      <stop offset="100%" stop-color="#EDE8DF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bgc)"/>
+
+  <!-- Letter "a" — elegant serif, dark green -->
+  <text x="250" y="690" font-family="Georgia, 'Times New Roman', serif" font-size="480" font-weight="700" fill="#2D5016">a</text>
+
+  <!-- Letter "i" — matching serif, no dot -->
+  <rect x="618" y="400" width="68" height="300" rx="6" fill="#2D5016"/>
+  <!-- Serif details -->
+  <rect x="594" y="690" width="116" height="14" rx="7" fill="#2D5016"/>
+  <rect x="594" y="400" width="116" height="14" rx="7" fill="#2D5016"/>
+
+  <!-- Checkmark dot — coral colored for pop -->
+  <circle cx="652" cy="330" r="44" fill="#D4654A"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="632,332 646,348 674,314"/>
+  </g>
+
+  <!-- Subtle bottom accent -->
+  <rect x="250" y="750" width="524" height="3" rx="1.5" fill="#2D5016" opacity="0.15"/>
+</svg>
