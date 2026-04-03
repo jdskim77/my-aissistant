@@ -1,6 +1,35 @@
 import Foundation
 import SwiftData
 
+// MARK: - Effort Level
+
+enum EffortLevel: String, CaseIterable, Identifiable, Codable {
+    case light = "Light"
+    case moderate = "Moderate"
+    case intense = "Intense"
+
+    var id: String { rawValue }
+
+    /// Effort points used in Life Compass scoring.
+    var points: Int {
+        switch self {
+        case .light: return 1
+        case .moderate: return 2
+        case .intense: return 3
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .light: return "leaf"
+        case .moderate: return "flame"
+        case .intense: return "bolt.fill"
+        }
+    }
+
+    var label: String { rawValue }
+}
+
 // MARK: - Recurrence
 
 enum TaskRecurrence: String, CaseIterable, Identifiable, Codable {
@@ -39,6 +68,8 @@ final class TaskItem {
     var completedAt: Date?
     var externalCalendarID: String?
     var recurrenceRaw: String?
+    var dimensionRaw: String?
+    var effortRaw: String?
 
     // MARK: - Computed enum accessors
 
@@ -58,6 +89,18 @@ final class TaskItem {
     var recurrence: TaskRecurrence {
         get { TaskRecurrence(rawValue: recurrenceRaw ?? "") ?? .none }
         set { recurrenceRaw = newValue == .none ? nil : newValue.rawValue }
+    }
+
+    @Transient
+    var dimension: LifeDimension? {
+        get { dimensionRaw.flatMap { LifeDimension(rawValue: $0) } }
+        set { dimensionRaw = newValue?.rawValue }
+    }
+
+    @Transient
+    var effort: EffortLevel {
+        get { EffortLevel(rawValue: effortRaw ?? "") ?? .moderate }
+        set { effortRaw = newValue.rawValue }
     }
 
     init(
