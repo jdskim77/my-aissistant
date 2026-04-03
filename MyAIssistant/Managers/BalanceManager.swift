@@ -198,7 +198,26 @@ final class BalanceManager: ObservableObject {
 
     // MARK: - Balance Streak
 
-    /// Consecutive weeks where all 4 dimensions scored >= 3.0 out of 10.
+    /// Whether there is any real user data (tasks or check-ins) in the given week.
+    func hasRealData(for weekStart: Date? = nil) -> Bool {
+        let calendar = Calendar.current
+        let start = weekStart ?? calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        let end = calendar.safeDate(byAdding: .day, value: 7, to: start)
+
+        let taskDesc = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= start && $0.date < end && $0.done == true }
+        )
+        let taskCount = (try? modelContext.fetchCount(taskDesc)) ?? 0
+        if taskCount > 0 { return true }
+
+        let checkInDesc = FetchDescriptor<DailyBalanceCheckIn>(
+            predicate: #Predicate { $0.date >= start && $0.date < end }
+        )
+        let checkInCount = (try? modelContext.fetchCount(checkInDesc)) ?? 0
+        return checkInCount > 0
+    }
+
+    /// Consecutive weeks where all 4 dimensions scored >= 3.0 out of 10 (with real data).
     func balanceStreak() -> Int {
         let calendar = Calendar.current
         let floor = 3.0
@@ -208,7 +227,7 @@ final class BalanceManager: ObservableObject {
         for _ in 0..<52 {
             let scores = weeklyScores(for: weekStart)
             let allAboveFloor = LifeDimension.scored.allSatisfy { (scores[$0] ?? 0) >= floor }
-            let hasData = scores.values.contains(where: { $0 > 0 })
+            let hasData = hasRealData(for: weekStart)
             let isCurrentWeek = calendar.isDate(weekStart, equalTo: Date(), toGranularity: .weekOfYear)
 
             if isCurrentWeek {
