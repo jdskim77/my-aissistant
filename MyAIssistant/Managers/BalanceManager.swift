@@ -48,13 +48,24 @@ final class BalanceManager: ObservableObject {
         let satisfactionScores = satisfactionSignal(from: start, to: end)
         let consistencyScores = consistencySignal(from: start, to: end)
 
+        // Detect if user has ANY data this week (tasks or check-ins)
+        let hasActivityData = activityScores.values.contains(where: { $0 > 0 })
+        let hasSatisfactionData = satisfactionScores.values.contains(where: { $0 != 5 })
+        let hasConsistencyData = consistencyScores.values.contains(where: { $0 > 0 })
+        let hasAnyData = hasActivityData || hasSatisfactionData || hasConsistencyData
+
         var result: [LifeDimension: DimensionBreakdown] = [:]
         for dim in LifeDimension.scored {
-            result[dim] = DimensionBreakdown(
-                activity: activityScores[dim] ?? 0,
-                satisfaction: satisfactionScores[dim] ?? 5, // default to neutral
-                consistency: consistencyScores[dim] ?? 0
-            )
+            if hasAnyData {
+                result[dim] = DimensionBreakdown(
+                    activity: activityScores[dim] ?? 0,
+                    satisfaction: satisfactionScores[dim] ?? 5,
+                    consistency: consistencyScores[dim] ?? 0
+                )
+            } else {
+                // No data yet — start at neutral 5/10 so compass looks balanced, not empty
+                result[dim] = DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
+            }
         }
         return result
     }
@@ -64,7 +75,7 @@ final class BalanceManager: ObservableObject {
     func balanceScore(for weekStart: Date? = nil) -> Double {
         let scores = weeklyScores(for: weekStart)
         let values = LifeDimension.scored.map { scores[$0] ?? 0 }
-        guard !values.isEmpty else { return 0 }
+        guard !values.isEmpty else { return 5 }
 
         let mean = values.reduce(0, +) / Double(values.count)
         guard mean > 0 else { return 0 }
@@ -410,10 +421,10 @@ final class BalanceManager: ObservableObject {
 
     private func nudgeSuggestion(for dimension: LifeDimension) -> String {
         switch dimension {
-        case .physical:  return ["A 20-minute walk?", "Some stretching today?", "A quick workout?"].randomElement()!
-        case .mental:    return ["Read for 15 minutes?", "Learn something new?", "Work on a creative project?"].randomElement()!
-        case .emotional: return ["Call someone you care about?", "Plan some fun tonight?", "Do something social?"].randomElement()!
-        case .spiritual: return ["A short meditation?", "Write in a gratitude journal?", "Spend time in nature?"].randomElement()!
+        case .physical:  return ["A 20-minute walk?", "Some stretching today?", "A quick workout?"].randomElement() ?? ""
+        case .mental:    return ["Read for 15 minutes?", "Learn something new?", "Work on a creative project?"].randomElement() ?? ""
+        case .emotional: return ["Call someone you care about?", "Plan some fun tonight?", "Do something social?"].randomElement() ?? ""
+        case .spiritual: return ["A short meditation?", "Write in a gratitude journal?", "Spend time in nature?"].randomElement() ?? ""
         case .practical: return "Tackle a quick errand?"
         }
     }
@@ -421,9 +432,10 @@ final class BalanceManager: ObservableObject {
     // MARK: - Season Goals
 
     func activeSeasonGoal() -> SeasonGoal? {
-        let now = Date()
+        // Use startOfDay to include the entire final day (matches SeasonGoal.isActive logic)
+        let today = Calendar.current.startOfDay(for: Date())
         let descriptor = FetchDescriptor<SeasonGoal>(
-            predicate: #Predicate { $0.completedAt == nil && $0.endDate > now },
+            predicate: #Predicate { $0.completedAt == nil && $0.endDate >= today },
             sortBy: [SortDescriptor(\SeasonGoal.startDate, order: .reverse)]
         )
         return try? modelContext.fetch(descriptor).first

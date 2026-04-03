@@ -15,15 +15,16 @@ struct SeasonGoalView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     if let goal = existingGoal {
-                        activeGoalCard(goal)
+                        activeGoalContent(goal)
                     } else {
                         newGoalFlow
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+                .padding(.bottom, 32)
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Season Goal")
@@ -49,79 +50,383 @@ struct SeasonGoalView: View {
         }
     }
 
-    // MARK: - Active Goal Card
+    // MARK: - Active Goal Content
 
-    private func activeGoalCard(_ goal: SeasonGoal) -> some View {
+    private func activeGoalContent(_ goal: SeasonGoal) -> some View {
         VStack(spacing: 20) {
-            // Header
-            VStack(spacing: 8) {
-                Image(systemName: goal.dimension.icon)
-                    .font(.system(size: 44, weight: .medium))
-                    .foregroundColor(goal.dimension.color)
+            // 1. Hero — Icon, name, intention, progress ring
+            heroSection(goal)
 
-                Text(goal.dimension.label)
-                    .font(AppFonts.heading(22))
-                    .foregroundColor(AppColors.textPrimary)
+            // 2. This Week's Performance
+            performanceCard(goal)
 
-                if !goal.intention.isEmpty {
-                    Text(goal.intention)
-                        .font(AppFonts.body(15))
-                        .foregroundColor(AppColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
+            // 3. Weekly Trend
+            weeklyTrendCard(goal)
 
-            // Progress ring
-            ZStack {
-                Circle()
-                    .stroke(AppColors.border, lineWidth: 8)
-                    .frame(width: 100, height: 100)
+            // 4. This Week's Tasks
+            tasksCard(goal)
 
-                Circle()
-                    .trim(from: 0, to: goal.progress)
-                    .stroke(goal.dimension.color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .frame(width: 100, height: 100)
-                    .rotationEffect(.degrees(-90))
+            // 5. AI Suggestion
+            suggestionCard(goal)
 
-                VStack(spacing: 2) {
-                    Text("\(goal.daysRemaining)")
-                        .font(AppFonts.heading(24))
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("days left")
-                        .font(AppFonts.caption(11))
-                        .foregroundColor(AppColors.textMuted)
-                }
-            }
-
-            // This week's score for the goal dimension
-            if let score = balanceManager.seasonGoalProgress() {
-                let displayScore = String(format: "%.1f", min(10, score))
-                HStack(spacing: 8) {
-                    Text("This week's \(goal.dimension.label) score:")
-                        .font(AppFonts.body(14))
-                        .foregroundColor(AppColors.textSecondary)
-                    Text("\(displayScore)/10")
-                        .font(AppFonts.heading(16))
-                        .foregroundColor(goal.dimension.color)
-                        .monospacedDigit()
-                }
-                .padding(12)
-                .background(goal.dimension.color.opacity(0.08))
-                .cornerRadius(12)
-            }
-
-            // Complete early button (BUG-26: requires confirmation)
+            // 6. End Goal (de-emphasized)
             Button {
                 Haptics.light()
                 showEndGoalConfirmation = true
             } label: {
                 Text("End Goal Early")
-                    .font(AppFonts.body(14))
+                    .font(AppFonts.caption(13))
                     .foregroundColor(AppColors.textMuted)
                     .frame(minHeight: 44)
             }
             .accessibilityLabel("End season goal early")
         }
+    }
+
+    // MARK: - 1. Hero Section
+
+    private func heroSection(_ goal: SeasonGoal) -> some View {
+        VStack(spacing: 16) {
+            // Progress ring with icon
+            ZStack {
+                Circle()
+                    .stroke(goal.dimension.color.opacity(0.15), lineWidth: 10)
+                    .frame(width: 120, height: 120)
+
+                Circle()
+                    .trim(from: 0, to: goal.progress)
+                    .stroke(goal.dimension.color, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .frame(width: 120, height: 120)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.5), value: goal.progress)
+
+                VStack(spacing: 2) {
+                    Image(systemName: goal.dimension.icon)
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(goal.dimension.color)
+                    Text("\(goal.daysRemaining)d")
+                        .font(AppFonts.label(12))
+                        .foregroundColor(AppColors.textMuted)
+                }
+            }
+
+            VStack(spacing: 4) {
+                Text(goal.dimension.label)
+                    .font(AppFonts.heading(22))
+                    .foregroundColor(AppColors.textPrimary)
+
+                if !goal.intention.isEmpty {
+                    Text("\"\(goal.intention)\"")
+                        .font(AppFonts.body(15))
+                        .foregroundColor(AppColors.textSecondary)
+                        .italic()
+                        .multilineTextAlignment(.center)
+                }
+
+                // Date range
+                HStack(spacing: 4) {
+                    Text(goal.startDate, style: .date)
+                    Text("→")
+                    Text(goal.endDate, style: .date)
+                }
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textMuted)
+            }
+        }
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - 2. Performance Card (3-Signal Breakdown)
+
+    private func performanceCard(_ goal: SeasonGoal) -> some View {
+        let breakdowns = balanceManager.weeklyBreakdowns()
+        let bd = breakdowns[goal.dimension] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
+        let score = bd.composite
+        let points = balanceManager.thisWeekEffortPoints()[goal.dimension] ?? 0
+        let target = balanceManager.personalTarget(for: goal.dimension)
+
+        return VStack(spacing: 14) {
+            HStack {
+                Text("This Week")
+                    .font(AppFonts.heading(15))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                Text(String(format: "%.1f", min(10, score)))
+                    .font(AppFonts.heading(22))
+                    .foregroundColor(goal.dimension.color)
+                    .monospacedDigit()
+                Text("/ 10")
+                    .font(AppFonts.caption(13))
+                    .foregroundColor(AppColors.textMuted)
+            }
+
+            // 3 signal bars
+            VStack(spacing: 10) {
+                signalRow(
+                    icon: "flame",
+                    label: "Activity",
+                    value: bd.activity,
+                    detail: "\(points) / \(target) effort pts",
+                    color: .green
+                )
+                signalRow(
+                    icon: "heart.fill",
+                    label: "Satisfaction",
+                    value: bd.satisfaction,
+                    detail: bd.satisfaction == 5 ? "No ratings yet" : String(format: "%.1f avg", bd.satisfaction / 2),
+                    color: .blue
+                )
+                signalRow(
+                    icon: "calendar",
+                    label: "Consistency",
+                    value: bd.consistency,
+                    detail: "\(Int(bd.consistency / 10 * 7)) of 7 days active",
+                    color: .orange
+                )
+            }
+        }
+        .padding(16)
+        .background(AppColors.card)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.border, lineWidth: 1)
+        )
+    }
+
+    private func signalRow(icon: String, label: String, value: Double, detail: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                    .foregroundColor(color)
+                    .frame(width: 16)
+                Text(label)
+                    .font(AppFonts.bodyMedium(13))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                Text(detail)
+                    .font(AppFonts.caption(11))
+                    .foregroundColor(AppColors.textMuted)
+                Text(String(format: "%.1f", min(10, value)))
+                    .font(AppFonts.label(12))
+                    .foregroundColor(color)
+                    .monospacedDigit()
+                    .frame(width: 28, alignment: .trailing)
+            }
+
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(AppColors.border.opacity(0.3))
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color.opacity(0.6))
+                        .frame(width: geo.size.width * min(1, value / 10))
+                }
+            }
+            .frame(height: 4)
+        }
+    }
+
+    // MARK: - 3. Weekly Trend
+
+    private func weeklyTrendCard(_ goal: SeasonGoal) -> some View {
+        let calendar = Calendar.current
+        let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+
+        // Get scores for last 4 weeks
+        let weekScores: [(String, Double)] = (0..<4).reversed().map { weeksAgo in
+            let weekStart = calendar.safeDate(byAdding: .day, value: -7 * weeksAgo, to: currentWeekStart)
+            let scores = balanceManager.weeklyScores(for: weekStart)
+            let score = scores[goal.dimension] ?? 5
+            let label = weeksAgo == 0 ? "This wk" : "\(weeksAgo)w ago"
+            return (label, score)
+        }
+
+        let maxScore = max(10, weekScores.map(\.1).max() ?? 10)
+
+        return VStack(spacing: 12) {
+            HStack {
+                Text("4-Week Trend")
+                    .font(AppFonts.heading(15))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                trendArrow(weekScores)
+            }
+
+            HStack(alignment: .bottom, spacing: 12) {
+                ForEach(Array(weekScores.enumerated()), id: \.offset) { index, item in
+                    VStack(spacing: 6) {
+                        Text(String(format: "%.1f", min(10, item.1)))
+                            .font(AppFonts.label(10))
+                            .foregroundColor(index == weekScores.count - 1 ? goal.dimension.color : AppColors.textMuted)
+                            .monospacedDigit()
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(index == weekScores.count - 1 ? goal.dimension.color : goal.dimension.color.opacity(0.3))
+                            .frame(height: max(8, CGFloat(item.1 / maxScore) * 60))
+
+                        Text(item.0)
+                            .font(AppFonts.caption(9))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(height: 100)
+        }
+        .padding(16)
+        .background(AppColors.card)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.border, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func trendArrow(_ scores: [(String, Double)]) -> some View {
+        let values = scores.map(\.1)
+        guard values.count >= 2 else { return AnyView(EmptyView()) }
+        let last = values.last ?? 0
+        let prev = values[values.count - 2]
+        let diff = last - prev
+
+        let icon: String
+        let color: Color
+        let label: String
+
+        if diff > 0.5 {
+            icon = "arrow.up.right"
+            color = AppColors.completionGreen
+            label = "Trending up"
+        } else if diff < -0.5 {
+            icon = "arrow.down.right"
+            color = AppColors.coral
+            label = "Trending down"
+        } else {
+            icon = "arrow.right"
+            color = AppColors.textMuted
+            label = "Steady"
+        }
+
+        return AnyView(
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .semibold))
+                Text(label)
+                    .font(AppFonts.caption(11))
+            }
+            .foregroundColor(color)
+        )
+    }
+
+    // MARK: - 4. Tasks This Week
+
+    private func tasksCard(_ goal: SeasonGoal) -> some View {
+        let counts = balanceManager.thisWeekTaskCounts()
+        let points = balanceManager.thisWeekEffortPoints()
+        let taskCount = counts[goal.dimension] ?? 0
+        let effortPoints = points[goal.dimension] ?? 0
+
+        return VStack(spacing: 12) {
+            HStack {
+                Text("Tasks This Week")
+                    .font(AppFonts.heading(15))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                Text("\(taskCount) tasks, \(effortPoints) pts")
+                    .font(AppFonts.caption(12))
+                    .foregroundColor(AppColors.textMuted)
+            }
+
+            if taskCount == 0 {
+                VStack(spacing: 8) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 24))
+                        .foregroundColor(AppColors.textMuted)
+                    Text("No \(goal.dimension.label.lowercased()) tasks completed yet this week")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            } else {
+                // Summary bar showing effort distribution
+                HStack(spacing: 4) {
+                    ForEach(EffortLevel.allCases) { level in
+                        HStack(spacing: 3) {
+                            Image(systemName: level.icon)
+                                .font(.system(size: 10))
+                            Text(level.label)
+                                .font(AppFonts.caption(10))
+                        }
+                        .foregroundColor(AppColors.textMuted)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppColors.surface)
+                        .cornerRadius(6)
+                    }
+                    Spacer()
+                }
+            }
+        }
+        .padding(16)
+        .background(AppColors.card)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.border, lineWidth: 1)
+        )
+    }
+
+    // MARK: - 5. AI Suggestion
+
+    private func suggestionCard(_ goal: SeasonGoal) -> some View {
+        let breakdowns = balanceManager.weeklyBreakdowns()
+        let bd = breakdowns[goal.dimension] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
+
+        // Find weakest signal
+        let signals: [(String, String, Double, String)] = [
+            ("flame", "Activity", bd.activity, "Try adding a \(goal.dimension.label.lowercased()) task today — even a small one counts."),
+            ("heart.fill", "Satisfaction", bd.satisfaction, "Rate your \(goal.dimension.label.lowercased()) satisfaction during your next check-in."),
+            ("calendar", "Consistency", bd.consistency, "Aim for a small \(goal.dimension.label.lowercased()) activity each day — regularity beats intensity.")
+        ]
+
+        let weakest = signals.min(by: { $0.2 < $1.2 })!
+
+        return VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.gold)
+                Text("Suggestion")
+                    .font(AppFonts.heading(14))
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                HStack(spacing: 3) {
+                    Image(systemName: weakest.0)
+                        .font(.system(size: 10))
+                    Text("\(weakest.1) is lowest")
+                        .font(AppFonts.caption(10))
+                }
+                .foregroundColor(AppColors.textMuted)
+            }
+
+            Text(weakest.3)
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .background(AppColors.gold.opacity(0.06))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.gold.opacity(0.15), lineWidth: 1)
+        )
     }
 
     // MARK: - New Goal Flow
@@ -153,8 +458,12 @@ struct SeasonGoalView: View {
                     .multilineTextAlignment(.center)
             }
 
-            // Dimension cards
+            // Dimension cards with current scores
+            let breakdowns = balanceManager.weeklyBreakdowns()
+
             ForEach(LifeDimension.scored) { dim in
+                let score = breakdowns[dim]?.composite ?? 5
+
                 Button {
                     Haptics.light()
                     withAnimation(.snappy(duration: 0.25)) {
@@ -170,15 +479,20 @@ struct SeasonGoalView: View {
                             .cornerRadius(12)
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(dim.label)
-                                .font(AppFonts.bodyMedium(16))
-                                .foregroundColor(AppColors.textPrimary)
+                            HStack {
+                                Text(dim.label)
+                                    .font(AppFonts.bodyMedium(16))
+                                    .foregroundColor(AppColors.textPrimary)
+                                Spacer()
+                                Text(String(format: "%.1f/10", min(10, score)))
+                                    .font(AppFonts.label(12))
+                                    .foregroundColor(dim.color)
+                                    .monospacedDigit()
+                            }
                             Text(dim.summary)
                                 .font(AppFonts.caption(12))
                                 .foregroundColor(AppColors.textMuted)
                         }
-
-                        Spacer()
 
                         if selectedDimension == dim {
                             Image(systemName: "checkmark.circle.fill")
