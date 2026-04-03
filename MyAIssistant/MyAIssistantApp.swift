@@ -14,6 +14,7 @@ struct MyAIssistantApp: App {
     @State private var checkInManager: CheckInManager
     @State private var calendarSyncManager: CalendarSyncManager
     @State private var usageGateManager: UsageGateManager
+    @State private var balanceManager: BalanceManager
     @StateObject private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
@@ -21,29 +22,57 @@ struct MyAIssistantApp: App {
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
-        let schema = Schema(versionedSchema: SchemaV1.self)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+        // All model types — flat list for CloudKit compatibility (no versioned schema)
+        let modelTypes: [any PersistentModel.Type] = [
+            TaskItem.self,
+            ChatMessage.self,
+            CheckInRecord.self,
+            DailySnapshot.self,
+            UserProfile.self,
+            UsageTracker.self,
+            CalendarLink.self,
+            ActivityEntry.self,
+            AlarmEntry.self,
+            FocusSession.self,
+            HabitItem.self,
+            DailyBalanceCheckIn.self,
+            SeasonGoal.self,
+            UserDimensionPreference.self,
+            ActivityPattern.self
+        ]
+        let schema = Schema(modelTypes)
+
+        // Local storage for now — CloudKit sync can be enabled once iCloud capability is configured
+        let config = ModelConfiguration(
+            "MyAIssistant",
+            schema: schema,
+            isStoredInMemoryOnly: false
+        )
+
         let container: ModelContainer
         do {
-            container = try ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )
+            container = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            // Database corrupted — log and delete to prevent permanent launch crash
-            AppLogger.data.critical("Database corrupted, resetting: \(error.localizedDescription)")
-            Self.databaseWasReset = true
+            // Database corrupted — log and try without CloudKit
+            AppLogger.data.critical("Database init failed: \(error.localizedDescription)")
 
-            let storeURL = config.url
-            try? FileManager.default.removeItem(at: storeURL)
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
-            container = (try? ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )) ?? ModelContainer.fallbackInMemory(schema: schema)
+            // Fallback: try local-only (no CloudKit)
+            let localConfig = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+            do {
+                container = try ModelContainer(for: schema, configurations: [localConfig])
+                AppLogger.data.warning("Falling back to local-only storage (no iCloud sync)")
+            } catch {
+                // Last resort: delete and recreate
+                AppLogger.data.critical("Database corrupted, resetting: \(error.localizedDescription)")
+                Self.databaseWasReset = true
+
+                let storeURL = localConfig.url
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+                container = (try? ModelContainer(for: schema, configurations: [localConfig]))
+                    ?? ModelContainer.fallbackInMemory(schema: schema)
+            }
         }
 
         self.modelContainer = container
@@ -57,6 +86,7 @@ struct MyAIssistantApp: App {
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
         self._calendarSyncManager = State(initialValue: csm)
         self._usageGateManager = State(initialValue: UsageGateManager(modelContext: context))
+        self._balanceManager = State(initialValue: BalanceManager(modelContext: context))
 
         // Background task manager
         self.backgroundTaskManager = BackgroundTaskManager(
@@ -86,6 +116,7 @@ struct MyAIssistantApp: App {
                 .environment(\.checkInManager, checkInManager)
                 .environment(\.calendarSyncManager, calendarSyncManager)
                 .environment(\.usageGateManager, usageGateManager)
+                .environment(\.balanceManager, balanceManager)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
@@ -98,6 +129,19 @@ struct MyAIssistantApp: App {
                     backgroundTaskManager?.scheduleDailySnapshot()
                     backgroundTaskManager?.scheduleWeeklyReview()
                     backgroundTaskManager?.scheduleCalendarSync()
+
+                    // Re-schedule check-in reminders on every launch (in case system cleared them)
+                    let notificationManager = NotificationManager()
+                    await notificationManager.checkAuthorizationStatus()
+                    if notificationManager.isAuthorized {
+                        notificationManager.scheduleCheckInReminders()
+                    }
+
+                    // Sync calendars + reminders on every launch
+                    await calendarSyncManager.syncAll()
+
+                    // Start listening for real-time calendar/reminder changes
+                    calendarSyncManager.startListeningForChanges()
 
                     // Initialize WatchSyncManager early so WCSession can activate
                     _ = WatchSyncManager.shared
@@ -132,6 +176,20 @@ struct MyAIssistantApp: App {
                         icon: "📝"
                     )
                     taskManager.addTask(task)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .taskCompletionChanged)) { notification in
+                    guard let info = notification.userInfo,
+                          let extID = info["externalID"] as? String,
+                          extID.hasPrefix("reminder:") else { return }
+                    let done = info["done"] as? Bool ?? false
+                    let reminderID = String(extID.dropFirst("reminder:".count))
+                    Task {
+                        if done {
+                            try? await calendarSyncManager.eventKitService.completeReminder(identifier: reminderID)
+                        } else {
+                            try? await calendarSyncManager.eventKitService.uncompleteReminder(identifier: reminderID)
+                        }
+                    }
                 }
                 .alert("Data Reset", isPresented: $showDatabaseResetAlert) {
                     Button("OK", role: .cancel) {}
