@@ -18,8 +18,10 @@ final class CalendarSyncManager: ObservableObject {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         // Use stored client ID if user set one, otherwise fall back to bundled default
-        let storedID = UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? ""
+        let storedID = (UserDefaults.standard.string(forKey: AppConstants.googleClientIDKey) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let clientID = storedID.isEmpty ? AppConstants.googleClientID : storedID
+        print("[CalendarSyncManager] Using Google client ID: \(clientID.prefix(30))...")
         self.googleService = GoogleCalendarService(clientID: clientID)
     }
 
