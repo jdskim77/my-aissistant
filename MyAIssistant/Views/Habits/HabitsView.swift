@@ -6,6 +6,7 @@ struct HabitsView: View {
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
     @State private var showingAddHabit = false
     @State private var habitToEdit: HabitItem?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let calendar = Calendar.current
 
@@ -50,9 +51,10 @@ struct HabitsView: View {
                         showingAddHabit = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
+                            .font(AppFonts.heading(22))
                             .foregroundColor(AppColors.accent)
                     }
+                    .accessibilityLabel("Add new habit")
                 }
             }
             .sheet(isPresented: $showingAddHabit) {
@@ -70,7 +72,7 @@ struct HabitsView: View {
         VStack(spacing: 16) {
             Spacer().frame(height: 60)
             Image(systemName: "leaf.fill")
-                .font(.system(size: 44))
+                .font(AppFonts.icon(44))
                 .foregroundColor(AppColors.textMuted)
             Text("No habits yet")
                 .font(AppFonts.heading(18))
@@ -87,7 +89,7 @@ struct HabitsView: View {
                     Text("Add First Habit")
                 }
                 .font(AppFonts.bodyMedium(15))
-                .foregroundColor(AppColors.onAccent)
+                .foregroundColor(.white)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 14)
                 .background(AppColors.accent)
@@ -128,9 +130,9 @@ struct HabitsView: View {
             // Checkbox
             Button {
                 Haptics.success()
-                withAnimation(.spring(response: 0.3)) {
+                withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
                     habit.toggleCompletion(for: today)
-                    modelContext.safeSave()
+                    try? modelContext.save()
                 }
             } label: {
                 ZStack {
@@ -142,17 +144,20 @@ struct HabitsView: View {
                             .fill(AppColors.completionGreen)
                             .frame(width: 28, height: 28)
                         Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppColors.onAccent)
+                            .font(AppFonts.label(13))
+                            .foregroundColor(.white)
                     }
                 }
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("\(habit.title), \(isDone ? "completed" : "not completed")")
+            .accessibilityHint(isDone ? "Double tap to mark as not completed" : "Double tap to mark as completed")
+            .accessibilityAddTraits(.isButton)
 
             Text(habit.icon)
-                .font(.system(size: 22))
+                .font(AppFonts.heading(22))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(habit.title)
@@ -175,11 +180,12 @@ struct HabitsView: View {
                 habitToEdit = habit
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFonts.body(14).weight(.medium))
                     .foregroundColor(AppColors.textMuted)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Edit \(habit.title)")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
@@ -218,7 +224,7 @@ struct HabitsView: View {
                     HStack(spacing: 0) {
                         HStack(spacing: 6) {
                             Text(habit.icon)
-                                .font(.system(size: 14))
+                                .font(AppFonts.body(14))
                             Text(habit.title)
                                 .font(AppFonts.caption(12))
                                 .foregroundColor(AppColors.textSecondary)
@@ -229,6 +235,7 @@ struct HabitsView: View {
                         ForEach(weekDates, id: \.self) { date in
                             let done = habit.isCompletedOn(date)
                             let applies = habit.targetDays.appliesTo(date: date)
+                            let dayName = date.formatted(as: "EEEE")
                             ZStack {
                                 if applies {
                                     RoundedRectangle(cornerRadius: 6)
@@ -236,8 +243,8 @@ struct HabitsView: View {
                                         .frame(width: 24, height: 24)
                                     if done {
                                         Image(systemName: "checkmark")
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(AppColors.onAccent)
+                                            .font(AppFonts.label(11))
+                                            .foregroundColor(.white)
                                     }
                                 } else {
                                     RoundedRectangle(cornerRadius: 6)
@@ -246,6 +253,7 @@ struct HabitsView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity)
+                            .accessibilityLabel("\(dayName), \(applies ? (done ? "completed" : "missed") : "not scheduled")")
                         }
                     }
                     .padding(.vertical, 6)
@@ -274,7 +282,7 @@ struct HabitsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             Text(habit.icon)
-                                .font(.system(size: 16))
+                                .font(AppFonts.body(16))
                             Text(habit.title)
                                 .font(AppFonts.bodyMedium(13))
                                 .foregroundColor(AppColors.textPrimary)

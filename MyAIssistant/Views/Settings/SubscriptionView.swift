@@ -43,7 +43,7 @@ struct SubscriptionView: View {
 
                 // Auto-renewal disclosure (required by Apple)
                 Text("Payment is charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
-                    .font(AppFonts.caption(10))
+                    .font(AppFonts.caption(11))
                     .foregroundColor(AppColors.textMuted.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
@@ -73,7 +73,7 @@ struct SubscriptionView: View {
     private var currentTierBadge: some View {
         HStack(spacing: 10) {
             Image(systemName: "crown.fill")
-                .font(.system(size: 20))
+                .font(AppFonts.heading(20))
                 .foregroundColor(currentTier == .free ? AppColors.textMuted : AppColors.accentWarm)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -152,7 +152,7 @@ struct SubscriptionView: View {
             ForEach(tier.features, id: \.self) { feature in
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFonts.label(11))
                         .foregroundColor(AppColors.accentWarm)
                     Text(feature)
                         .font(AppFonts.body(14))
@@ -181,7 +181,7 @@ struct SubscriptionView: View {
                         Text("Subscribe")
                             .font(AppFonts.bodyMedium(15))
                     }
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(AppColors.accent)
@@ -191,7 +191,7 @@ struct SubscriptionView: View {
             } else {
                 Text("Subscribe")
                     .font(AppFonts.bodyMedium(15))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(AppColors.textMuted)

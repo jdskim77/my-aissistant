@@ -19,7 +19,6 @@ struct NLTaskParserView: View {
     @State private var parsedIcon = "📌"
     @State private var parsedNotes = ""
     @State private var parsedRecurrence: TaskRecurrence = .none
-    @State private var parsedDimension: LifeDimension?
     @State private var showConfirmation = false
 
     @FocusState private var inputFocused: Bool
@@ -52,7 +51,7 @@ struct NLTaskParserView: View {
 
             VStack(spacing: 12) {
                 Image(systemName: "text.bubble")
-                    .font(.system(size: 44))
+                    .font(AppFonts.icon(44))
                     .foregroundColor(AppColors.accent)
 
                 Text("Describe your task")
@@ -100,7 +99,7 @@ struct NLTaskParserView: View {
                         Text(isLoading ? "Parsing..." : "Parse with AI")
                     }
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isLoading ? AppColors.textMuted : AppColors.accent)
@@ -157,7 +156,7 @@ struct NLTaskParserView: View {
                 // Preview header
                 HStack(spacing: 12) {
                     Text(parsedIcon)
-                        .font(.system(size: 36))
+                        .font(AppFonts.icon(36))
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Here's what I got")
                             .font(AppFonts.heading(18))
@@ -201,7 +200,7 @@ struct NLTaskParserView: View {
                                     Haptics.selection()
                                     parsedPriority = pri
                                 } label: {
-                                    Text(pri.displayName)
+                                    Text(pri.rawValue)
                                         .font(AppFonts.label(13))
                                         .foregroundColor(parsedPriority == pri ? .white : AppColors.priorityColor(pri))
                                         .padding(.horizontal, 14)
@@ -222,13 +221,6 @@ struct NLTaskParserView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(AppColors.accent)
-                    }
-
-                    editableField("Life Dimension") {
-                        DimensionPickerView(
-                            selection: $parsedDimension,
-                            suggestion: DimensionSuggester.suggest(title: parsedTitle, category: parsedCategory, context: nil)
-                        )
                     }
 
                     editableField("Notes") {
@@ -255,7 +247,7 @@ struct NLTaskParserView: View {
                             Text("Add Task")
                         }
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)
@@ -358,9 +350,6 @@ struct NLTaskParserView: View {
             parsedRecurrence = rec
         }
 
-        // Auto-suggest life dimension from parsed title + category
-        parsedDimension = DimensionSuggester.suggest(title: parsedTitle, category: parsedCategory)
-
         // Parse date
         if let dateStr = json["date"] as? String {
             let df = DateFormatter()
@@ -394,7 +383,6 @@ struct NLTaskParserView: View {
             notes: parsedNotes,
             recurrence: parsedRecurrence
         )
-        task.dimension = parsedDimension
         taskManager?.addTask(task)
         Haptics.success()
         dismiss()

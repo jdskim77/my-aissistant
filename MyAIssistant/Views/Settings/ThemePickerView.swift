@@ -88,7 +88,7 @@ struct ThemePickerView: View {
                 // Label
                 HStack(spacing: 6) {
                     Image(systemName: theme.icon)
-                        .font(.system(size: 13))
+                        .font(AppFonts.caption(13))
                         .foregroundColor(isSelected ? AppColors.accent : AppColors.textSecondary)
 
                     Text(theme.rawValue)
@@ -113,7 +113,7 @@ struct ThemePickerView: View {
             .overlay(alignment: .topTrailing) {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
+                        .font(AppFonts.heading(20))
                         .foregroundColor(AppColors.accent)
                         .background(Circle().fill(AppColors.card))
                         .offset(x: 6, y: -6)

@@ -32,7 +32,7 @@ struct APIKeySettingsView: View {
                             showAnthropicKey.toggle()
                         } label: {
                             Image(systemName: showAnthropicKey ? "eye.slash" : "eye")
-                                .font(.system(size: 14))
+                                .font(AppFonts.body(14))
                                 .foregroundColor(AppColors.textMuted)
                         }
                     }
@@ -74,7 +74,7 @@ struct APIKeySettingsView: View {
                             showOpenAIKey.toggle()
                         } label: {
                             Image(systemName: showOpenAIKey ? "eye.slash" : "eye")
-                                .font(.system(size: 14))
+                                .font(AppFonts.body(14))
                                 .foregroundColor(AppColors.textMuted)
                         }
                     }
@@ -100,7 +100,7 @@ struct APIKeySettingsView: View {
                 } label: {
                     Text("Save API Keys")
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(AppColors.accent)

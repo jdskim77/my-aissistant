@@ -31,7 +31,7 @@ struct AIGreetingCard: View {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFonts.label(11))
                     .foregroundColor(AppColors.textMuted)
                     .padding(6)
                     .background(AppColors.surface)

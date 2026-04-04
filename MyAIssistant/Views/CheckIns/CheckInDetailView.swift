@@ -118,7 +118,7 @@ struct CheckInDetailView: View {
     private var greetingStep: some View {
         VStack(spacing: 20) {
             Text(timeSlot.icon)
-                .font(.system(size: 56))
+                .font(AppFonts.icon(56))
 
             Text(timeSlot.title)
                 .font(AppFonts.display(28))
@@ -144,7 +144,7 @@ struct CheckInDetailView: View {
     private var moodStep: some View {
         VStack(spacing: 24) {
             Text(timeSlot.icon)
-                .font(.system(size: 40))
+                .font(AppFonts.icon(40))
 
             MoodPicker(selectedMood: $selectedMood)
         }
@@ -193,7 +193,7 @@ struct CheckInDetailView: View {
                             }
 
                             Text(energyLabel(level))
-                                .font(AppFonts.caption(10))
+                                .font(AppFonts.caption(11))
                                 .foregroundColor(AppColors.textMuted)
                         }
                     }
@@ -235,7 +235,7 @@ struct CheckInDetailView: View {
     private var completeStep: some View {
         VStack(spacing: 20) {
             Text("✅")
-                .font(.system(size: 56))
+                .font(AppFonts.icon(56))
 
             Text("Check-in Complete!")
                 .font(AppFonts.display(24))
@@ -253,7 +253,7 @@ struct CheckInDetailView: View {
             } label: {
                 Text("Done")
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(timeSlot.color)
@@ -295,7 +295,7 @@ struct CheckInDetailView: View {
             } label: {
                 Text(currentStep == .notes ? "Complete" : "Continue")
                     .font(AppFonts.bodyMedium(15))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(canAdvance ? timeSlot.color : AppColors.textMuted)

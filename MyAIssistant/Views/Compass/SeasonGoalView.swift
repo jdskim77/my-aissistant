@@ -102,7 +102,7 @@ struct SeasonGoalView: View {
 
                 VStack(spacing: 2) {
                     Image(systemName: goal.dimension.icon)
-                        .font(.system(size: 28, weight: .medium))
+                        .font(AppFonts.display(28).weight(.medium))
                         .foregroundColor(goal.dimension.color)
                     Text("\(goal.daysRemaining)d")
                         .font(AppFonts.label(12))
@@ -198,7 +198,7 @@ struct SeasonGoalView: View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(AppFonts.caption(12))
                     .foregroundColor(color)
                     .frame(width: 16)
                 Text(label)
@@ -314,7 +314,7 @@ struct SeasonGoalView: View {
         return AnyView(
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFonts.label(11))
                 Text(label)
                     .font(AppFonts.caption(11))
             }
@@ -344,7 +344,7 @@ struct SeasonGoalView: View {
             if taskCount == 0 {
                 VStack(spacing: 8) {
                     Image(systemName: "tray")
-                        .font(.system(size: 24))
+                        .font(AppFonts.display(24))
                         .foregroundColor(AppColors.textMuted)
                     Text("No \(goal.dimension.label.lowercased()) tasks completed yet this week")
                         .font(AppFonts.caption(12))
@@ -359,9 +359,9 @@ struct SeasonGoalView: View {
                     ForEach(EffortLevel.allCases) { level in
                         HStack(spacing: 3) {
                             Image(systemName: level.icon)
-                                .font(.system(size: 10))
+                                .font(AppFonts.caption(11))
                             Text(level.label)
-                                .font(AppFonts.caption(10))
+                                .font(AppFonts.caption(11))
                         }
                         .foregroundColor(AppColors.textMuted)
                         .padding(.horizontal, 8)
@@ -400,7 +400,7 @@ struct SeasonGoalView: View {
         return VStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 14))
+                    .font(AppFonts.body(14))
                     .foregroundColor(AppColors.gold)
                 Text("Suggestion")
                     .font(AppFonts.heading(14))
@@ -408,9 +408,9 @@ struct SeasonGoalView: View {
                 Spacer()
                 HStack(spacing: 3) {
                     Image(systemName: weakest.0)
-                        .font(.system(size: 10))
+                        .font(AppFonts.caption(11))
                     Text("\(weakest.1) is lowest")
-                        .font(AppFonts.caption(10))
+                        .font(AppFonts.caption(11))
                 }
                 .foregroundColor(AppColors.textMuted)
             }
@@ -445,7 +445,7 @@ struct SeasonGoalView: View {
         VStack(spacing: 20) {
             VStack(spacing: 8) {
                 Image(systemName: "target")
-                    .font(.system(size: 36))
+                    .font(AppFonts.icon(36))
                     .foregroundColor(AppColors.accent)
 
                 Text("Choose Your Focus")
@@ -472,7 +472,7 @@ struct SeasonGoalView: View {
                 } label: {
                     HStack(spacing: 14) {
                         Image(systemName: dim.icon)
-                            .font(.system(size: 22, weight: .medium))
+                            .font(AppFonts.heading(22).weight(.medium))
                             .foregroundColor(dim.color)
                             .frame(width: 44, height: 44)
                             .background(dim.color.opacity(0.1))
@@ -496,7 +496,7 @@ struct SeasonGoalView: View {
 
                         if selectedDimension == dim {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 22))
+                                .font(AppFonts.heading(22))
                                 .foregroundColor(dim.color)
                         }
                     }
@@ -553,7 +553,7 @@ struct SeasonGoalView: View {
         VStack(spacing: 16) {
             if let dim = selectedDimension {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 56))
+                    .font(AppFonts.icon(56))
                     .foregroundColor(dim.color)
 
                 Text("Season Goal Set!")

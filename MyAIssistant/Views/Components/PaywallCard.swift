@@ -10,7 +10,7 @@ struct PaywallCard: View {
         VStack(spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 20))
+                    .font(AppFonts.heading(20))
                     .foregroundColor(AppColors.accentWarm)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -29,7 +29,7 @@ struct PaywallCard: View {
                 Button(action: action) {
                     Text("Upgrade to Pro")
                         .font(AppFonts.bodyMedium(14))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(

@@ -82,7 +82,7 @@ struct EventScannerView: View {
     private var pickerButtons: some View {
         VStack(spacing: 16) {
             Image(systemName: "doc.text.viewfinder")
-                .font(.system(size: 52))
+                .font(AppFonts.icon(52))
                 .foregroundColor(AppColors.accent)
 
             Text("Scan an event")
@@ -131,7 +131,7 @@ struct EventScannerView: View {
                 .scaledToFit()
                 .frame(maxHeight: 240)
                 .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.1), radius: 8, y: 4)
+                .shadow(color: AppColors.textPrimary.opacity(0.1), radius: 8, y: 4)
 
             if scannedEvent == nil && !isScanning {
                 Button {
@@ -167,7 +167,7 @@ struct EventScannerView: View {
     private func errorBanner(_ message: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
+                .foregroundColor(AppColors.overdueRed)
             Text(message)
                 .font(AppFonts.body(13))
                 .foregroundColor(AppColors.textPrimary)
@@ -185,7 +185,7 @@ struct EventScannerView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.red.opacity(0.08))
+                .fill(AppColors.overdueRed.opacity(0.08))
         )
     }
 
@@ -236,7 +236,7 @@ struct EventScannerView: View {
                 } label: {
                     Text("Add to Schedule")
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 48)
                         .background(AppColors.accent)
@@ -248,14 +248,14 @@ struct EventScannerView: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(AppColors.card)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 4)
+                .shadow(color: AppColors.textPrimary.opacity(0.05), radius: 8, y: 4)
         )
     }
 
     private func eventDetailRow(icon: String, label: String, value: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFonts.body(14).weight(.medium))
                 .foregroundColor(AppColors.accent)
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 2) {

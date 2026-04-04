@@ -1,13 +1,20 @@
 import SwiftUI
+import UIKit
 
 struct AppFonts {
     private static var scale: CGFloat {
         TextSizeManager.shared.selectedSize.scale
     }
 
-    private static func scaled(_ size: CGFloat) -> CGFloat {
-        (size * scale).rounded(.toNearestOrEven)
+    /// Scales a point size by the app's TextSizeManager multiplier,
+    /// then additionally respects the system-wide Dynamic Type setting
+    /// via UIFontMetrics so that iOS Accessibility text sizes are honored.
+    static func scaled(_ size: CGFloat) -> CGFloat {
+        let appScale = size * scale
+        return UIFontMetrics.default.scaledValue(for: appScale)
     }
+
+    // MARK: - Primary type styles
 
     static func display(_ size: CGFloat) -> Font {
         .system(size: scaled(size), weight: .light, design: .serif)
@@ -35,5 +42,17 @@ struct AppFonts {
 
     static func label(_ size: CGFloat = 12) -> Font {
         .system(size: scaled(size), weight: .semibold, design: .rounded)
+    }
+
+    // MARK: - Special-purpose helpers
+
+    /// Monospaced font for timer displays and tabular data.
+    static func mono(_ size: CGFloat) -> Font {
+        .system(size: scaled(size), weight: .light, design: .monospaced)
+    }
+
+    /// Sized font for emoji / icon-only text (not SF Symbols).
+    static func icon(_ size: CGFloat) -> Font {
+        .system(size: scaled(size))
     }
 }

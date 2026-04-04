@@ -16,7 +16,7 @@ struct OnboardingCompleteView: View {
                     }
 
                     Text("🎉")
-                        .font(.system(size: 72))
+                        .font(AppFonts.icon(72))
                         .scaleEffect(appeared ? 1 : 0.3)
                 }
 
@@ -29,38 +29,22 @@ struct OnboardingCompleteView: View {
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
 
-                // Quick-start tips
-                VStack(spacing: 14) {
-                    tipRow(
-                        icon: "plus.circle.fill",
-                        color: AppColors.accent,
-                        text: "Tap + on the schedule tab to add your first task"
-                    )
-                    tipRow(
-                        icon: "sparkles",
-                        color: AppColors.accentWarm,
-                        text: "Ask the AI to manage your day — tap the center button"
-                    )
-                    tipRow(
-                        icon: "flame.fill",
-                        color: AppColors.coral,
-                        text: "Check in daily to build your streak"
-                    )
+                VStack(spacing: 12) {
+                    tipRow(icon: "💬", text: "Chat with your assistant to add tasks")
+                    tipRow(icon: "🔔", text: "Check in 4x daily to build your streak")
+                    tipRow(icon: "📊", text: "Review your patterns each week")
                 }
-                .padding(.top, 4)
+                .padding(.top, 8)
             }
             .offset(y: appeared ? 0 : 20)
             .opacity(appeared ? 1 : 0)
 
             Spacer()
 
-            Button {
-                Haptics.success()
-                onFinish()
-            } label: {
+            Button(action: onFinish) {
                 Text("Let's Go!")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
@@ -89,22 +73,20 @@ struct OnboardingCompleteView: View {
         }
     }
 
-    private func tipRow(icon: String, color: Color, text: String) -> some View {
+    private func tipRow(icon: String, text: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(color)
-                .frame(width: 32)
+            Text(icon)
+                .font(AppFonts.icon(22))
             Text(text)
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
         .padding(.horizontal, 24)
     }
 
     private var confettiEffect: some View {
+        // Simple animated dots as confetti placeholder
         ZStack {
             ForEach(0..<12, id: \.self) { i in
                 Circle()

@@ -8,9 +8,6 @@ struct SettingsView: View {
     @State private var exportURL: URL?
     @State private var showingExportShare = false
     @State private var exportError: String?
-    @State private var versionTapCount = 0
-    @State private var developerMode = AppConstants.isDeveloperMode
-    @State private var showDeveloperUnlocked = false
 
     var body: some View {
         NavigationStack {
@@ -135,7 +132,7 @@ struct SettingsView: View {
                                 .font(AppFonts.caption(12))
                                 .foregroundColor(AppColors.textMuted)
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 12))
+                                .font(AppFonts.caption(12))
                                 .foregroundColor(AppColors.textMuted)
                         }
                     }
@@ -198,18 +195,6 @@ struct SettingsView: View {
 
                 // About
                 Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Find your rhythm. Balance your day.")
-                            .font(AppFonts.bodyMedium(16))
-                            .foregroundColor(AppColors.textPrimary)
-
-                        Text("An AI companion that learns your patterns and helps you find balance across mind, body, heart, and soul \u{2014} one day at a time.")
-                            .font(AppFonts.body(14))
-                            .foregroundColor(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, 4)
-
                     HStack {
                         Text("Version")
                             .font(AppFonts.body(15))
@@ -219,44 +204,8 @@ struct SettingsView: View {
                             .font(AppFonts.body(15))
                             .foregroundColor(AppColors.textMuted)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        versionTapCount += 1
-                        if versionTapCount >= 7 && !developerMode {
-                            Haptics.success()
-                            developerMode = true
-                            UserDefaults.standard.set(true, forKey: AppConstants.developerModeKey)
-                            showDeveloperUnlocked = true
-                            versionTapCount = 0
-                        }
-                    }
                 } header: {
                     Text("About")
-                }
-
-                // Developer section — only visible when unlocked
-                if developerMode {
-                    Section {
-                        Toggle(isOn: $developerMode) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "hammer.fill")
-                                    .foregroundColor(AppColors.coral)
-                                Text("Developer Mode")
-                                    .font(AppFonts.bodyMedium(15))
-                                    .foregroundColor(AppColors.textPrimary)
-                            }
-                        }
-                        .tint(AppColors.coral)
-                        .onChange(of: developerMode) { _, newValue in
-                            UserDefaults.standard.set(newValue, forKey: AppConstants.developerModeKey)
-                        }
-
-                        Text("Bypasses all usage limits (check-ins, chat messages). Tap version number 7x to re-enable.")
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textMuted)
-                    } header: {
-                        Text("Developer")
-                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -283,11 +232,6 @@ struct SettingsView: View {
             } message: {
                 Text(exportError ?? "")
             }
-            .alert("Developer Mode Unlocked", isPresented: $showDeveloperUnlocked) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("Usage limits are now bypassed. You can toggle this off in the Developer section below.")
-            }
         }
     }
 
@@ -302,8 +246,8 @@ struct SettingsView: View {
     private func settingsRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(AppColors.onAccent)
+                .font(AppFonts.bodyMedium(16))
+                .foregroundColor(.white)
                 .frame(width: 32, height: 32)
                 .background(color)
                 .cornerRadius(8)

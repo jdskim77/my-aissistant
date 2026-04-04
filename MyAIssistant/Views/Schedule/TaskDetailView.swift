@@ -12,7 +12,6 @@ struct TaskDetailView: View {
     @State private var priority: TaskPriority
     @State private var notes: String
     @State private var icon: String
-    @State private var dimension: LifeDimension?
     @State private var showingDeleteAlert = false
 
     private let iconOptions = ["📌", "✈️", "🏨", "🚐", "🧳", "🛫", "🛬", "🏜️", "💱", "📋", "📘", "🛒", "💳", "🔧", "🧘", "📞", "💊", "🎁", "📦", "🏃"]
@@ -25,7 +24,6 @@ struct TaskDetailView: View {
         self._priority = State(initialValue: task.priority)
         self._notes = State(initialValue: task.notes)
         self._icon = State(initialValue: task.icon)
-        self._dimension = State(initialValue: task.dimension)
     }
 
     var body: some View {
@@ -35,7 +33,7 @@ struct TaskDetailView: View {
                     // Status
                     HStack(spacing: 10) {
                         Image(systemName: task.done ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 22))
+                            .font(AppFonts.icon(22))
                             .foregroundColor(task.done ? AppColors.accentWarm : AppColors.textMuted)
 
                         Text(task.done ? "Completed" : "Pending")
@@ -73,7 +71,7 @@ struct TaskDetailView: View {
                                         icon = opt
                                     } label: {
                                         Text(opt)
-                                            .font(.system(size: 22))
+                                            .font(AppFonts.icon(22))
                                             .padding(6)
                                             .background(icon == opt ? AppColors.accentLight : Color.clear)
                                             .cornerRadius(8)
@@ -151,7 +149,7 @@ struct TaskDetailView: View {
                                 Button {
                                     priority = pri
                                 } label: {
-                                    Text(pri.displayName)
+                                    Text(pri.rawValue)
                                         .font(AppFonts.bodyMedium(13))
                                         .foregroundColor(priority == pri ? .white : AppColors.priorityColor(pri))
                                         .padding(.horizontal, 12)
@@ -163,12 +161,6 @@ struct TaskDetailView: View {
                             }
                         }
                     }
-
-                    // Life Dimension
-                    DimensionPickerView(
-                        selection: $dimension,
-                        suggestion: DimensionSuggester.suggest(title: title, category: category, context: nil)
-                    )
 
                     // Notes
                     VStack(alignment: .leading, spacing: 8) {
@@ -192,7 +184,7 @@ struct TaskDetailView: View {
                     if let sourceLabel = taskManager?.calendarSourceLabel(task) {
                         HStack(spacing: 6) {
                             Image(systemName: "calendar")
-                                .font(.system(size: 13))
+                                .font(AppFonts.caption(13))
                             Text("Imported from \(sourceLabel)")
                                 .font(AppFonts.caption(12))
                         }
@@ -205,7 +197,7 @@ struct TaskDetailView: View {
                     } label: {
                         HStack {
                             Image(systemName: "trash")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(AppFonts.bodyMedium(14))
                             Text("Delete Task")
                                 .font(AppFonts.bodyMedium(15))
                         }
@@ -252,6 +244,5 @@ struct TaskDetailView: View {
         task.priority = priority
         task.notes = notes
         task.icon = icon
-        task.dimension = dimension
     }
 }

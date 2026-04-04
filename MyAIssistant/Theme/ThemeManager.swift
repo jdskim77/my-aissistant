@@ -68,7 +68,15 @@ final class ThemeManager {
         aiBubbleBorder: Color(hex: "E8E2D9"),
         checkboxHigh: Color(hex: "D32F2F"),
         checkboxMedium: Color(hex: "E8860B"),
-        checkboxLow: Color(hex: "1A5276")
+        checkboxLow: Color(hex: "1A5276"),
+        error: Color(hex: "D32F2F"),
+        errorBg: Color(hex: "FDEDED"),
+        warning: Color(hex: "E8860B"),
+        warningBg: Color(hex: "FFF8E1"),
+        success: Color(hex: "34A853"),
+        successBg: Color(hex: "E8F5E9"),
+        disabled: Color(hex: "C4BEB5"),
+        textDisabled: Color(hex: "9E9890")
     )
 
     // MARK: - 2. Ocean
@@ -100,7 +108,15 @@ final class ThemeManager {
         aiBubbleBorder: Color(hex: "D1D9E6"),
         checkboxHigh: Color(hex: "DC2626"),
         checkboxMedium: Color(hex: "F59E0B"),
-        checkboxLow: Color(hex: "1B6B93")
+        checkboxLow: Color(hex: "1B6B93"),
+        error: Color(hex: "DC2626"),
+        errorBg: Color(hex: "FEF2F2"),
+        warning: Color(hex: "F59E0B"),
+        warningBg: Color(hex: "FFFBEB"),
+        success: Color(hex: "059669"),
+        successBg: Color(hex: "ECFDF5"),
+        disabled: Color(hex: "C8CED6"),
+        textDisabled: Color(hex: "9CA3AF")
     )
 
     // MARK: - 3. High Contrast (Colorblind-Friendly, WCAG AAA)
@@ -132,7 +148,15 @@ final class ThemeManager {
         aiBubbleBorder: Color(hex: "BDBDBD"),
         checkboxHigh: Color(hex: "D84315"),    // Orange
         checkboxMedium: Color(hex: "E65100"),  // Darker orange
-        checkboxLow: Color(hex: "0052CC")      // Blue
+        checkboxLow: Color(hex: "0052CC"),     // Blue
+        error: Color(hex: "B71C1C"),
+        errorBg: Color(hex: "FFEBEE"),
+        warning: Color(hex: "E65100"),
+        warningBg: Color(hex: "FFF3E0"),
+        success: Color(hex: "1565C0"),         // Blue — colorblind-safe
+        successBg: Color(hex: "E3F2FD"),
+        disabled: Color(hex: "BDBDBD"),
+        textDisabled: Color(hex: "9E9E9E")
     )
 
     // MARK: - 4. Midnight (OLED Dark)
@@ -164,7 +188,15 @@ final class ThemeManager {
         aiBubbleBorder: Color(hex: "2D2D2D"),
         checkboxHigh: Color(hex: "EF5350"),
         checkboxMedium: Color(hex: "FFB74D"),
-        checkboxLow: Color(hex: "64B5F6")
+        checkboxLow: Color(hex: "64B5F6"),
+        error: Color(hex: "EF5350"),
+        errorBg: Color(hex: "3D1515"),
+        warning: Color(hex: "FFB74D"),
+        warningBg: Color(hex: "3D2E15"),
+        success: Color(hex: "66BB6A"),
+        successBg: Color(hex: "1A2E1A"),
+        disabled: Color(hex: "424242"),
+        textDisabled: Color(hex: "616161")
     )
 
     // MARK: - 5. Twilight (Soft Dark)
@@ -196,6 +228,14 @@ final class ThemeManager {
         aiBubbleBorder: Color(hex: "48484A"),
         checkboxHigh: Color(hex: "FF5252"),
         checkboxMedium: Color(hex: "FFB74D"),
-        checkboxLow: Color(hex: "82B1FF")
+        checkboxLow: Color(hex: "82B1FF"),
+        error: Color(hex: "FF5252"),
+        errorBg: Color(hex: "3D2020"),
+        warning: Color(hex: "FFB74D"),
+        warningBg: Color(hex: "3D3020"),
+        success: Color(hex: "81C784"),
+        successBg: Color(hex: "1C2E1C"),
+        disabled: Color(hex: "48484A"),
+        textDisabled: Color(hex: "636366")
     )
 }

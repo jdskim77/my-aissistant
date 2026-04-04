@@ -45,8 +45,8 @@ struct TaskCard: View {
                                 .fill(checkboxColor)
                                 .frame(width: 24, height: 24)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(AppColors.onAccent)
+                                .font(AppFonts.label(12))
+                                .foregroundColor(.white)
                         }
                     }
                     .frame(width: 44, height: 44)
@@ -75,7 +75,7 @@ struct TaskCard: View {
                         }
                         if task.recurrence != .none && !task.done {
                             Image(systemName: "repeat")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(AppFonts.caption(11))
                                 .foregroundColor(AppColors.accent)
                         }
                     }
@@ -85,13 +85,13 @@ struct TaskCard: View {
 
                 // Priority badge (color + text, not color-only)
                 if !task.done {
-                    Text(task.priority.shortLabel.prefix(1))
-                        .font(.system(size: 11, weight: .bold))
+                    Text(task.priority.rawValue.prefix(1))
+                        .font(AppFonts.label(11))
                         .foregroundColor(AppColors.checkboxColor(task.priority))
                         .frame(width: 24, height: 24)
                         .background(AppColors.checkboxColor(task.priority).opacity(0.12))
                         .cornerRadius(6)
-                        .accessibilityLabel("\(task.priority.displayName) priority")
+                        .accessibilityLabel("\(task.priority.rawValue) priority")
                 }
 
                 // Expand/collapse button
@@ -102,7 +102,7 @@ struct TaskCard: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.textMuted)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                         .frame(width: 32, height: 44)
@@ -122,7 +122,7 @@ struct TaskCard: View {
                     if !task.notes.isEmpty {
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "note.text")
-                                .font(.system(size: 13))
+                                .font(AppFonts.caption(13))
                                 .foregroundColor(AppColors.textMuted)
                                 .frame(width: 20)
                             Text(task.notes)
@@ -145,7 +145,7 @@ struct TaskCard: View {
                         if task.recurrence != .none {
                             HStack(spacing: 3) {
                                 Image(systemName: "repeat")
-                                    .font(.system(size: 9, weight: .semibold))
+                                    .font(AppFonts.label(11))
                                 Text(task.recurrence.rawValue)
                                     .font(AppFonts.label(11))
                             }
@@ -179,7 +179,7 @@ struct PriorityBadge: View {
     let priority: TaskPriority
 
     var body: some View {
-        Text(priority.shortLabel)
+        Text(priority.rawValue)
             .font(AppFonts.label(11))
             .foregroundColor(AppColors.priorityColor(priority))
             .padding(.horizontal, 8)

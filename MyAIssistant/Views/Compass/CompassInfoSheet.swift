@@ -11,7 +11,7 @@ struct CompassInfoSheet: View {
                     // Hero
                     VStack(spacing: 12) {
                         Image(systemName: "safari")
-                            .font(.system(size: 44))
+                            .font(AppFonts.icon(44))
                             .foregroundColor(AppColors.accent)
 
                         Text("How Life Compass Works")
@@ -122,7 +122,7 @@ struct CompassInfoSheet: View {
     private func dimensionRow(_ dimension: LifeDimension, description: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: dimension.icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(AppFonts.heading(18).weight(.medium))
                 .foregroundColor(dimension.color)
                 .frame(width: 32)
 
@@ -175,7 +175,7 @@ struct CompassInfoSheet: View {
     private func tipRow(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFonts.body(14).weight(.medium))
                 .foregroundColor(AppColors.accent)
                 .frame(width: 24)
                 .padding(.top, 2)

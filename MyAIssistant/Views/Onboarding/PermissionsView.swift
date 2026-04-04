@@ -13,7 +13,7 @@ struct PermissionsView: View {
 
             VStack(spacing: 24) {
                 Text("🔔")
-                    .font(.system(size: 56))
+                    .font(AppFonts.icon(56))
 
                 Text("Stay on Track")
                     .font(AppFonts.display(28))
@@ -53,29 +53,21 @@ struct PermissionsView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                Button {
-                    Haptics.light()
-                    onContinue()
-                } label: {
+                Button(action: onContinue) {
                     Text("Continue")
                         .font(AppFonts.bodyMedium(17))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)
                         .cornerRadius(14)
                 }
-                .accessibilityLabel("Continue to next step")
 
-                Button {
-                    Haptics.light()
-                    onContinue()
-                } label: {
+                Button(action: onContinue) {
                     Text("Skip for now")
                         .font(AppFonts.body(15))
                         .foregroundColor(AppColors.textMuted)
                 }
-                .accessibilityLabel("Skip permissions")
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
@@ -97,7 +89,7 @@ struct PermissionsView: View {
     ) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 24))
+                .font(AppFonts.icon(24))
                 .foregroundColor(granted == true ? AppColors.accentWarm : AppColors.accent)
                 .frame(width: 44)
 
@@ -114,21 +106,17 @@ struct PermissionsView: View {
 
             if granted == true {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 24))
+                    .font(AppFonts.icon(24))
                     .foregroundColor(AppColors.accentWarm)
             } else {
-                Button {
-                    Haptics.light()
+                Button("Enable") {
                     action()
-                } label: {
-                    Text("Enable")
-                        .font(AppFonts.bodyMedium(14))
-                        .foregroundColor(AppColors.onAccent)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(AppColors.accent)
                 }
-                .accessibilityLabel("Enable \(title)")
+                .font(AppFonts.bodyMedium(14))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppColors.accent)
                 .cornerRadius(8)
             }
         }

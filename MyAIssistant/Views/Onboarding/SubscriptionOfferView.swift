@@ -10,7 +10,7 @@ struct SubscriptionOfferView: View {
 
             VStack(spacing: 24) {
                 Text("⭐")
-                    .font(.system(size: 56))
+                    .font(AppFonts.icon(56))
 
                 Text("Unlock the Full\nExperience")
                     .font(AppFonts.display(28))
@@ -42,7 +42,7 @@ struct SubscriptionOfferView: View {
                     HStack {
                         Text("Pro")
                             .font(AppFonts.bodyMedium(14))
-                            .foregroundColor(AppColors.onAccent)
+                            .foregroundColor(.white)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(AppColors.accent)
@@ -84,7 +84,7 @@ struct SubscriptionOfferView: View {
                 Button(action: onContinue) {
                     Text("Continue with Free")
                         .font(AppFonts.bodyMedium(17))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)
@@ -96,7 +96,7 @@ struct SubscriptionOfferView: View {
                     .foregroundColor(AppColors.textMuted)
 
                 Text("Subscriptions auto-renew unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
-                    .font(AppFonts.caption(10))
+                    .font(AppFonts.caption(11))
                     .foregroundColor(AppColors.textMuted.opacity(0.7))
                     .multilineTextAlignment(.center)
 
@@ -121,7 +121,7 @@ struct SubscriptionOfferView: View {
     private func benefitRow(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
-                .font(.system(size: 12, weight: .bold))
+                .font(AppFonts.label(12))
                 .foregroundColor(AppColors.accentWarm)
             Text(text)
                 .font(AppFonts.body(14))

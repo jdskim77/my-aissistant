@@ -11,7 +11,7 @@ struct VoiceModeSelectionView: View {
 
             VStack(spacing: 24) {
                 Image(systemName: "waveform.circle.fill")
-                    .font(.system(size: 56))
+                    .font(AppFonts.icon(56))
                     .foregroundColor(AppColors.accent)
 
                 Text("How Do You Want\nto Chat?")
@@ -58,7 +58,7 @@ struct VoiceModeSelectionView: View {
             Button(action: onContinue) {
                 Text("Continue")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.accent)
@@ -85,7 +85,7 @@ struct VoiceModeSelectionView: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 28))
+                    .font(AppFonts.icon(28))
                     .foregroundColor(isSelected ? AppColors.accent : AppColors.textMuted)
                     .frame(width: 44)
 
@@ -102,7 +102,7 @@ struct VoiceModeSelectionView: View {
                 Spacer()
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
+                    .font(AppFonts.icon(24))
                     .foregroundColor(isSelected ? AppColors.accent : AppColors.border)
             }
             .padding(16)

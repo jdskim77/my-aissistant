@@ -2,24 +2,54 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Calendar Access -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>My AIssistant uses your calendar to sync events with your schedule and help you stay organized.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Full calendar access lets My AIssistant create and update events to keep your schedule in sync.</string>
+
+	<!-- Reminders Access -->
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Thrivn needs reminders access to import and sync your tasks.</string>
+
+	<!-- Notifications -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>My AIssistant sends check-in reminders and task alerts to help you stay on track.</string>
+
+	<!-- Speech Recognition -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>My AIssistant uses speech recognition to let you talk to your AI assistant hands-free.</string>
+
+	<!-- Camera Access -->
+	<key>NSCameraUsageDescription</key>
+	<string>My AIssistant uses the camera to scan event flyers and posters to add them to your schedule.</string>
+
+	<!-- Microphone Access -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>My AIssistant needs microphone access to transcribe your voice into text for the AI assistant.</string>
+
+	<!-- Queried URL Schemes (for canOpenURL checks) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>clock-sleep-alarm</string>
+	</array>
+
+	<!-- Background Tasks -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.myaissistant.daily-snapshot</string>
 		<string>com.myaissistant.weekly-review</string>
 		<string>com.myaissistant.calendar-sync</string>
 	</array>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>clock-sleep-alarm</string>
-	</array>
-	<key>NSUserNotificationsUsageDescription</key>
-	<string>Thrivn sends check-in reminders and task alerts to help you stay on track.</string>
+
+	<!-- Background Modes -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
-		<string>remote-notification</string>
 	</array>
+
+	<!-- Launch Screen -->
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

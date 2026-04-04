@@ -28,7 +28,7 @@ struct ConversationListView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "plus.bubble")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(AppFonts.bodyMedium(16))
                             .foregroundColor(AppColors.accent)
                             .frame(width: 32, height: 32)
                             .background(AppColors.accentLight)
@@ -49,7 +49,7 @@ struct ConversationListView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: convo.id == "weekly-review" ? "sparkles" : "bubble.left.and.bubble.right")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(AppFonts.bodyMedium(14))
                                 .foregroundColor(convo.id == selectedConversationID ? .white : AppColors.textMuted)
                                 .frame(width: 32, height: 32)
                                 .background(convo.id == selectedConversationID ? AppColors.accent : AppColors.surface)
@@ -79,7 +79,7 @@ struct ConversationListView: View {
 
                             if convo.id == selectedConversationID {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(AppFonts.label(13))
                                     .foregroundColor(AppColors.accent)
                             }
                         }
@@ -123,6 +123,6 @@ struct ConversationListView: View {
                 modelContext.delete(message)
             }
         }
-        modelContext.safeSave()
+        try? modelContext.save()
     }
 }

@@ -74,4 +74,14 @@ struct ColorTheme {
     let checkboxHigh: Color
     let checkboxMedium: Color
     let checkboxLow: Color
+
+    // Semantic feedback colors
+    let error: Color
+    let errorBg: Color
+    let warning: Color
+    let warningBg: Color
+    let success: Color
+    let successBg: Color
+    let disabled: Color
+    let textDisabled: Color
 }

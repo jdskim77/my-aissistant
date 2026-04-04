@@ -51,11 +51,11 @@ struct DayTickerView: View {
         } label: {
             VStack(spacing: 4) {
                 Text(dayAbbrev(day))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFonts.label(11))
                     .foregroundColor(isSelected ? .white : isToday ? AppColors.accent : AppColors.textMuted)
 
                 Text("\(calendar.component(.day, from: day))")
-                    .font(.system(size: 17, weight: isSelected || isToday ? .bold : .semibold))
+                    .font(isSelected || isToday ? AppFonts.heading(17) : AppFonts.bodyMedium(17))
                     .foregroundColor(isSelected ? .white : isToday ? AppColors.accent : AppColors.textPrimary)
 
                 // Density dots

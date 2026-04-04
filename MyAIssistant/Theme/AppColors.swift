@@ -43,10 +43,6 @@ struct AppColors {
     static var coral: Color { theme.coral }
     static var skyBlue: Color { theme.skyBlue }
 
-    // MARK: - Button Text
-    /// Text on accent/colored backgrounds. Use instead of .white for theme safety.
-    static var onAccent: Color { .white }
-
     // MARK: - Text
     static var textPrimary: Color { theme.textPrimary }
     static var textSecondary: Color { theme.textSecondary }
@@ -68,6 +64,16 @@ struct AppColors {
     static var aiBubble: Color { theme.aiBubble }
     static var aiBubbleText: Color { theme.aiBubbleText }
     static var aiBubbleBorder: Color { theme.aiBubbleBorder }
+
+    // MARK: - Semantic Feedback
+    static var error: Color { theme.error }
+    static var errorBg: Color { theme.errorBg }
+    static var warning: Color { theme.warning }
+    static var warningBg: Color { theme.warningBg }
+    static var success: Color { theme.success }
+    static var successBg: Color { theme.successBg }
+    static var disabled: Color { theme.disabled }
+    static var textDisabled: Color { theme.textDisabled }
 
     // MARK: - Priority
 

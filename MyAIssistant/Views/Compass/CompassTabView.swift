@@ -37,7 +37,7 @@ struct CompassTabView: View {
                         showingInfo = true
                     } label: {
                         Image(systemName: "info.circle")
-                            .font(.system(size: 17))
+                            .font(AppFonts.body(17))
                             .foregroundColor(AppColors.accent)
                     }
                     .accessibilityLabel("How Life Compass works")
@@ -111,7 +111,7 @@ struct CompassTabView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: goal.dimension.icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(AppFonts.heading(18).weight(.medium))
                     .foregroundColor(goal.dimension.color)
                     .frame(width: 36, height: 36)
                     .background(goal.dimension.color.opacity(0.1))
@@ -170,7 +170,7 @@ struct CompassTabView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "target")
-                    .font(.system(size: 18))
+                    .font(AppFonts.heading(18))
                     .foregroundColor(AppColors.accent)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Set a Season Goal")
@@ -182,7 +182,7 @@ struct CompassTabView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(AppFonts.label(13))
                     .foregroundColor(AppColors.textMuted)
             }
             .padding(16)
@@ -215,7 +215,7 @@ struct CompassTabView: View {
 
                 HStack(spacing: 12) {
                     Image(systemName: dim.icon)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(AppFonts.body(16).weight(.medium))
                         .foregroundColor(dim.color)
                         .frame(width: 32)
 
@@ -269,7 +269,7 @@ struct CompassTabView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "bolt.heart.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFonts.label(14))
                     .foregroundColor(AppColors.gold)
                 Text("Energy Insight")
                     .font(AppFonts.heading(14))
@@ -323,7 +323,7 @@ struct CompassTabView: View {
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFonts.label(13))
                             .foregroundColor(AppColors.textMuted)
                     }
                     .padding(16)
@@ -349,7 +349,7 @@ struct CompassTabView: View {
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFonts.label(13))
                         .foregroundColor(AppColors.textMuted)
                 }
                 .padding(16)

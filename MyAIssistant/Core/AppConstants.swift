@@ -49,6 +49,7 @@ enum AppConstants {
     static let textSizeKey = "textSize"
 
     // MARK: - Google Calendar
+    // Public OAuth client ID — bound to bundle ID, not a secret per Google's mobile OAuth spec
     static let googleClientID = "124674263612-m8h7hifl06m3ru01k3fvtbmmjleoatfp.apps.googleusercontent.com"
     static let googleClientIDKey = "googleClientID"
 

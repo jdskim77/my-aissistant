@@ -206,7 +206,7 @@ struct ScheduleView: View {
                 showingNLParser = true
             } label: {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFonts.bodyMedium(16))
                     .foregroundColor(AppColors.accent)
                     .frame(width: 44, height: 44)
                     .background(AppColors.accentLight)
@@ -223,7 +223,7 @@ struct ScheduleView: View {
                 }
             } label: {
                 Image(systemName: "camera.viewfinder")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFonts.bodyMedium(16))
                     .foregroundColor(tier == .free ? AppColors.textMuted : AppColors.accent)
                     .frame(width: 44, height: 44)
                     .background(tier == .free ? AppColors.surface : AppColors.accentLight)
@@ -231,7 +231,7 @@ struct ScheduleView: View {
                     .overlay {
                         if tier == .free {
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 8))
+                                .font(AppFonts.caption(11))
                                 .foregroundColor(AppColors.textMuted)
                                 .offset(x: 14, y: -14)
                         }
@@ -244,7 +244,7 @@ struct ScheduleView: View {
                 showingCalendarImport = true
             } label: {
                 Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFonts.bodyMedium(16))
                     .foregroundColor(AppColors.accent)
                     .frame(width: 44, height: 44)
                     .background(AppColors.accentLight)
@@ -311,20 +311,19 @@ struct ScheduleView: View {
         let minute = calendar.component(.minute, from: task.date)
         let hasTime = hour != 0 || minute != 0
 
-        return HStack(alignment: .top, spacing: 8) {
-            // Time column — single line, narrower
+        return HStack(alignment: .top, spacing: 12) {
+            // Time column
             VStack {
                 if hasTime {
                     Text(task.date.formatted(as: "h:mm"))
-                        .font(AppFonts.caption(12))
+                        .font(AppFonts.mono(13))
                         .foregroundColor(AppColors.textMuted)
-                        .monospacedDigit()
                     Text(task.date.formatted(as: "a"))
-                        .font(AppFonts.caption(9))
+                        .font(AppFonts.caption(11))
                         .foregroundColor(AppColors.textMuted)
                 }
             }
-            .frame(width: 40, alignment: .trailing)
+            .frame(width: 48, alignment: .trailing)
 
             // Color bar (calendar events get accent, tasks get priority color)
             RoundedRectangle(cornerRadius: 2)
@@ -354,8 +353,8 @@ struct ScheduleView: View {
                                     .fill(color)
                                     .frame(width: 22, height: 22)
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(AppColors.onAccent)
+                                    .font(AppFonts.label(11))
+                                    .foregroundColor(.white)
                             }
                         }
                         .frame(width: 36, height: 36)
@@ -381,8 +380,8 @@ struct ScheduleView: View {
                     Spacer()
 
                     if !task.done && !isCalendarEvent {
-                        Text(task.priority.shortLabel.prefix(1))
-                            .font(AppFonts.label(10))
+                        Text(task.priority.rawValue.prefix(1))
+                            .font(AppFonts.label(11))
                             .foregroundColor(AppColors.checkboxColor(task.priority))
                             .frame(width: 22, height: 22)
                             .background(AppColors.checkboxColor(task.priority).opacity(0.12))
@@ -391,7 +390,7 @@ struct ScheduleView: View {
 
                     if task.recurrence != .none {
                         Image(systemName: "repeat")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(AppFonts.caption(11))
                             .foregroundColor(AppColors.accent)
                     }
                 }
@@ -441,25 +440,24 @@ struct ScheduleView: View {
     // MARK: - Check-in Row
 
     private func checkInTimelineRow(_ slot: CheckInTime) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            // Time column — matches task rows
+        HStack(alignment: .center, spacing: 12) {
+            // Time column
             VStack {
                 Text(String(format: "%d:00", slot.hour > 12 ? slot.hour - 12 : slot.hour))
-                    .font(AppFonts.caption(12))
+                    .font(AppFonts.mono(13))
                     .foregroundColor(AppColors.accentWarm)
-                    .monospacedDigit()
-                Text(slot.hour >= 12 ? "pm" : "am")
-                    .font(AppFonts.caption(9))
+                Text(slot.hour >= 12 ? "PM" : "AM")
+                    .font(AppFonts.caption(11))
                     .foregroundColor(AppColors.accentWarm)
             }
-            .frame(width: 40, alignment: .trailing)
+            .frame(width: 48, alignment: .trailing)
 
             // Color bar
             RoundedRectangle(cornerRadius: 2)
                 .fill(AppColors.accentWarm.opacity(0.5))
                 .frame(width: 4, height: 44)
 
-            // Compact content — single row, no card background
+            // Content
             Button {
                 Haptics.light()
                 checkInSlot = slot
@@ -467,27 +465,31 @@ struct ScheduleView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(slot.icon)
-                        .font(.system(size: 16))
-                    Text("\(slot.rawValue) Check-in")
-                        .font(AppFonts.bodyMedium(14))
-                        .foregroundColor(AppColors.accentWarm)
-                    Text("·")
-                        .foregroundColor(AppColors.textMuted)
-                    Text(slot.greeting)
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.textMuted)
-                        .lineLimit(1)
+                        .font(AppFonts.icon(18))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(slot.rawValue) Check-in")
+                            .font(AppFonts.bodyMedium(14))
+                            .foregroundColor(AppColors.accentWarm)
+                        Text(slot.greeting)
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.textMuted)
                 }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppColors.accentWarm.opacity(0.08))
+                )
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
-        .frame(minHeight: 44)
     }
 
     // MARK: - Empty State
@@ -495,7 +497,7 @@ struct ScheduleView: View {
     private var emptyDayState: some View {
         VStack(spacing: 16) {
             Image(systemName: calendar.isDateInToday(selectedDate) ? "sun.max" : "calendar")
-                .font(.system(size: 44))
+                .font(AppFonts.icon(44))
                 .foregroundColor(AppColors.textMuted)
 
             Text(calendar.isDateInToday(selectedDate) ? "Nothing planned for today" : "No tasks on this day")
@@ -530,10 +532,10 @@ struct ScheduleView: View {
                                 Haptics.selection()
                                 newPriority = pri
                             } label: {
-                                Text(pri.shortLabel.prefix(1))
+                                Text(pri.rawValue.prefix(1))
                                     .font(AppFonts.label(12))
                                     .foregroundColor(newPriority == pri ? .white : AppColors.priorityColor(pri))
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: 32, height: 32)
                                     .background(newPriority == pri ? AppColors.priorityColor(pri) : AppColors.priorityColor(pri).opacity(0.12))
                                     .cornerRadius(8)
                             }
@@ -552,9 +554,9 @@ struct ScheduleView: View {
                         }
                     } label: {
                         Image(systemName: quickAddExpanded ? "chevron.down" : "slider.horizontal.3")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFonts.bodyMedium(14))
                             .foregroundColor(AppColors.accent)
-                            .frame(width: 44, height: 44)
+                            .frame(width: 36, height: 36)
                     }
                     .accessibilityLabel(quickAddExpanded ? "Collapse options" : "Show options")
 
@@ -575,7 +577,7 @@ struct ScheduleView: View {
                         submitQuickAdd()
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 32))
+                            .font(AppFonts.icon(32))
                             .foregroundColor(quickAddText.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textMuted : AppColors.accent)
                     }
                     .disabled(quickAddText.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -644,7 +646,7 @@ struct ScheduleView: View {
                 } label: {
                     Text("Reschedule")
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)

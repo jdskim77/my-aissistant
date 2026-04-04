@@ -3,14 +3,14 @@ import SwiftUI
 enum Tab: Int, CaseIterable {
     case home = 0
     case schedule = 1
-    case compass = 2
+    case patterns = 2
     case settings = 3
 
     var icon: String {
         switch self {
         case .home: return "checklist"
         case .schedule: return "calendar"
-        case .compass: return "safari"
+        case .patterns: return "chart.bar.fill"
         case .settings: return "gearshape.fill"
         }
     }
@@ -19,7 +19,7 @@ enum Tab: Int, CaseIterable {
         switch self {
         case .home: return "checklist"
         case .schedule: return "calendar"
-        case .compass: return "safari.fill"
+        case .patterns: return "chart.bar.fill"
         case .settings: return "gearshape.fill"
         }
     }
@@ -28,7 +28,7 @@ enum Tab: Int, CaseIterable {
         switch self {
         case .home: return "Today"
         case .schedule: return "Schedule"
-        case .compass: return "Compass"
+        case .patterns: return "Patterns"
         case .settings: return "Settings"
         }
     }
@@ -38,6 +38,7 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Tab
     let onAITap: () -> Void
     var scheduleBadge: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack {
@@ -48,7 +49,7 @@ struct CustomTabBar: View {
             aiCenterButton
             Spacer()
 
-            tabButton(for: .compass)
+            tabButton(for: .patterns)
             tabButton(for: .settings)
         }
         .padding(.horizontal, 16)
@@ -56,7 +57,7 @@ struct CustomTabBar: View {
         .padding(.bottom, 8)
         .background(
             AppColors.surface
-                .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: -4)
+                .shadow(color: AppColors.textPrimary.opacity(0.06), radius: 12, x: 0, y: -4)
                 .ignoresSafeArea(edges: .bottom)
         )
         .accessibilityElement(children: .contain)
@@ -65,19 +66,19 @@ struct CustomTabBar: View {
     private func tabButton(for tab: Tab, badge: Int = 0) -> some View {
         Button {
             Haptics.selection()
-            withAnimation(.spring(response: 0.3)) {
+            withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
                 selectedTab = tab
             }
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: selectedTab == tab ? tab.selectedIcon : tab.icon)
-                        .font(.system(size: 22))
+                    Image(systemName: tab.icon)
+                        .font(AppFonts.heading(22))
 
                     if badge > 0 {
                         Text("\(badge)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppColors.onAccent)
+                            .font(AppFonts.label(11))
+                            .foregroundColor(.white)
                             .frame(width: 16, height: 16)
                             .background(AppColors.coral)
                             .cornerRadius(8)
@@ -87,7 +88,7 @@ struct CustomTabBar: View {
                 }
 
                 Text(tab.label)
-                    .font(AppFonts.caption(10))
+                    .font(AppFonts.caption(11))
             }
             .foregroundColor(selectedTab == tab ? AppColors.accent : AppColors.textMuted)
             .frame(maxWidth: .infinity)
@@ -115,11 +116,9 @@ struct CustomTabBar: View {
                     .frame(width: 60, height: 60)
                     .shadow(color: AppColors.accent.opacity(0.35), radius: 10, x: 0, y: 4)
 
-                Image("ThrivnLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
-                    .clipShape(Circle())
+                Text("✦")
+                    .font(AppFonts.display(26))
+                    .foregroundColor(.white)
             }
             .offset(y: -20)
         }

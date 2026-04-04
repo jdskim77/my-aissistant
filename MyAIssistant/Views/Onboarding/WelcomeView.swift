@@ -8,73 +8,45 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 28) {
-                // App icon
-                Image("ThrivnLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 140)
-                    .clipShape(RoundedRectangle(cornerRadius: 32))
-                    .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
+            VStack(spacing: 24) {
+                Text("✦")
+                    .font(AppFonts.icon(64))
+                    .foregroundColor(AppColors.accent)
                     .scaleEffect(appeared ? 1 : 0.5)
                     .opacity(appeared ? 1 : 0)
 
                 VStack(spacing: 8) {
-                    Text("Thrivn")
-                        .font(AppFonts.display(34))
+                    Text("My AIssistant")
+                        .font(AppFonts.display(32))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Find your rhythm. Every day.")
-                        .font(AppFonts.body(17))
+                    Text("Your AI-powered daily planner")
+                        .font(AppFonts.body(16))
                         .foregroundColor(AppColors.textSecondary)
                 }
-                .offset(y: appeared ? 0 : 16)
+                .offset(y: appeared ? 0 : 20)
                 .opacity(appeared ? 1 : 0)
 
-                // Three value props — benefit-led, not feature-led
-                VStack(alignment: .leading, spacing: 20) {
-                    featureRow(
-                        icon: "calendar.badge.clock",
-                        color: AppColors.accentWarm,
-                        title: "Your day, already planned",
-                        subtitle: "Add tasks with a tap and start each morning with clarity"
-                    )
-                    featureRow(
-                        icon: "sparkles",
-                        color: AppColors.accent,
-                        title: "It learns how you work best",
-                        subtitle: "Smart nudges toward your goals at the right moments"
-                    )
-                    featureRow(
-                        icon: "safari",
-                        color: AppColors.coral,
-                        title: "See where your energy goes",
-                        subtitle: "Balance mind, body, heart and soul with the Life Compass"
-                    )
+                VStack(alignment: .leading, spacing: 16) {
+                    featureRow(icon: "🌅", title: "Smart Check-ins", subtitle: "4 daily rituals to keep you on track")
+                    featureRow(icon: "✦", title: "AI Assistant", subtitle: "Chat naturally to manage your day")
+                    featureRow(icon: "📊", title: "Pattern Insights", subtitle: "Discover your productivity trends")
+                    featureRow(icon: "📅", title: "Calendar Sync", subtitle: "Connect your existing calendars")
                 }
-                .padding(.top, 8)
-                .offset(y: appeared ? 0 : 24)
+                .padding(.top, 16)
+                .offset(y: appeared ? 0 : 30)
                 .opacity(appeared ? 1 : 0)
             }
 
             Spacer()
 
-            Button {
-                Haptics.light()
-                onContinue()
-            } label: {
+            Button(action: onContinue) {
                 Text("Get Started")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [AppColors.accent, AppColors.accentWarm],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .background(AppColors.accent)
                     .cornerRadius(14)
             }
             .padding(.horizontal, 24)
@@ -83,25 +55,24 @@ struct WelcomeView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
+            withAnimation(.easeOut(duration: 0.8)) {
                 appeared = true
             }
         }
     }
 
-    private func featureRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
+    private func featureRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(color)
+            Text(icon)
+                .font(AppFonts.icon(28))
                 .frame(width: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(AppFonts.bodyMedium(16))
+                    .font(AppFonts.bodyMedium(15))
                     .foregroundColor(AppColors.textPrimary)
                 Text(subtitle)
-                    .font(AppFonts.body(14))
+                    .font(AppFonts.body(13))
                     .foregroundColor(AppColors.textSecondary)
             }
         }

@@ -76,7 +76,7 @@ struct ChatView: View {
             if let errorMessage {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 12))
+                        .font(AppFonts.caption(12))
                     Text(errorMessage)
                         .font(AppFonts.caption(12))
                     Spacer()
@@ -84,7 +84,7 @@ struct ChatView: View {
                         self.errorMessage = nil
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.label(11))
                     }
                 }
                 .foregroundColor(AppColors.coral)
@@ -97,7 +97,7 @@ struct ChatView: View {
             if showClockAppPrompt {
                 HStack(spacing: 8) {
                     Image(systemName: "alarm.fill")
-                        .font(.system(size: 14))
+                        .font(AppFonts.body(14))
                     Text("Notification alarm set.")
                         .font(AppFonts.bodyMedium(13))
                     Spacer()
@@ -108,7 +108,7 @@ struct ChatView: View {
                         showClockAppPrompt = false
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFonts.label(11))
                     }
                 }
                 .foregroundColor(AppColors.accent)
@@ -239,7 +239,7 @@ struct ChatView: View {
                     onDismiss()
                 } label: {
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFonts.body(16).weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .padding(8)
                         .background(AppColors.surface)
@@ -277,7 +277,7 @@ struct ChatView: View {
                 }
             } label: {
                 Image(systemName: voiceModeEnabled ? "speaker.wave.2.fill" : "speaker.slash")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFonts.body(16).weight(.medium))
                     .foregroundColor(voiceModeEnabled ? AppColors.accent : AppColors.textMuted)
                     .padding(8)
                     .background(voiceModeEnabled ? AppColors.accentLight : AppColors.surface)
@@ -293,7 +293,7 @@ struct ChatView: View {
                 showingConversations = true
             } label: {
                 Image(systemName: "bubble.left.and.bubble.right")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(AppFonts.body(16).weight(.medium))
                     .foregroundColor(AppColors.accent)
                     .padding(8)
                     .background(AppColors.accentLight)
@@ -330,7 +330,7 @@ struct ChatView: View {
                 if remaining <= 5 {
                     HStack(spacing: 6) {
                         Image(systemName: remaining == 0 ? "exclamationmark.circle.fill" : "info.circle.fill")
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption(12))
                         Text(remaining == 0
                             ? "No messages remaining this month"
                             : "\(remaining) message\(remaining == 1 ? "" : "s") remaining this month")
@@ -400,7 +400,7 @@ struct ChatView: View {
                         }
 
                         Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic")
-                            .font(.system(size: 22, weight: .medium))
+                            .font(AppFonts.heading(22).weight(.medium))
                             .foregroundColor(speechRecognizer.isRecording ? .white : AppColors.accent)
                             .frame(width: 44, height: 44)
                             .background(speechRecognizer.isRecording ? AppColors.coral : AppColors.accentLight)
@@ -416,7 +416,7 @@ struct ChatView: View {
                     sendMessage(text)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 40))
+                        .font(AppFonts.icon(40))
                         .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppColors.textMuted : AppColors.accent)
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAITyping)
@@ -682,7 +682,7 @@ struct ChatView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar.badge.exclamationmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFonts.label(14))
                 Text("Calendar changes requested")
                     .font(AppFonts.bodyMedium(13))
                 Spacer()
@@ -695,7 +695,7 @@ struct ChatView: View {
                     case .create(let title, let start, _, _, _):
                         Image(systemName: "plus.circle.fill")
                             .foregroundColor(AppColors.completionGreen)
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption(12))
                         Text("Create: \(title)")
                             .font(AppFonts.body(12))
                         Text("(\(start.formatted(as: "MMM d, h:mm a")))")
@@ -704,7 +704,7 @@ struct ChatView: View {
                     case .delete(let eventID):
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(AppColors.coral)
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption(12))
                         Text("Delete event: \(eventID)")
                             .font(AppFonts.body(12))
                     }
@@ -1049,7 +1049,7 @@ private struct ConversationMessages: View {
                         VStack(spacing: 12) {
                             HStack(spacing: 10) {
                                 Image(systemName: "calendar.badge.plus")
-                                    .font(.system(size: 20, weight: .medium))
+                                    .font(AppFonts.heading(20).weight(.medium))
                                     .foregroundColor(AppColors.accent)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Task added to your schedule")

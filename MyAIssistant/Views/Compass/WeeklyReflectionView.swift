@@ -35,7 +35,7 @@ struct WeeklyReflectionView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 6) {
                             Image(systemName: "thought.bubble")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(AppFonts.label(13))
                                 .foregroundColor(AppColors.accent)
                             Text("Weekly Reflection")
                                 .font(AppFonts.heading(15))
@@ -133,7 +133,7 @@ struct WeeklyReflectionView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Image(systemName: "calendar.badge.checkmark")
-                .font(.system(size: 32))
+                .font(AppFonts.display(32))
                 .foregroundColor(AppColors.accent)
             Text("Your Week")
                 .font(AppFonts.heading(20))
@@ -144,7 +144,7 @@ struct WeeklyReflectionView: View {
     private func seasonGoalCard(_ goal: SeasonGoal) -> some View {
         HStack(spacing: 12) {
             Image(systemName: goal.dimension.icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(AppFonts.heading(18).weight(.medium))
                 .foregroundColor(goal.dimension.color)
                 .frame(width: 36, height: 36)
                 .background(goal.dimension.color.opacity(0.1))

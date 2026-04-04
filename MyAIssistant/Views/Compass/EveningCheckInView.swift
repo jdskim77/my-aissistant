@@ -57,7 +57,7 @@ struct EveningCheckInView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Image(systemName: headerIcon)
-                .font(.system(size: 36))
+                .font(AppFonts.icon(36))
                 .foregroundColor(headerColor)
 
             Text(headerTitle)
@@ -155,7 +155,7 @@ struct EveningCheckInView: View {
             // Dimension icon + name
             HStack(spacing: 8) {
                 Image(systemName: dim.icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(AppFonts.heading(18).weight(.medium))
                     .foregroundColor(dim.color)
                     .frame(width: 28)
 
@@ -201,7 +201,7 @@ struct EveningCheckInView: View {
     private var energySliderStep: some View {
         VStack(spacing: 24) {
             Text(energyEmoji)
-                .font(.system(size: 48))
+                .font(AppFonts.icon(48))
                 .animation(.snappy(duration: 0.15), value: energyEmoji)
 
             VStack(spacing: 8) {
@@ -303,7 +303,7 @@ struct EveningCheckInView: View {
         return VStack(spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: pattern.dimension.icon)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(AppFonts.heading(20).weight(.medium))
                     .foregroundColor(pattern.dimension.color)
 
                 Text(suggestion.message)
@@ -344,7 +344,7 @@ struct EveningCheckInView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(AppFonts.label(13))
                         Text("Yes, \(duration) min")
                             .font(AppFonts.bodyMedium(14))
                     }
@@ -387,7 +387,7 @@ struct EveningCheckInView: View {
     private var confirmationState: some View {
         VStack(spacing: 16) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
+                .font(AppFonts.icon(48))
                 .foregroundColor(AppColors.completionGreen)
 
             Text("All Set")

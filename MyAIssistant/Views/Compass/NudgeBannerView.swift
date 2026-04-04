@@ -11,7 +11,7 @@ struct NudgeBannerView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: nudge.dimension.icon)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFonts.body(14).weight(.medium))
                     .foregroundColor(nudge.dimension.color)
 
                 Text(nudge.message)
@@ -25,7 +25,7 @@ struct NudgeBannerView: View {
                     onDismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFonts.label(11))
                         .foregroundColor(AppColors.textMuted)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
@@ -40,7 +40,7 @@ struct NudgeBannerView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 13))
+                        .font(AppFonts.caption(13))
                     Text(nudge.suggestion)
                         .font(AppFonts.bodyMedium(13))
                 }

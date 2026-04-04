@@ -178,16 +178,18 @@ actor GoogleCalendarService {
     private func authenticatedData(for request: URLRequest) async throws -> (Data, URLResponse) {
         try await ensureValidToken()
 
+        guard let token = accessToken else { throw GoogleCalendarError.notAuthenticated }
         var authedRequest = request
-        authedRequest.setValue("Bearer \(accessToken!)", forHTTPHeaderField: "Authorization")
+        authedRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: authedRequest)
 
         // If 401, attempt one token refresh and retry
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 401 {
             try await refreshAccessToken()
+            guard let refreshedToken = accessToken else { throw GoogleCalendarError.notAuthenticated }
             var retryRequest = request
-            retryRequest.setValue("Bearer \(accessToken!)", forHTTPHeaderField: "Authorization")
+            retryRequest.setValue("Bearer \(refreshedToken)", forHTTPHeaderField: "Authorization")
             return try await URLSession.shared.data(for: retryRequest)
         }
 

@@ -60,7 +60,7 @@ struct CalendarImportView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "calendar")
-                    .font(.system(size: 20))
+                    .font(AppFonts.heading(20))
                     .foregroundColor(AppColors.accent)
                 Text("Apple Calendar")
                     .font(AppFonts.heading(17))
@@ -92,11 +92,11 @@ struct CalendarImportView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.open")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFonts.bodyMedium(14))
                         Text("Grant Calendar Access")
                             .font(AppFonts.bodyMedium(14))
                     }
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(AppColors.accent)
@@ -119,7 +119,7 @@ struct CalendarImportView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "globe")
-                    .font(.system(size: 20))
+                    .font(AppFonts.heading(20))
                     .foregroundColor(AppColors.coral)
                 Text("Google Calendar")
                     .font(AppFonts.heading(17))
@@ -148,7 +148,7 @@ struct CalendarImportView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(AppFonts.bodyMedium(13))
                         Text("Sign Out")
                             .font(AppFonts.bodyMedium(13))
                     }
@@ -177,12 +177,12 @@ struct CalendarImportView: View {
                                 .tint(.white)
                         } else {
                             Image(systemName: "globe")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(AppFonts.bodyMedium(14))
                         }
                         Text("Sign in with Google")
                             .font(AppFonts.bodyMedium(14))
                     }
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color(hex: "4285F4"))
@@ -215,7 +215,7 @@ struct CalendarImportView: View {
                     ForEach(links, id: \.id) { link in
                         HStack(spacing: 12) {
                             Image(systemName: link.calendarSource.icon)
-                                .font(.system(size: 16))
+                                .font(AppFonts.body(16))
                                 .foregroundColor(AppColors.accent)
                                 .frame(width: 28)
 
@@ -254,7 +254,7 @@ struct CalendarImportView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(AppFonts.bodyMedium(14))
                             }
                             Text("Sync Now")
                                 .font(AppFonts.bodyMedium(14))

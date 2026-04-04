@@ -27,7 +27,7 @@ struct ActivityTimelineView: View {
                         ForEach(categorySummary, id: \.category) { item in
                             HStack(spacing: 4) {
                                 Text(iconFor(category: item.category))
-                                    .font(.system(size: 12))
+                                    .font(AppFonts.icon(12))
                                 Text(item.category)
                                     .font(AppFonts.bodyMedium(12))
                                 Text("\(item.count)")
@@ -47,7 +47,7 @@ struct ActivityTimelineView: View {
                     ForEach(recentActivities.prefix(10), id: \.id) { entry in
                         HStack(spacing: 10) {
                             Text(iconFor(category: entry.category))
-                                .font(.system(size: 14))
+                                .font(AppFonts.icon(14))
                                 .frame(width: 28, height: 28)
                                 .background(colorFor(category: entry.category).opacity(0.12))
                                 .cornerRadius(8)
@@ -66,7 +66,7 @@ struct ActivityTimelineView: View {
                             Spacer()
 
                             Text(entry.category)
-                                .font(AppFonts.caption(10))
+                                .font(AppFonts.caption(11))
                                 .foregroundColor(colorFor(category: entry.category))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -89,7 +89,7 @@ struct ActivityTimelineView: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: "sparkles")
-                .font(.system(size: 24))
+                .font(AppFonts.icon(24))
                 .foregroundColor(AppColors.textMuted)
             Text("No activities tracked yet")
                 .font(AppFonts.body(13))

@@ -88,7 +88,7 @@ struct FocusTimerView: View {
             VStack(spacing: 6) {
                 if let task {
                     Text(task.icon)
-                        .font(.system(size: 28))
+                        .font(AppFonts.icon(28))
                     Text(task.title)
                         .font(AppFonts.bodyMedium(16))
                         .foregroundColor(AppColors.textSecondary)
@@ -124,7 +124,7 @@ struct FocusTimerView: View {
                 // Time display
                 VStack(spacing: 4) {
                     Text(timeString)
-                        .font(.system(size: 56, weight: .light, design: .monospaced))
+                        .font(AppFonts.mono(56))
                         .foregroundColor(AppColors.textPrimary)
                     Text(isBreak ? "Take a breather" : "Stay focused")
                         .font(AppFonts.caption(13))
@@ -149,7 +149,7 @@ struct FocusTimerView: View {
                     resetCurrentInterval()
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(AppFonts.heading(20))
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: 56, height: 56)
                         .background(AppColors.surface)
@@ -163,8 +163,8 @@ struct FocusTimerView: View {
                     toggleTimer()
                 } label: {
                     Image(systemName: isRunning ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .medium))
-                        .foregroundColor(AppColors.onAccent)
+                        .font(AppFonts.heading(28))
+                        .foregroundColor(.white)
                         .frame(width: 72, height: 72)
                         .background(isBreak ? AppColors.accentWarm : AppColors.accent)
                         .clipShape(Circle())
@@ -176,7 +176,7 @@ struct FocusTimerView: View {
                     skipPhase()
                 } label: {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 20, weight: .medium))
+                        .font(AppFonts.heading(20))
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: 56, height: 56)
                         .background(AppColors.surface)
@@ -222,7 +222,7 @@ struct FocusTimerView: View {
             HStack(spacing: 8) {
                 Button { Haptics.selection(); adjust(-1) } label: {
                     Image(systemName: "minus")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFonts.label(11))
                         .frame(width: 28, height: 28)
                         .background(AppColors.surface)
                         .clipShape(Circle())
@@ -236,7 +236,7 @@ struct FocusTimerView: View {
 
                 Button { Haptics.selection(); adjust(1) } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFonts.label(11))
                         .frame(width: 28, height: 28)
                         .background(AppColors.surface)
                         .clipShape(Circle())
@@ -253,7 +253,7 @@ struct FocusTimerView: View {
             Spacer()
 
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 64))
+                .font(AppFonts.icon(64))
                 .foregroundColor(AppColors.completionGreen)
 
             Text("Session Complete!")
@@ -281,7 +281,7 @@ struct FocusTimerView: View {
                         Text("Mark Task Complete")
                     }
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(AppColors.onAccent)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.completionGreen)
@@ -429,6 +429,6 @@ struct FocusTimerView: View {
 
     private func saveSession() {
         modelContext.insert(session)
-        modelContext.safeSave()
+        try? modelContext.save()
     }
 }

@@ -15,7 +15,7 @@ struct NotificationSettingsView: View {
             Section {
                 HStack {
                     Image(systemName: notificationsEnabled ? "bell.badge.fill" : "bell.slash")
-                        .font(.system(size: 20))
+                        .font(AppFonts.icon(20))
                         .foregroundColor(notificationsEnabled ? AppColors.accentWarm : AppColors.textMuted)
                         .frame(width: 28)
 
@@ -86,7 +86,7 @@ struct NotificationSettingsView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 14))
+                            .font(AppFonts.body(14))
                         Text("Update Notification Schedule")
                             .font(AppFonts.bodyMedium(14))
                     }
@@ -108,7 +108,7 @@ struct NotificationSettingsView: View {
     private func checkInTimeRow(_ label: String, icon: String, time: Binding<Date>) -> some View {
         HStack(spacing: 10) {
             Text(icon)
-                .font(.system(size: 20))
+                .font(AppFonts.icon(20))
             Text(label)
                 .font(AppFonts.body(15))
                 .foregroundColor(AppColors.textPrimary)

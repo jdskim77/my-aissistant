@@ -20,7 +20,7 @@ struct CompassView: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "safari")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFonts.label(14))
                         .foregroundColor(AppColors.accent)
                     Text("Life Compass")
                         .font(AppFonts.heading(16))
@@ -35,7 +35,7 @@ struct CompassView: View {
                     showCoachMarks = true
                 } label: {
                     Image(systemName: "questionmark.circle")
-                        .font(.system(size: 16))
+                        .font(AppFonts.body(16))
                         .foregroundColor(AppColors.textMuted)
                 }
                 .accessibilityLabel("How Life Compass works")
@@ -69,7 +69,7 @@ struct CompassView: View {
             if hasRealData && balanceStreak > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 12))
+                        .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.gold)
                     Text("\(balanceStreak)-week balance streak")
                         .font(AppFonts.caption(12))
@@ -183,7 +183,7 @@ struct CompassView: View {
                     let labelPoint = pointOnCircle(center: center, radius: radius + 22, angle: angle)
                     VStack(spacing: 1) {
                         Image(systemName: dim.icon)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFonts.label(12))
                         Text(dim.label.prefix(4))
                             .font(AppFonts.caption(8))
                     }
@@ -213,7 +213,7 @@ struct CompassView: View {
                             .monospacedDigit()
 
                         Text(dim.label)
-                            .font(AppFonts.caption(10))
+                            .font(AppFonts.caption(11))
                             .foregroundColor(AppColors.textMuted)
 
                         // Simple score ring instead of A/S/C bars
@@ -294,7 +294,7 @@ struct DimensionDetailSheet: View {
                 // Header
                 HStack(spacing: 12) {
                     Image(systemName: dimension.icon)
-                        .font(.system(size: 28, weight: .medium))
+                        .font(AppFonts.display(28).weight(.medium))
                         .foregroundColor(dimension.color)
                         .frame(width: 48, height: 48)
                         .background(dimension.color.opacity(0.1))
@@ -371,7 +371,7 @@ struct DimensionDetailSheet: View {
         VStack(spacing: 8) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(AppFonts.body(14))
                     .foregroundColor(color)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
@@ -454,7 +454,7 @@ struct CompassCoachMarks: View {
 
             VStack(spacing: 16) {
                 Image(systemName: step.icon)
-                    .font(.system(size: 40))
+                    .font(AppFonts.icon(40))
                     .foregroundColor(AppColors.accent)
 
                 Text(step.title)
@@ -519,7 +519,7 @@ struct CompassEmptyView: View {
         VStack(spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "safari")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFonts.label(14))
                     .foregroundColor(AppColors.accent)
                 Text("Life Compass")
                     .font(AppFonts.heading(16))
@@ -529,7 +529,7 @@ struct CompassEmptyView: View {
 
             VStack(spacing: 8) {
                 Image(systemName: "safari")
-                    .font(.system(size: 32))
+                    .font(AppFonts.display(32))
                     .foregroundColor(AppColors.textMuted)
 
                 Text("Your Compass builds as you tag tasks")

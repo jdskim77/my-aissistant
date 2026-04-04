@@ -6,6 +6,7 @@ struct PatternsView: View {
     @Environment(\.subscriptionTier) private var tier
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -70,7 +71,7 @@ struct PatternsView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(reduceMotion ? .none : .easeOut(duration: 0.6)) {
                 appeared = true
             }
         }
@@ -81,7 +82,7 @@ struct PatternsView: View {
     private func metricCard(title: String, value: String, unit: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(AppFonts.heading(20))
                 .foregroundColor(color)
 
             HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -107,6 +108,7 @@ struct PatternsView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Consistency grid
@@ -125,14 +127,16 @@ struct PatternsView: View {
                             .frame(width: 36, height: 36)
                             .overlay(
                                 Image(systemName: checkinHistory[i] ? "checkmark" : "xmark")
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(AppFonts.label(13))
                                     .foregroundColor(checkinHistory[i] ? .white : AppColors.textMuted)
                             )
 
                         Text(dayLabels[i])
-                            .font(AppFonts.caption(10))
+                            .font(AppFonts.caption(11))
                             .foregroundColor(AppColors.textMuted)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(dayLabels[i]), \(checkinHistory[i] ? "completed" : "missed")")
                 }
             }
             .frame(maxWidth: .infinity)

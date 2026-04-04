@@ -15,7 +15,7 @@ struct CategoryBreakdownView: View {
                 VStack(spacing: 6) {
                     HStack {
                         Text(item.category.icon)
-                            .font(.system(size: 16))
+                            .font(AppFonts.icon(16))
                         Text(item.category.rawValue)
                             .font(AppFonts.bodyMedium(14))
                             .foregroundColor(AppColors.textPrimary)

@@ -79,7 +79,7 @@ struct MoodTrendView: View {
                 AxisValueLabel {
                     if let intVal = value.as(Int.self) {
                         Text("\(intVal)")
-                            .font(AppFonts.caption(10))
+                            .font(AppFonts.caption(11))
                             .foregroundColor(AppColors.textMuted)
                     }
                 }
@@ -121,7 +121,7 @@ struct MoodTrendView: View {
             if let corr = patternEngine?.moodProductivityCorrelation() {
                 HStack(spacing: 6) {
                     Image(systemName: correlationIcon(corr))
-                        .font(.system(size: 13))
+                        .font(AppFonts.caption(13))
                         .foregroundColor(correlationColor(corr))
 
                     Text(correlationText(corr))
@@ -136,7 +136,7 @@ struct MoodTrendView: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: 24))
+                .font(AppFonts.icon(24))
                 .foregroundColor(AppColors.skyBlue)
 
             Text("Complete check-ins with mood ratings to see trends")

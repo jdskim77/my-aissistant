@@ -10,7 +10,7 @@ struct StatCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(icon)
-                    .font(.system(size: 16))
+                    .font(AppFonts.icon(16))
                 Spacer()
             }
 

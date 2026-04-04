@@ -41,24 +41,24 @@ struct ErrorBoundaryModifier: ViewModifier {
             if let error = reporter.currentError {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 14))
+                        .font(AppFonts.body(14))
                     Text(error)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFonts.label(13))
                         .lineLimit(2)
                     Spacer()
                     Button {
                         reporter.dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 16))
+                            .font(AppFonts.body(16))
                     }
                 }
-                .foregroundColor(AppColors.onAccent)
+                .foregroundColor(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color.red.opacity(0.9))
+                .background(AppColors.overdueRed.opacity(0.9))
                 .cornerRadius(12)
-                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                .shadow(color: AppColors.textPrimary.opacity(0.15), radius: 8, y: 4)
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .transition(.move(edge: .top).combined(with: .opacity))

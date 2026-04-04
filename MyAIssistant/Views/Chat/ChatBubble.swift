@@ -43,7 +43,7 @@ struct ChatBubble: View {
                     }
 
                 Text(formatTime(message.timestamp))
-                    .font(AppFonts.caption(10))
+                    .font(AppFonts.caption(11))
                     .foregroundColor(AppColors.textMuted)
             }
 

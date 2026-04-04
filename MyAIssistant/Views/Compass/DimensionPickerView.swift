@@ -34,7 +34,7 @@ struct DimensionPickerView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "sparkles")
-                                .font(.system(size: 10))
+                                .font(AppFonts.caption(11))
                             Text(suggestion.dimension.label)
                                 .font(AppFonts.label(11))
                         }
@@ -79,10 +79,10 @@ struct DimensionPickerView: View {
             HStack(spacing: 5) {
                 if isLearned {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 10))
+                        .font(AppFonts.caption(11))
                 }
                 Image(systemName: dim.icon)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFonts.label(12))
                 Text(dim.label)
                     .font(AppFonts.bodyMedium(13))
             }

@@ -37,8 +37,8 @@ struct CalendarEventRow: View {
                             .fill(checkboxColor)
                             .frame(width: 24, height: 24)
                         Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(AppColors.onAccent)
+                            .font(AppFonts.label(12))
+                            .foregroundColor(.white)
                     }
                 }
                 .frame(width: 44, height: 44)

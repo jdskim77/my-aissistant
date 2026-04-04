@@ -10,6 +10,7 @@ struct CheckInsView: View {
     @State private var appeared = false
     @State private var showingCheckInDetail = false
     @State private var showingHistory = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var todayTasks: [TaskItem] {
         allTasks.filter { Calendar.current.isDateInToday($0.date) }
@@ -42,9 +43,10 @@ struct CheckInsView: View {
                         showingHistory = true
                     } label: {
                         Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(AppFonts.body(16).weight(.medium))
                             .foregroundColor(AppColors.accent)
                     }
+                    .accessibilityLabel("View check-in history")
                 }
                 .padding(.top, 8)
 
@@ -72,7 +74,7 @@ struct CheckInsView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) {
+            withAnimation(reduceMotion ? .none : .easeOut(duration: 0.5)) {
                 appeared = true
             }
         }
@@ -91,18 +93,18 @@ struct CheckInsView: View {
         let isCompleted = checkInManager?.isCheckInCompleted(checkIn) ?? false
 
         return Button {
-            withAnimation(.spring(response: 0.3)) {
+            withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
                 selectedCheckIn = checkIn
             }
         } label: {
             VStack(spacing: 6) {
                 ZStack(alignment: .topTrailing) {
                     Text(checkIn.icon)
-                        .font(.system(size: 24))
+                        .font(AppFonts.display(24))
 
                     if isCompleted {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
+                            .font(AppFonts.caption(12))
                             .foregroundColor(AppColors.accentWarm)
                             .offset(x: 6, y: -4)
                     }
@@ -124,6 +126,8 @@ struct CheckInsView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Check in for \(checkIn.rawValue), \(checkIn.timeLabel)\(isCompleted ? ", completed" : "")")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Start check-in button
@@ -136,7 +140,7 @@ struct CheckInsView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 20))
+                    .font(AppFonts.heading(20))
                 Text(isCompleted ? "Check-in Complete" : "Start \(selectedCheckIn.rawValue) Check-in")
                     .font(AppFonts.bodyMedium(15))
             }
@@ -147,6 +151,8 @@ struct CheckInsView: View {
             .cornerRadius(12)
         }
         .disabled(isCompleted)
+        .accessibilityLabel(isCompleted ? "Check-in complete" : "Start \(selectedCheckIn.rawValue) check-in")
+        .accessibilityHint(isCompleted ? "" : "Opens the check-in form")
     }
 
     // MARK: - Summary card
@@ -155,7 +161,7 @@ struct CheckInsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(selectedCheckIn.icon)
-                    .font(.system(size: 24))
+                    .font(AppFonts.display(24))
                 Text(selectedCheckIn.title)
                     .font(AppFonts.heading(18))
                     .foregroundColor(AppColors.textPrimary)
@@ -218,7 +224,7 @@ struct CheckInsView: View {
     private var motivationCard: some View {
         HStack(spacing: 12) {
             Text("💡")
-                .font(.system(size: 20))
+                .font(AppFonts.heading(20))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Tip")
@@ -266,7 +272,7 @@ struct CheckInsView: View {
             } else {
                 ForEach(tasks, id: \.id) { task in
                     TaskCard(task: task) {
-                        withAnimation(.spring(response: 0.3)) {
+                        withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
                             taskManager?.toggleCompletion(task)
                         }
                     }

@@ -30,7 +30,7 @@ struct WeeklyAIReviewView: View {
                                 .scaleEffect(0.8)
                         } else {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(AppFonts.bodyMedium(14))
                                 .foregroundColor(AppColors.accent)
                         }
                     }
@@ -50,7 +50,7 @@ struct WeeklyAIReviewView: View {
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 24))
+                        .font(AppFonts.icon(24))
                         .foregroundColor(AppColors.gold)
 
                     Text("No weekly review yet")

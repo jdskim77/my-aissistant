@@ -32,6 +32,9 @@
 		A100000006000000 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006000000 /* ChatMessage.swift */; };
 		A100000009000000 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009000000 /* AppColors.swift */; };
 		A100000010000000 /* AppFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010000000 /* AppFonts.swift */; };
+		A1AA000001000000 /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AA000001000000 /* AppSpacing.swift */; };
+		A1AA000002000000 /* AppRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AA000002000000 /* AppRadius.swift */; };
+		A1AA000003000000 /* ScaleButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AA000003000000 /* ScaleButtonStyle.swift */; };
 		A100000012000000 /* TaskCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000012000000 /* TaskCard.swift */; };
 		A100000013000000 /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000013000000 /* StatCard.swift */; };
 		A100000014000000 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014000000 /* HomeView.swift */; };
@@ -121,7 +124,6 @@
 		AC00000009000000 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
 		AC00000010000000 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000010000000 /* ThemePickerView.swift */; };
 		AC00000011000000 /* TextSizeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000011000000 /* TextSizeSettingsView.swift */; };
-		AC00000012000000 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000012000000 /* LegalView.swift */; };
 		AD00000001000000 /* AIActivityOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000001000000 /* AIActivityOrb.swift */; };
 		AD00000002000000 /* VariedGreetingBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000002000000 /* VariedGreetingBuilder.swift */; };
 		AD00000003000000 /* GreetingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000003000000 /* GreetingManager.swift */; };
@@ -130,8 +132,6 @@
 		AE00000002000000 /* ActivityTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000002000000 /* ActivityTimelineView.swift */; };
 		AF00000001000000 /* AlarmEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000001000000 /* AlarmEntry.swift */; };
 		AF00000002000000 /* SchemaVersioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000002000000 /* SchemaVersioning.swift */; };
-		AF00000003000000 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000003000000 /* AppLogger.swift */; };
-		AF00000004000000 /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000004000000 /* ModelContext+SafeSave.swift */; };
 		AW00000001000000 /* WidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000001000000 /* WidgetBundle.swift */; };
 		AW00000002000000 /* NextCheckInWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000002000000 /* NextCheckInWidget.swift */; };
 		AW00000003000000 /* TodayProgressWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000003000000 /* TodayProgressWidget.swift */; };
@@ -139,21 +139,6 @@
 		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
 		AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000 /* MyAIssistantWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */; };
-		C100000010000000 /* BalanceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000020000000 /* BalanceManager.swift */; };
-		C100000011000000 /* DimensionSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000021000000 /* DimensionSuggester.swift */; };
-		C100000012000000 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000022000000 /* DailyBalanceCheckIn.swift */; };
-		C100000013000000 /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000023000000 /* LifeDimension.swift */; };
-		C100000014000000 /* SeasonGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000024000000 /* SeasonGoal.swift */; };
-		C100000015000000 /* CompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000025000000 /* CompassView.swift */; };
-		C100000016000000 /* DimensionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000026000000 /* DimensionPickerView.swift */; };
-		C100000017000000 /* EveningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000027000000 /* EveningCheckInView.swift */; };
-		C100000018000000 /* NudgeBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000028000000 /* NudgeBannerView.swift */; };
-		C100000019000000 /* SeasonGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000029000000 /* SeasonGoalView.swift */; };
-		C100000020000000 /* WeeklyReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000030000000 /* WeeklyReflectionView.swift */; };
-		C100000021000000 /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000032000000 /* CompassTabView.swift */; };
-		C100000022000000 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000033000000 /* CompassInfoSheet.swift */; };
-		C100000023000000 /* UserDimensionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000034000000 /* UserDimensionPreference.swift */; };
-		C100000024000000 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000035000000 /* ActivityPattern.swift */; };
 		C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
@@ -247,6 +232,9 @@
 		B100000006000000 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		B100000009000000 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		B100000010000000 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
+		B1AA000001000000 /* AppSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSpacing.swift; sourceTree = "<group>"; };
+		B1AA000002000000 /* AppRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
+		B1AA000003000000 /* ScaleButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleButtonStyle.swift; sourceTree = "<group>"; };
 		B100000012000000 /* TaskCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCard.swift; sourceTree = "<group>"; };
 		B100000013000000 /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
 		B100000014000000 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -334,7 +322,6 @@
 		BC00000009000000 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		BC00000010000000 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePickerView.swift; sourceTree = "<group>"; };
 		BC00000011000000 /* TextSizeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeSettingsView.swift; sourceTree = "<group>"; };
-		BC00000012000000 /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		BD00000001000000 /* AIActivityOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActivityOrb.swift; sourceTree = "<group>"; };
 		BD00000002000000 /* VariedGreetingBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
 		BD00000003000000 /* GreetingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
@@ -343,8 +330,6 @@
 		BE00000002000000 /* ActivityTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
 		BF00000001000000 /* AlarmEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
 		BF00000002000000 /* SchemaVersioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
-		BF00000003000000 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
-		BF00000004000000 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
 		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
 		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
 		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
@@ -356,21 +341,6 @@
 		C5C847075057F68B9E39C52A /* NLTaskParserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLTaskParserView.swift; sourceTree = "<group>"; };
 		C85E40C1975819FFCA2410F6 /* DailyWisdom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = DailyWisdom.json; path = MyAIssistant/Resources/DailyWisdom.json; sourceTree = SOURCE_ROOT; };
 		C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartFocusIntent.swift; sourceTree = "<group>"; };
-		D100000020000000 /* BalanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
-		D100000021000000 /* DimensionSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionSuggester.swift; sourceTree = "<group>"; };
-		D100000022000000 /* DailyBalanceCheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBalanceCheckIn.swift; sourceTree = "<group>"; };
-		D100000023000000 /* LifeDimension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeDimension.swift; sourceTree = "<group>"; };
-		D100000024000000 /* SeasonGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
-		D100000025000000 /* CompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
-		D100000026000000 /* DimensionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionPickerView.swift; sourceTree = "<group>"; };
-		D100000027000000 /* EveningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
-		D100000028000000 /* NudgeBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeBannerView.swift; sourceTree = "<group>"; };
-		D100000029000000 /* SeasonGoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonGoalView.swift; sourceTree = "<group>"; };
-		D100000030000000 /* WeeklyReflectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionView.swift; sourceTree = "<group>"; };
-		D100000032000000 /* CompassTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassTabView.swift; sourceTree = "<group>"; };
-		D100000033000000 /* CompassInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassInfoSheet.swift; sourceTree = "<group>"; };
-		D100000034000000 /* UserDimensionPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
-		D100000035000000 /* ActivityPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityPattern.swift; sourceTree = "<group>"; };
 		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusTimerView.swift; sourceTree = "<group>"; };
 		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -498,11 +468,6 @@
 				C4EC24E793485FD28F82D50E /* FocusSession.swift */,
 				34B94FBDE7397641F976C27E /* HabitItem.swift */,
 				BF00000002000000 /* SchemaVersioning.swift */,
-				D100000022000000 /* DailyBalanceCheckIn.swift */,
-				D100000023000000 /* LifeDimension.swift */,
-				D100000024000000 /* SeasonGoal.swift */,
-				D100000034000000 /* UserDimensionPreference.swift */,
-				D100000035000000 /* ActivityPattern.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -513,6 +478,9 @@
 				45D328A62F7AE94900293A7A /* TextSizeManager.swift */,
 				B100000009000000 /* AppColors.swift */,
 				B100000010000000 /* AppFonts.swift */,
+				B1AA000001000000 /* AppSpacing.swift */,
+				B1AA000002000000 /* AppRadius.swift */,
+				B1AA000003000000 /* ScaleButtonStyle.swift */,
 				BC00000008000000 /* ColorTheme.swift */,
 				BC00000009000000 /* ThemeManager.swift */,
 			);
@@ -546,7 +514,6 @@
 				D500000002000000 /* Settings */,
 				EFAC014373457DBAE7937331 /* Focus */,
 				3B4A6C51FA5F00EF5D88E395 /* Habits */,
-				D100000031000000 /* Compass */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -637,21 +604,6 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
-		D100000031000000 /* Compass */ = {
-			isa = PBXGroup;
-			children = (
-				D100000025000000 /* CompassView.swift */,
-				D100000026000000 /* DimensionPickerView.swift */,
-				D100000027000000 /* EveningCheckInView.swift */,
-				D100000028000000 /* NudgeBannerView.swift */,
-				D100000029000000 /* SeasonGoalView.swift */,
-				D100000030000000 /* WeeklyReflectionView.swift */,
-				D100000032000000 /* CompassTabView.swift */,
-				D100000033000000 /* CompassInfoSheet.swift */,
-			);
-			path = Compass;
-			sourceTree = "<group>";
-		};
 		D200000001000000 /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -673,8 +625,6 @@
 				B600000003000000 /* UsageGateManager.swift */,
 				B800000001000000 /* BackgroundTaskManager.swift */,
 				BD00000003000000 /* GreetingManager.swift */,
-				D100000020000000 /* BalanceManager.swift */,
-				D100000021000000 /* DimensionSuggester.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -686,8 +636,6 @@
 				B200000012000000 /* DataSeeder.swift */,
 				B200000013000000 /* PreviewHelpers.swift */,
 				B200000014000000 /* Haptics.swift */,
-				BF00000003000000 /* AppLogger.swift */,
-				BF00000004000000 /* ModelContext+SafeSave.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -753,7 +701,6 @@
 				BC00000005000000 /* VoiceSettingsView.swift */,
 				BC00000010000000 /* ThemePickerView.swift */,
 				BC00000011000000 /* TextSizeSettingsView.swift */,
-				BC00000012000000 /* LegalView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1123,6 +1070,9 @@
 				A100000009000000 /* AppColors.swift in Sources */,
 				4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */,
 				A100000010000000 /* AppFonts.swift in Sources */,
+				A1AA000001000000 /* AppSpacing.swift in Sources */,
+				A1AA000002000000 /* AppRadius.swift in Sources */,
+				A1AA000003000000 /* ScaleButtonStyle.swift in Sources */,
 				A300000001000000 /* AIProvider.swift in Sources */,
 				A300000002000000 /* AIPromptBuilder.swift in Sources */,
 				A300000003000000 /* AnthropicProvider.swift in Sources */,
@@ -1189,7 +1139,6 @@
 				AC00000009000000 /* ThemeManager.swift in Sources */,
 				AC00000010000000 /* ThemePickerView.swift in Sources */,
 				AC00000011000000 /* TextSizeSettingsView.swift in Sources */,
-				AC00000012000000 /* LegalView.swift in Sources */,
 				AD00000001000000 /* AIActivityOrb.swift in Sources */,
 				AD00000002000000 /* VariedGreetingBuilder.swift in Sources */,
 				AD00000003000000 /* GreetingManager.swift in Sources */,
@@ -1198,23 +1147,6 @@
 				AE00000002000000 /* ActivityTimelineView.swift in Sources */,
 				AF00000001000000 /* AlarmEntry.swift in Sources */,
 				AF00000002000000 /* SchemaVersioning.swift in Sources */,
-				AF00000003000000 /* AppLogger.swift in Sources */,
-				AF00000004000000 /* ModelContext+SafeSave.swift in Sources */,
-				C100000010000000 /* BalanceManager.swift in Sources */,
-				C100000011000000 /* DimensionSuggester.swift in Sources */,
-				C100000012000000 /* DailyBalanceCheckIn.swift in Sources */,
-				C100000013000000 /* LifeDimension.swift in Sources */,
-				C100000014000000 /* SeasonGoal.swift in Sources */,
-				C100000015000000 /* CompassView.swift in Sources */,
-				C100000016000000 /* DimensionPickerView.swift in Sources */,
-				C100000017000000 /* EveningCheckInView.swift in Sources */,
-				C100000018000000 /* NudgeBannerView.swift in Sources */,
-				C100000019000000 /* SeasonGoalView.swift in Sources */,
-				C100000020000000 /* WeeklyReflectionView.swift in Sources */,
-				C100000021000000 /* CompassTabView.swift in Sources */,
-				C100000022000000 /* CompassInfoSheet.swift in Sources */,
-				C100000023000000 /* UserDimensionPreference.swift in Sources */,
-				C100000024000000 /* ActivityPattern.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
 				7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */,
 				51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */,
@@ -1327,7 +1259,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1340,18 +1272,17 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.watch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1401,7 +1332,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1410,18 +1341,17 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant on your wrist.";
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "My AIssistant needs microphone access to transcribe your voice for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "My AIssistant uses speech recognition to let you talk to your AI assistant on your wrist.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.myaissistant.app;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app.watch;
@@ -1769,25 +1699,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Full calendar access lets Thrivn create and update events to keep your schedule in sync.";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "Thrivn uses your calendar to sync events with your schedule and help you stay organized.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Thrivn uses the camera to scan event flyers and posters to add them to your schedule.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice into text for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant hands-free.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1802,25 +1726,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Full calendar access lets Thrivn create and update events to keep your schedule in sync.";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "Thrivn uses your calendar to sync events with your schedule and help you stay organized.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Thrivn uses the camera to scan event flyers and posters to add them to your schedule.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice into text for the AI assistant.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant hands-free.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1875,7 +1793,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1903,7 +1821,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
+				INFOPLIST_KEY_CFBundleDisplayName = MyAIssistantWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

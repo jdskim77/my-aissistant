@@ -33,7 +33,7 @@ struct CheckInHistoryView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Text("📋")
-                .font(.system(size: 40))
+                .font(AppFonts.icon(40))
             Text("No check-ins yet")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
@@ -54,7 +54,7 @@ struct CheckInHistoryView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(record.timeSlot.icon)
-                    .font(.system(size: 20))
+                    .font(AppFonts.icon(20))
                 Text(record.timeSlot.title)
                     .font(AppFonts.bodyMedium(15))
                     .foregroundColor(AppColors.textPrimary)

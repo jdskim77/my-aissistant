@@ -26,10 +26,10 @@ struct MoodPicker: View {
                     } label: {
                         VStack(spacing: 4) {
                             Text(mood.emoji)
-                                .font(.system(size: selectedMood == mood.value ? 36 : 28))
+                                .font(AppFonts.icon(selectedMood == mood.value ? 36 : 28))
 
                             Text(mood.label)
-                                .font(AppFonts.caption(10))
+                                .font(AppFonts.caption(11))
                                 .foregroundColor(
                                     selectedMood == mood.value
                                         ? AppColors.accent

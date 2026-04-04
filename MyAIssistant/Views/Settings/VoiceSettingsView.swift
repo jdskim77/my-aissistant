@@ -65,7 +65,7 @@ struct VoiceSettingsView: View {
                         Spacer()
                         if selectedProvider == provider {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 22))
+                                .font(AppFonts.heading(22))
                                 .foregroundColor(AppColors.accent)
                         }
                     }
@@ -165,14 +165,14 @@ struct VoiceSettingsView: View {
                 previewVoice(voice)
             } label: {
                 Image(systemName: "play.circle")
-                    .font(.system(size: 22))
+                    .font(AppFonts.heading(22))
                     .foregroundColor(AppColors.accent)
             }
             .buttonStyle(.plain)
 
             if selectedVoiceID == voice.id {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22))
+                    .font(AppFonts.heading(22))
                     .foregroundColor(AppColors.accent)
             }
         }

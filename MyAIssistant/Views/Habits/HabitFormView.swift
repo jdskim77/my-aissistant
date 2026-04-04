@@ -69,7 +69,7 @@ struct HabitFormView: View {
                     // Icon picker
                     VStack(spacing: 10) {
                         Text(icon)
-                            .font(.system(size: 48))
+                            .font(AppFonts.icon(48))
 
                         LazyVGrid(columns: Array(repeating: .init(.flexible()), count: 6), spacing: 10) {
                             ForEach(iconOptions, id: \.self) { emoji in
@@ -78,7 +78,7 @@ struct HabitFormView: View {
                                     icon = emoji
                                 } label: {
                                     Text(emoji)
-                                        .font(.system(size: 28))
+                                        .font(AppFonts.icon(28))
                                         .frame(width: 48, height: 48)
                                         .background(icon == emoji ? Color(hex: colorHex).opacity(0.15) : Color.clear)
                                         .cornerRadius(12)
@@ -215,7 +215,7 @@ struct HabitFormView: View {
                 Button("Delete", role: .destructive) {
                     if let habit = existingHabit {
                         modelContext.delete(habit)
-                        modelContext.safeSave()
+                        try? modelContext.save()
                     }
                     dismiss()
                 }
@@ -265,7 +265,7 @@ struct HabitFormView: View {
             modelContext.insert(habit)
         }
 
-        modelContext.safeSave()
+        try? modelContext.save()
         Haptics.success()
         dismiss()
     }

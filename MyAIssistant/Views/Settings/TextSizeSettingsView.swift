@@ -52,7 +52,7 @@ struct TextSizeSettingsView: View {
             HStack(spacing: 8) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: scaled(12)))
-                    .foregroundColor(.orange)
+                    .foregroundColor(AppColors.accentWarm)
                 Text("5-day streak")
                     .font(.system(size: scaled(12), weight: .regular, design: .rounded))
                     .foregroundColor(AppColors.textMuted)
