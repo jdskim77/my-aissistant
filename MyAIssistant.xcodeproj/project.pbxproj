@@ -7,6 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C2EE1397819F460A /* BalanceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF474997B5617EE /* BalanceManager.swift */; };
+		509B13965C22520D /* DimensionSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = 782904D9C0483457 /* DimensionSuggester.swift */; };
+		48A58AB84355E4C0 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E3C5AEE92B1962 /* ActivityPattern.swift */; };
+		62F061773984EF43 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC03B687B92B1962 /* DailyBalanceCheckIn.swift */; };
+		FC88CB0A6B8A9C4D /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75731A9ECCC7764 /* LifeDimension.swift */; };
+		DCDD8AC386ADAF66 /* SeasonGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48D93391864A138 /* SeasonGoal.swift */; };
+		05AC897011053A45 /* UserDimensionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0751CF15C2C8592F /* UserDimensionPreference.swift */; };
+		E878BB10401E0CE5 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B70EC6122CEB3B6 /* CompassInfoSheet.swift */; };
+		D01AA441709C947A /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D1EE858BA564B3 /* CompassTabView.swift */; };
+		7A1B183620569BC4 /* CompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC9BDB1B33E16A7 /* CompassView.swift */; };
+		755B6C5E43E60513 /* DimensionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26ED043EA95BEF30 /* DimensionPickerView.swift */; };
+		ADF3E8DA41ED54C9 /* EveningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E098048F6BA7A1B5 /* EveningCheckInView.swift */; };
+		52E430B12EBF5ECC /* NudgeBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB88029B8B2B935 /* NudgeBannerView.swift */; };
+		A275BCFDF6CED165 /* SeasonGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED1C122C2A8C3EB /* SeasonGoalView.swift */; };
+		074ADF369E2F99B4 /* WeeklyReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147ECC24ED5FF0EC /* WeeklyReflectionView.swift */; };
+		BE50D47E314E5E85 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96C0B187F67768C /* LegalView.swift */; };
 		00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */; };
 		0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C847075057F68B9E39C52A /* NLTaskParserView.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
@@ -212,6 +228,22 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6BF474997B5617EE /* BalanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
+		782904D9C0483457 /* DimensionSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionSuggester.swift; sourceTree = "<group>"; };
+		26E3C5AEE92B1962 /* ActivityPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityPattern.swift; sourceTree = "<group>"; };
+		EC03B687B92B1962 /* DailyBalanceCheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBalanceCheckIn.swift; sourceTree = "<group>"; };
+		B75731A9ECCC7764 /* LifeDimension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeDimension.swift; sourceTree = "<group>"; };
+		F48D93391864A138 /* SeasonGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
+		0751CF15C2C8592F /* UserDimensionPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
+		2B70EC6122CEB3B6 /* CompassInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassInfoSheet.swift; sourceTree = "<group>"; };
+		D4D1EE858BA564B3 /* CompassTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassTabView.swift; sourceTree = "<group>"; };
+		2DC9BDB1B33E16A7 /* CompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
+		26ED043EA95BEF30 /* DimensionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionPickerView.swift; sourceTree = "<group>"; };
+		E098048F6BA7A1B5 /* EveningCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
+		1AB88029B8B2B935 /* NudgeBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeBannerView.swift; sourceTree = "<group>"; };
+		DED1C122C2A8C3EB /* SeasonGoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonGoalView.swift; sourceTree = "<group>"; };
+		147ECC24ED5FF0EC /* WeeklyReflectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionView.swift; sourceTree = "<group>"; };
+		C96C0B187F67768C /* LegalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		11E7024744C354093E7EE70E /* HabitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitManager.swift; path = MyAIssistant/Managers/HabitManager.swift; sourceTree = SOURCE_ROOT; };
@@ -477,6 +509,11 @@
 				C4EC24E793485FD28F82D50E /* FocusSession.swift */,
 				34B94FBDE7397641F976C27E /* HabitItem.swift */,
 				BF00000002000000 /* SchemaVersioning.swift */,
+				26E3C5AEE92B1962 /* ActivityPattern.swift */,
+				EC03B687B92B1962 /* DailyBalanceCheckIn.swift */,
+				B75731A9ECCC7764 /* LifeDimension.swift */,
+				F48D93391864A138 /* SeasonGoal.swift */,
+				0751CF15C2C8592F /* UserDimensionPreference.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -523,8 +560,24 @@
 				D500000002000000 /* Settings */,
 				EFAC014373457DBAE7937331 /* Focus */,
 				3B4A6C51FA5F00EF5D88E395 /* Habits */,
+				6FE428889A4FA0B6 /* Compass */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		6FE428889A4FA0B6 /* Compass */ = {
+			isa = PBXGroup;
+			children = (
+				2B70EC6122CEB3B6 /* CompassInfoSheet.swift */,
+				D4D1EE858BA564B3 /* CompassTabView.swift */,
+				2DC9BDB1B33E16A7 /* CompassView.swift */,
+				26ED043EA95BEF30 /* DimensionPickerView.swift */,
+				E098048F6BA7A1B5 /* EveningCheckInView.swift */,
+				1AB88029B8B2B935 /* NudgeBannerView.swift */,
+				DED1C122C2A8C3EB /* SeasonGoalView.swift */,
+				147ECC24ED5FF0EC /* WeeklyReflectionView.swift */,
+			);
+			path = Compass;
 			sourceTree = "<group>";
 		};
 		D100000007000000 /* Components */ = {
@@ -635,6 +688,8 @@
 				B600000003000000 /* UsageGateManager.swift */,
 				B800000001000000 /* BackgroundTaskManager.swift */,
 				BD00000003000000 /* GreetingManager.swift */,
+				6BF474997B5617EE /* BalanceManager.swift */,
+				782904D9C0483457 /* DimensionSuggester.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -713,6 +768,7 @@
 				BC00000005000000 /* VoiceSettingsView.swift */,
 				BC00000010000000 /* ThemePickerView.swift */,
 				BC00000011000000 /* TextSizeSettingsView.swift */,
+				C96C0B187F67768C /* LegalView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1068,6 +1124,22 @@
 				A200000001000000 /* AppConstants.swift in Sources */,
 				A200000002000000 /* DependencyContainer.swift in Sources */,
 				A200000003000000 /* TaskItem.swift in Sources */,
+				C2EE1397819F460A /* BalanceManager.swift in Sources */,
+				509B13965C22520D /* DimensionSuggester.swift in Sources */,
+				48A58AB84355E4C0 /* ActivityPattern.swift in Sources */,
+				62F061773984EF43 /* DailyBalanceCheckIn.swift in Sources */,
+				FC88CB0A6B8A9C4D /* LifeDimension.swift in Sources */,
+				DCDD8AC386ADAF66 /* SeasonGoal.swift in Sources */,
+				05AC897011053A45 /* UserDimensionPreference.swift in Sources */,
+				E878BB10401E0CE5 /* CompassInfoSheet.swift in Sources */,
+				D01AA441709C947A /* CompassTabView.swift in Sources */,
+				7A1B183620569BC4 /* CompassView.swift in Sources */,
+				755B6C5E43E60513 /* DimensionPickerView.swift in Sources */,
+				ADF3E8DA41ED54C9 /* EveningCheckInView.swift in Sources */,
+				52E430B12EBF5ECC /* NudgeBannerView.swift in Sources */,
+				A275BCFDF6CED165 /* SeasonGoalView.swift in Sources */,
+				074ADF369E2F99B4 /* WeeklyReflectionView.swift in Sources */,
+				BE50D47E314E5E85 /* LegalView.swift in Sources */,
 				A200000004000000 /* TaskCategory.swift in Sources */,
 				A200000005000000 /* TaskPriority.swift in Sources */,
 				45D328A72F7AE94900293A7A /* TextSizeManager.swift in Sources */,
