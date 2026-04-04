@@ -54,7 +54,7 @@ struct CompleteTaskIntent: AppIntent {
 
         task.done = true
         task.completedAt = Date()
-        try? context.save()
+        context.safeSave()
 
         let remaining = tasks.count - 1
         var msg = "Completed \"\(task.title)\"!"

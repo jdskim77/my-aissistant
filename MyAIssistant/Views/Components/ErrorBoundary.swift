@@ -53,7 +53,7 @@ struct ErrorBoundaryModifier: ViewModifier {
                             .font(.system(size: 16))
                     }
                 }
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.onAccent)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(Color.red.opacity(0.9))

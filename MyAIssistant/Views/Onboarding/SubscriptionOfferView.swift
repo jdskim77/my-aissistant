@@ -42,7 +42,7 @@ struct SubscriptionOfferView: View {
                     HStack {
                         Text("Pro")
                             .font(AppFonts.bodyMedium(14))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onAccent)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(AppColors.accent)
@@ -84,7 +84,7 @@ struct SubscriptionOfferView: View {
                 Button(action: onContinue) {
                     Text("Continue with Free")
                         .font(AppFonts.bodyMedium(17))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)

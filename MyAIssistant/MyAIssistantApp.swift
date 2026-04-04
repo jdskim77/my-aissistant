@@ -137,9 +137,6 @@ struct MyAIssistantApp: App {
                         notificationManager.scheduleCheckInReminders()
                     }
 
-                    // Sync calendars + reminders on every launch
-                    await calendarSyncManager.syncAll()
-
                     // Start listening for real-time calendar/reminder changes
                     calendarSyncManager.startListeningForChanges()
 
@@ -278,12 +275,16 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 extension ModelContainer {
     /// Last-resort in-memory container so the app can at least launch.
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
-        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
-        // This is the absolute last resort — if even in-memory fails, the app cannot function
+        let inMemory = ModelConfiguration(isStoredInMemoryOnly: true)
         do {
             return try ModelContainer(for: schema, configurations: [inMemory])
         } catch {
-            fatalError("Cannot create even an in-memory ModelContainer: \(error)")
+            // Even in-memory failed — try with no named config
+            print("🔴 fallbackInMemory failed: \(error)")
+            return try! ModelContainer(
+                for: UserProfile.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            )
         }
     }
 }

@@ -539,7 +539,7 @@ struct SeasonGoalView: View {
                 } label: {
                     Text("Start 4-Week Focus")
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(selectedDimension?.color ?? AppColors.accent)
@@ -575,7 +575,7 @@ struct SeasonGoalView: View {
                 } label: {
                     Text("Let's Go")
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(dim.color)

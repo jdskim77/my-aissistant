@@ -181,7 +181,7 @@ struct SubscriptionView: View {
                         Text("Subscribe")
                             .font(AppFonts.bodyMedium(15))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(AppColors.accent)
@@ -191,7 +191,7 @@ struct SubscriptionView: View {
             } else {
                 Text("Subscribe")
                     .font(AppFonts.bodyMedium(15))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(AppColors.textMuted)

@@ -46,7 +46,7 @@ struct TaskCard: View {
                                 .frame(width: 24, height: 24)
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.onAccent)
                         }
                     }
                     .frame(width: 44, height: 44)
@@ -85,13 +85,13 @@ struct TaskCard: View {
 
                 // Priority badge (color + text, not color-only)
                 if !task.done {
-                    Text(task.priority.rawValue.prefix(1))
+                    Text(task.priority.shortLabel.prefix(1))
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(AppColors.checkboxColor(task.priority))
                         .frame(width: 24, height: 24)
                         .background(AppColors.checkboxColor(task.priority).opacity(0.12))
                         .cornerRadius(6)
-                        .accessibilityLabel("\(task.priority.rawValue) priority")
+                        .accessibilityLabel("\(task.priority.displayName) priority")
                 }
 
                 // Expand/collapse button

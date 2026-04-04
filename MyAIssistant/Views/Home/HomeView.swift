@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.balanceManager) private var balanceManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -20,6 +21,9 @@ struct HomeView: View {
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
+    // Compass nudge state (radar chart + check-ins live in Compass tab)
+
+    @State private var nudgeDismissed = false
 
     // MARK: - Computed
 
@@ -160,6 +164,14 @@ struct HomeView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
+            }
+
+            // Life Compass
+            Section {
+                compassNudge
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
 
             // Stats bar
@@ -531,6 +543,43 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Life Compass Section
+
+    /// Only the nudge banner from Compass lives on Home — the full radar chart,
+    /// check-ins, reflections, and season goals live in the dedicated Compass tab.
+    @ViewBuilder
+    private var compassNudge: some View {
+        if let bm = balanceManager, !nudgeDismissed, let nudge = bm.todayNudge() {
+            NudgeBannerView(
+                nudge: nudge,
+                onDismiss: {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        nudgeDismissed = true
+                    }
+                    bm.dismissNudge()
+                },
+                onAddTask: { dimension, suggestion in
+                    let task = TaskItem(
+                        title: suggestion.replacingOccurrences(of: "?", with: ""),
+                        category: .personal,
+                        priority: .medium,
+                        date: Date(),
+                        icon: "📌"
+                    )
+                    task.dimension = dimension
+                    taskManager?.addTask(task)
+                    Haptics.success()
+                    withAnimation(.snappy(duration: 0.25)) {
+                        nudgeDismissed = true
+                    }
+                    bm.dismissNudge()
+                }
+            )
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+            .listRowBackground(Color.clear)
+        }
+    }
+
     // MARK: - Daily Wisdom Card
 
     private func wisdomCard(quote: WisdomManager.Quote) -> some View {
@@ -814,7 +863,7 @@ struct HomeView: View {
                                     .frame(width: 22, height: 22)
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.onAccent)
                             }
                         }
                         .frame(width: 36, height: 36)
@@ -890,7 +939,7 @@ struct HomeView: View {
                 } label: {
                     Text("Reschedule")
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(AppColors.accent)

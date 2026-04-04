@@ -87,7 +87,7 @@ struct HabitsView: View {
                     Text("Add First Habit")
                 }
                 .font(AppFonts.bodyMedium(15))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.onAccent)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 14)
                 .background(AppColors.accent)
@@ -143,7 +143,7 @@ struct HabitsView: View {
                             .frame(width: 28, height: 28)
                         Image(systemName: "checkmark")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onAccent)
                     }
                 }
                 .frame(width: 44, height: 44)
@@ -237,7 +237,7 @@ struct HabitsView: View {
                                     if done {
                                         Image(systemName: "checkmark")
                                             .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppColors.onAccent)
                                     }
                                 } else {
                                     RoundedRectangle(cornerRadius: 6)

@@ -29,7 +29,7 @@ struct ToggleHabitIntent: AppIntent {
         let today = Calendar.current.startOfDay(for: Date())
         let wasCompleted = habit.isCompletedOn(today)
         habit.toggleCompletion(for: today)
-        try? context.save()
+        context.safeSave()
 
         if wasCompleted {
             return .result(dialog: "Unmarked \"\(habit.title)\" for today.")

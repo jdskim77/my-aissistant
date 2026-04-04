@@ -11,6 +11,7 @@ struct ChatView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.usageGateManager) private var usageGateManager
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.balanceManager) private var balanceManager
     @Environment(\.modelContext) private var modelContext
     @State private var conversationID = "main"
     @State private var inputText = ""
@@ -28,8 +29,19 @@ struct ChatView: View {
     @State private var showingMicPermissionAlert = false
     @State private var showClockAppPrompt = false
     @State private var showChatPaywall = false
+    @State private var showCalendarConnectCard = false
+    @State private var showCalendarSettingsSheet = false
     @State private var pendingCalendarActions: [CalendarAction] = []
     @FocusState private var isInputFocused: Bool
+
+    private var hasCalendarConnected: Bool {
+        let links = calendarSyncManager?.enabledCalendarLinks() ?? []
+        return !links.isEmpty
+    }
+
+    private var hasShownCalendarPrompt: Bool {
+        UserDefaults.standard.bool(forKey: "hasShownCalendarConnectPrompt")
+    }
 
     private let quickActions = [
         "What's high priority?",
@@ -46,7 +58,9 @@ struct ChatView: View {
             // Messages — tap to stop AI speech
             ConversationMessages(
                 conversationID: conversationID,
-                isAITyping: isAITyping
+                isAITyping: isAITyping,
+                showCalendarConnectCard: $showCalendarConnectCard,
+                showCalendarSettingsSheet: $showCalendarSettingsSheet
             )
             .onTapGesture {
                 if speechSynthesizer.isSpeaking {
@@ -87,21 +101,9 @@ struct ChatView: View {
                     Text("Notification alarm set.")
                         .font(AppFonts.bodyMedium(13))
                     Spacer()
-                    Button {
-                        // Open the built-in Clock app's alarm tab
-                        if let url = URL(string: "clock-sleep-alarm://") {
-                            UIApplication.shared.open(url)
-                        }
-                        showClockAppPrompt = false
-                    } label: {
-                        Text("Open Clock App")
-                            .font(AppFonts.bodyMedium(12))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(AppColors.accent)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
+                    Text("You'll get a notification")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
                     Button {
                         showClockAppPrompt = false
                     } label: {
@@ -219,6 +221,11 @@ struct ChatView: View {
             }
             .presentationDetents([.medium])
         }
+        .sheet(isPresented: $showCalendarSettingsSheet) {
+            NavigationStack {
+                CalendarSettingsView()
+            }
+        }
     }
 
     // MARK: - Header
@@ -238,6 +245,7 @@ struct ChatView: View {
                         .background(AppColors.surface)
                         .cornerRadius(8)
                 }
+                .accessibilityLabel("Close chat")
             }
 
             AIActivityOrb(
@@ -279,6 +287,7 @@ struct ChatView: View {
                             .stroke(voiceModeEnabled ? AppColors.accent.opacity(0.3) : Color.clear, lineWidth: 1)
                     )
             }
+            .accessibilityLabel(voiceModeEnabled ? "Disable voice mode" : "Enable voice mode")
 
             Button {
                 showingConversations = true
@@ -290,6 +299,7 @@ struct ChatView: View {
                     .background(AppColors.accentLight)
                     .cornerRadius(8)
             }
+            .accessibilityLabel("View conversations")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -397,6 +407,7 @@ struct ChatView: View {
                             .cornerRadius(22)
                     }
                 }
+                .accessibilityLabel(speechRecognizer.isRecording ? "Stop recording" : "Start voice input")
 
                 // Send button
                 Button {
@@ -408,7 +419,8 @@ struct ChatView: View {
                         .font(.system(size: 40))
                         .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppColors.textMuted : AppColors.accent)
                 }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAITyping)
+                .accessibilityLabel("Send message")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -419,6 +431,8 @@ struct ChatView: View {
     // MARK: - Actions
 
     private func sendMessage(_ text: String) {
+        // Re-entrancy guard — prevent duplicate sends from rapid tapping
+        guard !isAITyping else { return }
         errorMessage = nil
 
         // Enforce free tier chat limit
@@ -463,7 +477,8 @@ struct ChatView: View {
                     hasGoogleCalendar: hasGoogle,
                     hasAppleCalendar: hasApple,
                     activitySummary: patternEngine?.activitySummaryText() ?? "",
-                    patternInsights: patternEngine?.patternInsightsText() ?? ""
+                    patternInsights: patternEngine?.patternInsightsText() ?? "",
+                    balanceSummary: balanceManager?.balanceSummaryForAI() ?? ""
                 )
 
                 let aiResponse = try await provider.sendMessage(
@@ -497,6 +512,14 @@ struct ChatView: View {
                             category: activity.category
                         )
                         modelContext.insert(entry)
+                    }
+
+                    // Show calendar connect card on first task creation without calendar
+                    if !parsed.calendarActions.isEmpty, !hasCalendarConnected, !hasShownCalendarPrompt {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showCalendarConnectCard = true
+                        }
+                        UserDefaults.standard.set(true, forKey: "hasShownCalendarConnectPrompt")
                     }
 
                     // Speak response aloud if voice mode is on
@@ -714,7 +737,7 @@ struct ChatView: View {
                 } label: {
                     Text("Approve")
                         .font(AppFonts.bodyMedium(13))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(AppColors.accent)
@@ -991,12 +1014,16 @@ struct ChatView: View {
 private struct ConversationMessages: View {
     let conversationID: String
     let isAITyping: Bool
+    @Binding var showCalendarConnectCard: Bool
+    @Binding var showCalendarSettingsSheet: Bool
 
     @Query private var messages: [ChatMessage]
 
-    init(conversationID: String, isAITyping: Bool) {
+    init(conversationID: String, isAITyping: Bool, showCalendarConnectCard: Binding<Bool>, showCalendarSettingsSheet: Binding<Bool>) {
         self.conversationID = conversationID
         self.isAITyping = isAITyping
+        self._showCalendarConnectCard = showCalendarConnectCard
+        self._showCalendarSettingsSheet = showCalendarSettingsSheet
         let convoID = conversationID
         self._messages = Query(
             filter: #Predicate<ChatMessage> { $0.conversationID == convoID },
@@ -1015,6 +1042,59 @@ private struct ConversationMessages: View {
                     ForEach(messages, id: \.id) { message in
                         ChatBubble(message: message)
                             .id(message.id)
+                    }
+
+                    // One-time calendar connect card
+                    if showCalendarConnectCard {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "calendar.badge.plus")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(AppColors.accent)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Task added to your schedule")
+                                        .font(AppFonts.bodyMedium(14))
+                                        .foregroundColor(AppColors.textPrimary)
+                                    Text("Connect a calendar for two-way sync.")
+                                        .font(AppFonts.body(13))
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                            }
+                            HStack(spacing: 12) {
+                                Button {
+                                    Haptics.light()
+                                    showCalendarSettingsSheet = true
+                                } label: {
+                                    Text("Connect Calendar")
+                                        .font(AppFonts.bodyMedium(14))
+                                        .foregroundColor(AppColors.onAccent)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(AppColors.accent)
+                                        .cornerRadius(10)
+                                }
+                                Button {
+                                    withAnimation(.snappy(duration: 0.25)) {
+                                        showCalendarConnectCard = false
+                                    }
+                                } label: {
+                                    Text("Not now")
+                                        .font(AppFonts.body(14))
+                                        .foregroundColor(AppColors.textMuted)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(AppColors.card)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(AppColors.accent.opacity(0.2), lineWidth: 1)
+                        )
+                        .id("calendarConnect")
+                        .transition(.scale.combined(with: .opacity))
                     }
 
                     if isAITyping {
@@ -1047,9 +1127,11 @@ private struct ConversationMessages: View {
             Spacer()
                 .frame(height: 60)
 
-            Text("✦")
-                .font(.system(size: 40))
-                .foregroundColor(AppColors.accent)
+            Image("ThrivnLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
 
             Text("How can I help?")
                 .font(AppFonts.heading(20))

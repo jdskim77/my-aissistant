@@ -104,3 +104,16 @@ extension EnvironmentValues {
         set { self[UsageGateManagerKey.self] = newValue }
     }
 }
+
+// MARK: - BalanceManager Environment Key
+
+struct BalanceManagerKey: EnvironmentKey {
+    static let defaultValue: BalanceManager? = nil
+}
+
+extension EnvironmentValues {
+    var balanceManager: BalanceManager? {
+        get { self[BalanceManagerKey.self] }
+        set { self[BalanceManagerKey.self] = newValue }
+    }
+}

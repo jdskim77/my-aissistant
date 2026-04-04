@@ -1,21 +1,24 @@
 import Foundation
 import SwiftData
 
-/// Shared ModelContainer accessor for App Intents.
-/// App Intents run outside the SwiftUI lifecycle, so they need their own container.
+/// Shared ModelContainer for App Intents.
 enum IntentModelContainer {
     @MainActor
     static let shared: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV1.self)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+        let modelTypes: [any PersistentModel.Type] = [
+            TaskItem.self, ChatMessage.self, CheckInRecord.self,
+            DailySnapshot.self, UserProfile.self, UsageTracker.self,
+            CalendarLink.self, ActivityEntry.self, AlarmEntry.self,
+            FocusSession.self, HabitItem.self, DailyBalanceCheckIn.self,
+            SeasonGoal.self, UserDimensionPreference.self, ActivityPattern.self
+        ]
+        let schema = Schema(modelTypes)
+        let config = ModelConfiguration("MyAIssistant", schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            return ModelContainer.fallbackInMemory(schema: schema)
+            let memConfig = ModelConfiguration(isStoredInMemoryOnly: true)
+            return try! ModelContainer(for: schema, configurations: [memConfig])
         }
     }()
 }

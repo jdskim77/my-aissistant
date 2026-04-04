@@ -12,6 +12,7 @@ struct TaskDetailView: View {
     @State private var priority: TaskPriority
     @State private var notes: String
     @State private var icon: String
+    @State private var dimension: LifeDimension?
     @State private var showingDeleteAlert = false
 
     private let iconOptions = ["📌", "✈️", "🏨", "🚐", "🧳", "🛫", "🛬", "🏜️", "💱", "📋", "📘", "🛒", "💳", "🔧", "🧘", "📞", "💊", "🎁", "📦", "🏃"]
@@ -24,6 +25,7 @@ struct TaskDetailView: View {
         self._priority = State(initialValue: task.priority)
         self._notes = State(initialValue: task.notes)
         self._icon = State(initialValue: task.icon)
+        self._dimension = State(initialValue: task.dimension)
     }
 
     var body: some View {
@@ -162,6 +164,12 @@ struct TaskDetailView: View {
                         }
                     }
 
+                    // Life Dimension
+                    DimensionPickerView(
+                        selection: $dimension,
+                        suggestion: DimensionSuggester.suggest(title: title, category: category, context: nil)
+                    )
+
                     // Notes
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Notes")
@@ -244,5 +252,6 @@ struct TaskDetailView: View {
         task.priority = priority
         task.notes = notes
         task.icon = icon
+        task.dimension = dimension
     }
 }

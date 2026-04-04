@@ -25,7 +25,7 @@
 		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
-				8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
+		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
 		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000 /* MyAIssistantApp.swift */; };
 		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000 /* ContentView.swift */; };
 		A100000005000000 /* CheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005000000 /* CheckIn.swift */; };
@@ -1774,9 +1774,13 @@
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Full calendar access lets Thrivn create and update events to keep your schedule in sync.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Thrivn uses your calendar to sync events with your schedule and help you stay organized.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Thrivn uses the camera to scan event flyers and posters to add them to your schedule.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice into text for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant hands-free.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1803,9 +1807,13 @@
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Full calendar access lets Thrivn create and update events to keep your schedule in sync.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Thrivn uses your calendar to sync events with your schedule and help you stay organized.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Thrivn uses the camera to scan event flyers and posters to add them to your schedule.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Thrivn needs microphone access to transcribe your voice into text for the AI assistant.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Thrivn uses speech recognition to let you talk to your AI assistant hands-free.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (

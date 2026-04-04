@@ -48,6 +48,26 @@ final class CalendarSyncManager: ObservableObject {
         appleCalendars = await eventKitService.availableCalendars()
     }
 
+    // MARK: - Reminders Access
+
+    @Published var reminderLists: [EKCalendar] = []
+
+    var remindersAuthorized: Bool {
+        EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
+    }
+
+    func requestRemindersAccess() async -> Bool {
+        let granted = await eventKitService.requestReminderAccess()
+        if granted {
+            await loadReminderLists()
+        }
+        return granted
+    }
+
+    func loadReminderLists() async {
+        reminderLists = await eventKitService.availableReminderLists()
+    }
+
     // MARK: - Google Calendar Access
 
     func googleCalendarConnected() async -> Bool {
@@ -260,9 +280,134 @@ final class CalendarSyncManager: ObservableObject {
 
     // MARK: - Full Sync
 
+    /// Re-entrancy guard — prevents concurrent syncs from racing.
+    private var isSyncingAll = false
+
     func syncAll() async {
+        guard !isSyncingAll else { return }
+        isSyncingAll = true
+        isSyncing = true
+        defer {
+            isSyncing = false
+            isSyncingAll = false
+        }
+
         await syncAppleCalendar()
         await syncGoogleCalendar()
+        await syncReminders()
+    }
+
+    // MARK: - Sync Reminders
+
+    func syncReminders() async {
+        guard remindersAuthorized else { return }
+
+        // Don't set isSyncing here if syncAll already set it (prevents flicker)
+        let ownsSyncing = !isSyncingAll
+        if ownsSyncing { isSyncing = true }
+        defer { if ownsSyncing { isSyncing = false } }
+
+        let enabledLinks = enabledCalendarLinks().filter { $0.calendarSource == .reminders }
+        guard !enabledLinks.isEmpty else { return }
+
+        let listIDs = enabledLinks.map(\.calendarID)
+
+        // Fetch BOTH incomplete and recently completed reminders
+        let incompleteReminders = await eventKitService.incompleteReminders(in: listIDs)
+        let lastSync = enabledLinks.compactMap(\.lastSynced).min() ?? Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let completedReminders = await eventKitService.completedReminders(in: listIDs, since: lastSync)
+
+        let allReminders = incompleteReminders + completedReminders
+
+        // Track which reminder IDs we've seen — for orphan detection
+        var seenReminderIDs: Set<String> = []
+
+        for reminder in allReminders {
+            let reminderID = "reminder:\(reminder.calendarItemIdentifier)"
+            seenReminderIDs.insert(reminderID)
+
+            let descriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { $0.externalCalendarID == reminderID }
+            )
+            let existing = (try? modelContext.fetch(descriptor)) ?? []
+
+            if let existingTask = existing.first {
+                // Update existing task from reminder
+                existingTask.title = reminder.title ?? "Untitled"
+                if let dueDate = reminder.dueDateComponents?.date {
+                    existingTask.date = dueDate
+                }
+                existingTask.notes = reminder.notes ?? ""
+                // Sync completion: Reminders → app
+                if reminder.isCompleted && !existingTask.done {
+                    existingTask.done = true
+                    existingTask.completedAt = reminder.completionDate ?? Date()
+                } else if !reminder.isCompleted && existingTask.done {
+                    existingTask.done = false
+                    existingTask.completedAt = nil
+                }
+            } else if !reminder.isCompleted {
+                // New incomplete reminder — import as task
+                let title = reminder.title ?? "Untitled"
+                let dueDate = reminder.dueDateComponents?.date ?? reminder.creationDate ?? Date()
+                guard !taskExistsOnSameDay(title: title, date: dueDate) else { continue }
+
+                let priority: TaskPriority = {
+                    switch reminder.priority {
+                    case 1...4: return .high
+                    case 5: return .medium
+                    case 6...9: return .low
+                    default: return .medium
+                    }
+                }()
+
+                let task = TaskItem(
+                    title: title,
+                    category: .personal,
+                    priority: priority,
+                    date: dueDate,
+                    icon: "☑️",
+                    notes: reminder.notes ?? ""
+                )
+                task.externalCalendarID = reminderID
+                modelContext.insert(task)
+            }
+        }
+
+        // Clean up orphaned tasks (reminder was deleted in Reminders app)
+        await cleanUpOrphanedReminderTasks(seenIDs: seenReminderIDs, listIDs: listIDs)
+
+        for link in enabledLinks {
+            link.lastSynced = Date()
+        }
+        modelContext.safeSave()
+    }
+
+    /// Remove tasks whose linked reminder no longer exists.
+    private func cleanUpOrphanedReminderTasks(seenIDs: Set<String>, listIDs: [String]) async {
+        // Fetch all tasks linked to reminders
+        let descriptor = FetchDescriptor<TaskItem>()
+        let allTasks = (try? modelContext.fetch(descriptor)) ?? []
+
+        for task in allTasks {
+            guard let extID = task.externalCalendarID, extID.hasPrefix("reminder:") else { continue }
+            // If this reminder ID wasn't in the fetch results, it's been deleted
+            if !seenIDs.contains(extID) {
+                modelContext.delete(task)
+            }
+        }
+    }
+
+    /// Immediately sync a single task's completion state to Reminders.
+    /// Called from TaskManager.toggleCompletion() for reminder-linked tasks.
+    func syncTaskCompletionToReminders(_ task: TaskItem) async {
+        guard let extID = task.externalCalendarID, extID.hasPrefix("reminder:") else { return }
+        let reminderID = String(extID.dropFirst("reminder:".count))
+        if task.done {
+            try? await eventKitService.completeReminder(identifier: reminderID)
+        } else {
+            try? await eventKitService.uncompleteReminder(identifier: reminderID)
+        }
     }
 
     // MARK: - Push to Apple Calendar
@@ -297,12 +442,15 @@ final class CalendarSyncManager: ObservableObject {
         guard let eventID = task.externalCalendarID else { return }
 
         if eventID.hasPrefix("google:") {
-            // Delete from Google Calendar
             let googleEventID = String(eventID.dropFirst("google:".count))
             let googleLinks = enabledCalendarLinks().filter { $0.calendarSource == .google }
             if let calendarID = googleLinks.first?.calendarID {
                 try? await googleService.deleteEvent(calendarID: calendarID, eventID: googleEventID)
             }
+        } else if eventID.hasPrefix("reminder:") {
+            // Mark reminder as complete in Reminders app (don't actually delete it)
+            let reminderID = String(eventID.dropFirst("reminder:".count))
+            try? await eventKitService.completeReminder(identifier: reminderID)
         } else {
             // Delete from Apple Calendar
             try? await eventKitService.deleteEvent(identifier: eventID)
@@ -352,7 +500,13 @@ final class CalendarSyncManager: ObservableObject {
     func startListeningForChanges() {
         Task {
             for await _ in await eventKitService.storeChanges() {
+                // EKEventStoreChanged fires for both calendar and reminder changes
                 await syncAppleCalendar()
+                await syncReminders()
+                // Refresh Watch and widgets after external changes
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .watchRequestedUpdate, object: nil)
+                }
             }
         }
     }

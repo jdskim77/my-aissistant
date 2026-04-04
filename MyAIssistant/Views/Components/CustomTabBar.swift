@@ -3,14 +3,14 @@ import SwiftUI
 enum Tab: Int, CaseIterable {
     case home = 0
     case schedule = 1
-    case patterns = 2
+    case compass = 2
     case settings = 3
 
     var icon: String {
         switch self {
         case .home: return "checklist"
         case .schedule: return "calendar"
-        case .patterns: return "chart.bar.fill"
+        case .compass: return "safari"
         case .settings: return "gearshape.fill"
         }
     }
@@ -19,7 +19,7 @@ enum Tab: Int, CaseIterable {
         switch self {
         case .home: return "checklist"
         case .schedule: return "calendar"
-        case .patterns: return "chart.bar.fill"
+        case .compass: return "safari.fill"
         case .settings: return "gearshape.fill"
         }
     }
@@ -28,7 +28,7 @@ enum Tab: Int, CaseIterable {
         switch self {
         case .home: return "Today"
         case .schedule: return "Schedule"
-        case .patterns: return "Patterns"
+        case .compass: return "Compass"
         case .settings: return "Settings"
         }
     }
@@ -48,7 +48,7 @@ struct CustomTabBar: View {
             aiCenterButton
             Spacer()
 
-            tabButton(for: .patterns)
+            tabButton(for: .compass)
             tabButton(for: .settings)
         }
         .padding(.horizontal, 16)
@@ -71,13 +71,13 @@ struct CustomTabBar: View {
         } label: {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: tab.icon)
+                    Image(systemName: selectedTab == tab ? tab.selectedIcon : tab.icon)
                         .font(.system(size: 22))
 
                     if badge > 0 {
                         Text("\(badge)")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onAccent)
                             .frame(width: 16, height: 16)
                             .background(AppColors.coral)
                             .cornerRadius(8)
@@ -115,9 +115,11 @@ struct CustomTabBar: View {
                     .frame(width: 60, height: 60)
                     .shadow(color: AppColors.accent.opacity(0.35), radius: 10, x: 0, y: 4)
 
-                Text("✦")
-                    .font(.system(size: 26))
-                    .foregroundColor(.white)
+                Image("ThrivnLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
             }
             .offset(y: -20)
         }

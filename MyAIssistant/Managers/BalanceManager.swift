@@ -16,8 +16,31 @@ final class BalanceManager: ObservableObject {
     /// Default weekly effort target per dimension. User can customize.
     private static let defaultTarget = 10
 
+    /// Cache for weekly breakdowns — invalidated after 30 seconds or on data mutation.
+    private var cachedBreakdowns: [LifeDimension: DimensionBreakdown]?
+    private var cachedBreakdownsWeekStart: Date?
+    private var cacheTimestamp: Date?
+    private static let cacheTTL: TimeInterval = 30
+
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+    }
+
+    /// Invalidate the cache (call after any data mutation).
+    func invalidateCache() {
+        cachedBreakdowns = nil
+        cacheTimestamp = nil
+    }
+
+    private func isCacheValid(for weekStart: Date?) -> Bool {
+        guard let cached = cachedBreakdowns,
+              let ts = cacheTimestamp,
+              Date().timeIntervalSince(ts) < Self.cacheTTL else { return false }
+        // Only valid for current week (nil weekStart = current week)
+        if weekStart == nil && cachedBreakdownsWeekStart == Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start {
+            return true
+        }
+        return weekStart == cachedBreakdownsWeekStart
     }
 
     // MARK: - Composite Dimension Scores
@@ -39,14 +62,25 @@ final class BalanceManager: ObservableObject {
     }
 
     /// Returns the full signal breakdown per dimension for the current week.
+    /// Results are cached for 30 seconds to avoid redundant queries.
     func weeklyBreakdowns(for weekStart: Date? = nil) -> [LifeDimension: DimensionBreakdown] {
+        if isCacheValid(for: weekStart), let cached = cachedBreakdowns {
+            return cached
+        }
+
         let calendar = Calendar.current
         let start = weekStart ?? calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
         let end = calendar.safeDate(byAdding: .day, value: 7, to: start)
 
-        let activityScores = activitySignal(from: start, to: end)
+        // Single fetch for tasks — shared between activity and consistency signals
+        let taskDescriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= start && $0.date < end && $0.done == true }
+        )
+        let tasks = (try? modelContext.fetch(taskDescriptor)) ?? []
+
+        let activityScores = activitySignalFromTasks(tasks)
         let satisfactionScores = satisfactionSignal(from: start, to: end)
-        let consistencyScores = consistencySignal(from: start, to: end)
+        let consistencyScores = consistencySignalFromTasks(tasks)
 
         // Detect if user has ANY data this week (tasks or check-ins)
         let hasActivityData = activityScores.values.contains(where: { $0 > 0 })
@@ -67,6 +101,11 @@ final class BalanceManager: ObservableObject {
                 result[dim] = DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
             }
         }
+        // Cache the result
+        cachedBreakdowns = result
+        cachedBreakdownsWeekStart = start
+        cacheTimestamp = Date()
+
         return result
     }
 
@@ -114,6 +153,38 @@ final class BalanceManager: ObservableObject {
         for dim in LifeDimension.scored {
             let points = effortPoints[dim] ?? 0
             scores[dim] = min(10, Double(points) / Double(target) * 10)
+        }
+        return scores
+    }
+
+    /// Activity signal from pre-fetched tasks (avoids duplicate query).
+    private func activitySignalFromTasks(_ tasks: [TaskItem]) -> [LifeDimension: Double] {
+        var effortPoints: [LifeDimension: Int] = [:]
+        for dim in LifeDimension.scored { effortPoints[dim] = 0 }
+        for task in tasks {
+            guard let dim = task.dimension, dim.isScored else { continue }
+            effortPoints[dim, default: 0] += task.effort.points
+        }
+        let target = personalTarget()
+        var scores: [LifeDimension: Double] = [:]
+        for dim in LifeDimension.scored {
+            scores[dim] = min(10, Double(effortPoints[dim] ?? 0) / Double(target) * 10)
+        }
+        return scores
+    }
+
+    /// Consistency signal from pre-fetched tasks (avoids duplicate query).
+    private func consistencySignalFromTasks(_ tasks: [TaskItem]) -> [LifeDimension: Double] {
+        let calendar = Calendar.current
+        var activeDays: [LifeDimension: Set<Int>] = [:]
+        for dim in LifeDimension.scored { activeDays[dim] = [] }
+        for task in tasks {
+            guard let dim = task.dimension, dim.isScored else { continue }
+            activeDays[dim, default: []].insert(calendar.component(.weekday, from: task.date))
+        }
+        var scores: [LifeDimension: Double] = [:]
+        for dim in LifeDimension.scored {
+            scores[dim] = Double(activeDays[dim]?.count ?? 0) / 7.0 * 10
         }
         return scores
     }
@@ -391,7 +462,8 @@ final class BalanceManager: ObservableObject {
         let seasonGoal = activeSeasonGoal()
 
         // Find the dimension with lowest composite score
-        var candidates = LifeDimension.scored.map { ($0, breakdowns[$0]!) }
+        let defaultBD = DimensionBreakdown(activity: 0, satisfaction: 5, consistency: 0)
+        var candidates = LifeDimension.scored.map { ($0, breakdowns[$0] ?? defaultBD) }
             .sorted { $0.1.composite < $1.1.composite }
 
         // Boost season goal priority if lagging
@@ -480,6 +552,160 @@ final class BalanceManager: ObservableObject {
         return scores[goal.dimension]
     }
 
+    // MARK: - Smart Activity Recall
+
+    /// A suggestion for an activity the user likely did today but didn't log.
+    struct RecallSuggestion: Identifiable {
+        let id = UUID()
+        let pattern: ActivityPattern
+        let message: String
+    }
+
+    /// Returns up to 2 recall suggestions for unlogged activities today.
+    /// Only shows patterns with confidence > 60% that haven't been logged today.
+    func recallSuggestions() -> [RecallSuggestion] {
+        let descriptor = FetchDescriptor<ActivityPattern>()
+        let patterns = (try? modelContext.fetch(descriptor)) ?? []
+        guard !patterns.isEmpty else { return [] }
+
+        // Find which activity names were already logged today
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: Date())
+        let todayEnd = calendar.safeDate(byAdding: .day, value: 1, to: todayStart)
+        let taskDescriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= todayStart && $0.date < todayEnd && $0.done == true }
+        )
+        let todayTasks = (try? modelContext.fetch(taskDescriptor)) ?? []
+        let loggedNames = Set(todayTasks.map { $0.title.lowercased() })
+
+        // Filter and rank patterns
+        var candidates: [(ActivityPattern, Double)] = []
+        for pattern in patterns {
+            // Skip if already logged today
+            // Word-boundary match: "running errands" should NOT suppress "run" pattern
+            if loggedNames.contains(where: { name in
+                name == pattern.activityName ||
+                name.components(separatedBy: .whitespaces).contains(pattern.activityName)
+            }) { continue }
+            // Skip suppressed patterns
+            if pattern.isSuppressed { continue }
+            // Skip if already suggested today
+            if let lastSuggested = pattern.lastSuggested,
+               calendar.isDateInToday(lastSuggested) { continue }
+
+            let confidence = pattern.confidenceForToday()
+            if confidence > 0.6 {
+                candidates.append((pattern, confidence))
+            }
+        }
+
+        // Sort by confidence, take top 2
+        candidates.sort { $0.1 > $1.1 }
+        let top = candidates.prefix(2)
+
+        return top.map { pattern, _ in
+            let dayName = calendar.weekdaySymbols[calendar.component(.weekday, from: Date()) - 1]
+            let message = "I noticed you usually do \(pattern.activityName) on \(dayName)s. Did you get to it today?"
+            return RecallSuggestion(pattern: pattern, message: message)
+        }
+    }
+
+    /// Record that the user confirmed doing a recalled activity.
+    func acceptRecall(_ pattern: ActivityPattern, durationMinutes: Int) {
+        // Update pattern stats
+        pattern.totalSuggested += 1
+        pattern.totalAccepted += 1
+        pattern.consecutiveDismissals = 0
+        pattern.lastSuggested = Date()
+        pattern.lastConfirmed = Date()
+        if durationMinutes > 0 {
+            pattern.typicalDurationMinutes = durationMinutes
+        }
+
+        // Create a retroactive task
+        let task = TaskItem(
+            title: pattern.activityName.prefix(1).uppercased() + pattern.activityName.dropFirst(),
+            category: .personal,
+            priority: .low,
+            date: Date(),
+            icon: pattern.dimension.icon.contains("figure") ? "🏃" : "✨",
+            notes: "Recalled from evening check-in"
+        )
+        task.dimension = pattern.dimension
+        modelContext.insert(task)
+        task.done = true
+        task.completedAt = Date()
+
+        modelContext.safeSave()
+    }
+
+    /// Record that the user dismissed a recall suggestion.
+    func dismissRecall(_ pattern: ActivityPattern) {
+        pattern.totalSuggested += 1
+        pattern.consecutiveDismissals += 1
+        pattern.lastSuggested = Date()
+        modelContext.safeSave()
+    }
+
+    // MARK: - Pattern Learning (from completed tasks)
+
+    /// Analyze completed tasks to detect and update activity patterns.
+    /// Call this periodically (e.g., during evening check-in or daily background task).
+    func updateActivityPatterns() {
+        let calendar = Calendar.current
+        let fourWeeksAgo = calendar.safeDate(byAdding: .day, value: -28, to: Date())
+        let now = Date()
+
+        // Fetch all completed dimension-tagged tasks from last 4 weeks
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { $0.date >= fourWeeksAgo && $0.date < now && $0.done == true }
+        )
+        let tasks = (try? modelContext.fetch(descriptor)) ?? []
+
+        // Group by normalized title
+        var activityOccurrences: [String: [(task: TaskItem, weekday: Int)]] = [:]
+        for task in tasks {
+            guard task.dimension != nil else { continue }
+            let key = task.title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !key.isEmpty else { continue }
+            let weekday = calendar.component(.weekday, from: task.date)
+            activityOccurrences[key, default: []].append((task: task, weekday: weekday))
+        }
+
+        // Only create patterns for activities that occurred 3+ times in 4 weeks
+        for (name, occurrences) in activityOccurrences where occurrences.count >= 3 {
+            let patternDescriptor = FetchDescriptor<ActivityPattern>(
+                predicate: #Predicate { $0.activityName == name }
+            )
+            let existing = try? modelContext.fetch(patternDescriptor).first
+
+            let weekdays = occurrences.map(\.weekday)
+            let uniqueWeekdays = Array(Set(weekdays)).sorted()
+            let frequency = min(7, occurrences.count / 4 + 1) // approximate weekly frequency
+
+            let dim = occurrences.last?.task.dimension ?? .physical
+
+            if let pattern = existing {
+                // Update existing pattern
+                pattern.weekdayPattern = uniqueWeekdays
+                pattern.weeklyFrequency = frequency
+                pattern.dimension = dim
+            } else {
+                // Create new pattern
+                let pattern = ActivityPattern(
+                    activityName: name,
+                    dimension: dim,
+                    typicalDurationMinutes: 30,
+                    weekdayPattern: uniqueWeekdays,
+                    weeklyFrequency: frequency
+                )
+                modelContext.insert(pattern)
+            }
+        }
+
+        modelContext.safeSave()
+    }
+
     // MARK: - Weekly Reflection
 
     func weeklyReflectionPrompt() -> String? {
@@ -538,7 +764,7 @@ final class BalanceManager: ObservableObject {
         lines.append("Life Compass this week (Balance: \(String(format: "%.1f", balance))/10):")
 
         for dim in LifeDimension.scored {
-            let bd = breakdowns[dim]!
+            let bd = breakdowns[dim] ?? DimensionBreakdown(activity: 0, satisfaction: 5, consistency: 0)
             let pts = points[dim] ?? 0
             lines.append("  \(dim.label): \(String(format: "%.1f", bd.composite))/10 (activity:\(String(format: "%.1f", bd.activity)) satisfaction:\(String(format: "%.1f", bd.satisfaction)) consistency:\(String(format: "%.1f", bd.consistency)), \(pts) effort points)")
         }
@@ -550,6 +776,80 @@ final class BalanceManager: ObservableObject {
             if !goal.intention.isEmpty { lines.append("  Intention: \(goal.intention)") }
         }
 
+        // Energy data
+        if let energy = weeklyEnergyAverage() {
+            lines.append("Average daily energy this week: \(String(format: "%.1f", energy)) (-3 to +3 scale)")
+        }
+
+        // Energy trend (last 4 weeks)
+        let trends = energyTrend()
+        if !trends.isEmpty {
+            let trendStr = trends.map { "wk\($0.weekOffset): \(String(format: "%.1f", $0.average))" }.joined(separator: ", ")
+            lines.append("Energy trend (recent→oldest): \(trendStr)")
+        }
+
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Energy Insights (Phase 3)
+
+    struct WeekEnergy {
+        let weekOffset: Int // 0 = current week, 1 = last week, etc.
+        let average: Double
+    }
+
+    /// Returns average energy per week for the last 4 weeks.
+    func energyTrend() -> [WeekEnergy] {
+        let calendar = Calendar.current
+        var results: [WeekEnergy] = []
+
+        for offset in 0..<4 {
+            let weekStart = calendar.date(byAdding: .weekOfYear, value: -offset,
+                to: calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()) ?? Date()
+            let weekEnd = calendar.safeDate(byAdding: .day, value: 7, to: weekStart)
+
+            let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
+                predicate: #Predicate { $0.date >= weekStart && $0.date < weekEnd }
+            )
+            let checkIns = (try? modelContext.fetch(descriptor)) ?? []
+            let rated = checkIns.compactMap(\.energyRating)
+            if !rated.isEmpty {
+                let avg = Double(rated.reduce(0, +)) / Double(rated.count)
+                results.append(WeekEnergy(weekOffset: offset, average: avg))
+            }
+        }
+        return results
+    }
+
+    /// Generates human-readable energy insights if enough data exists (4+ weeks).
+    func energyInsights() -> String? {
+        let trends = energyTrend()
+        guard trends.count >= 3 else { return nil } // Need at least 3 weeks
+
+        let current = trends.first(where: { $0.weekOffset == 0 })?.average
+        let lastWeek = trends.first(where: { $0.weekOffset == 1 })?.average
+        let overall = trends.map(\.average).reduce(0, +) / Double(trends.count)
+
+        var insights: [String] = []
+
+        // Trend direction
+        if let curr = current, let last = lastWeek {
+            if curr > last + 0.5 {
+                insights.append("Your energy is trending up this week — nice momentum.")
+            } else if curr < last - 0.5 {
+                insights.append("Energy dipped this week compared to last. Consider what changed.")
+            } else {
+                insights.append("Energy is holding steady.")
+            }
+        }
+
+        // Overall level
+        if overall > 1.5 {
+            insights.append("Your average energy has been strong. Keep doing what's working.")
+        } else if overall < -0.5 {
+            insights.append("Energy has been low recently. Small wins and rest might help.")
+        }
+
+        return insights.isEmpty ? nil : insights.joined(separator: " ")
     }
 }

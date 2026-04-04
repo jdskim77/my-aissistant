@@ -164,7 +164,7 @@ struct FocusTimerView: View {
                 } label: {
                     Image(systemName: isRunning ? "pause.fill" : "play.fill")
                         .font(.system(size: 28, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(width: 72, height: 72)
                         .background(isBreak ? AppColors.accentWarm : AppColors.accent)
                         .clipShape(Circle())
@@ -281,7 +281,7 @@ struct FocusTimerView: View {
                         Text("Mark Task Complete")
                     }
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.completionGreen)

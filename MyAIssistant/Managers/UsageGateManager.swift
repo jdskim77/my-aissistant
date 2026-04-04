@@ -26,25 +26,36 @@ final class UsageGateManager: ObservableObject {
     // MARK: - Gate Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
-        guard t.verifyIntegrity() else { return false }
+        // If integrity fails (e.g. reinstall with new Keychain key), re-sign rather than blocking
+        if !t.verifyIntegrity() {
+            t.updateIntegrityHash()
+            modelContext.safeSave()
+        }
         return t.canSendChat(tier: tier)
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
-        guard t.verifyIntegrity() else { return false }
+        if !t.verifyIntegrity() {
+            t.updateIntegrityHash()
+            modelContext.safeSave()
+        }
         return t.canDoCheckIn(tier: tier)
     }
 
     // MARK: - Usage Info
 
     var remainingChatMessages: Int {
-        tracker().remainingChatMessages
+        if AppConstants.isDeveloperMode { return 999 }
+        return tracker().remainingChatMessages
     }
 
     var remainingCheckIns: Int {
-        tracker().remainingCheckIns
+        if AppConstants.isDeveloperMode { return 999 }
+        return tracker().remainingCheckIns
     }
 
     var chatUsedThisMonth: Int {

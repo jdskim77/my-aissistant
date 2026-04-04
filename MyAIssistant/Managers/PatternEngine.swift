@@ -360,12 +360,17 @@ final class PatternEngine: ObservableObject {
 
         let streak = currentStreak()
 
+        // Include Compass balance data in the review
+        let balanceManager = BalanceManager(modelContext: modelContext)
+        let balanceSummary = balanceManager.balanceSummaryForAI()
+
         let systemPrompt = AIPromptBuilder.weeklyReviewPrompt(
             weekSummary: weekSummary,
             averageMood: averageMood,
             totalTasks: totalTasks,
             completedTasks: completedTasks,
-            streak: streak
+            streak: streak,
+            balanceSummary: balanceSummary
         )
 
         do {

@@ -32,7 +32,7 @@ struct AddTaskIntent: AppIntent {
             icon: resolvedCategory.icon
         )
         context.insert(task)
-        try? context.save()
+        context.safeSave()
 
         let dateStr = resolvedDate.formatted(date: .abbreviated, time: .shortened)
         return .result(dialog: "Added \"\(title)\" on \(dateStr).")

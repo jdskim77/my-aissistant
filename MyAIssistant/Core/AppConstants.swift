@@ -12,7 +12,17 @@ enum AppConstants {
 
     // MARK: - Free Tier Limits
     static let freeCheckInsPerDay = 4
+    static let freeCheckInsPerDayNewUser = 10
+    static let newUserGracePeriodDays = 3
     static let freeChatMessagesPerMonth = 10
+
+    // MARK: - Developer Mode
+    static let developerModeKey = "developerModeEnabled"
+
+    /// Returns true if developer mode is active — bypasses all usage limits.
+    static var isDeveloperMode: Bool {
+        UserDefaults.standard.bool(forKey: developerModeKey)
+    }
 
     // MARK: - Check-in Defaults
     static let defaultCheckInTimes: [Int] = [8, 13, 18, 22] // hours
@@ -53,6 +63,9 @@ enum AppConstants {
 
     // MARK: - App Group
     static let appGroupID = "group.com.myaissistant.shared"
+
+    // MARK: - iCloud
+    static let cloudKitContainerID = "iCloud.com.myaissistant"
 
     // MARK: - StoreKit Product IDs
     enum ProductID {

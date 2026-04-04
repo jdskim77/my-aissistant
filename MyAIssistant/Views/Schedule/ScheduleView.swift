@@ -293,7 +293,7 @@ struct ScheduleView: View {
                 .fill(AppColors.accent)
                 .frame(width: 8, height: 8)
             Text("UP NEXT")
-                .font(.system(size: 11, weight: .bold))
+                .font(AppFonts.label(11))
                 .foregroundColor(AppColors.accent)
             Rectangle()
                 .fill(AppColors.accent)
@@ -311,19 +311,20 @@ struct ScheduleView: View {
         let minute = calendar.component(.minute, from: task.date)
         let hasTime = hour != 0 || minute != 0
 
-        return HStack(alignment: .top, spacing: 12) {
-            // Time column
+        return HStack(alignment: .top, spacing: 8) {
+            // Time column — single line, narrower
             VStack {
                 if hasTime {
                     Text(task.date.formatted(as: "h:mm"))
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.textMuted)
+                        .monospacedDigit()
                     Text(task.date.formatted(as: "a"))
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFonts.caption(9))
                         .foregroundColor(AppColors.textMuted)
                 }
             }
-            .frame(width: 48, alignment: .trailing)
+            .frame(width: 40, alignment: .trailing)
 
             // Color bar (calendar events get accent, tasks get priority color)
             RoundedRectangle(cornerRadius: 2)
@@ -354,7 +355,7 @@ struct ScheduleView: View {
                                     .frame(width: 22, height: 22)
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.onAccent)
                             }
                         }
                         .frame(width: 36, height: 36)
@@ -380,8 +381,8 @@ struct ScheduleView: View {
                     Spacer()
 
                     if !task.done && !isCalendarEvent {
-                        Text(task.priority.rawValue.prefix(1))
-                            .font(.system(size: 10, weight: .bold))
+                        Text(task.priority.shortLabel.prefix(1))
+                            .font(AppFonts.label(10))
                             .foregroundColor(AppColors.checkboxColor(task.priority))
                             .frame(width: 22, height: 22)
                             .background(AppColors.checkboxColor(task.priority).opacity(0.12))
@@ -440,24 +441,25 @@ struct ScheduleView: View {
     // MARK: - Check-in Row
 
     private func checkInTimelineRow(_ slot: CheckInTime) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            // Time column
+        HStack(alignment: .center, spacing: 8) {
+            // Time column — matches task rows
             VStack {
                 Text(String(format: "%d:00", slot.hour > 12 ? slot.hour - 12 : slot.hour))
-                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .font(AppFonts.caption(12))
                     .foregroundColor(AppColors.accentWarm)
-                Text(slot.hour >= 12 ? "PM" : "AM")
-                    .font(.system(size: 10, weight: .medium))
+                    .monospacedDigit()
+                Text(slot.hour >= 12 ? "pm" : "am")
+                    .font(AppFonts.caption(9))
                     .foregroundColor(AppColors.accentWarm)
             }
-            .frame(width: 48, alignment: .trailing)
+            .frame(width: 40, alignment: .trailing)
 
             // Color bar
             RoundedRectangle(cornerRadius: 2)
                 .fill(AppColors.accentWarm.opacity(0.5))
                 .frame(width: 4, height: 44)
 
-            // Content
+            // Compact content — single row, no card background
             Button {
                 Haptics.light()
                 checkInSlot = slot
@@ -465,31 +467,27 @@ struct ScheduleView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(slot.icon)
-                        .font(.system(size: 18))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(slot.rawValue) Check-in")
-                            .font(AppFonts.bodyMedium(14))
-                            .foregroundColor(AppColors.accentWarm)
-                        Text(slot.greeting)
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textMuted)
-                    }
+                        .font(.system(size: 16))
+                    Text("\(slot.rawValue) Check-in")
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.accentWarm)
+                    Text("·")
+                        .foregroundColor(AppColors.textMuted)
+                    Text(slot.greeting)
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
+                        .lineLimit(1)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(AppColors.textMuted)
                 }
-                .padding(.vertical, 10)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(AppColors.accentWarm.opacity(0.08))
-                )
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
+        .frame(minHeight: 44)
     }
 
     // MARK: - Empty State
@@ -533,9 +531,9 @@ struct ScheduleView: View {
                                 newPriority = pri
                             } label: {
                                 Text(pri.shortLabel.prefix(1))
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(AppFonts.label(12))
                                     .foregroundColor(newPriority == pri ? .white : AppColors.priorityColor(pri))
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 44, height: 44)
                                     .background(newPriority == pri ? AppColors.priorityColor(pri) : AppColors.priorityColor(pri).opacity(0.12))
                                     .cornerRadius(8)
                             }
@@ -556,7 +554,7 @@ struct ScheduleView: View {
                         Image(systemName: quickAddExpanded ? "chevron.down" : "slider.horizontal.3")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(AppColors.accent)
-                            .frame(width: 36, height: 36)
+                            .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel(quickAddExpanded ? "Collapse options" : "Show options")
 
@@ -646,7 +644,7 @@ struct ScheduleView: View {
                 } label: {
                     Text("Reschedule")
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)

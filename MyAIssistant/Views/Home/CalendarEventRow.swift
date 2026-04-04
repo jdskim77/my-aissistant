@@ -38,7 +38,7 @@ struct CalendarEventRow: View {
                             .frame(width: 24, height: 24)
                         Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onAccent)
                     }
                 }
                 .frame(width: 44, height: 44)

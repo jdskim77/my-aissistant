@@ -43,6 +43,10 @@ struct AppColors {
     static var coral: Color { theme.coral }
     static var skyBlue: Color { theme.skyBlue }
 
+    // MARK: - Button Text
+    /// Text on accent/colored backgrounds. Use instead of .white for theme safety.
+    static var onAccent: Color { .white }
+
     // MARK: - Text
     static var textPrimary: Color { theme.textPrimary }
     static var textSecondary: Color { theme.textSecondary }

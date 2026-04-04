@@ -96,7 +96,7 @@ struct CalendarImportView: View {
                         Text("Grant Calendar Access")
                             .font(AppFonts.bodyMedium(14))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(AppColors.accent)
@@ -182,7 +182,7 @@ struct CalendarImportView: View {
                         Text("Sign in with Google")
                             .font(AppFonts.bodyMedium(14))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color(hex: "4285F4"))

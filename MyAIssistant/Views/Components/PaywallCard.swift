@@ -29,7 +29,7 @@ struct PaywallCard: View {
                 Button(action: action) {
                     Text("Upgrade to Pro")
                         .font(AppFonts.bodyMedium(14))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(

@@ -53,21 +53,29 @@ struct PermissionsView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                Button(action: onContinue) {
+                Button {
+                    Haptics.light()
+                    onContinue()
+                } label: {
                     Text("Continue")
                         .font(AppFonts.bodyMedium(17))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)
                         .cornerRadius(14)
                 }
+                .accessibilityLabel("Continue to next step")
 
-                Button(action: onContinue) {
+                Button {
+                    Haptics.light()
+                    onContinue()
+                } label: {
                     Text("Skip for now")
                         .font(AppFonts.body(15))
                         .foregroundColor(AppColors.textMuted)
                 }
+                .accessibilityLabel("Skip permissions")
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
@@ -109,14 +117,18 @@ struct PermissionsView: View {
                     .font(.system(size: 24))
                     .foregroundColor(AppColors.accentWarm)
             } else {
-                Button("Enable") {
+                Button {
+                    Haptics.light()
                     action()
+                } label: {
+                    Text("Enable")
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.onAccent)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(AppColors.accent)
                 }
-                .font(AppFonts.bodyMedium(14))
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(AppColors.accent)
+                .accessibilityLabel("Enable \(title)")
                 .cornerRadius(8)
             }
         }

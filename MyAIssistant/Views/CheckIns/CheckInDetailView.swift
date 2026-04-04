@@ -253,7 +253,7 @@ struct CheckInDetailView: View {
             } label: {
                 Text("Done")
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(timeSlot.color)
@@ -295,7 +295,7 @@ struct CheckInDetailView: View {
             } label: {
                 Text(currentStep == .notes ? "Complete" : "Continue")
                     .font(AppFonts.bodyMedium(15))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(canAdvance ? timeSlot.color : AppColors.textMuted)

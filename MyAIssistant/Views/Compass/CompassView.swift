@@ -498,7 +498,7 @@ struct CompassCoachMarks: View {
                 } label: {
                     Text(currentStep < steps.count - 1 ? "Next" : "Got It")
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(AppColors.accent)

@@ -9,58 +9,47 @@ struct WelcomeView: View {
             Spacer()
 
             VStack(spacing: 28) {
-                // App icon / brand
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [AppColors.accent, AppColors.accentWarm],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 88, height: 88)
-                        .scaleEffect(appeared ? 1 : 0.5)
-                        .opacity(appeared ? 1 : 0)
-
-                    Text("✦")
-                        .font(.system(size: 44))
-                        .foregroundColor(.white)
-                        .scaleEffect(appeared ? 1 : 0.5)
-                        .opacity(appeared ? 1 : 0)
-                }
+                // App icon
+                Image("ThrivnLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 140, height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 32))
+                    .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
+                    .scaleEffect(appeared ? 1 : 0.5)
+                    .opacity(appeared ? 1 : 0)
 
                 VStack(spacing: 8) {
                     Text("Thrivn")
                         .font(AppFonts.display(34))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Find your rhythm. Balance your day.")
+                    Text("Find your rhythm. Every day.")
                         .font(AppFonts.body(17))
                         .foregroundColor(AppColors.textSecondary)
                 }
                 .offset(y: appeared ? 0 : 16)
                 .opacity(appeared ? 1 : 0)
 
-                // Three key value props — concise
+                // Three value props — benefit-led, not feature-led
                 VStack(alignment: .leading, spacing: 20) {
                     featureRow(
-                        icon: "circle.grid.cross.fill",
+                        icon: "calendar.badge.clock",
                         color: AppColors.accentWarm,
-                        title: "Balance mind, body, heart & soul",
-                        subtitle: "Track four dimensions of your daily life"
+                        title: "Your day, already planned",
+                        subtitle: "Add tasks with a tap and start each morning with clarity"
                     )
                     featureRow(
                         icon: "sparkles",
                         color: AppColors.accent,
-                        title: "AI that learns your patterns",
-                        subtitle: "Intelligent nudges to keep you in rhythm"
+                        title: "It learns how you work best",
+                        subtitle: "Smart nudges toward your goals at the right moments"
                     )
                     featureRow(
-                        icon: "chart.line.uptrend.xyaxis",
+                        icon: "safari",
                         color: AppColors.coral,
-                        title: "Tune, don't judge",
-                        subtitle: "Supportive guidance toward your best balance"
+                        title: "See where your energy goes",
+                        subtitle: "Balance mind, body, heart and soul with the Life Compass"
                     )
                 }
                 .padding(.top, 8)
@@ -70,10 +59,13 @@ struct WelcomeView: View {
 
             Spacer()
 
-            Button(action: onContinue) {
+            Button {
+                Haptics.light()
+                onContinue()
+            } label: {
                 Text("Get Started")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
@@ -111,16 +103,8 @@ struct WelcomeView: View {
                 Text(subtitle)
                     .font(AppFonts.body(14))
                     .foregroundColor(AppColors.textSecondary)
-                    .lineHeight(18)
             }
         }
         .padding(.horizontal, 24)
-    }
-}
-
-// Helper for line height on Text
-private extension Text {
-    func lineHeight(_ height: CGFloat) -> some View {
-        self.lineSpacing(height - 14)
     }
 }

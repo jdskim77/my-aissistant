@@ -236,7 +236,7 @@ struct EventScannerView: View {
                 } label: {
                     Text("Add to Schedule")
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 48)
                         .background(AppColors.accent)

@@ -100,7 +100,7 @@ struct APIKeySettingsView: View {
                 } label: {
                     Text("Save API Keys")
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(AppColors.accent)

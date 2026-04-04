@@ -58,7 +58,7 @@ struct VoiceModeSelectionView: View {
             Button(action: onContinue) {
                 Text("Continue")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(AppColors.accent)

@@ -67,6 +67,6 @@ struct DataSeeder {
         for task in tasks {
             context.insert(task)
         }
-        try? context.save()
+        context.safeSave()
     }
 }

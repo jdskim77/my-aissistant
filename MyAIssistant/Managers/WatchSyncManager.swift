@@ -165,4 +165,5 @@ extension Notification.Name {
     static let watchRequestedUpdate = Notification.Name("watchRequestedUpdate")
     static let watchToggledTask = Notification.Name("watchToggledTask")
     static let watchAddedTask = Notification.Name("watchAddedTask")
+    static let taskCompletionChanged = Notification.Name("taskCompletionChanged")
 }

@@ -44,6 +44,7 @@ final class CalendarLink {
 enum CalendarSource: String, CaseIterable, Identifiable {
     case apple
     case google
+    case reminders
 
     var id: String { rawValue }
 
@@ -51,6 +52,7 @@ enum CalendarSource: String, CaseIterable, Identifiable {
         switch self {
         case .apple: return "Apple Calendar"
         case .google: return "Google Calendar"
+        case .reminders: return "Reminders"
         }
     }
 
@@ -58,6 +60,7 @@ enum CalendarSource: String, CaseIterable, Identifiable {
         switch self {
         case .apple: return "calendar"
         case .google: return "globe"
+        case .reminders: return "checklist"
         }
     }
 }

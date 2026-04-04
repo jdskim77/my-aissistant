@@ -109,8 +109,8 @@ final class BackgroundTaskManager {
     private func handleCalendarSync(_ task: BGAppRefreshTask) async {
         task.expirationHandler = { task.setTaskCompleted(success: false) }
 
-        await calendarSyncManager.syncAppleCalendar()
-        scheduleCalendarSync() // Reschedule
+        await calendarSyncManager.syncAll() // Calendar + Google + Reminders
+        scheduleCalendarSync() // Reschedule in 1 hour
         task.setTaskCompleted(success: true)
     }
 

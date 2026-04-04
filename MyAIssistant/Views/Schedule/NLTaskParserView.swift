@@ -19,6 +19,7 @@ struct NLTaskParserView: View {
     @State private var parsedIcon = "📌"
     @State private var parsedNotes = ""
     @State private var parsedRecurrence: TaskRecurrence = .none
+    @State private var parsedDimension: LifeDimension?
     @State private var showConfirmation = false
 
     @FocusState private var inputFocused: Bool
@@ -99,7 +100,7 @@ struct NLTaskParserView: View {
                         Text(isLoading ? "Parsing..." : "Parse with AI")
                     }
                     .font(AppFonts.bodyMedium(16))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isLoading ? AppColors.textMuted : AppColors.accent)
@@ -223,6 +224,13 @@ struct NLTaskParserView: View {
                         .tint(AppColors.accent)
                     }
 
+                    editableField("Life Dimension") {
+                        DimensionPickerView(
+                            selection: $parsedDimension,
+                            suggestion: DimensionSuggester.suggest(title: parsedTitle, category: parsedCategory, context: nil)
+                        )
+                    }
+
                     editableField("Notes") {
                         TextField("Optional notes", text: $parsedNotes, axis: .vertical)
                             .font(AppFonts.body(15))
@@ -247,7 +255,7 @@ struct NLTaskParserView: View {
                             Text("Add Task")
                         }
                         .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(AppColors.accent)
@@ -350,6 +358,9 @@ struct NLTaskParserView: View {
             parsedRecurrence = rec
         }
 
+        // Auto-suggest life dimension from parsed title + category
+        parsedDimension = DimensionSuggester.suggest(title: parsedTitle, category: parsedCategory)
+
         // Parse date
         if let dateStr = json["date"] as? String {
             let df = DateFormatter()
@@ -383,6 +394,7 @@ struct NLTaskParserView: View {
             notes: parsedNotes,
             recurrence: parsedRecurrence
         )
+        task.dimension = parsedDimension
         taskManager?.addTask(task)
         Haptics.success()
         dismiss()

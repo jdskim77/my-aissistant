@@ -37,8 +37,8 @@ struct ContentView: View {
                     HomeView()
                 case .schedule:
                     ScheduleView()
-                case .patterns:
-                    PatternsView()
+                case .compass:
+                    CompassTabView()
                 case .settings:
                     SettingsView()
                 }
@@ -91,8 +91,8 @@ struct ContentView: View {
         switch destination {
         case "schedule":
             selectedTab = .schedule
-        case "patterns":
-            selectedTab = .patterns
+        case "compass", "patterns":
+            selectedTab = .compass
         case "settings":
             selectedTab = .settings
         default:

@@ -5,7 +5,7 @@ import Foundation
 actor EventKitService {
     private let store = EKEventStore()
 
-    // MARK: - Authorization
+    // MARK: - Authorization (Events)
 
     var authorizationStatus: EKAuthorizationStatus {
         EKEventStore.authorizationStatus(for: .event)
@@ -23,10 +23,88 @@ actor EventKitService {
         }
     }
 
-    // MARK: - Calendars
+    // MARK: - Authorization (Reminders)
+
+    var reminderAuthorizationStatus: EKAuthorizationStatus {
+        EKEventStore.authorizationStatus(for: .reminder)
+    }
+
+    func requestReminderAccess() async -> Bool {
+        do {
+            if #available(iOS 17.0, *) {
+                return try await store.requestFullAccessToReminders()
+            } else {
+                return try await store.requestAccess(to: .reminder)
+            }
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - Calendars (Events)
 
     func availableCalendars() -> [EKCalendar] {
         store.calendars(for: .event)
+    }
+
+    // MARK: - Reminder Lists
+
+    func availableReminderLists() -> [EKCalendar] {
+        store.calendars(for: .reminder)
+    }
+
+    // MARK: - Fetch Reminders
+
+    /// Fetches incomplete reminders from the specified lists.
+    func incompleteReminders(in listIDs: [String]) async -> [EKReminder] {
+        let lists = listIDs.compactMap { store.calendar(withIdentifier: $0) }
+        guard !lists.isEmpty else { return [] }
+
+        let predicate = store.predicateForIncompleteReminders(
+            withDueDateStarting: nil,
+            ending: nil,
+            calendars: lists
+        )
+
+        return await withCheckedContinuation { continuation in
+            store.fetchReminders(matching: predicate) { reminders in
+                continuation.resume(returning: reminders ?? [])
+            }
+        }
+    }
+
+    /// Fetches reminders that were completed recently (for sync tracking).
+    func completedReminders(in listIDs: [String], since date: Date) async -> [EKReminder] {
+        let lists = listIDs.compactMap { store.calendar(withIdentifier: $0) }
+        guard !lists.isEmpty else { return [] }
+
+        let predicate = store.predicateForCompletedReminders(
+            withCompletionDateStarting: date,
+            ending: Date(),
+            calendars: lists
+        )
+
+        return await withCheckedContinuation { continuation in
+            store.fetchReminders(matching: predicate) { reminders in
+                continuation.resume(returning: reminders ?? [])
+            }
+        }
+    }
+
+    /// Mark a reminder as complete in the Reminders app.
+    func completeReminder(identifier: String) throws {
+        guard let reminder = store.calendarItem(withIdentifier: identifier) as? EKReminder else { return }
+        reminder.isCompleted = true
+        reminder.completionDate = Date()
+        try store.save(reminder, commit: true)
+    }
+
+    /// Mark a reminder as incomplete in the Reminders app.
+    func uncompleteReminder(identifier: String) throws {
+        guard let reminder = store.calendarItem(withIdentifier: identifier) as? EKReminder else { return }
+        reminder.isCompleted = false
+        reminder.completionDate = nil
+        try store.save(reminder, commit: true)
     }
 
     func calendar(withIdentifier id: String) -> EKCalendar? {

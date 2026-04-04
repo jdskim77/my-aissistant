@@ -27,7 +27,7 @@ struct EmptyStateView: View {
                 Button(action: action) {
                     Text(actionTitle)
                         .font(AppFonts.bodyMedium(15))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.onAccent)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 10)
                         .background(AppColors.accent)

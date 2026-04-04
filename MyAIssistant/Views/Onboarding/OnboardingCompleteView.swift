@@ -54,10 +54,13 @@ struct OnboardingCompleteView: View {
 
             Spacer()
 
-            Button(action: onFinish) {
+            Button {
+                Haptics.success()
+                onFinish()
+            } label: {
                 Text("Let's Go!")
                     .font(AppFonts.bodyMedium(17))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(

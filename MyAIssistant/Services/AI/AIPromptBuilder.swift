@@ -11,7 +11,8 @@ enum AIPromptBuilder {
         hasGoogleCalendar: Bool = false,
         hasAppleCalendar: Bool = false,
         activitySummary: String = "",
-        patternInsights: String = ""
+        patternInsights: String = "",
+        balanceSummary: String = ""
     ) -> String {
         var prompt = """
         You are a warm, motivational personal assistant. \
@@ -53,6 +54,17 @@ enum AIPromptBuilder {
             """
         }
 
+        if !balanceSummary.isEmpty {
+            prompt += """
+
+            Life balance context (the user tracks balance across Physical, Mental, Emotional, Spiritual dimensions):
+            \(balanceSummary)
+            When the user asks "how's my week going?" or about their balance, reference this data naturally. \
+            Gently acknowledge neglected dimensions without being preachy. If they have a season goal, \
+            encourage progress toward it. Frame balance as sufficiency, not perfection.
+            """
+        }
+
         prompt += """
 
         ALARMS: When the user asks you to set an alarm, wake them up, or remind them at a specific time, \
@@ -65,27 +77,42 @@ enum AIPromptBuilder {
         Always confirm the alarm in your conversational text.
         """
 
+        // Task/event creation — always available (tasks are local, calendar sync is optional)
+        prompt += """
+
+        TASKS & EVENTS: When the user asks you to add, create, schedule, or remove tasks/events, \
+        include an action tag in your response. The user will see your conversational text; the app will parse and \
+        execute the action tags automatically.
+
+        To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description]]
+        To create a recurring task: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|daily]] (options: daily, weekly, biweekly, monthly)
+        To delete a task/event: [[DELETE_EVENT:event_id]]
+
+        Examples:
+        - User: "Add a meeting tomorrow at 2pm" → reply naturally and include [[CREATE_EVENT:Meeting|\(Self.exampleDate()) 14:00|\(Self.exampleDate()) 15:00|]]
+        - User: "Add yoga to my schedule" → [[CREATE_EVENT:Yoga|\(Self.exampleDate()) 07:00|\(Self.exampleDate()) 08:00|]]
+        - User: "Remind me to take vitamins every morning at 8am" → [[CREATE_EVENT:Take vitamins|\(Self.exampleDate()) 08:00|\(Self.exampleDate()) 08:30||daily]]
+        - User: "Add a weekly team standup on Mondays at 10am" → [[CREATE_EVENT:Team Standup|\(Self.exampleDate()) 10:00|\(Self.exampleDate()) 10:30||weekly]]
+
+        Always confirm the action in your conversational text. Use these tags whenever the user asks to add, schedule, \
+        create, or set up any task, event, reminder, or activity. Default duration is 1 hour if not specified. \
+        Use today's date if no date is mentioned.
+        """
+
         if hasGoogleCalendar || hasAppleCalendar {
             let calendarName = hasGoogleCalendar ? "Google Calendar" : "Apple Calendar"
             prompt += """
 
-            You can manage the user's \(calendarName). When they ask you to add, create, update, or delete events, \
-            include an action tag in your response. The user will see your conversational text; the app will parse and \
-            execute the action tags automatically.
-
-            To create an event: [[CREATE_EVENT:Event Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description]]
-            To create a recurring event: [[CREATE_EVENT:Event Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|daily]] (options: daily, weekly, biweekly, monthly)
-            To delete an event: [[DELETE_EVENT:event_id]]
-
-            Examples:
-            - User: "Add a meeting tomorrow at 2pm" → reply naturally and include [[CREATE_EVENT:Meeting|2026-02-19 14:00|2026-02-19 15:00|]]
-            - User: "Remind me to take vitamins every morning at 8am" → [[CREATE_EVENT:Take vitamins|2026-02-19 08:00|2026-02-19 08:30||daily]]
-            - User: "Add a weekly team standup on Mondays at 10am" → [[CREATE_EVENT:Team Standup|2026-02-24 10:00|2026-02-24 10:30||weekly]]
-            - User: "Remove the dentist appointment" → find the event's {id:...} in the schedule, then reply naturally and include [[DELETE_EVENT:the_event_id]]
-
-            Always confirm the action in your conversational text. Only use these tags when the user explicitly asks \
-            to add or remove calendar events. Events in the schedule have IDs in the format {id:google:EVENT_ID} or {id:APPLE_EVENT_ID}. \
+            The user has \(calendarName) connected. Tasks you create will also sync to their calendar. \
+            To delete an existing calendar event, find its {id:...} in the schedule and use [[DELETE_EVENT:the_event_id]]. \
+            Events have IDs in the format {id:google:EVENT_ID} or {id:APPLE_EVENT_ID}. \
             Use the full ID value (everything after "id:") in the DELETE_EVENT tag.
+            """
+        } else {
+            prompt += """
+
+            NOTE: The user has not connected a calendar yet. Tasks you create are saved in the app. \
+            Do NOT mention calendar connection in your response — the app handles that separately.
             """
         }
 
@@ -130,7 +157,8 @@ enum AIPromptBuilder {
         averageMood: Double?,
         totalTasks: Int,
         completedTasks: Int,
-        streak: Int
+        streak: Int,
+        balanceSummary: String = ""
     ) -> String {
         var prompt = """
         Generate a weekly review for the user. Week ending \(formattedToday()).
@@ -144,6 +172,10 @@ enum AIPromptBuilder {
             prompt += "\n- Average mood: \(String(format: "%.1f", mood))/5"
         }
 
+        if !balanceSummary.isEmpty {
+            prompt += "\n\n\(balanceSummary)"
+        }
+
         prompt += """
 
         Schedule this week:
@@ -151,7 +183,7 @@ enum AIPromptBuilder {
 
         Provide:
         1. A warm summary of their week (2-3 sentences)
-        2. One specific pattern you noticed
+        2. One observation about their life balance across dimensions
         3. One actionable suggestion for next week
 
         Keep it under 150 words. Be encouraging. No markdown headers.
@@ -199,5 +231,12 @@ enum AIPromptBuilder {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d, yyyy"
         return formatter.string(from: Date())
+    }
+
+    /// Tomorrow's date in YYYY-MM-DD format for use in prompt examples.
+    private static func exampleDate() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date())
     }
 }

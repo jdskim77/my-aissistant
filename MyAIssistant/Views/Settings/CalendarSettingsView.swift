@@ -75,8 +75,108 @@ struct CalendarSettingsView: View {
                             .foregroundColor(AppColors.textMuted)
                     }
                 }
+                // Reminders
+                HStack(spacing: 14) {
+                    Image(systemName: "checklist")
+                        .font(.system(size: 20))
+                        .foregroundColor(AppColors.accent)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Reminders")
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text(calendarSyncManager?.remindersAuthorized == true ? "Connected" : "Not connected")
+                            .font(AppFonts.caption(13))
+                            .foregroundColor(calendarSyncManager?.remindersAuthorized == true ? AppColors.accentWarm : AppColors.textMuted)
+                    }
+
+                    Spacer()
+
+                    if calendarSyncManager?.remindersAuthorized == true {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.accentWarm)
+                    } else {
+                        Button {
+                            Task {
+                                let granted = await calendarSyncManager?.requestRemindersAccess() ?? false
+                                if granted {
+                                    await calendarSyncManager?.loadReminderLists()
+                                }
+                            }
+                        } label: {
+                            Text("Connect")
+                                .font(AppFonts.bodyMedium(13))
+                                .foregroundColor(AppColors.onAccent)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(AppColors.accent)
+                                .cornerRadius(8)
+                        }
+                        .accessibilityLabel("Connect Reminders")
+                    }
+                }
             } header: {
                 Text("Calendar Sources")
+            }
+
+            // Reminder lists
+            if calendarSyncManager?.remindersAuthorized == true {
+                Section {
+                    let lists = calendarSyncManager?.reminderLists ?? []
+                    if lists.isEmpty {
+                        Text("No reminder lists found")
+                            .font(AppFonts.body(14))
+                            .foregroundColor(AppColors.textMuted)
+                    } else {
+                        ForEach(lists, id: \.calendarIdentifier) { list in
+                            let isLinked = calendarSyncManager?.linkedCalendars().contains(where: {
+                                $0.calendarID == list.calendarIdentifier && $0.source == CalendarSource.reminders.rawValue
+                            }) ?? false
+
+                            HStack(spacing: 12) {
+                                Image(systemName: "checklist")
+                                    .foregroundColor(AppColors.accent)
+                                    .frame(width: 28)
+
+                                Text(list.title)
+                                    .font(AppFonts.body(14))
+                                    .foregroundColor(AppColors.textPrimary)
+
+                                Spacer()
+
+                                Toggle("", isOn: Binding(
+                                    get: { isLinked },
+                                    set: { newValue in
+                                        if newValue {
+                                            calendarSyncManager?.linkCalendar(
+                                                source: .reminders,
+                                                calendarID: list.calendarIdentifier,
+                                                name: list.title,
+                                                color: "#4CAF50"
+                                            )
+                                            Task { await calendarSyncManager?.syncReminders() }
+                                        } else {
+                                            if let link = calendarSyncManager?.linkedCalendars().first(where: {
+                                                $0.calendarID == list.calendarIdentifier && $0.source == CalendarSource.reminders.rawValue
+                                            }) {
+                                                calendarSyncManager?.unlinkCalendar(link)
+                                            }
+                                        }
+                                    }
+                                ))
+                                .labelsHidden()
+                                .tint(AppColors.accent)
+                                .accessibilityLabel("Sync \(list.title) reminder list")
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Reminder Lists")
+                } footer: {
+                    Text("Enabled lists will sync to your task list. Completing a task in the app marks it done in Reminders too.")
+                        .font(AppFonts.caption(11))
+                }
             }
 
             // Google Client ID
@@ -122,7 +222,7 @@ struct CalendarSettingsView: View {
                     } label: {
                         Text("Save Client ID")
                             .font(AppFonts.bodyMedium(14))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.onAccent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(AppColors.accent)
@@ -179,7 +279,7 @@ struct CalendarSettingsView: View {
                                     Text("Sign in with Google")
                                         .font(AppFonts.bodyMedium(14))
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.onAccent)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(Color(hex: "4285F4"))
@@ -223,6 +323,7 @@ struct CalendarSettingsView: View {
                             ))
                             .labelsHidden()
                             .tint(AppColors.accent)
+                            .accessibilityLabel("Sync \(link.name)")
                         }
                     }
                 }

@@ -72,10 +72,12 @@ struct AIActivityOrb: View {
                 )
                 .animation(.easeOut(duration: 0.3), value: isActive)
 
-            // Center symbol
-            Text("✦")
-                .font(.system(size: size * 0.45))
-                .foregroundColor(.white)
+            // Center logo
+            Image("ThrivnLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size * 0.7, height: size * 0.7)
+                .clipShape(Circle())
                 .opacity(isActive ? (animationPhase ? 1.0 : 0.7) : 0.9)
                 .animation(
                     isActive
