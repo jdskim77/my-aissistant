@@ -6,16 +6,12 @@ import SwiftData
 enum IntentModelContainer {
     @MainActor
     static let shared: ModelContainer = {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(AppSchema.allModels)
         let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            print("[IntentModelContainer] Failed to create persistent container: \(error.localizedDescription). Falling back to in-memory.")
+            print("[IntentModelContainer] Failed: \(error.localizedDescription). Using in-memory fallback.")
             return ModelContainer.fallbackInMemory(schema: schema)
         }
     }()

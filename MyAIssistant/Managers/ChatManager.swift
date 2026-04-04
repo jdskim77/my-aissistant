@@ -3,19 +3,6 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-// MARK: - ModelContext Safe Save Extension
-
-extension ModelContext {
-    /// Saves with error logging instead of silently swallowing failures.
-    func safeSave(file: String = #file, line: Int = #line) {
-        do {
-            try save()
-        } catch {
-            print("[ModelContext.safeSave] Save failed at \(file):\(line) — \(error.localizedDescription)")
-        }
-    }
-}
-
 // MARK: - ChatManager
 
 @MainActor
