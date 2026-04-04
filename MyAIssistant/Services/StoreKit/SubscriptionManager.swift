@@ -9,7 +9,7 @@ final class SubscriptionManager {
     var purchaseInProgress = false
     var lastError: String?
 
-    private var transactionListener: Task<Void, Error>?
+    private nonisolated(unsafe) var transactionListener: Task<Void, Error>?
 
     static let allProductIDs: Set<String> = [
         AppConstants.ProductID.proMonthly,
