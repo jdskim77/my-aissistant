@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.subscriptionTier) private var tier
@@ -8,6 +9,11 @@ struct SettingsView: View {
     @State private var exportURL: URL?
     @State private var showingExportShare = false
     @State private var exportError: String?
+    @State private var showingImportPicker = false
+    @State private var importResult: String?
+    @State private var importError: String?
+    @State private var showingImportConfirm = false
+    @State private var pendingImportURL: URL?
 
     var body: some View {
         NavigationStack {
@@ -142,9 +148,10 @@ struct SettingsView: View {
                     Text("Opens iOS Settings to manage microphone, calendar, notification, and camera access.")
                 }
 
-                // Data & Privacy
+                // Backup & Restore
                 Section {
                     Button {
+                        Haptics.light()
                         do {
                             let service = DataExportService(modelContext: modelContext)
                             exportURL = try service.exportFileURL()
@@ -156,14 +163,56 @@ struct SettingsView: View {
                         settingsRow(
                             icon: "square.and.arrow.up",
                             color: AppColors.completionGreen,
-                            title: "Export Data",
-                            subtitle: "Back up tasks, check-ins & chats"
+                            title: "Back Up Data",
+                            subtitle: "Save all tasks, check-ins & chats"
                         )
                     }
+
+                    Button {
+                        Haptics.light()
+                        showingImportPicker = true
+                    } label: {
+                        settingsRow(
+                            icon: "square.and.arrow.down",
+                            color: AppColors.skyBlue,
+                            title: "Restore from Backup",
+                            subtitle: "Import a previous backup file"
+                        )
+                    }
+
+                    if let result = importResult {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(AppColors.completionGreen)
+                            Text(result)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.completionGreen)
+                        }
+                    }
+
+                    if let error = importError {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.coral)
+                            Text(error)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.coral)
+                        }
+                    }
+
+                    if let error = exportError {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.coral)
+                            Text(error)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.coral)
+                        }
+                    }
                 } header: {
-                    Text("Data & Privacy")
+                    Text("Backup & Restore")
                 } footer: {
-                    Text("Exports all your data as a JSON file you can save or share.")
+                    Text("Back up your data to a file you can save to iCloud Drive, email, or AirDrop. Restore it on any device.")
                 }
 
                 // Legal
@@ -232,6 +281,58 @@ struct SettingsView: View {
             } message: {
                 Text(exportError ?? "")
             }
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    pendingImportURL = url
+                    showingImportConfirm = true
+                case .failure(let error):
+                    importError = error.localizedDescription
+                }
+            }
+            .confirmationDialog("Restore from Backup?", isPresented: $showingImportConfirm, titleVisibility: .visible) {
+                Button("Restore") {
+                    performImport()
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingImportURL = nil
+                }
+            } message: {
+                Text("This will add any data from the backup that doesn't already exist on this device. Your current data will not be deleted.")
+            }
+        }
+    }
+
+    private func performImport() {
+        guard let url = pendingImportURL else { return }
+        defer { pendingImportURL = nil }
+
+        // Start accessing security-scoped resource (from file picker)
+        guard url.startAccessingSecurityScopedResource() else {
+            importError = "Couldn't access the selected file."
+            return
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        do {
+            let service = DataExportService(modelContext: modelContext)
+            let result = try service.importJSON(from: url)
+            Haptics.success()
+            importResult = result.summary
+            importError = nil
+            // Auto-clear success message after 8 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
+                importResult = nil
+            }
+        } catch {
+            Haptics.medium()
+            importError = error.localizedDescription
+            importResult = nil
         }
     }
 

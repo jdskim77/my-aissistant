@@ -302,7 +302,7 @@ struct DataExportService {
         if let balanceCheckIns = json["balanceCheckIns"] as? [[String: Any]] {
             for dict in balanceCheckIns {
                 guard let id = dict["id"] as? String else { continue }
-                if existsInDB(DailyBalanceCheckIn.self, id: id) { result.skipped += 1; continue }
+                if balanceCheckInExists(id: id) { result.skipped += 1; continue }
 
                 guard let dateStr = dict["date"] as? String,
                       let date = iso.date(from: dateStr) else { continue }
@@ -326,7 +326,7 @@ struct DataExportService {
         if let goals = json["seasonGoals"] as? [[String: Any]] {
             for dict in goals {
                 guard let id = dict["id"] as? String else { continue }
-                if existsInDB(SeasonGoal.self, id: id) { result.skipped += 1; continue }
+                if seasonGoalExists(id: id) { result.skipped += 1; continue }
 
                 guard let dimRaw = dict["dimensionRaw"] as? String,
                       let startStr = dict["startDate"] as? String,
