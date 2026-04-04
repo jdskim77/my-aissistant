@@ -75,6 +75,10 @@ struct AppColors {
     static var disabled: Color { theme.disabled }
     static var textDisabled: Color { theme.textDisabled }
 
+    /// Text color for use on accent-colored backgrounds (buttons, badges).
+    /// Always white — accent colors are dark enough for white text in all themes.
+    static var onAccent: Color { .white }
+
     // MARK: - Priority
 
     static func priorityColor(_ priority: TaskPriority) -> Color {
