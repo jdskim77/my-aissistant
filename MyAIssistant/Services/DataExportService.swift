@@ -406,8 +406,8 @@ struct DataExportService {
                     tasksCompleted: dict["tasksCompleted"] as? Int ?? 0,
                     checkInsCompleted: dict["checkInsCompleted"] as? Int ?? 0,
                     checkInsTotal: dict["checkInsTotal"] as? Int ?? 0,
-                    streakCount: dict["streakCount"] as? Int ?? 0,
-                    averageMood: dict["averageMood"] as? Double
+                    averageMood: dict["averageMood"] as? Double,
+                    streakCount: dict["streakCount"] as? Int ?? 0
                 )
                 snapshot.id = id
                 modelContext.insert(snapshot)
