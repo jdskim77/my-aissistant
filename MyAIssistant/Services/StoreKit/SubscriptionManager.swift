@@ -2,12 +2,12 @@ import StoreKit
 import SwiftUI
 
 /// Manages StoreKit 2 subscriptions: loading products, purchasing, restoring, and listening for transactions.
-@MainActor
-final class SubscriptionManager: ObservableObject {
-    @Published var products: [Product] = []
-    @Published var currentTier: SubscriptionTier = .free
-    @Published var purchaseInProgress = false
-    @Published var lastError: String?
+@Observable @MainActor
+final class SubscriptionManager {
+    var products: [Product] = []
+    var currentTier: SubscriptionTier = .free
+    var purchaseInProgress = false
+    var lastError: String?
 
     private var transactionListener: Task<Void, Error>?
 

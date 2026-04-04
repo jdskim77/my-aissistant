@@ -2,8 +2,8 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-@MainActor
-final class PatternEngine: ObservableObject {
+@Observable @MainActor
+final class PatternEngine {
     private let modelContext: ModelContext
     private let keychainService: KeychainService
 
@@ -360,17 +360,12 @@ final class PatternEngine: ObservableObject {
 
         let streak = currentStreak()
 
-        // Include Compass balance data in the review
-        let balanceManager = BalanceManager(modelContext: modelContext)
-        let balanceSummary = balanceManager.balanceSummaryForAI()
-
         let systemPrompt = AIPromptBuilder.weeklyReviewPrompt(
             weekSummary: weekSummary,
             averageMood: averageMood,
             totalTasks: totalTasks,
             completedTasks: completedTasks,
-            streak: streak,
-            balanceSummary: balanceSummary
+            streak: streak
         )
 
         do {

@@ -1,9 +1,10 @@
 import Foundation
+import Observation
 import UserNotifications
 
-@MainActor
-final class NotificationManager: ObservableObject {
-    @Published var isAuthorized = false
+@Observable @MainActor
+final class NotificationManager {
+    var isAuthorized = false
 
     // MARK: - Authorization
 

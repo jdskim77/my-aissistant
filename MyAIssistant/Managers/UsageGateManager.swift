@@ -1,9 +1,10 @@
 import Foundation
+import Observation
 import SwiftData
 
 /// Enforces tier-based usage limits. Wraps UsageTracker with tier-aware checks.
-@MainActor
-final class UsageGateManager: ObservableObject {
+@Observable @MainActor
+final class UsageGateManager {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -26,36 +27,25 @@ final class UsageGateManager: ObservableObject {
     // MARK: - Gate Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
-        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
-        // If integrity fails (e.g. reinstall with new Keychain key), re-sign rather than blocking
-        if !t.verifyIntegrity() {
-            t.updateIntegrityHash()
-            modelContext.safeSave()
-        }
+        guard t.verifyIntegrity() else { return false }
         return t.canSendChat(tier: tier)
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
-        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
-        if !t.verifyIntegrity() {
-            t.updateIntegrityHash()
-            modelContext.safeSave()
-        }
+        guard t.verifyIntegrity() else { return false }
         return t.canDoCheckIn(tier: tier)
     }
 
     // MARK: - Usage Info
 
     var remainingChatMessages: Int {
-        if AppConstants.isDeveloperMode { return 999 }
-        return tracker().remainingChatMessages
+        tracker().remainingChatMessages
     }
 
     var remainingCheckIns: Int {
-        if AppConstants.isDeveloperMode { return 999 }
-        return tracker().remainingCheckIns
+        tracker().remainingCheckIns
     }
 
     var chatUsedThisMonth: Int {

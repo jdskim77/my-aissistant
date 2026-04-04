@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.habitManager) private var habitManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -693,8 +694,7 @@ struct HomeView: View {
                     Button {
                         Haptics.success()
                         withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
-                            habit.toggleCompletion(for: today)
-                            try? modelContext.save()
+                            habitManager?.toggleCompletion(habit, for: today)
                         }
                     } label: {
                         ZStack {

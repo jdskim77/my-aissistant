@@ -3,25 +3,12 @@ import SwiftData
 import SwiftUI
 import WidgetKit
 
-@MainActor
-final class TaskManager: ObservableObject {
+@Observable @MainActor
+final class TaskManager {
     private let modelContext: ModelContext
-    /// Debounce task for widget/watch updates — collapses rapid mutations into one update.
-    private var widgetUpdateTask: Task<Void, Never>?
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-    }
-
-    /// Schedules a widget/watch update after a short delay.
-    /// Cancels any pending update so rapid mutations (e.g., completing 5 tasks) only trigger once.
-    func scheduleWidgetUpdate() {
-        widgetUpdateTask?.cancel()
-        widgetUpdateTask = Task {
-            try? await Task.sleep(for: .milliseconds(500))
-            guard !Task.isCancelled else { return }
-            updateWidgetData()
-        }
     }
 
     // MARK: - CRUD
@@ -29,7 +16,7 @@ final class TaskManager: ObservableObject {
     func addTask(_ task: TaskItem) {
         modelContext.insert(task)
         modelContext.safeSave()
-        scheduleWidgetUpdate()
+        updateWidgetData()
     }
 
     func toggleCompletion(_ task: TaskItem) {
@@ -53,22 +40,13 @@ final class TaskManager: ObservableObject {
         }
 
         modelContext.safeSave()
-        scheduleWidgetUpdate()
-
-        // Immediately sync completion to Reminders if this task is reminder-linked
-        if let extID = task.externalCalendarID, extID.hasPrefix("reminder:") {
-            NotificationCenter.default.post(
-                name: .taskCompletionChanged,
-                object: nil,
-                userInfo: ["taskID": task.id, "done": task.done, "externalID": extID]
-            )
-        }
+        updateWidgetData()
     }
 
     func deleteTask(_ task: TaskItem) {
         modelContext.delete(task)
         modelContext.safeSave()
-        scheduleWidgetUpdate()
+        updateWidgetData()
     }
 
     func rescheduleTask(_ task: TaskItem, to newDate: Date) {
@@ -79,7 +57,25 @@ final class TaskManager: ObservableObject {
         newComponents.minute = oldComponents.minute
         task.date = calendar.date(from: newComponents) ?? newDate
         modelContext.safeSave()
-        scheduleWidgetUpdate()
+        updateWidgetData()
+    }
+
+    // MARK: - Conversation Management
+
+    func deleteConversationMessages(_ messages: [ChatMessage]) {
+        for message in messages {
+            modelContext.delete(message)
+        }
+        modelContext.safeSave()
+    }
+
+    // MARK: - Focus Sessions
+
+    func saveFocusSession(_ session: FocusSession) {
+        if session.modelContext == nil {
+            modelContext.insert(session)
+        }
+        modelContext.safeSave()
     }
 
     // MARK: - Queries

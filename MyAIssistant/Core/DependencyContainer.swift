@@ -117,3 +117,42 @@ extension EnvironmentValues {
         set { self[BalanceManagerKey.self] = newValue }
     }
 }
+
+// MARK: - ChatManager Environment Key
+
+struct ChatManagerKey: EnvironmentKey {
+    static let defaultValue: ChatManager? = nil
+}
+
+extension EnvironmentValues {
+    var chatManager: ChatManager? {
+        get { self[ChatManagerKey.self] }
+        set { self[ChatManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - HabitManager Environment Key
+
+struct HabitManagerKey: EnvironmentKey {
+    static let defaultValue: HabitManager? = nil
+}
+
+extension EnvironmentValues {
+    var habitManager: HabitManager? {
+        get { self[HabitManagerKey.self] }
+        set { self[HabitManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - SubscriptionManager Environment Key
+
+struct SubscriptionManagerKey: EnvironmentKey {
+    static let defaultValue: SubscriptionManager? = nil
+}
+
+extension EnvironmentValues {
+    var subscriptionManager: SubscriptionManager? {
+        get { self[SubscriptionManagerKey.self] }
+        set { self[SubscriptionManagerKey.self] = newValue }
+    }
+}

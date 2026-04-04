@@ -15,6 +15,7 @@ struct HabitFormView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.habitManager) private var habitManager
     @Environment(\.modelContext) private var modelContext
 
     let mode: Mode
@@ -69,7 +70,7 @@ struct HabitFormView: View {
                     // Icon picker
                     VStack(spacing: 10) {
                         Text(icon)
-                            .font(AppFonts.icon(48))
+                            .font(.system(size: 48))
 
                         LazyVGrid(columns: Array(repeating: .init(.flexible()), count: 6), spacing: 10) {
                             ForEach(iconOptions, id: \.self) { emoji in
@@ -78,7 +79,7 @@ struct HabitFormView: View {
                                     icon = emoji
                                 } label: {
                                     Text(emoji)
-                                        .font(AppFonts.icon(28))
+                                        .font(.system(size: 28))
                                         .frame(width: 48, height: 48)
                                         .background(icon == emoji ? Color(hex: colorHex).opacity(0.15) : Color.clear)
                                         .cornerRadius(12)
@@ -214,8 +215,7 @@ struct HabitFormView: View {
             .alert("Delete Habit", isPresented: $showDeleteConfirm) {
                 Button("Delete", role: .destructive) {
                     if let habit = existingHabit {
-                        modelContext.delete(habit)
-                        try? modelContext.save()
+                        habitManager?.delete(habit)
                     }
                     dismiss()
                 }
@@ -255,6 +255,7 @@ struct HabitFormView: View {
             habit.icon = icon
             habit.colorHex = colorHex
             habit.targetDays = frequency
+            habitManager?.save(habit)
         } else {
             let habit = HabitItem(
                 title: trimmed,
@@ -262,10 +263,9 @@ struct HabitFormView: View {
                 colorHex: colorHex,
                 targetDays: frequency
             )
-            modelContext.insert(habit)
+            habitManager?.save(habit)
         }
 
-        try? modelContext.save()
         Haptics.success()
         dismiss()
     }

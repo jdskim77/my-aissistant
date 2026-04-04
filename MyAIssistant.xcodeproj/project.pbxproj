@@ -24,7 +24,10 @@
 		7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
 		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
+		1EB7AC11F42D8372E826D15B /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E7024744C354093E7EE70E /* HabitManager.swift */; };
+		23BC5563F3F65EA2E108544B /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9547409DF22C2E668F7D7712 /* ModelContext+SafeSave.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
+		9195924F9B037D95589D0E9E /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF37D60B9D4F49B5CC476DB /* AppLogger.swift */; };
 		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
 		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000 /* MyAIssistantApp.swift */; };
 		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000 /* ContentView.swift */; };
@@ -211,7 +214,10 @@
 /* Begin PBXFileReference section */
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
+		11E7024744C354093E7EE70E /* HabitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitManager.swift; path = MyAIssistant/Managers/HabitManager.swift; sourceTree = SOURCE_ROOT; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
+		6AF37D60B9D4F49B5CC476DB /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppLogger.swift; path = MyAIssistant/Utilities/AppLogger.swift; sourceTree = SOURCE_ROOT; };
+		9547409DF22C2E668F7D7712 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ModelContext+SafeSave.swift"; path = "MyAIssistant/Utilities/ModelContext+SafeSave.swift"; sourceTree = SOURCE_ROOT; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
 		34B94FBDE7397641F976C27E /* HabitItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitItem.swift; sourceTree = "<group>"; };
@@ -427,6 +433,7 @@
 				4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */,
 				4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
 				D100000010000000 /* Products */,
+				11E7024744C354093E7EE70E /* HabitManager.swift */,
 				12CC4D3DBACA141D3B64244D /* WisdomManager.swift */,
 				C85E40C1975819FFCA2410F6 /* DailyWisdom.json */,
 				4532A6E62F7A4B8D00739994 /* Frameworks */,
@@ -639,6 +646,8 @@
 				B200000012000000 /* DataSeeder.swift */,
 				B200000013000000 /* PreviewHelpers.swift */,
 				B200000014000000 /* Haptics.swift */,
+				6AF37D60B9D4F49B5CC476DB /* AppLogger.swift */,
+				9547409DF22C2E668F7D7712 /* ModelContext+SafeSave.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -1152,6 +1161,9 @@
 				AF00000001000000 /* AlarmEntry.swift in Sources */,
 				AF00000002000000 /* SchemaVersioning.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
+				1EB7AC11F42D8372E826D15B /* HabitManager.swift in Sources */,
+				9195924F9B037D95589D0E9E /* AppLogger.swift in Sources */,
+				23BC5563F3F65EA2E108544B /* ModelContext+SafeSave.swift in Sources */,
 				7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */,
 				51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */,
 				7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */,

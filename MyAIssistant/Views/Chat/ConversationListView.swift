@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ConversationListView: View {
+    @Environment(\.taskManager) private var taskManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ChatMessage.timestamp, order: .reverse) private var allMessages: [ChatMessage]
     @Binding var selectedConversationID: String
@@ -119,10 +120,7 @@ struct ConversationListView: View {
             let convoID = conversations[index].id
             guard convoID != "main" else { continue } // Don't delete main
             let messages = allMessages.filter { $0.conversationID == convoID }
-            for message in messages {
-                modelContext.delete(message)
-            }
+            taskManager?.deleteConversationMessages(messages)
         }
-        try? modelContext.save()
     }
 }

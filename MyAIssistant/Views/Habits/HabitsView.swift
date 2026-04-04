@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HabitsView: View {
+    @Environment(\.habitManager) private var habitManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
     @State private var showingAddHabit = false
@@ -131,8 +132,7 @@ struct HabitsView: View {
             Button {
                 Haptics.success()
                 withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
-                    habit.toggleCompletion(for: today)
-                    try? modelContext.save()
+                    habitManager?.toggleCompletion(habit, for: today)
                 }
             } label: {
                 ZStack {

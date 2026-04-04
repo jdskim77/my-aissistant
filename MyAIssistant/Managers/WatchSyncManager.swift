@@ -1,38 +1,11 @@
-import CryptoKit
 import Foundation
+import Observation
 import WatchConnectivity
-
-// MARK: - WatchConnectivity Payload Encryption
-
-/// Simple symmetric encryption for API keys sent over WatchConnectivity.
-/// Derives a key from the app bundle ID so only this app can decrypt.
-enum WatchPayloadCrypto {
-    /// Derive a 256-bit symmetric key from the bundle identifier.
-    private static var symmetricKey: SymmetricKey {
-        let seed = (Bundle.main.bundleIdentifier ?? "com.myaissistant").data(using: .utf8)!
-        let hash = SHA256.hash(data: seed)
-        return SymmetricKey(data: hash)
-    }
-
-    /// Encrypt a string into a combined sealed-box Data (nonce + ciphertext + tag).
-    static func encrypt(_ plaintext: String) -> Data? {
-        guard let data = plaintext.data(using: .utf8) else { return nil }
-        guard let sealedBox = try? ChaChaPoly.seal(data, using: symmetricKey) else { return nil }
-        return sealedBox.combined
-    }
-
-    /// Decrypt combined sealed-box Data back into the original string.
-    static func decrypt(_ combined: Data) -> String? {
-        guard let sealedBox = try? ChaChaPoly.SealedBox(combined: combined) else { return nil }
-        guard let data = try? ChaChaPoly.open(sealedBox, using: symmetricKey) else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-}
 
 /// Manages iPhone → Watch data sync via WatchConnectivity.
 /// Sends schedule snapshots to the Watch app whenever tasks change.
-@MainActor
-final class WatchSyncManager: NSObject, ObservableObject {
+@Observable @MainActor
+final class WatchSyncManager: NSObject {
     static let shared = WatchSyncManager()
     private var session: WCSession?
     private var isActivated = false
@@ -54,15 +27,14 @@ final class WatchSyncManager: NSObject, ObservableObject {
         guard isActivated, session.isPaired, session.isWatchAppInstalled else { return }
         let keychain = KeychainService()
         guard let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty else { return }
-        guard let encryptedKey = WatchPayloadCrypto.encrypt(apiKey) else { return }
-        let message: [String: Any] = ["apiKeyEncrypted": encryptedKey]
+        let message = ["apiKey": apiKey]
         // Use both channels to ensure delivery
         if session.isReachable {
             session.sendMessage(message, replyHandler: nil)
         }
         // Also include in application context for when Watch isn't reachable
         var context = session.applicationContext
-        context["apiKeyEncrypted"] = encryptedKey
+        context["apiKey"] = apiKey
         context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
         try? session.updateApplicationContext(context)
     }
@@ -128,11 +100,10 @@ final class WatchSyncManager: NSObject, ObservableObject {
         )
 
         var context = data.toDictionary()
-        // Include encrypted API key in context so Watch always has it
+        // Include API key in context so Watch always has it
         let keychain = KeychainService()
-        if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty,
-           let encryptedKey = WatchPayloadCrypto.encrypt(apiKey) {
-            context["apiKeyEncrypted"] = encryptedKey
+        if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty {
+            context["apiKey"] = apiKey
         }
         // Include text size preference
         context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
@@ -195,5 +166,4 @@ extension Notification.Name {
     static let watchRequestedUpdate = Notification.Name("watchRequestedUpdate")
     static let watchToggledTask = Notification.Name("watchToggledTask")
     static let watchAddedTask = Notification.Name("watchAddedTask")
-    static let taskCompletionChanged = Notification.Name("taskCompletionChanged")
 }

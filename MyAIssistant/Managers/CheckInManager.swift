@@ -1,8 +1,9 @@
 import Foundation
+import Observation
 import SwiftData
 
-@MainActor
-final class CheckInManager: ObservableObject {
+@Observable @MainActor
+final class CheckInManager {
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {

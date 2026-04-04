@@ -10,32 +10,39 @@ struct MyAIssistantApp: App {
     @State private var checkInManager: CheckInManager
     @State private var calendarSyncManager: CalendarSyncManager
     @State private var usageGateManager: UsageGateManager
-    @StateObject private var subscriptionManager = SubscriptionManager()
+    @State private var balanceManager: BalanceManager
+    @State private var chatManager: ChatManager
+    @State private var habitManager: HabitManager
+    @State private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(AppSchema.allModels)
         let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
         let container: ModelContainer
         do {
             container = try ModelContainer(
                 for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
                 configurations: [config]
             )
         } catch {
-            // Database corrupted — delete and recreate to prevent permanent launch crash
+            // Database corrupted — back up then delete to prevent permanent launch crash
             let storeURL = config.url
+            // Back up the corrupt database before deleting
+            let backupURL = storeURL.deletingLastPathComponent()
+                .appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
+            try? FileManager.default.copyItem(at: storeURL, to: backupURL)
+            // Flag so the app can show a one-time recovery alert
+            UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
             try? FileManager.default.removeItem(at: storeURL)
             // Also remove WAL/SHM sidecar files
             try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
             try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
             container = (try? ModelContainer(
                 for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
                 configurations: [config]
             )) ?? ModelContainer.fallbackInMemory(schema: schema)
         }
@@ -51,6 +58,15 @@ struct MyAIssistantApp: App {
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
         self._calendarSyncManager = State(initialValue: csm)
         self._usageGateManager = State(initialValue: UsageGateManager(modelContext: context))
+        self._balanceManager = State(initialValue: BalanceManager(modelContext: context))
+        self._habitManager = State(initialValue: HabitManager(modelContext: context))
+
+        let cm = ChatManager(modelContext: context)
+        cm.taskManager = tm
+        cm.patternEngine = pe
+        cm.keychainService = keychainService
+        cm.calendarSyncManager = csm
+        self._chatManager = State(initialValue: cm)
 
         // Background task manager
         self.backgroundTaskManager = BackgroundTaskManager(
@@ -80,10 +96,13 @@ struct MyAIssistantApp: App {
                 .environment(\.checkInManager, checkInManager)
                 .environment(\.calendarSyncManager, calendarSyncManager)
                 .environment(\.usageGateManager, usageGateManager)
+                .environment(\.balanceManager, balanceManager)
+                .environment(\.chatManager, chatManager)
+                .environment(\.habitManager, habitManager)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
+                .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
-                .environmentObject(subscriptionManager)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
@@ -208,10 +227,7 @@ extension ModelContainer {
         do {
             return try ModelContainer(for: schema, configurations: [inMemory])
         } catch {
-            fatalError(
-                "[Thrivn] Cannot create even an in-memory ModelContainer. "
-                + "Schema types may be invalid. Error: \(error.localizedDescription)"
-            )
+            fatalError("Cannot create even an in-memory ModelContainer: \(error)")
         }
     }
 }

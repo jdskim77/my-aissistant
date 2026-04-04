@@ -5,14 +5,10 @@ import UserNotifications
 struct ChatView: View {
     var onDismiss: (() -> Void)? = nil
 
-    @Environment(\.taskManager) private var taskManager
-    @Environment(\.patternEngine) private var patternEngine
+    @Environment(\.chatManager) private var chatManager
     @Environment(\.keychainService) private var keychainService
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.usageGateManager) private var usageGateManager
-    @Environment(\.calendarSyncManager) private var calendarSyncManager
-    @Environment(\.balanceManager) private var balanceManager
-    @Environment(\.modelContext) private var modelContext
     @State private var conversationID = "main"
     @State private var inputText = ""
     @State private var isAITyping = false
@@ -29,19 +25,8 @@ struct ChatView: View {
     @State private var showingMicPermissionAlert = false
     @State private var showClockAppPrompt = false
     @State private var showChatPaywall = false
-    @State private var showCalendarConnectCard = false
-    @State private var showCalendarSettingsSheet = false
-    @State private var pendingCalendarActions: [CalendarAction] = []
+    @State private var pendingCalendarActions: [ChatManager.CalendarAction] = []
     @FocusState private var isInputFocused: Bool
-
-    private var hasCalendarConnected: Bool {
-        let links = calendarSyncManager?.enabledCalendarLinks() ?? []
-        return !links.isEmpty
-    }
-
-    private var hasShownCalendarPrompt: Bool {
-        UserDefaults.standard.bool(forKey: "hasShownCalendarConnectPrompt")
-    }
 
     private let quickActions = [
         "What's high priority?",
@@ -58,9 +43,7 @@ struct ChatView: View {
             // Messages — tap to stop AI speech
             ConversationMessages(
                 conversationID: conversationID,
-                isAITyping: isAITyping,
-                showCalendarConnectCard: $showCalendarConnectCard,
-                showCalendarSettingsSheet: $showCalendarSettingsSheet
+                isAITyping: isAITyping
             )
             .onTapGesture {
                 if speechSynthesizer.isSpeaking {
@@ -76,7 +59,7 @@ struct ChatView: View {
             if let errorMessage {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(AppFonts.caption(12))
+                        .font(.system(size: 12))
                     Text(errorMessage)
                         .font(AppFonts.caption(12))
                     Spacer()
@@ -84,7 +67,7 @@ struct ChatView: View {
                         self.errorMessage = nil
                     } label: {
                         Image(systemName: "xmark")
-                            .font(AppFonts.label(11))
+                            .font(.system(size: 10, weight: .bold))
                     }
                 }
                 .foregroundColor(AppColors.coral)
@@ -97,18 +80,30 @@ struct ChatView: View {
             if showClockAppPrompt {
                 HStack(spacing: 8) {
                     Image(systemName: "alarm.fill")
-                        .font(AppFonts.body(14))
+                        .font(.system(size: 14))
                     Text("Notification alarm set.")
                         .font(AppFonts.bodyMedium(13))
                     Spacer()
-                    Text("You'll get a notification")
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.textMuted)
+                    Button {
+                        // Open the built-in Clock app's alarm tab
+                        if let url = URL(string: "clock-sleep-alarm://") {
+                            UIApplication.shared.open(url)
+                        }
+                        showClockAppPrompt = false
+                    } label: {
+                        Text("Open Clock App")
+                            .font(AppFonts.bodyMedium(12))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(AppColors.accent)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
                     Button {
                         showClockAppPrompt = false
                     } label: {
                         Image(systemName: "xmark")
-                            .font(AppFonts.label(11))
+                            .font(.system(size: 10, weight: .bold))
                     }
                 }
                 .foregroundColor(AppColors.accent)
@@ -221,11 +216,6 @@ struct ChatView: View {
             }
             .presentationDetents([.medium])
         }
-        .sheet(isPresented: $showCalendarSettingsSheet) {
-            NavigationStack {
-                CalendarSettingsView()
-            }
-        }
     }
 
     // MARK: - Header
@@ -239,13 +229,12 @@ struct ChatView: View {
                     onDismiss()
                 } label: {
                     Image(systemName: "chevron.down")
-                        .font(AppFonts.body(16).weight(.semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .padding(8)
                         .background(AppColors.surface)
                         .cornerRadius(8)
                 }
-                .accessibilityLabel("Close chat")
             }
 
             AIActivityOrb(
@@ -277,7 +266,7 @@ struct ChatView: View {
                 }
             } label: {
                 Image(systemName: voiceModeEnabled ? "speaker.wave.2.fill" : "speaker.slash")
-                    .font(AppFonts.body(16).weight(.medium))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(voiceModeEnabled ? AppColors.accent : AppColors.textMuted)
                     .padding(8)
                     .background(voiceModeEnabled ? AppColors.accentLight : AppColors.surface)
@@ -287,19 +276,17 @@ struct ChatView: View {
                             .stroke(voiceModeEnabled ? AppColors.accent.opacity(0.3) : Color.clear, lineWidth: 1)
                     )
             }
-            .accessibilityLabel(voiceModeEnabled ? "Disable voice mode" : "Enable voice mode")
 
             Button {
                 showingConversations = true
             } label: {
                 Image(systemName: "bubble.left.and.bubble.right")
-                    .font(AppFonts.body(16).weight(.medium))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(AppColors.accent)
                     .padding(8)
                     .background(AppColors.accentLight)
                     .cornerRadius(8)
             }
-            .accessibilityLabel("View conversations")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -330,7 +317,7 @@ struct ChatView: View {
                 if remaining <= 5 {
                     HStack(spacing: 6) {
                         Image(systemName: remaining == 0 ? "exclamationmark.circle.fill" : "info.circle.fill")
-                            .font(AppFonts.caption(12))
+                            .font(.system(size: 12))
                         Text(remaining == 0
                             ? "No messages remaining this month"
                             : "\(remaining) message\(remaining == 1 ? "" : "s") remaining this month")
@@ -400,14 +387,13 @@ struct ChatView: View {
                         }
 
                         Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic")
-                            .font(AppFonts.heading(22).weight(.medium))
+                            .font(.system(size: 22, weight: .medium))
                             .foregroundColor(speechRecognizer.isRecording ? .white : AppColors.accent)
                             .frame(width: 44, height: 44)
                             .background(speechRecognizer.isRecording ? AppColors.coral : AppColors.accentLight)
                             .cornerRadius(22)
                     }
                 }
-                .accessibilityLabel(speechRecognizer.isRecording ? "Stop recording" : "Start voice input")
 
                 // Send button
                 Button {
@@ -416,11 +402,10 @@ struct ChatView: View {
                     sendMessage(text)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(AppFonts.icon(40))
+                        .font(.system(size: 40))
                         .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppColors.textMuted : AppColors.accent)
                 }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isAITyping)
-                .accessibilityLabel("Send message")
+                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -431,148 +416,51 @@ struct ChatView: View {
     // MARK: - Actions
 
     private func sendMessage(_ text: String) {
-        // Re-entrancy guard — prevent duplicate sends from rapid tapping
-        guard !isAITyping else { return }
+        guard let chatManager else { return }
         errorMessage = nil
 
-        // Enforce free tier chat limit
+        // Check paywall before clearing input so text is preserved if blocked
         if let gate = usageGateManager, !gate.canSendChat(tier: tier) {
             showChatPaywall = true
             return
         }
 
-        // Fetch prior history BEFORE inserting the new message to avoid duplicate
-        let convoID = conversationID
-        let descriptor = FetchDescriptor<ChatMessage>(
-            predicate: #Predicate { $0.conversationID == convoID },
-            sortBy: [SortDescriptor(\ChatMessage.timestamp)]
-        )
-        let priorHistory = (try? modelContext.fetch(descriptor)) ?? []
-
-        let userMessage = ChatMessage(role: .user, content: text, conversationID: conversationID)
-        modelContext.insert(userMessage)
-        modelContext.safeSave()
         inputText = ""
         speechRecognizer.transcript = ""
         isInputFocused = false
         isAITyping = true
 
         Task {
-            do {
-                let provider = try AIProviderFactory.provider(
-                    for: tier,
-                    useCase: .chat,
-                    keychain: keychainService
-                )
+            let result = await chatManager.sendMessage(text, conversationID: conversationID)
 
-                let enabledLinks = calendarSyncManager?.enabledCalendarLinks() ?? []
-                let hasGoogle = enabledLinks.contains { $0.calendarSource == .google }
-                let hasApple = enabledLinks.contains { $0.calendarSource == .apple }
-                    || calendarSyncManager?.appleCalendarAuthorized == true
+            isAITyping = false
 
-                let systemPrompt = AIPromptBuilder.chatSystemPrompt(
-                    scheduleSummary: taskManager?.scheduleSummary() ?? "",
-                    completionRate: patternEngine?.completionRate() ?? 0,
-                    streak: patternEngine?.currentStreak() ?? 0,
-                    hasGoogleCalendar: hasGoogle,
-                    hasAppleCalendar: hasApple,
-                    activitySummary: patternEngine?.activitySummaryText() ?? "",
-                    patternInsights: patternEngine?.patternInsightsText() ?? "",
-                    balanceSummary: balanceManager?.balanceSummaryForAI() ?? ""
-                )
+            if result.hasError {
+                errorMessage = result.errorMessage
+            }
 
-                let aiResponse = try await provider.sendMessage(
-                    userMessage: text,
-                    conversationHistory: Array(priorHistory.suffix(10)),
-                    systemPrompt: systemPrompt
-                )
-
-                let parsed = parseResponseTags(from: aiResponse.content)
-
-                await MainActor.run {
-                    isAITyping = false
-
-                    let assistantMessage = ChatMessage(role: .assistant, content: parsed.displayText, conversationID: conversationID)
-                    modelContext.insert(assistantMessage)
-
-                    // Track usage
-                    usageGateManager?.recordChatMessage(inputTokens: aiResponse.inputTokens, outputTokens: aiResponse.outputTokens)
-
-                    // Queue calendar actions for user confirmation
-                    if !parsed.calendarActions.isEmpty {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            pendingCalendarActions = parsed.calendarActions
-                        }
-                    }
-
-                    // Store tracked activities
-                    for activity in parsed.activities {
-                        let entry = ActivityEntry(
-                            activity: activity.description,
-                            category: activity.category
-                        )
-                        modelContext.insert(entry)
-                    }
-
-                    // Show calendar connect card on first task creation without calendar
-                    if !parsed.calendarActions.isEmpty, !hasCalendarConnected, !hasShownCalendarPrompt {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showCalendarConnectCard = true
-                        }
-                        UserDefaults.standard.set(true, forKey: "hasShownCalendarConnectPrompt")
-                    }
-
-                    // Speak response aloud if voice mode is on
-                    if voiceModeEnabled {
-                        speechSynthesizer.speak(parsed.displayText)
-                    }
-
-                    modelContext.safeSave()
+            // Queue calendar actions for user confirmation
+            if !result.calendarActions.isEmpty {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    pendingCalendarActions = result.calendarActions
                 }
+            }
 
-                // Schedule alarms async (requires auth check) — only show banner if at least one succeeded
-                if !parsed.alarms.isEmpty {
-                    var anyScheduled = false
-                    for alarm in parsed.alarms {
-                        if await scheduleAlarm(alarm) { anyScheduled = true }
-                    }
-                    if anyScheduled {
-                        await MainActor.run {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showClockAppPrompt = true
-                            }
-                        }
-                    }
+            // Speak response aloud if voice mode is on
+            if voiceModeEnabled && !result.displayText.isEmpty {
+                speechSynthesizer.speak(result.displayText)
+            }
+
+            // Schedule alarms async
+            if !result.alarms.isEmpty {
+                var anyScheduled = false
+                for alarm in result.alarms {
+                    if await chatManager.scheduleAlarm(alarm) { anyScheduled = true }
                 }
-            } catch {
-                await MainActor.run {
-                    isAITyping = false
-                    if let aiError = error as? AIError, case .noAPIKey = aiError {
-                        errorMessage = "No API key set. Add one in Settings."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I need an API key to work. Please add your Anthropic API key in Settings to get started!",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
-                    } else if let aiError = error as? AIError, case .rateLimited = aiError {
-                        errorMessage = "Too many requests — please wait a moment."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I'm getting a lot of requests right now. Give me a moment and try again!",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
-                    } else {
-                        errorMessage = "Connection issue — please try again."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I'm having trouble connecting right now. Please check your internet connection and try again.",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
+                if anyScheduled {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showClockAppPrompt = true
                     }
-                    modelContext.safeSave()
                 }
             }
         }
@@ -614,36 +502,10 @@ struct ChatView: View {
     // MARK: - Voice Conversation Loop
 
     private func playGreeting() {
-        guard !hasPlayedGreeting else { return }
+        guard !hasPlayedGreeting, let chatManager else { return }
         hasPlayedGreeting = true
 
-        let todayTasks = taskManager?.todayTasks() ?? []
-        let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
-
-        // Load previously used openers today to avoid repeats
-        let usedOpeners = GreetingManager.loadUsedOpenersForToday()
-
-        let result = VariedGreetingBuilder.greetingWithOpener(
-            todayTaskCount: todayTasks.count,
-            completedTodayCount: todayTasks.filter(\.done).count,
-            highPriorityTitles: highPriority.map(\.title),
-            completionRate: patternEngine?.completionRate() ?? 0,
-            streak: patternEngine?.currentStreak() ?? 0,
-            excludeOpeners: usedOpeners
-        )
-        let greeting = result.text
-
-        // Track the opener so it won't repeat today
-        GreetingManager.recordUsedOpenerForToday(result.opener)
-
-        let greetingMessage = ChatMessage(
-            role: .assistant,
-            content: greeting,
-            conversationID: conversationID
-        )
-        modelContext.insert(greetingMessage)
-        modelContext.safeSave()
-
+        let greeting = chatManager.insertGreetingMessage(conversationID: conversationID)
         speechSynthesizer.speak(greeting)
     }
 
@@ -682,7 +544,7 @@ struct ChatView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar.badge.exclamationmark")
-                    .font(AppFonts.label(14))
+                    .font(.system(size: 14, weight: .semibold))
                 Text("Calendar changes requested")
                     .font(AppFonts.bodyMedium(13))
                 Spacer()
@@ -695,7 +557,7 @@ struct ChatView: View {
                     case .create(let title, let start, _, _, _):
                         Image(systemName: "plus.circle.fill")
                             .foregroundColor(AppColors.completionGreen)
-                            .font(AppFonts.caption(12))
+                            .font(.system(size: 12))
                         Text("Create: \(title)")
                             .font(AppFonts.body(12))
                         Text("(\(start.formatted(as: "MMM d, h:mm a")))")
@@ -704,7 +566,7 @@ struct ChatView: View {
                     case .delete(let eventID):
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(AppColors.coral)
-                            .font(AppFonts.caption(12))
+                            .font(.system(size: 12))
                         Text("Delete event: \(eventID)")
                             .font(AppFonts.body(12))
                     }
@@ -733,11 +595,17 @@ struct ChatView: View {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         pendingCalendarActions = []
                     }
-                    Task { await executeCalendarActions(actions) }
+                    Task {
+                        if let chatManager {
+                            if let err = await chatManager.executeCalendarActions(actions) {
+                                errorMessage = err
+                            }
+                        }
+                    }
                 } label: {
                     Text("Approve")
                         .font(AppFonts.bodyMedium(13))
-                        .foregroundColor(AppColors.onAccent)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(AppColors.accent)
@@ -751,262 +619,6 @@ struct ChatView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    // MARK: - Calendar Action Parsing
-
-    private enum CalendarAction {
-        case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence)
-        case delete(eventID: String)
-    }
-
-    private struct ParsedAlarm {
-        let timeString: String
-        let label: String
-        let repeatsDaily: Bool
-    }
-
-    private struct ParsedResponse {
-        let displayText: String
-        let calendarActions: [CalendarAction]
-        let activities: [(category: String, description: String)]
-        let alarms: [ParsedAlarm]
-    }
-
-    private func parseResponseTags(from text: String) -> ParsedResponse {
-        var displayText = text
-        var calendarActions: [CalendarAction] = []
-        var activities: [(category: String, description: String)] = []
-        var alarms: [ParsedAlarm] = []
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-
-        // Parse CREATE_EVENT tags: [[CREATE_EVENT:title|start|end|desc]] or [[CREATE_EVENT:title|start|end|desc|recurrence]]
-        let createPattern = /\[\[CREATE_EVENT:(.+?)\|(.+?)\|(.+?)\|(.*?)(?:\|(daily|weekly|biweekly|monthly))?\]\]/
-        for match in text.matches(of: createPattern) {
-            let title = String(match.1).trimmingCharacters(in: .whitespaces)
-            let startStr = String(match.2).trimmingCharacters(in: .whitespaces)
-            let endStr = String(match.3).trimmingCharacters(in: .whitespaces)
-            let desc = String(match.4).trimmingCharacters(in: .whitespaces)
-            let recStr = match.5.map { String($0).lowercased() }
-            let recurrence = recStr.flatMap { TaskRecurrence(rawValue: $0.capitalized) } ?? .none
-
-            if let startDate = dateFormatter.date(from: startStr),
-               let endDate = dateFormatter.date(from: endStr) {
-                calendarActions.append(.create(
-                    title: title,
-                    start: startDate,
-                    end: endDate,
-                    description: desc.isEmpty ? nil : desc,
-                    recurrence: recurrence
-                ))
-            }
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse DELETE_EVENT tags
-        let deletePattern = /\[\[DELETE_EVENT:(.+?)\]\]/
-        for match in text.matches(of: deletePattern) {
-            let eventID = String(match.1).trimmingCharacters(in: .whitespaces)
-            calendarActions.append(.delete(eventID: eventID))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse ACTIVITY tags
-        let activityPattern = /\[\[ACTIVITY:(.+?)\|(.+?)\]\]/
-        for match in text.matches(of: activityPattern) {
-            let category = String(match.1).trimmingCharacters(in: .whitespaces)
-            let description = String(match.2).trimmingCharacters(in: .whitespaces)
-            activities.append((category: category, description: description))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse SET_ALARM tags: [[SET_ALARM:HH:mm|Label]] or [[SET_ALARM:HH:mm|Label|daily]]
-        let alarmPattern = /\[\[SET_ALARM:(.+?)\|(.+?)(?:\|(daily))?\]\]/
-        for match in text.matches(of: alarmPattern) {
-            let timeStr = String(match.1).trimmingCharacters(in: .whitespaces)
-            let label = String(match.2).trimmingCharacters(in: .whitespaces)
-            let repeats = match.3 != nil
-            alarms.append(ParsedAlarm(timeString: timeStr, label: label, repeatsDaily: repeats))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        return ParsedResponse(
-            displayText: displayText.trimmingCharacters(in: .whitespacesAndNewlines),
-            calendarActions: calendarActions,
-            activities: activities,
-            alarms: alarms
-        )
-    }
-
-    private func executeCalendarActions(_ actions: [CalendarAction]) async {
-        let syncManager = calendarSyncManager
-        let enabledLinks = syncManager?.enabledCalendarLinks() ?? []
-        let googleCalendarID = enabledLinks.first(where: { $0.calendarSource == .google })?.calendarID
-        let appleCalendarID = enabledLinks.first(where: { $0.calendarSource == .apple })?.calendarID
-        let useGoogle = googleCalendarID != nil
-
-        for action in actions {
-            switch action {
-            case .create(let title, let start, let end, let description, let recurrence):
-                // Dedup FIRST: check if a task with the same title exists on this day
-                let isDuplicate = await MainActor.run {
-                    let calendar = Calendar.current
-                    let dayStart = calendar.startOfDay(for: start)
-                    let dayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
-                    let titleLower = title.lowercased()
-                    let descriptor = FetchDescriptor<TaskItem>(
-                        predicate: #Predicate { $0.date >= dayStart && $0.date < dayEnd }
-                    )
-                    let existing = (try? modelContext.fetch(descriptor)) ?? []
-                    return existing.contains { $0.title.lowercased() == titleLower }
-                }
-                guard !isDuplicate else { continue }
-
-                // Create calendar event, then local task
-                var calendarID: String?
-
-                if let syncManager {
-                    do {
-                        if useGoogle, let calID = googleCalendarID {
-                            let eventID = try await syncManager.googleService.createEvent(
-                                calendarID: calID,
-                                title: title,
-                                startDate: start,
-                                endDate: end,
-                                description: description
-                            )
-                            calendarID = "google:\(eventID)"
-                        } else if appleCalendarID != nil || syncManager.appleCalendarAuthorized {
-                            let eventID = try await syncManager.eventKitService.createEvent(
-                                title: title,
-                                startDate: start,
-                                endDate: end,
-                                notes: description,
-                                calendarID: appleCalendarID
-                            )
-                            calendarID = eventID
-                        }
-                    } catch {
-                        await MainActor.run {
-                            errorMessage = "Calendar sync failed, but task was added: \(error.localizedDescription)"
-                        }
-                    }
-                }
-
-                await MainActor.run {
-                    let task = TaskItem(
-                        title: title,
-                        category: .personal,
-                        priority: .medium,
-                        date: start,
-                        icon: calendarID?.hasPrefix("google:") == true ? "🌐" : "📅",
-                        notes: description ?? "",
-                        recurrence: recurrence
-                    )
-                    task.externalCalendarID = calendarID
-                    modelContext.insert(task)
-                    modelContext.safeSave()
-                }
-
-            case .delete(let eventID):
-                // Try to delete from calendar, then always remove the task
-                if let syncManager {
-                    do {
-                        if eventID.hasPrefix("google:") {
-                            let googleEventID = String(eventID.dropFirst("google:".count))
-                            if let calID = googleCalendarID {
-                                try await syncManager.googleService.deleteEvent(
-                                    calendarID: calID,
-                                    eventID: googleEventID
-                                )
-                            }
-                        } else {
-                            try await syncManager.eventKitService.deleteEvent(identifier: eventID)
-                        }
-                    } catch {
-                        await MainActor.run {
-                            errorMessage = "Failed to delete calendar event: \(error.localizedDescription)"
-                        }
-                    }
-                }
-
-                await MainActor.run {
-                    let targetID = eventID
-                    let descriptor = FetchDescriptor<TaskItem>(
-                        predicate: #Predicate { $0.externalCalendarID == targetID }
-                    )
-                    if let tasks = try? modelContext.fetch(descriptor) {
-                        for task in tasks {
-                            modelContext.delete(task)
-                        }
-                        modelContext.safeSave()
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Alarm Scheduling
-
-    /// Returns true if the alarm was successfully scheduled.
-    @discardableResult
-    private func scheduleAlarm(_ alarm: ParsedAlarm) async -> Bool {
-        // Bug fix #5: check notification auth before scheduling
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        guard settings.authorizationStatus == .authorized else {
-            errorMessage = "Notifications are disabled. Enable them in Settings to receive alarms."
-            return false
-        }
-
-        // Bug fix #4: try multiple time formats to handle "7:00" as well as "07:00"
-        let formats = ["HH:mm", "H:mm", "h:mm a", "h:mma", "h:mm"]
-        var parsedTime: Date?
-        for format in formats {
-            let f = DateFormatter()
-            f.dateFormat = format
-            f.locale = Locale(identifier: "en_US_POSIX")
-            if let d = f.date(from: alarm.timeString) { parsedTime = d; break }
-        }
-        guard let parsedTime else {
-            errorMessage = "Couldn't parse alarm time \"\(alarm.timeString)\". Please try again."
-            return false
-        }
-
-        let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: parsedTime)
-        let minute = calendar.component(.minute, from: parsedTime)
-
-        // Build the target date: today if still in the future, otherwise tomorrow
-        let now = Date()
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
-
-        let alarmDate: Date
-        if let candidate = calendar.date(from: components), candidate > now {
-            alarmDate = candidate
-        } else {
-            alarmDate = calendar.date(from: components).flatMap {
-                calendar.date(byAdding: .day, value: 1, to: $0)
-            } ?? now
-        }
-
-        let entry = AlarmEntry(
-            label: alarm.label,
-            time: alarmDate,
-            repeatsDaily: alarm.repeatsDaily
-        )
-        modelContext.insert(entry)
-
-        let notificationManager = NotificationManager()
-        notificationManager.scheduleAlarm(
-            notificationID: entry.notificationID,
-            label: alarm.label,
-            time: alarmDate,
-            repeatsDaily: alarm.repeatsDaily
-        )
-        return true
-    }
 }
 
 // MARK: - Conversation Messages (inner view with @Query)
@@ -1014,16 +626,12 @@ struct ChatView: View {
 private struct ConversationMessages: View {
     let conversationID: String
     let isAITyping: Bool
-    @Binding var showCalendarConnectCard: Bool
-    @Binding var showCalendarSettingsSheet: Bool
 
     @Query private var messages: [ChatMessage]
 
-    init(conversationID: String, isAITyping: Bool, showCalendarConnectCard: Binding<Bool>, showCalendarSettingsSheet: Binding<Bool>) {
+    init(conversationID: String, isAITyping: Bool) {
         self.conversationID = conversationID
         self.isAITyping = isAITyping
-        self._showCalendarConnectCard = showCalendarConnectCard
-        self._showCalendarSettingsSheet = showCalendarSettingsSheet
         let convoID = conversationID
         self._messages = Query(
             filter: #Predicate<ChatMessage> { $0.conversationID == convoID },
@@ -1042,59 +650,6 @@ private struct ConversationMessages: View {
                     ForEach(messages, id: \.id) { message in
                         ChatBubble(message: message)
                             .id(message.id)
-                    }
-
-                    // One-time calendar connect card
-                    if showCalendarConnectCard {
-                        VStack(spacing: 12) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "calendar.badge.plus")
-                                    .font(AppFonts.heading(20).weight(.medium))
-                                    .foregroundColor(AppColors.accent)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Task added to your schedule")
-                                        .font(AppFonts.bodyMedium(14))
-                                        .foregroundColor(AppColors.textPrimary)
-                                    Text("Connect a calendar for two-way sync.")
-                                        .font(AppFonts.body(13))
-                                        .foregroundColor(AppColors.textSecondary)
-                                }
-                            }
-                            HStack(spacing: 12) {
-                                Button {
-                                    Haptics.light()
-                                    showCalendarSettingsSheet = true
-                                } label: {
-                                    Text("Connect Calendar")
-                                        .font(AppFonts.bodyMedium(14))
-                                        .foregroundColor(AppColors.onAccent)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(AppColors.accent)
-                                        .cornerRadius(10)
-                                }
-                                Button {
-                                    withAnimation(.snappy(duration: 0.25)) {
-                                        showCalendarConnectCard = false
-                                    }
-                                } label: {
-                                    Text("Not now")
-                                        .font(AppFonts.body(14))
-                                        .foregroundColor(AppColors.textMuted)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                }
-                            }
-                        }
-                        .padding(16)
-                        .background(AppColors.card)
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(AppColors.accent.opacity(0.2), lineWidth: 1)
-                        )
-                        .id("calendarConnect")
-                        .transition(.scale.combined(with: .opacity))
                     }
 
                     if isAITyping {
@@ -1127,11 +682,9 @@ private struct ConversationMessages: View {
             Spacer()
                 .frame(height: 60)
 
-            Image("ThrivnLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+            Text("✦")
+                .font(.system(size: 40))
+                .foregroundColor(AppColors.accent)
 
             Text("How can I help?")
                 .font(AppFonts.heading(20))

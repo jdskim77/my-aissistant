@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @Environment(\.subscriptionTier) private var currentTier
-    @EnvironmentObject private var subscriptionManager: SubscriptionManager
+    @Environment(\.subscriptionManager) private var subscriptionManager
     @State private var selectedBilling: BillingPeriod = .monthly
 
     private enum BillingPeriod {
@@ -25,7 +25,7 @@ struct SubscriptionView: View {
 
                 // Restore purchases
                 Button {
-                    Task { await subscriptionManager.restore() }
+                    Task { await subscriptionManager?.restore() }
                 } label: {
                     Text("Restore Purchases")
                         .font(AppFonts.body(14))
@@ -34,7 +34,7 @@ struct SubscriptionView: View {
                 .padding(.top, 8)
 
                 // Error message
-                if let error = subscriptionManager.lastError {
+                if let error = subscriptionManager?.lastError {
                     Text(error)
                         .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.coral)
@@ -43,7 +43,7 @@ struct SubscriptionView: View {
 
                 // Auto-renewal disclosure (required by Apple)
                 Text("Payment is charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Manage subscriptions in Settings > Apple ID > Subscriptions.")
-                    .font(AppFonts.caption(11))
+                    .font(AppFonts.caption(10))
                     .foregroundColor(AppColors.textMuted.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
@@ -64,7 +64,7 @@ struct SubscriptionView: View {
         .navigationTitle("Subscription")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await subscriptionManager.loadProducts()
+            await subscriptionManager?.loadProducts()
         }
     }
 
@@ -73,7 +73,7 @@ struct SubscriptionView: View {
     private var currentTierBadge: some View {
         HStack(spacing: 10) {
             Image(systemName: "crown.fill")
-                .font(AppFonts.heading(20))
+                .font(.system(size: 20))
                 .foregroundColor(currentTier == .free ? AppColors.textMuted : AppColors.accentWarm)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -152,7 +152,7 @@ struct SubscriptionView: View {
             ForEach(tier.features, id: \.self) { feature in
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark")
-                        .font(AppFonts.label(11))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundColor(AppColors.accentWarm)
                     Text(feature)
                         .font(AppFonts.body(14))
@@ -168,12 +168,12 @@ struct SubscriptionView: View {
                     .padding(.vertical, 12)
                     .background(AppColors.accentWarm.opacity(0.1))
                     .cornerRadius(10)
-            } else if let productID, let product = subscriptionManager.product(for: productID) {
+            } else if let productID, let product = subscriptionManager?.product(for: productID) {
                 Button {
-                    Task { _ = await subscriptionManager.purchase(product) }
+                    Task { _ = await subscriptionManager?.purchase(product) }
                 } label: {
                     HStack {
-                        if subscriptionManager.purchaseInProgress {
+                        if subscriptionManager?.purchaseInProgress == true {
                             ProgressView()
                                 .scaleEffect(0.8)
                                 .tint(.white)
@@ -187,7 +187,7 @@ struct SubscriptionView: View {
                     .background(AppColors.accent)
                     .cornerRadius(10)
                 }
-                .disabled(subscriptionManager.purchaseInProgress)
+                .disabled(subscriptionManager?.purchaseInProgress == true)
             } else {
                 Text("Subscribe")
                     .font(AppFonts.bodyMedium(15))
