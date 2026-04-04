@@ -50,6 +50,7 @@
 		A200000006000000 /* CheckInRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006000000 /* CheckInRecord.swift */; };
 		A200000007000000 /* DailySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000007000000 /* DailySnapshot.swift */; };
 		A200000008000000 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000008000000 /* UserProfile.swift */; };
+		CE00000001000000 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE00000002000000 /* ChatManager.swift */; };
 		A200000009000000 /* TaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000009000000 /* TaskManager.swift */; };
 		A200000010000000 /* PatternEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000010000000 /* PatternEngine.swift */; };
 		A200000011000000 /* DateHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000011000000 /* DateHelpers.swift */; };
@@ -250,6 +251,7 @@
 		B200000006000000 /* CheckInRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
 		B200000007000000 /* DailySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
 		B200000008000000 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		CE00000002000000 /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		B200000009000000 /* TaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
 		B200000010000000 /* PatternEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternEngine.swift; sourceTree = "<group>"; };
 		B200000011000000 /* DateHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelpers.swift; sourceTree = "<group>"; };
@@ -617,6 +619,7 @@
 			isa = PBXGroup;
 			children = (
 				4583C2E42F7A137700603B08 /* WatchSyncManager.swift */,
+				CE00000002000000 /* ChatManager.swift */,
 				B200000009000000 /* TaskManager.swift */,
 				B200000010000000 /* PatternEngine.swift */,
 				B400000001000000 /* NotificationManager.swift */,
@@ -1065,6 +1068,7 @@
 				A200000007000000 /* DailySnapshot.swift in Sources */,
 				A200000008000000 /* UserProfile.swift in Sources */,
 				A300000008000000 /* UsageTracker.swift in Sources */,
+				CE00000001000000 /* ChatManager.swift in Sources */,
 				A200000009000000 /* TaskManager.swift in Sources */,
 				A200000010000000 /* PatternEngine.swift in Sources */,
 				A100000009000000 /* AppColors.swift in Sources */,
