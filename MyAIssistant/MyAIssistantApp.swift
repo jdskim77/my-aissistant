@@ -22,30 +22,52 @@ struct MyAIssistantApp: App {
 
     init() {
         let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+
+        // CloudKit-synced store for the 14 user-data models
+        let cloudConfig = ModelConfiguration(
+            "MyAIssistant",
+            schema: Schema(AppSchema.syncedModels),
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+
+        // Local-only store for UsageTracker (per-device usage limits, not synced)
+        let localConfig = ModelConfiguration(
+            "MyAIssistant-local",
+            schema: Schema(AppSchema.localModels),
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+
         let container: ModelContainer
         do {
             container = try ModelContainer(
                 for: schema,
-                configurations: [config]
+                configurations: [cloudConfig, localConfig]
             )
         } catch {
             // Database corrupted — back up then delete to prevent permanent launch crash
             #if DEBUG
             print("[DB Recovery] ModelContainer failed: \(error)")
             #endif
-            let storeURL = config.url
-            let storeDir = storeURL.deletingLastPathComponent()
-            let storeName = storeURL.deletingPathExtension().lastPathComponent
 
-            // Back up the corrupt database before deleting
-            let backupURL = storeDir.appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
-            try? FileManager.default.copyItem(at: storeURL, to: backupURL)
+            // Clean up both store files
+            for config in [cloudConfig, localConfig] {
+                let storeURL = config.url
+                let storeDir = storeURL.deletingLastPathComponent()
+                let storeName = storeURL.deletingPathExtension().lastPathComponent
 
-            // Delete ALL files matching the store name (handles .sqlite, .sqlite-wal, .sqlite-shm, .store variants)
-            if let contents = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
-                for file in contents where file.lastPathComponent.hasPrefix(storeName) {
-                    try? FileManager.default.removeItem(at: file)
+                // Back up the main (cloud) store before deleting
+                if storeName == "MyAIssistant" {
+                    let backupURL = storeDir.appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
+                    try? FileManager.default.copyItem(at: storeURL, to: backupURL)
+                }
+
+                // Delete ALL files matching the store name
+                if let contents = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
+                    for file in contents where file.lastPathComponent.hasPrefix(storeName) {
+                        try? FileManager.default.removeItem(at: file)
+                    }
                 }
             }
 
@@ -54,7 +76,7 @@ struct MyAIssistantApp: App {
 
             container = (try? ModelContainer(
                 for: schema,
-                configurations: [config]
+                configurations: [cloudConfig, localConfig]
             )) ?? ModelContainer.fallbackInMemory(schema: schema)
         }
 
