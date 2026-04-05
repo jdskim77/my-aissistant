@@ -8,6 +8,8 @@ struct SettingsView: View {
     @State private var appeared = false
     @State private var exportURL: URL?
     @State private var showingExportShare = false
+    @State private var versionTapCount = 0
+    @State private var showDeveloperModeAlert = false
     @State private var exportError: String?
     @State private var showingImportPicker = false
     @State private var importResult: String?
@@ -253,9 +255,38 @@ struct SettingsView: View {
                             .font(AppFonts.body(15))
                             .foregroundColor(AppColors.textMuted)
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        versionTapCount += 1
+                        if versionTapCount >= 7 {
+                            versionTapCount = 0
+                            let current = AppConstants.isDeveloperMode
+                            UserDefaults.standard.set(!current, forKey: AppConstants.developerModeKey)
+                            showDeveloperModeAlert = true
+                        }
+                    }
+
+                    if AppConstants.isDeveloperMode {
+                        HStack {
+                            Image(systemName: "hammer.fill")
+                                .foregroundColor(AppColors.accentWarm)
+                            Text("Developer Mode")
+                                .font(AppFonts.body(15))
+                                .foregroundColor(AppColors.accentWarm)
+                            Spacer()
+                            Text("Active")
+                                .font(AppFonts.caption(13))
+                                .foregroundColor(AppColors.accentWarm)
+                        }
+                    }
                 } header: {
                     Text("About")
                 }
+            }
+            .alert("Developer Mode", isPresented: $showDeveloperModeAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(AppConstants.isDeveloperMode ? "Developer mode enabled. Usage limits bypassed." : "Developer mode disabled.")
             }
             .scrollContentBackground(.hidden)
             .background(AppColors.background.ignoresSafeArea())

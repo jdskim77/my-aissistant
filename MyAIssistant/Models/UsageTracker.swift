@@ -96,6 +96,7 @@ final class UsageTracker {
     // MARK: - Limit Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         resetIfNeeded()
         switch tier {
         case .free:
@@ -106,6 +107,7 @@ final class UsageTracker {
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         resetIfNeeded()
         switch tier {
         case .free:
@@ -137,6 +139,11 @@ final class UsageTracker {
     }
 
     func verifyIntegrity() -> Bool {
+        // Empty hash means fresh install or DB was recreated — recompute and trust
+        if integrityHash.isEmpty {
+            updateIntegrityHash()
+            return true
+        }
         let expected = Self.computeHash(
             monthKey: monthKey,
             dayKey: dayKey,
