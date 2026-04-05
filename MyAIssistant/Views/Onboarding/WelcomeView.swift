@@ -15,23 +15,29 @@ struct WelcomeView: View {
                     .scaleEffect(appeared ? 1 : 0.5)
                     .opacity(appeared ? 1 : 0)
 
-                VStack(spacing: 8) {
-                    Text("My AIssistant")
-                        .font(AppFonts.display(32))
+                VStack(spacing: 12) {
+                    Text("Thrivn")
+                        .font(AppFonts.display(36))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Your AI-powered daily planner")
-                        .font(AppFonts.body(16))
+                    Text("Excel at life by finding balance.")
+                        .font(AppFonts.heading(17))
+                        .foregroundColor(AppColors.accent)
+
+                    Text("Reveals where you're thriving and where you need attention — across your physical, mental, emotional, and spiritual well-being.")
+                        .font(AppFonts.body(14))
                         .foregroundColor(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
                 .offset(y: appeared ? 0 : 20)
                 .opacity(appeared ? 1 : 0)
 
                 VStack(alignment: .leading, spacing: 16) {
-                    featureRow(icon: "🌅", title: "Smart Check-ins", subtitle: "4 daily rituals to keep you on track")
-                    featureRow(icon: "✦", title: "AI Assistant", subtitle: "Chat naturally to manage your day")
-                    featureRow(icon: "📊", title: "Pattern Insights", subtitle: "Discover your productivity trends")
-                    featureRow(icon: "📅", title: "Calendar Sync", subtitle: "Connect your existing calendars")
+                    featureRow(icon: "🌅", title: "Daily Check-ins", subtitle: "Track mood, energy, and progress")
+                    featureRow(icon: "🧭", title: "Life Compass", subtitle: "See your balance across all dimensions")
+                    featureRow(icon: "✦", title: "AI Coach", subtitle: "Personalized guidance toward your goals")
+                    featureRow(icon: "📊", title: "Pattern Insights", subtitle: "Discover what's working and what's not")
                 }
                 .padding(.top, 16)
                 .offset(y: appeared ? 0 : 30)
