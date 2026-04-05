@@ -23,6 +23,20 @@ struct MyAIssistantApp: App {
     init() {
         let container: ModelContainer
 
+        // Diagnostic: try each model individually to find the problem
+        #if DEBUG
+        for modelType in AppSchema.allModels {
+            do {
+                let testSchema = Schema([modelType])
+                let testConfig = ModelConfiguration("test-\(String(describing: modelType))", isStoredInMemoryOnly: true)
+                _ = try ModelContainer(for: testSchema, configurations: [testConfig])
+                print("[Schema OK] \(modelType)")
+            } catch {
+                print("[Schema FAIL] \(modelType): \(error)")
+            }
+        }
+        #endif
+
         // Attempt 1: CloudKit-synced dual-store (synced + local)
         if let dual = Self.createDualContainer(inMemory: false) {
             container = dual
@@ -249,14 +263,14 @@ extension MyAIssistantApp {
     /// Single local-only store for all models (no CloudKit, no split)
     static func createLocalOnlyContainer() -> ModelContainer? {
         let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         return try? ModelContainer(for: schema, configurations: [config])
     }
 
     /// In-memory fallback — data won't persist but the app can launch
     static func createInMemoryContainer() -> ModelContainer {
         let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
+        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
@@ -269,7 +283,7 @@ extension MyAIssistantApp {
 
 extension ModelContainer {
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
-        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
+        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
