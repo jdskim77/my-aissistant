@@ -1,13 +1,45 @@
 import Foundation
+import Security
 import SwiftData
 
 struct DataSeeder {
+    private static let hasSeededKey = "com.myaissistant.dataSeederHasRun"
+
     static func seedIfEmpty(context: ModelContext) {
+        // Use Keychain to persist across reinstalls — only seed on the very first install
+        guard !hasSeededBefore() else { return }
+
         let descriptor = FetchDescriptor<TaskItem>()
         let existingCount = (try? context.fetchCount(descriptor)) ?? 0
-        guard existingCount == 0 else { return }
+        guard existingCount == 0 else {
+            // Data exists (e.g., restored from backup) — mark as seeded and skip
+            markAsSeeded()
+            return
+        }
 
         seedStarterData(context: context)
+        markAsSeeded()
+    }
+
+    // MARK: - Keychain Persistence (survives app reinstall)
+
+    private static func hasSeededBefore() -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: hasSeededKey,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
+    }
+
+    private static func markAsSeeded() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: hasSeededKey,
+            kSecValueData as String: Data([1]),
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+        ]
+        SecItemAdd(query as CFDictionary, nil)
     }
 
     // MARK: - Starter Data
