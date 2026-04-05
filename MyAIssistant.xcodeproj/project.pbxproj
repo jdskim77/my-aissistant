@@ -956,13 +956,11 @@
 				C100000001000000 /* Frameworks */,
 				CA00000001000000 /* Resources */,
 				CW00000004000000 /* Embed Foundation Extensions */,
-				4583C2CD2F79D1BE00603B08 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				HW00000001000000 /* PBXTargetDependency */,
-				4583C2CB2F79D1BE00603B08 /* PBXTargetDependency */,
 			);
 			name = MyAIssistant;
 			productName = MyAIssistant;
