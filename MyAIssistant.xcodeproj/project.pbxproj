@@ -161,6 +161,13 @@
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
 		FC88CB0A6B8A9C4D /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B75731A9ECCC7764 /* LifeDimension.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
+		CA10000001000000 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000001000000 /* CheckInBehaviorEngine.swift */; };
+		CA10000002000000 /* CheckInSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000002000000 /* CheckInSuggestionCard.swift */; };
+		CA10000003000000 /* CheckInBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000003000000 /* CheckInBehavior.swift */; };
+		CA10000004000000 /* CheckInPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000004000000 /* CheckInPreference.swift */; };
+		CA10000005000000 /* CheckInSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000005000000 /* CheckInSuggestion.swift */; };
+		CA10000006000000 /* CheckInPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000006000000 /* CheckInPreferencesView.swift */; };
+		CA10000007000000 /* WidgetCheckInWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB10000007000000 /* WidgetCheckInWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -366,6 +373,13 @@
 		EC03B687B92B1962 /* DailyBalanceCheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBalanceCheckIn.swift; sourceTree = "<group>"; };
 		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F48D93391864A138 /* SeasonGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
+		CB10000001000000 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
+		CB10000002000000 /* CheckInSuggestionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInSuggestionCard.swift; sourceTree = "<group>"; };
+		CB10000003000000 /* CheckInBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInBehavior.swift; sourceTree = "<group>"; };
+		CB10000004000000 /* CheckInPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInPreference.swift; sourceTree = "<group>"; };
+		CB10000005000000 /* CheckInSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInSuggestion.swift; sourceTree = "<group>"; };
+		CB10000007000000 /* WidgetCheckInWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCheckInWindow.swift; sourceTree = "<group>"; };
+		CB10000006000000 /* CheckInPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInPreferencesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -510,6 +524,10 @@
 				B75731A9ECCC7764 /* LifeDimension.swift */,
 				F48D93391864A138 /* SeasonGoal.swift */,
 				0751CF15C2C8592F /* UserDimensionPreference.swift */,
+				CB10000003000000 /* CheckInBehavior.swift */,
+				CB10000004000000 /* CheckInPreference.swift */,
+				CB10000005000000 /* CheckInSuggestion.swift */,
+				CB10000007000000 /* WidgetCheckInWindow.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -572,6 +590,7 @@
 				B800000003000000 /* LoadingView.swift */,
 				BC00000002000000 /* CustomTabBar.swift */,
 				BD00000001000000 /* AIActivityOrb.swift */,
+				CB10000002000000 /* CheckInSuggestionCard.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -671,6 +690,7 @@
 				BD00000003000000 /* GreetingManager.swift */,
 				6BF474997B5617EE /* BalanceManager.swift */,
 				782904D9C0483457 /* DimensionSuggester.swift */,
+				CB10000001000000 /* CheckInBehaviorEngine.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -750,6 +770,7 @@
 				BC00000010000000 /* ThemePickerView.swift */,
 				BC00000011000000 /* TextSizeSettingsView.swift */,
 				C96C0B187F67768C /* LegalView.swift */,
+				CB10000006000000 /* CheckInPreferencesView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1233,6 +1254,13 @@
 				5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */,
 				6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */,
 				A8A62D0788AB8113AB70DB92 /* HabitsView.swift in Sources */,
+				CA10000001000000 /* CheckInBehaviorEngine.swift in Sources */,
+				CA10000002000000 /* CheckInSuggestionCard.swift in Sources */,
+				CA10000003000000 /* CheckInBehavior.swift in Sources */,
+				CA10000004000000 /* CheckInPreference.swift in Sources */,
+				CA10000005000000 /* CheckInSuggestion.swift in Sources */,
+				CA10000006000000 /* CheckInPreferencesView.swift in Sources */,
+				CA10000007000000 /* WidgetCheckInWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

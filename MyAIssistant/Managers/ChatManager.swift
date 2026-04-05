@@ -166,15 +166,36 @@ final class ChatManager {
             let errorMsg: String
             let assistantContent: String
 
-            if let aiError = error as? AIError, case .noAPIKey = aiError {
-                errorMsg = "No API key set. Add one in Settings."
-                assistantContent = "I need an API key to work. Please add your Anthropic API key in Settings to get started!"
-            } else if let aiError = error as? AIError, case .rateLimited = aiError {
-                errorMsg = "Too many requests — please wait a moment."
-                assistantContent = "I'm getting a lot of requests right now. Give me a moment and try again!"
+            if let aiError = error as? AIError {
+                switch aiError {
+                case .noAPIKey:
+                    errorMsg = "No API key set. Add one in Settings."
+                    assistantContent = "I need an API key to work. Please add your Anthropic API key in Settings to get started!"
+                case .rateLimited:
+                    errorMsg = "Too many requests — please wait a moment."
+                    assistantContent = "I'm getting a lot of requests right now. Give me a moment and try again!"
+                case .apiError(let code, let message):
+                    errorMsg = "API error (\(code))"
+                    if code == 401 {
+                        assistantContent = "Your API key appears to be invalid or expired. Please check it in Settings."
+                    } else if code == 400 {
+                        assistantContent = "Something went wrong with the request. Please try again with a shorter message."
+                    } else {
+                        assistantContent = "The AI service returned an error (code \(code)). Please try again. Details: \(message.prefix(200))"
+                    }
+                case .invalidResponse, .parsingError:
+                    errorMsg = "Unexpected response from AI."
+                    assistantContent = "I received an unexpected response. Please try again."
+                case .networkError:
+                    errorMsg = "Network error."
+                    assistantContent = "I'm having trouble connecting. Please check your internet connection and try again."
+                }
             } else {
-                errorMsg = "Connection issue — please try again."
-                assistantContent = "I'm having trouble connecting right now. Please check your internet connection and try again."
+                errorMsg = "Unexpected error."
+                assistantContent = "Something went wrong: \(error.localizedDescription). Please try again."
+                #if DEBUG
+                print("[ChatManager] Unexpected error: \(error)")
+                #endif
             }
 
             let msg = ChatMessage(

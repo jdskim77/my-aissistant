@@ -144,6 +144,19 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - CheckInBehaviorEngine Environment Key
+
+struct CheckInBehaviorEngineKey: EnvironmentKey {
+    static let defaultValue: CheckInBehaviorEngine? = nil
+}
+
+extension EnvironmentValues {
+    var checkInBehaviorEngine: CheckInBehaviorEngine? {
+        get { self[CheckInBehaviorEngineKey.self] }
+        set { self[CheckInBehaviorEngineKey.self] = newValue }
+    }
+}
+
 // MARK: - SubscriptionManager Environment Key
 
 struct SubscriptionManagerKey: EnvironmentKey {

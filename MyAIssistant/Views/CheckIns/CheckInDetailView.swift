@@ -10,6 +10,7 @@ struct CheckInDetailView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.checkInManager) private var checkInManager
     @Environment(\.usageGateManager) private var usageGateManager
+    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
     @State private var currentStep: CheckInStep = .greeting
     @State private var isGated = false
     @State private var selectedMood: Int? = nil
@@ -375,6 +376,7 @@ struct CheckInDetailView: View {
             aiSummary: aiGreeting
         )
         usageGateManager?.recordCheckIn()
+        checkInBehaviorEngine?.recordCompletion(window: timeSlot)
     }
 
     private func energyLabel(_ level: Int) -> String {

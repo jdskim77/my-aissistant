@@ -89,6 +89,17 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        CheckInPreferencesView()
+                    } label: {
+                        settingsRow(
+                            icon: "clock.badge.checkmark.fill",
+                            color: AppColors.accent,
+                            title: "Check-in Schedule",
+                            subtitle: "Windows, timing & insights"
+                        )
+                    }
+
+                    NavigationLink {
                         VoiceSettingsView()
                     } label: {
                         settingsRow(

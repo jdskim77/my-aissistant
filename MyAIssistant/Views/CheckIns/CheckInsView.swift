@@ -5,12 +5,19 @@ struct CheckInsView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.checkInManager) private var checkInManager
+    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @State private var selectedCheckIn: CheckInTime = CheckInTime.current()
     @State private var appeared = false
     @State private var showingCheckInDetail = false
     @State private var showingHistory = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var enabledCheckInTimes: [CheckInTime] {
+        guard let engine = checkInBehaviorEngine else { return CheckInTime.allCases }
+        let enabledWindows = Set(engine.activePreferences().compactMap(\.checkInTime))
+        return CheckInTime.allCases.filter { enabledWindows.contains($0) }
+    }
 
     private var todayTasks: [TaskItem] {
         allTasks.filter { Calendar.current.isDateInToday($0.date) }
@@ -53,7 +60,7 @@ struct CheckInsView: View {
                 // Horizontal check-in selector
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(CheckInTime.allCases) { checkIn in
+                        ForEach(enabledCheckInTimes, id: \.self) { checkIn in
                             checkInTab(checkIn)
                         }
                     }

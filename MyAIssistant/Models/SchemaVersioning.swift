@@ -25,5 +25,8 @@ enum AppSchema {
         DailyBalanceCheckIn.self,
         SeasonGoal.self,
         UserDimensionPreference.self,
+        CheckInPreference.self,
+        CheckInBehavior.self,
+        CheckInSuggestion.self,
     ]
 }

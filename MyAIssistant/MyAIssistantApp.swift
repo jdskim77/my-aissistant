@@ -14,6 +14,7 @@ struct MyAIssistantApp: App {
     @State private var balanceManager: BalanceManager
     @State private var chatManager: ChatManager
     @State private var habitManager: HabitManager
+    @State private var checkInBehaviorEngine: CheckInBehaviorEngine
     @State private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
@@ -58,6 +59,9 @@ struct MyAIssistantApp: App {
         self._balanceManager = State(initialValue: BalanceManager(modelContext: context))
         self._habitManager = State(initialValue: HabitManager(modelContext: context))
 
+        let cbe = CheckInBehaviorEngine(modelContext: context)
+        self._checkInBehaviorEngine = State(initialValue: cbe)
+
         let cm = ChatManager(modelContext: context)
         cm.taskManager = tm
         cm.patternEngine = pe
@@ -69,7 +73,8 @@ struct MyAIssistantApp: App {
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
-            calendarSyncManager: csm
+            calendarSyncManager: csm,
+            checkInBehaviorEngine: cbe
         )
 
         // Register background tasks (must happen during init, before app finishes launching)
@@ -96,6 +101,7 @@ struct MyAIssistantApp: App {
                 .environment(\.balanceManager, balanceManager)
                 .environment(\.chatManager, chatManager)
                 .environment(\.habitManager, habitManager)
+                .environment(\.checkInBehaviorEngine, checkInBehaviorEngine)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
                 .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.keychainService, keychainService)
@@ -114,6 +120,10 @@ struct MyAIssistantApp: App {
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
+
+                    // Seed default check-in preferences and recalculate behavior
+                    checkInBehaviorEngine.seedDefaultPreferencesIfNeeded()
+                    checkInBehaviorEngine.recalculateIfNeeded()
 
                     // Schedule background tasks
                     backgroundTaskManager?.scheduleDailySnapshot()

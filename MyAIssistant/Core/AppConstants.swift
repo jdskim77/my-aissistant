@@ -28,6 +28,15 @@ enum AppConstants {
     static let defaultCheckInTimes: [Int] = [8, 13, 18, 22] // hours
     static let taskReminderLeadMinutes = 30
 
+    // MARK: - Adaptive Check-in Behavior
+    static let behaviorWindowDays = 14
+    static let quietAdjustMaxMinutes = 30
+    static let suggestionCooldownDays = 30
+    static let disableThreshold = 0.25
+    static let organicClusterMinCount = 5
+    static let timeDriftThresholdMinutes = 15
+    static let minWindowSpacingMinutes = 30
+
     // MARK: - Patterns
     static let defaultPatternWindowDays = 30
     static let weeklyReviewDay = 1 // Sunday (Calendar weekday)

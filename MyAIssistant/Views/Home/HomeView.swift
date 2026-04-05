@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.habitManager) private var habitManager
+    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -106,6 +107,24 @@ struct HomeView: View {
                         greeting: greetingManager.currentGreeting,
                         isAnimating: greetingOrbActive,
                         onDismiss: { greetingManager.dismissGreeting() }
+                    )
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            }
+
+            // Check-in behavior suggestion
+            if let suggestion = checkInBehaviorEngine?.activeSuggestion {
+                Section {
+                    CheckInSuggestionCard(
+                        suggestion: suggestion,
+                        onAccept: {
+                            checkInBehaviorEngine?.applySuggestion(suggestion)
+                            let prefs = checkInBehaviorEngine?.activePreferences() ?? []
+                            NotificationManager().scheduleCheckInReminders(preferences: prefs)
+                        },
+                        onDismiss: { checkInBehaviorEngine?.dismissSuggestion(suggestion) }
                     )
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     .listRowBackground(Color.clear)

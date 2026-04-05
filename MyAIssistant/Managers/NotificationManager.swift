@@ -29,10 +29,47 @@ final class NotificationManager {
 
     // MARK: - Check-in Reminders
 
+    /// Schedule reminders using persisted preferences (adaptive system).
+    func scheduleCheckInReminders(preferences: [CheckInPreference]) {
+        let center = UNUserNotificationCenter.current()
+
+        // Remove ALL existing check-in notifications (default + custom)
+        center.getPendingNotificationRequests { requests in
+            let checkInIDs = requests
+                .filter { $0.identifier.hasPrefix("checkin-") }
+                .map(\.identifier)
+            center.removePendingNotificationRequests(withIdentifiers: checkInIDs)
+        }
+
+        for pref in preferences where pref.isEnabled {
+            let checkInTime = pref.checkInTime
+            let content = UNMutableNotificationContent()
+            content.title = pref.displayTitle
+            content.body = checkInTime?.greeting ?? "Time for a check-in!"
+            content.sound = .default
+            content.categoryIdentifier = "CHECKIN"
+            content.userInfo = ["timeSlot": pref.windowRaw]
+
+            var dateComponents = DateComponents()
+            dateComponents.hour = pref.customHour
+            dateComponents.minute = pref.customMinute
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+            let request = UNNotificationRequest(
+                identifier: "checkin-\(pref.windowRaw)",
+                content: content,
+                trigger: trigger
+            )
+
+            center.add(request)
+        }
+    }
+
+    /// Legacy convenience — schedules the 4 default windows at hardcoded times.
+    /// Used when no CheckInPreference records exist yet.
     func scheduleCheckInReminders() {
         let center = UNUserNotificationCenter.current()
 
-        // Remove existing check-in notifications
         center.removePendingNotificationRequests(withIdentifiers:
             CheckInTime.allCases.map { "checkin-\($0.rawValue)" }
         )

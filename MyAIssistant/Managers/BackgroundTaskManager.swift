@@ -11,11 +11,18 @@ final class BackgroundTaskManager {
     private let modelContext: ModelContext
     private let patternEngine: PatternEngine
     private let calendarSyncManager: CalendarSyncManager
+    private let checkInBehaviorEngine: CheckInBehaviorEngine?
 
-    init(modelContext: ModelContext, patternEngine: PatternEngine, calendarSyncManager: CalendarSyncManager) {
+    init(
+        modelContext: ModelContext,
+        patternEngine: PatternEngine,
+        calendarSyncManager: CalendarSyncManager,
+        checkInBehaviorEngine: CheckInBehaviorEngine? = nil
+    ) {
         self.modelContext = modelContext
         self.patternEngine = patternEngine
         self.calendarSyncManager = calendarSyncManager
+        self.checkInBehaviorEngine = checkInBehaviorEngine
     }
 
     // MARK: - Registration
@@ -93,6 +100,7 @@ final class BackgroundTaskManager {
         task.expirationHandler = { task.setTaskCompleted(success: false) }
 
         await createDailySnapshot()
+        checkInBehaviorEngine?.recalculateIfNeeded()
         scheduleDailySnapshot() // Reschedule for tomorrow
         task.setTaskCompleted(success: true)
     }
@@ -140,11 +148,15 @@ final class BackgroundTaskManager {
         let moods = checkIns.compactMap { $0.mood }
         let averageMood = moods.isEmpty ? nil : Double(moods.reduce(0, +)) / Double(moods.count)
 
+        // Dynamic window count from preferences, fallback to default 4
+        let activeWindowCount = checkInBehaviorEngine?.activePreferences().count ?? 4
+
         let snapshot = DailySnapshot(
             date: yesterday,
             tasksTotal: tasksTotal,
             tasksCompleted: tasksCompleted,
             checkInsCompleted: checkInsCompleted,
+            checkInsTotal: activeWindowCount,
             averageMood: averageMood,
             streakCount: patternEngine.currentStreak()
         )
