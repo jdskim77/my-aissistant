@@ -21,63 +21,27 @@ struct MyAIssistantApp: App {
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
-        let schema = Schema(AppSchema.allModels)
-
-        // CloudKit-synced store for the 14 user-data models
-        let cloudConfig = ModelConfiguration(
-            "MyAIssistant",
-            schema: Schema(AppSchema.syncedModels),
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-
-        // Local-only store for UsageTracker (per-device usage limits, not synced)
-        let localConfig = ModelConfiguration(
-            "MyAIssistant-local",
-            schema: Schema(AppSchema.localModels),
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none
-        )
-
         let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: schema,
-                configurations: [cloudConfig, localConfig]
-            )
-        } catch {
-            // Database corrupted — back up then delete to prevent permanent launch crash
+
+        // Attempt 1: CloudKit-synced dual-store (synced + local)
+        if let dual = Self.createDualContainer(inMemory: false) {
+            container = dual
+        }
+        // Attempt 2: Local-only single store (no CloudKit — graceful degradation)
+        else if let local = Self.createLocalOnlyContainer() {
             #if DEBUG
-            print("[DB Recovery] ModelContainer failed: \(error)")
+            print("[DB Recovery] CloudKit container failed, using local-only storage")
             #endif
-
-            // Clean up both store files
-            for config in [cloudConfig, localConfig] {
-                let storeURL = config.url
-                let storeDir = storeURL.deletingLastPathComponent()
-                let storeName = storeURL.deletingPathExtension().lastPathComponent
-
-                // Back up the main (cloud) store before deleting
-                if storeName == "MyAIssistant" {
-                    let backupURL = storeDir.appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
-                    try? FileManager.default.copyItem(at: storeURL, to: backupURL)
-                }
-
-                // Delete ALL files matching the store name
-                if let contents = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
-                    for file in contents where file.lastPathComponent.hasPrefix(storeName) {
-                        try? FileManager.default.removeItem(at: file)
-                    }
-                }
-            }
-
-            // Flag so the app can show a one-time recovery alert
             UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
-
-            container = (try? ModelContainer(
-                for: schema,
-                configurations: [cloudConfig, localConfig]
-            )) ?? ModelContainer.fallbackInMemory(schema: schema)
+            container = local
+        }
+        // Attempt 3: In-memory fallback (data won't persist)
+        else {
+            #if DEBUG
+            print("[DB Recovery] All persistent containers failed, using in-memory")
+            #endif
+            UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
+            container = Self.createInMemoryContainer()
         }
 
         self.modelContainer = container
@@ -261,15 +225,53 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-// MARK: - ModelContainer Recovery
+// MARK: - ModelContainer Factory Methods
+
+extension MyAIssistantApp {
+    /// Dual-store: CloudKit-synced (14 models) + local-only (UsageTracker)
+    static func createDualContainer(inMemory: Bool = false) -> ModelContainer? {
+        let schema = Schema(AppSchema.allModels)
+        let cloudConfig = ModelConfiguration(
+            "MyAIssistant",
+            schema: Schema(AppSchema.syncedModels),
+            isStoredInMemoryOnly: inMemory,
+            cloudKitDatabase: inMemory ? .none : .automatic
+        )
+        let localConfig = ModelConfiguration(
+            "MyAIssistant-local",
+            schema: Schema(AppSchema.localModels),
+            isStoredInMemoryOnly: inMemory,
+            cloudKitDatabase: .none
+        )
+        return try? ModelContainer(for: schema, configurations: [cloudConfig, localConfig])
+    }
+
+    /// Single local-only store for all models (no CloudKit, no split)
+    static func createLocalOnlyContainer() -> ModelContainer? {
+        let schema = Schema(AppSchema.allModels)
+        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+        return try? ModelContainer(for: schema, configurations: [config])
+    }
+
+    /// In-memory fallback — data won't persist but the app can launch
+    static func createInMemoryContainer() -> ModelContainer {
+        let schema = Schema(AppSchema.allModels)
+        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            fatalError("Cannot create even an in-memory ModelContainer: \(error)")
+        }
+    }
+}
+
+// MARK: - ModelContainer Fallback (used by IntentModelContainer)
 
 extension ModelContainer {
-    /// Last-resort in-memory container so the app can at least launch.
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
-        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
-        // This is the absolute last resort — if even in-memory fails, the app cannot function
+        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
         do {
-            return try ModelContainer(for: schema, configurations: [inMemory])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Cannot create even an in-memory ModelContainer: \(error)")
         }
