@@ -23,23 +23,9 @@ struct MyAIssistantApp: App {
     init() {
         let container: ModelContainer
 
-        // Diagnostic: try each model individually to find the problem
-        #if DEBUG
-        for modelType in AppSchema.allModels {
-            do {
-                let testSchema = Schema([modelType])
-                let testConfig = ModelConfiguration("test-\(String(describing: modelType))", isStoredInMemoryOnly: true)
-                _ = try ModelContainer(for: testSchema, configurations: [testConfig])
-                print("[Schema OK] \(modelType)")
-            } catch {
-                print("[Schema FAIL] \(modelType): \(error)")
-            }
-        }
-        #endif
-
-        // Attempt 1: CloudKit-synced dual-store (synced + local)
-        if let dual = Self.createDualContainer(inMemory: false) {
-            container = dual
+        // Attempt 1: CloudKit-synced store
+        if let cloud = Self.createCloudContainer() {
+            container = cloud
         }
         // Attempt 2: Local-only single store (no CloudKit — graceful degradation)
         else if let local = Self.createLocalOnlyContainer() {
@@ -242,22 +228,15 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 // MARK: - ModelContainer Factory Methods
 
 extension MyAIssistantApp {
-    /// Dual-store: CloudKit-synced (14 models) + local-only (UsageTracker)
-    static func createDualContainer(inMemory: Bool = false) -> ModelContainer? {
+    /// Single store with CloudKit sync for all models
+    static func createCloudContainer() -> ModelContainer? {
         let schema = Schema(AppSchema.allModels)
-        let cloudConfig = ModelConfiguration(
+        let config = ModelConfiguration(
             "MyAIssistant",
-            schema: Schema(AppSchema.syncedModels),
-            isStoredInMemoryOnly: inMemory,
-            cloudKitDatabase: inMemory ? .none : .automatic
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
         )
-        let localConfig = ModelConfiguration(
-            "MyAIssistant-local",
-            schema: Schema(AppSchema.localModels),
-            isStoredInMemoryOnly: inMemory,
-            cloudKitDatabase: .none
-        )
-        return try? ModelContainer(for: schema, configurations: [cloudConfig, localConfig])
+        return try? ModelContainer(for: schema, configurations: [config])
     }
 
     /// Single local-only store for all models (no CloudKit, no split)
