@@ -5,6 +5,7 @@ import UserNotifications
 @main
 struct MyAIssistantApp: App {
     let modelContainer: ModelContainer
+    @State private var showDatabaseRecoveryAlert = false
     @State private var taskManager: TaskManager
     @State private var patternEngine: PatternEngine
     @State private var checkInManager: CheckInManager
@@ -30,17 +31,27 @@ struct MyAIssistantApp: App {
             )
         } catch {
             // Database corrupted — back up then delete to prevent permanent launch crash
+            #if DEBUG
+            print("[DB Recovery] ModelContainer failed: \(error)")
+            #endif
             let storeURL = config.url
+            let storeDir = storeURL.deletingLastPathComponent()
+            let storeName = storeURL.deletingPathExtension().lastPathComponent
+
             // Back up the corrupt database before deleting
-            let backupURL = storeURL.deletingLastPathComponent()
-                .appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
+            let backupURL = storeDir.appendingPathComponent("MyAIssistant_backup_\(Int(Date().timeIntervalSince1970)).sqlite")
             try? FileManager.default.copyItem(at: storeURL, to: backupURL)
+
+            // Delete ALL files matching the store name (handles .sqlite, .sqlite-wal, .sqlite-shm, .store variants)
+            if let contents = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
+                for file in contents where file.lastPathComponent.hasPrefix(storeName) {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+
             // Flag so the app can show a one-time recovery alert
             UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
-            try? FileManager.default.removeItem(at: storeURL)
-            // Also remove WAL/SHM sidecar files
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+
             container = (try? ModelContainer(
                 for: schema,
                 configurations: [config]
@@ -103,6 +114,17 @@ struct MyAIssistantApp: App {
                 .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
+                .alert("Data Reset", isPresented: $showDatabaseRecoveryAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("The app's database was reset due to an update. Your previous data has been backed up but a fresh start was needed. We apologize for the inconvenience.")
+                }
+                .onAppear {
+                    if UserDefaults.standard.bool(forKey: "databaseRecoveryOccurred") {
+                        showDatabaseRecoveryAlert = true
+                        UserDefaults.standard.set(false, forKey: "databaseRecoveryOccurred")
+                    }
+                }
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()

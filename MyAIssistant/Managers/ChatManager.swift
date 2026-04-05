@@ -5,8 +5,8 @@ import UserNotifications
 
 // MARK: - ChatManager
 
-@MainActor
-final class ChatManager: ObservableObject {
+@Observable @MainActor
+final class ChatManager {
     private let modelContext: ModelContext
 
     // Dependencies injected after init (set by the app entry point or view)

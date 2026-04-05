@@ -9,8 +9,8 @@ import SwiftUI
 ///
 /// Balance Score penalizes imbalance: mean - 1.5 * stdev
 /// Based on Wheel of Life (coaching), PERMA (Seligman), WHO-5, and SDT.
-@MainActor
-final class BalanceManager: ObservableObject {
+@Observable @MainActor
+final class BalanceManager {
     private let modelContext: ModelContext
 
     /// Default weekly effort target per dimension. User can customize.
