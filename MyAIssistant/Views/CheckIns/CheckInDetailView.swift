@@ -377,8 +377,11 @@ struct CheckInDetailView: View {
         )
         usageGateManager?.recordCheckIn()
 
-        // Cancel streak-at-risk reminder since user has checked in today
+        // Cancel today's streak-at-risk reminder and re-schedule adaptive reminders
+        // for tomorrow based on the updated streak value
+        let updatedStreak = patternEngine?.currentStreak() ?? 0
         notificationManager?.cancelStreakReminder()
+        notificationManager?.scheduleAdaptiveCheckInReminders(currentStreak: updatedStreak)
     }
 
     private func energyLabel(_ level: Int) -> String {

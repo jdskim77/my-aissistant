@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A400000030000001 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000030000001 /* CheckInBehaviorEngine.swift */; };
+		A400000030000002 /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000030000002 /* CompassTabView.swift */; };
+		A400000030000003 /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000030000003 /* ModelContext+SafeSave.swift */; };
+		A400000030000004 /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000030000004 /* LifeDimension.swift */; };
 		IE10000001000000 /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = IE10000002000000 /* InsightEngine.swift */; };
 		00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */; };
 		0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C847075057F68B9E39C52A /* NLTaskParserView.swift */; };
@@ -207,6 +211,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B400000030000001 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
+		B400000030000002 /* CompassTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassTabView.swift; sourceTree = "<group>"; };
+		B400000030000003 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContext+SafeSave.swift; sourceTree = "<group>"; };
+		B400000030000004 /* LifeDimension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeDimension.swift; sourceTree = "<group>"; };
 		IE10000002000000 /* InsightEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightEngine.swift; sourceTree = "<group>"; };
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
@@ -630,6 +638,7 @@
 			children = (
 				B200000011000000 /* DateHelpers.swift */,
 				B200000012000000 /* DataSeeder.swift */,
+				B400000030000003 /* ModelContext+SafeSave.swift */,
 				B200000013000000 /* PreviewHelpers.swift */,
 				B200000014000000 /* Haptics.swift */,
 			);

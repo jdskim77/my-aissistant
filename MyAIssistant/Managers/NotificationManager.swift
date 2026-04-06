@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import UserNotifications
 
 // MARK: - Notification Frequency
@@ -19,9 +20,9 @@ enum NotificationFrequency: String {
     }
 }
 
-@MainActor
-final class NotificationManager: ObservableObject {
-    @Published var isAuthorized = false
+@Observable @MainActor
+final class NotificationManager {
+    var isAuthorized = false
 
     // MARK: - Authorization
 

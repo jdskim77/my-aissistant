@@ -12,7 +12,7 @@ struct MyAIssistantApp: App {
     @State private var usageGateManager: UsageGateManager
     @State private var wisdomManager: WisdomManager
     @State private var insightEngine: InsightEngine
-    @StateObject private var subscriptionManager = SubscriptionManager()
+    @State private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
@@ -20,27 +20,20 @@ struct MyAIssistantApp: App {
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
-        let schema = Schema(versionedSchema: SchemaV1.self)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
+        let schema = Schema(AppSchema.allModels)
         let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )
-        } catch {
-            // Database corrupted — delete and recreate to prevent permanent launch crash
-            let storeURL = config.url
-            try? FileManager.default.removeItem(at: storeURL)
-            // Also remove WAL/SHM sidecar files
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
-            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
-            container = (try? ModelContainer(
-                for: schema,
-                migrationPlan: MyAIssistantMigrationPlan.self,
-                configurations: [config]
-            )) ?? ModelContainer.fallbackInMemory(schema: schema)
+
+        // Attempt 1: CloudKit-synced store
+        if let cloud = Self.createCloudContainer(schema: schema) {
+            container = cloud
+        }
+        // Attempt 2: Local-only single store (no CloudKit)
+        else if let local = Self.createLocalOnlyContainer(schema: schema) {
+            container = local
+        }
+        // Attempt 3: In-memory fallback (data won't persist)
+        else {
+            container = ModelContainer.fallbackInMemory(schema: schema)
         }
 
         self.modelContainer = container
@@ -91,7 +84,7 @@ struct MyAIssistantApp: App {
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
                 .environment(\.notificationManager, notificationManager)
-                .environmentObject(subscriptionManager)
+                .environment(\.subscriptionManager, subscriptionManager)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
@@ -210,13 +203,28 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-// MARK: - ModelContainer Recovery
+// MARK: - ModelContainer Factory Methods
+
+extension MyAIssistantApp {
+    static func createCloudContainer(schema: Schema) -> ModelContainer? {
+        let config = ModelConfiguration(
+            "MyAIssistant",
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+        return try? ModelContainer(for: schema, configurations: [config])
+    }
+
+    static func createLocalOnlyContainer(schema: Schema) -> ModelContainer? {
+        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        return try? ModelContainer(for: schema, configurations: [config])
+    }
+}
 
 extension ModelContainer {
     /// Last-resort in-memory container so the app can at least launch.
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
-        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
-        // This is the absolute last resort — if even in-memory fails, the app cannot function
+        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         do {
             return try ModelContainer(for: schema, configurations: [inMemory])
         } catch {
