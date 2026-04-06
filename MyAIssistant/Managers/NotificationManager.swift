@@ -173,7 +173,7 @@ final class NotificationManager {
         case .full:
             slotsToSchedule = Array(CheckInTime.allCases)
         case .moderate:
-            slotsToSchedule = [.morning, .night]
+            slotsToSchedule = [.morning, .afternoon]  // Morning + evening (6 PM)
         case .minimal:
             // No regular check-in reminders — rely on streak-at-risk only
             slotsToSchedule = []
