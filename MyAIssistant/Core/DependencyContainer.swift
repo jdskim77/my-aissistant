@@ -131,6 +131,71 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - BalanceManager Environment Key
+
+struct BalanceManagerKey: EnvironmentKey {
+    static let defaultValue: BalanceManager? = nil
+}
+
+extension EnvironmentValues {
+    var balanceManager: BalanceManager? {
+        get { self[BalanceManagerKey.self] }
+        set { self[BalanceManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - ChatManager Environment Key
+
+struct ChatManagerKey: EnvironmentKey {
+    static let defaultValue: ChatManager? = nil
+}
+
+extension EnvironmentValues {
+    var chatManager: ChatManager? {
+        get { self[ChatManagerKey.self] }
+        set { self[ChatManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - HabitManager Environment Key
+
+struct HabitManagerKey: EnvironmentKey {
+    static let defaultValue: HabitManager? = nil
+}
+
+extension EnvironmentValues {
+    var habitManager: HabitManager? {
+        get { self[HabitManagerKey.self] }
+        set { self[HabitManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - CheckInBehaviorEngine Environment Key
+
+struct CheckInBehaviorEngineKey: EnvironmentKey {
+    static let defaultValue: CheckInBehaviorEngine? = nil
+}
+
+extension EnvironmentValues {
+    var checkInBehaviorEngine: CheckInBehaviorEngine? {
+        get { self[CheckInBehaviorEngineKey.self] }
+        set { self[CheckInBehaviorEngineKey.self] = newValue }
+    }
+}
+
+// MARK: - SubscriptionManager Environment Key
+
+struct SubscriptionManagerKey: EnvironmentKey {
+    @MainActor static let defaultValue: SubscriptionManager = SubscriptionManager()
+}
+
+extension EnvironmentValues {
+    var subscriptionManager: SubscriptionManager {
+        get { self[SubscriptionManagerKey.self] }
+        set { self[SubscriptionManagerKey.self] = newValue }
+    }
+}
+
 // MARK: - InsightEngine Environment Key
 
 struct InsightEngineKey: EnvironmentKey {

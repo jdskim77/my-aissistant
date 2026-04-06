@@ -25,7 +25,7 @@ struct SubscriptionView: View {
 
                 // Restore purchases
                 Button {
-                    Task { await subscriptionManager?.restore() }
+                    Task { await subscriptionManager.restore() }
                 } label: {
                     Text("Restore Purchases")
                         .font(AppFonts.body(14))
@@ -34,7 +34,7 @@ struct SubscriptionView: View {
                 .padding(.top, 8)
 
                 // Error message
-                if let error = subscriptionManager?.lastError {
+                if let error = subscriptionManager.lastError {
                     Text(error)
                         .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.coral)
@@ -64,7 +64,7 @@ struct SubscriptionView: View {
         .navigationTitle("Subscription")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await subscriptionManager?.loadProducts()
+            await subscriptionManager.loadProducts()
         }
     }
 
@@ -168,12 +168,12 @@ struct SubscriptionView: View {
                     .padding(.vertical, 12)
                     .background(AppColors.accentWarm.opacity(0.1))
                     .cornerRadius(10)
-            } else if let productID, let product = subscriptionManager?.product(for: productID) {
+            } else if let productID, let product = subscriptionManager.product(for: productID) {
                 Button {
-                    Task { _ = await subscriptionManager?.purchase(product) }
+                    Task { _ = await subscriptionManager.purchase(product) }
                 } label: {
                     HStack {
-                        if subscriptionManager?.purchaseInProgress == true {
+                        if subscriptionManager.purchaseInProgress {
                             ProgressView()
                                 .scaleEffect(0.8)
                                 .tint(.white)
@@ -187,7 +187,7 @@ struct SubscriptionView: View {
                     .background(AppColors.accent)
                     .cornerRadius(10)
                 }
-                .disabled(subscriptionManager?.purchaseInProgress == true)
+                .disabled(subscriptionManager.purchaseInProgress)
             } else {
                 Text("Subscribe")
                     .font(AppFonts.bodyMedium(15))

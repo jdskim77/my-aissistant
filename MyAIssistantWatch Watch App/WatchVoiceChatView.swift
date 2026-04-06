@@ -257,10 +257,9 @@ struct WatchVoiceChatView: View {
             .navigationTitle("Ask AI")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // Auto-focus triggers watchOS system text input (dictation / scribble)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    isInputFocused = true
-                }
+                // Don't auto-focus — let the user tap the TextField so watchOS
+                // presents its input method picker (dictation / scribble / keyboard).
+                // Auto-focusing skips the picker and goes straight to scribble.
             }
         }
     }
@@ -314,8 +313,9 @@ struct WatchVoiceChatView: View {
 
     // MARK: - Dictation
 
-    /// Opens the text input sheet with auto-focus so watchOS presents
-    /// its system dictation / scribble interface immediately.
+    /// Opens the text input sheet. On watchOS, tapping into the TextField
+    /// presents the system input method picker (dictation / scribble / keyboard).
+    /// We delay focus slightly to ensure the picker appears reliably.
     private func startDictation() {
         textInputValue = ""
         showingTextInput = true
@@ -356,7 +356,11 @@ struct WatchVoiceChatView: View {
                     isProcessing = false
                     parseAndExecuteActions(from: response, userQuery: text)
                     speakResponse(response)
-                    WKInterfaceDevice.current().play(.success)
+                    // Only play success haptic if no action was performed
+                    // (action-performing paths play their own haptic)
+                    if actionPerformed == nil {
+                        WKInterfaceDevice.current().play(.click)
+                    }
                 }
             } catch is CancellationError {
                 // Dismissed or replaced
@@ -405,16 +409,23 @@ struct WatchVoiceChatView: View {
 
     /// Detects whether the query is an intent to add a task, event, or calendar item.
     private func detectsAddIntent(_ lowerQuery: String) -> Bool {
-        let addVerbs = ["add", "create", "schedule", "set up", "put", "remind", "remember", "new", "make"]
         let targetNouns = ["task", "reminder", "todo", "to-do", "to do", "event", "meeting",
                            "appointment", "calendar", "call", "session"]
 
-        let hasVerb = addVerbs.contains { lowerQuery.contains($0) }
+        // Word-boundary verb check to avoid matching "address", "badder", etc.
+        let words = Set(lowerQuery.split(separator: " ").map(String.init))
+        let addVerbs: Set<String> = ["add", "create", "schedule", "put", "remind", "remember", "new", "make", "book"]
+        let hasVerb = !words.isDisjoint(with: addVerbs)
         let hasNoun = targetNouns.contains { lowerQuery.contains($0) }
 
-        // "add X" without a noun is also valid: "add call dentist"
-        if lowerQuery.hasPrefix("add ") || lowerQuery.hasPrefix("schedule ") ||
-           lowerQuery.hasPrefix("remind me ") || lowerQuery.hasPrefix("remember to ") {
+        // Common natural-language prefix patterns
+        let prefixPatterns = [
+            "add ", "schedule ", "remind me ", "remember to ",
+            "set up ", "create ", "book ", "put ", "make ",
+            "can you add", "please add", "i need to add",
+            "i want to add", "could you add"
+        ]
+        if prefixPatterns.contains(where: { lowerQuery.hasPrefix($0) || lowerQuery.contains($0) }) {
             return true
         }
 
@@ -427,12 +438,14 @@ struct WatchVoiceChatView: View {
 
         // Strip leading prefixes to isolate the title + time portion
         let prefixes = [
+            "can you add ", "please add ", "i need to add ", "i want to add ", "could you add ",
             "add a task to ", "add a task ", "add task ", "add a reminder to ",
             "add a reminder ", "add reminder ", "add a todo ", "add todo ",
             "add a to-do ", "add to-do ", "create a task ", "create task ",
             "create a reminder ", "create an event ", "create event ",
             "schedule a ", "schedule an ", "schedule ",
             "set up a ", "set up an ", "set up ",
+            "book a ", "book an ", "book ",
             "put ", "make a ", "make an ",
             "remind me to ", "remember to ",
             "add a ", "add an ", "add "

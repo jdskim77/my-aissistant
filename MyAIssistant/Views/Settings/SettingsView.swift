@@ -268,17 +268,7 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 4)
 
-                    HStack {
-                        Text("Version")
-                            .font(AppFonts.body(15))
-                            .foregroundColor(AppColors.textPrimary)
-                        Spacer()
-                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                            .font(AppFonts.body(15))
-                            .foregroundColor(AppColors.textMuted)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         versionTapCount += 1
                         if versionTapCount >= 7 {
                             versionTapCount = 0
@@ -286,7 +276,18 @@ struct SettingsView: View {
                             UserDefaults.standard.set(!current, forKey: AppConstants.developerModeKey)
                             showDeveloperModeAlert = true
                         }
+                    } label: {
+                        HStack {
+                            Text("Version")
+                                .font(AppFonts.body(15))
+                                .foregroundColor(AppColors.textPrimary)
+                            Spacer()
+                            Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                                .font(AppFonts.body(15))
+                                .foregroundColor(AppColors.textMuted)
+                        }
                     }
+                    .buttonStyle(.plain)
 
                     if AppConstants.isDeveloperMode {
                         HStack {
