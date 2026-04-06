@@ -30,16 +30,14 @@ final class NotificationManager {
     // MARK: - Check-in Reminders
 
     /// Schedule reminders using persisted preferences (adaptive system).
-    func scheduleCheckInReminders(preferences: [CheckInPreference]) {
+    /// Static because it only talks to the UNUserNotificationCenter singleton.
+    static func scheduleCheckInReminders(preferences: [CheckInPreference]) {
         let center = UNUserNotificationCenter.current()
 
-        // Remove ALL existing check-in notifications (default + custom)
-        center.getPendingNotificationRequests { requests in
-            let checkInIDs = requests
-                .filter { $0.identifier.hasPrefix("checkin-") }
-                .map(\.identifier)
-            center.removePendingNotificationRequests(withIdentifiers: checkInIDs)
-        }
+        // Remove all known check-in notifications deterministically
+        let defaultIDs = CheckInTime.allCases.map { "checkin-\($0.rawValue)" }
+        let prefIDs = preferences.map { "checkin-\($0.windowRaw)" }
+        center.removePendingNotificationRequests(withIdentifiers: defaultIDs + prefIDs)
 
         for pref in preferences where pref.isEnabled {
             let checkInTime = pref.checkInTime

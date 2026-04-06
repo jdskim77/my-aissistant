@@ -1,62 +1,747 @@
 [
-  {"text": "The secret of getting ahead is getting started.", "author": "Mark Twain", "category": "productivity"},
-  {"text": "It is not that we have a short time to live, but that we waste a good deal of it.", "author": "Seneca", "category": "stoic"},
-  {"text": "You do not rise to the level of your goals. You fall to the level of your systems.", "author": "James Clear", "category": "productivity"},
-  {"text": "The best time to plant a tree was 20 years ago. The second best time is now.", "author": "Chinese Proverb", "category": "wisdom"},
-  {"text": "We suffer more often in imagination than in reality.", "author": "Seneca", "category": "stoic"},
-  {"text": "A journey of a thousand miles begins with a single step.", "author": "Lao Tzu", "category": "wisdom"},
-  {"text": "How long are you going to wait before you demand the best for yourself?", "author": "Epictetus", "category": "stoic"},
-  {"text": "Focus on being productive instead of busy.", "author": "Tim Ferriss", "category": "productivity"},
-  {"text": "The obstacle is the way.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "What we fear doing most is usually what we most need to do.", "author": "Tim Ferriss", "category": "productivity"},
-  {"text": "He who has a why to live can bear almost any how.", "author": "Friedrich Nietzsche", "category": "wisdom"},
-  {"text": "Waste no more time arguing about what a good man should be. Be one.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "The only way to do great work is to love what you do.", "author": "Steve Jobs", "category": "productivity"},
-  {"text": "If you are depressed you are living in the past. If you are anxious you are living in the future. If you are at peace you are living in the present.", "author": "Lao Tzu", "category": "mindfulness"},
-  {"text": "Begin at once to live, and count each separate day as a separate life.", "author": "Seneca", "category": "stoic"},
-  {"text": "Small daily improvements over time lead to stunning results.", "author": "Robin Sharma", "category": "productivity"},
-  {"text": "The mind is everything. What you think you become.", "author": "Buddha", "category": "mindfulness"},
-  {"text": "Discipline equals freedom.", "author": "Jocko Willink", "category": "productivity"},
-  {"text": "No man is free who is not master of himself.", "author": "Epictetus", "category": "stoic"},
-  {"text": "Done is better than perfect.", "author": "Sheryl Sandberg", "category": "productivity"},
-  {"text": "Knowing yourself is the beginning of all wisdom.", "author": "Aristotle", "category": "wisdom"},
-  {"text": "The happiness of your life depends upon the quality of your thoughts.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "Action is the foundational key to all success.", "author": "Pablo Picasso", "category": "productivity"},
-  {"text": "Be tolerant with others and strict with yourself.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "The wise man does at once what the fool does finally.", "author": "Niccolo Machiavelli", "category": "wisdom"},
-  {"text": "Your time is limited, so don't waste it living someone else's life.", "author": "Steve Jobs", "category": "wisdom"},
-  {"text": "First say to yourself what you would be; and then do what you have to do.", "author": "Epictetus", "category": "stoic"},
-  {"text": "Simplicity is the ultimate sophistication.", "author": "Leonardo da Vinci", "category": "wisdom"},
-  {"text": "What stands in the way becomes the way.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "Until we can manage time, we can manage nothing else.", "author": "Peter Drucker", "category": "productivity"},
-  {"text": "If you want to lift yourself up, lift up someone else.", "author": "Booker T. Washington", "category": "wisdom"},
-  {"text": "It does not matter how slowly you go as long as you do not stop.", "author": "Confucius", "category": "wisdom"},
-  {"text": "The key is not to prioritize what's on your schedule, but to schedule your priorities.", "author": "Stephen Covey", "category": "productivity"},
-  {"text": "Luck is what happens when preparation meets opportunity.", "author": "Seneca", "category": "stoic"},
-  {"text": "Well-being is realized by small steps, but is truly no small thing.", "author": "Zeno of Citium", "category": "stoic"},
-  {"text": "You are what you repeatedly do. Excellence, then, is not an act, but a habit.", "author": "Will Durant", "category": "productivity"},
-  {"text": "The present moment is filled with joy and happiness. If you are attentive, you will see it.", "author": "Thich Nhat Hanh", "category": "mindfulness"},
-  {"text": "An unexamined life is not worth living.", "author": "Socrates", "category": "wisdom"},
-  {"text": "We are what we repeatedly do. Excellence is not an act, but a habit.", "author": "Aristotle", "category": "productivity"},
-  {"text": "Very little is needed to make a happy life; it is all within yourself, in your way of thinking.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "The only person you are destined to become is the person you decide to be.", "author": "Ralph Waldo Emerson", "category": "wisdom"},
-  {"text": "When you arise in the morning, think of what a precious privilege it is to be alive.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "Energy and persistence conquer all things.", "author": "Benjamin Franklin", "category": "productivity"},
-  {"text": "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", "author": "Ralph Waldo Emerson", "category": "wisdom"},
-  {"text": "Perfection is not attainable, but if we chase perfection we can catch excellence.", "author": "Vince Lombardi", "category": "productivity"},
-  {"text": "Peace comes from within. Do not seek it without.", "author": "Buddha", "category": "mindfulness"},
-  {"text": "Choose not to be harmed and you won't feel harmed. Don't feel harmed and you haven't been.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "Success is not final, failure is not fatal: it is the courage to continue that counts.", "author": "Winston Churchill", "category": "wisdom"},
-  {"text": "The more I accomplish, the more I realize that time is the most valuable commodity.", "author": "Elon Musk", "category": "productivity"},
-  {"text": "Nothing endures but change.", "author": "Heraclitus", "category": "wisdom"},
-  {"text": "The whole future lies in uncertainty: live immediately.", "author": "Seneca", "category": "stoic"},
-  {"text": "Be kind, for everyone you meet is fighting a hard battle.", "author": "Plato", "category": "wisdom"},
-  {"text": "What you get by achieving your goals is not as important as what you become by achieving your goals.", "author": "Zig Ziglar", "category": "productivity"},
-  {"text": "True happiness is to enjoy the present, without anxious dependence upon the future.", "author": "Seneca", "category": "stoic"},
-  {"text": "In the middle of difficulty lies opportunity.", "author": "Albert Einstein", "category": "wisdom"},
-  {"text": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "One day or day one. You decide.", "author": "Paulo Coelho", "category": "productivity"},
-  {"text": "Wherever you are, be all there.", "author": "Jim Elliot", "category": "mindfulness"},
-  {"text": "The soul becomes dyed with the color of its thoughts.", "author": "Marcus Aurelius", "category": "stoic"},
-  {"text": "Fall seven times, stand up eight.", "author": "Japanese Proverb", "category": "wisdom"}
+  {
+    "text": "Everything can be taken from a man but one thing: the last of the human freedoms — to choose one's attitude in any given set of circumstances.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Those who have a 'why' to live can bear with almost any 'how'.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "When we are no longer able to change a situation, we are challenged to change ourselves.",
+    "author": "Viktor Frankl",
+    "dimension": "mental"
+  },
+  {
+    "text": "Between stimulus and response there is a space. In that space is our power to choose our response.",
+    "author": "Viktor Frankl",
+    "dimension": "mental"
+  },
+  {
+    "text": "In some ways suffering ceases to be suffering at the moment it finds a meaning.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "What is to give light must endure burning.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Happiness cannot be pursued; it must ensue.",
+    "author": "Viktor Frankl",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Life is never made unbearable by circumstances, but only by lack of meaning and purpose.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "If there is meaning in life at all, then there must be meaning in suffering.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Love is the only way to grasp another human being in the innermost core of his personality.",
+    "author": "Viktor Frankl",
+    "dimension": "emotional"
+  },
+  {
+    "text": "It did not really matter what we expected from life, but rather what life expected from us.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The one thing you can't take away from me is the way I choose to respond to what you do to me.",
+    "author": "Viktor Frankl",
+    "dimension": "mental"
+  },
+  {
+    "text": "So live as if you were living already for the second time and as if you had acted the first time as wrongly as you are about to act now.",
+    "author": "Viktor Frankl",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "An abnormal reaction to an abnormal situation is normal behavior.",
+    "author": "Viktor Frankl",
+    "dimension": "emotional"
+  },
+  {
+    "text": "No man should judge unless he asks himself in absolute honesty whether in a similar situation he might not have done the same.",
+    "author": "Viktor Frankl",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Waste no more time arguing what a good man should be. Be one.",
+    "author": "Marcus Aurelius",
+    "dimension": "general"
+  },
+  {
+    "text": "You have power over your mind — not outside events. Realize this, and you will find strength.",
+    "author": "Marcus Aurelius",
+    "dimension": "mental"
+  },
+  {
+    "text": "The happiness of your life depends upon the quality of your thoughts.",
+    "author": "Marcus Aurelius",
+    "dimension": "mental"
+  },
+  {
+    "text": "Choose not to be harmed — and you won't feel harmed. Don't feel harmed — and you haven't been.",
+    "author": "Marcus Aurelius",
+    "dimension": "emotional"
+  },
+  {
+    "text": "When you arise in the morning, think of what a precious privilege it is to be alive.",
+    "author": "Marcus Aurelius",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The best revenge is not to be like your enemy.",
+    "author": "Marcus Aurelius",
+    "dimension": "emotional"
+  },
+  {
+    "text": "It is not death that a man should fear, but he should fear never beginning to live.",
+    "author": "Marcus Aurelius",
+    "dimension": "general"
+  },
+  {
+    "text": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.",
+    "author": "Marcus Aurelius",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Very little is needed to make a happy life; it is all within yourself, in your way of thinking.",
+    "author": "Marcus Aurelius",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Be tolerant with others and strict with yourself.",
+    "author": "Marcus Aurelius",
+    "dimension": "emotional"
+  },
+  {
+    "text": "We suffer more often in imagination than in reality.",
+    "author": "Seneca",
+    "dimension": "mental"
+  },
+  {
+    "text": "Difficulties strengthen the mind, as labor does the body.",
+    "author": "Seneca",
+    "dimension": "mental"
+  },
+  {
+    "text": "True happiness is to enjoy the present, without anxious dependence upon the future.",
+    "author": "Seneca",
+    "dimension": "emotional"
+  },
+  {
+    "text": "As long as you live, keep learning how to live.",
+    "author": "Seneca",
+    "dimension": "mental"
+  },
+  {
+    "text": "If a man knows not which port he sails, no wind is favorable.",
+    "author": "Seneca",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "He who fears death will never do anything worthy of a man who is alive.",
+    "author": "Seneca",
+    "dimension": "general"
+  },
+  {
+    "text": "The whole future lies in uncertainty: live immediately.",
+    "author": "Seneca",
+    "dimension": "general"
+  },
+  {
+    "text": "It's not what happens to you, but how you react to it that matters.",
+    "author": "Epictetus",
+    "dimension": "mental"
+  },
+  {
+    "text": "How long are you going to wait before you demand the best for yourself?",
+    "author": "Epictetus",
+    "dimension": "general"
+  },
+  {
+    "text": "Don't explain your philosophy. Embody it.",
+    "author": "Epictetus",
+    "dimension": "general"
+  },
+  {
+    "text": "First say to yourself what you would be; and then do what you have to do.",
+    "author": "Epictetus",
+    "dimension": "general"
+  },
+  {
+    "text": "No man is free who is not master of himself.",
+    "author": "Epictetus",
+    "dimension": "mental"
+  },
+  {
+    "text": "No matter what your ability is, effort is what ignites that ability and turns it into accomplishment.",
+    "author": "Carol Dweck",
+    "dimension": "mental"
+  },
+  {
+    "text": "Becoming is better than being.",
+    "author": "Carol Dweck",
+    "dimension": "mental"
+  },
+  {
+    "text": "In a growth mindset, challenges are exciting rather than threatening.",
+    "author": "Carol Dweck",
+    "dimension": "mental"
+  },
+  {
+    "text": "Failure is information — we label it failure, but it's more like, 'This didn't work, and I'll try something else.'",
+    "author": "Carol Dweck",
+    "dimension": "mental"
+  },
+  {
+    "text": "The hallmark of successful people is that they are always stretching themselves to learn new things.",
+    "author": "Carol Dweck",
+    "dimension": "mental"
+  },
+  {
+    "text": "Without effort, your talent is nothing more than your unmet potential.",
+    "author": "Angela Duckworth",
+    "dimension": "general"
+  },
+  {
+    "text": "Grit is about working on something you care about so much that you're willing to stay loyal to it.",
+    "author": "Angela Duckworth",
+    "dimension": "general"
+  },
+  {
+    "text": "Greatness is many, many individual feats, and each of them is doable.",
+    "author": "Angela Duckworth",
+    "dimension": "general"
+  },
+  {
+    "text": "Enthusiasm is common. Endurance is rare.",
+    "author": "Angela Duckworth",
+    "dimension": "general"
+  },
+  {
+    "text": "Grit depends on a different kind of hope. It rests on the expectation that our own efforts can improve our future.",
+    "author": "Angela Duckworth",
+    "dimension": "mental"
+  },
+  {
+    "text": "Vulnerability is not winning or losing; it's having the courage to show up when you can't control the outcome.",
+    "author": "Brene Brown",
+    "dimension": "emotional"
+  },
+  {
+    "text": "We are biologically, cognitively, physically, and spiritually wired to love, to be loved, and to belong.",
+    "author": "Brene Brown",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Owning our story and loving ourselves through that process is the bravest thing that we will ever do.",
+    "author": "Brene Brown",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Talk to yourself like somebody you love.",
+    "author": "Brene Brown",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Courage starts with showing up and letting ourselves be seen.",
+    "author": "Brene Brown",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Physical fitness is not only one of the most important keys to a healthy body; it is the basis of dynamic and creative intellectual activity.",
+    "author": "John F. Kennedy",
+    "dimension": "physical"
+  },
+  {
+    "text": "Take care of your body. It's the only place you have to live.",
+    "author": "Jim Rohn",
+    "dimension": "physical"
+  },
+  {
+    "text": "The body achieves what the mind believes.",
+    "author": "Napoleon Hill",
+    "dimension": "physical"
+  },
+  {
+    "text": "I don't stop when I'm tired. I stop when I'm done.",
+    "author": "David Goggins",
+    "dimension": "physical"
+  },
+  {
+    "text": "Don't count the days, make the days count.",
+    "author": "Muhammad Ali",
+    "dimension": "physical"
+  },
+  {
+    "text": "Discipline is the bridge between goals and accomplishment.",
+    "author": "Jim Rohn",
+    "dimension": "physical"
+  },
+  {
+    "text": "The human body is the best picture of the human soul.",
+    "author": "Ludwig Wittgenstein",
+    "dimension": "physical"
+  },
+  {
+    "text": "Movement is a medicine for creating change in a person's physical, emotional, and mental states.",
+    "author": "Carol Welch",
+    "dimension": "physical"
+  },
+  {
+    "text": "Your body hears everything your mind says. Stay positive.",
+    "author": "Naomi Judd",
+    "dimension": "physical"
+  },
+  {
+    "text": "A healthy outside starts from the inside.",
+    "author": "Robert Urich",
+    "dimension": "physical"
+  },
+  {
+    "text": "To keep the body in good health is a duty, otherwise we shall not be able to keep the mind strong and clear.",
+    "author": "Buddha",
+    "dimension": "physical"
+  },
+  {
+    "text": "You don't have to be extreme, just consistent.",
+    "author": "Anonymous",
+    "dimension": "physical"
+  },
+  {
+    "text": "Strength does not come from physical capacity. It comes from an indomitable will.",
+    "author": "Mahatma Gandhi",
+    "dimension": "physical"
+  },
+  {
+    "text": "Exercise is king and nutrition is queen. Together you have a kingdom.",
+    "author": "Jack LaLanne",
+    "dimension": "physical"
+  },
+  {
+    "text": "The resistance that you fight physically in the gym and the resistance that you fight in life can only build a strong character.",
+    "author": "Arnold Schwarzenegger",
+    "dimension": "physical"
+  },
+  {
+    "text": "Sleep is the best meditation.",
+    "author": "Dalai Lama",
+    "dimension": "physical"
+  },
+  {
+    "text": "Sleep is not an optional lifestyle luxury. It is a non-negotiable biological necessity.",
+    "author": "Matthew Walker",
+    "dimension": "physical"
+  },
+  {
+    "text": "The best bridge between despair and hope is a good night's sleep.",
+    "author": "E. Joseph Cossman",
+    "dimension": "physical"
+  },
+  {
+    "text": "It is health that is real wealth, and not pieces of gold and silver.",
+    "author": "Mahatma Gandhi",
+    "dimension": "physical"
+  },
+  {
+    "text": "Walking is man's best medicine.",
+    "author": "Hippocrates",
+    "dimension": "physical"
+  },
+  {
+    "text": "The groundwork for all happiness is good health.",
+    "author": "Leigh Hunt",
+    "dimension": "physical"
+  },
+  {
+    "text": "A reader lives a thousand lives before he dies. The man who never reads lives only one.",
+    "author": "George R.R. Martin",
+    "dimension": "mental"
+  },
+  {
+    "text": "The mind is everything. What you think you become.",
+    "author": "Buddha",
+    "dimension": "mental"
+  },
+  {
+    "text": "An investment in knowledge pays the best interest.",
+    "author": "Benjamin Franklin",
+    "dimension": "mental"
+  },
+  {
+    "text": "The more that you read, the more things you will know. The more that you learn, the more places you'll go.",
+    "author": "Dr. Seuss",
+    "dimension": "mental"
+  },
+  {
+    "text": "Knowing yourself is the beginning of all wisdom.",
+    "author": "Aristotle",
+    "dimension": "mental"
+  },
+  {
+    "text": "Live as if you were to die tomorrow. Learn as if you were to live forever.",
+    "author": "Mahatma Gandhi",
+    "dimension": "mental"
+  },
+  {
+    "text": "The only true wisdom is in knowing you know nothing.",
+    "author": "Socrates",
+    "dimension": "mental"
+  },
+  {
+    "text": "Education is the most powerful weapon which you can use to change the world.",
+    "author": "Nelson Mandela",
+    "dimension": "mental"
+  },
+  {
+    "text": "Intellectual growth should commence at birth and cease only at death.",
+    "author": "Albert Einstein",
+    "dimension": "mental"
+  },
+  {
+    "text": "In the middle of difficulty lies opportunity.",
+    "author": "Albert Einstein",
+    "dimension": "mental"
+  },
+  {
+    "text": "An unexamined life is not worth living.",
+    "author": "Socrates",
+    "dimension": "mental"
+  },
+  {
+    "text": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "dimension": "mental"
+  },
+  {
+    "text": "It does not matter how slowly you go as long as you do not stop.",
+    "author": "Confucius",
+    "dimension": "mental"
+  },
+  {
+    "text": "I have no special talents. I am only passionately curious.",
+    "author": "Albert Einstein",
+    "dimension": "mental"
+  },
+  {
+    "text": "Our bodies are our gardens, to the which our wills are gardeners.",
+    "author": "William Shakespeare",
+    "dimension": "physical"
+  },
+  {
+    "text": "The first wealth is health.",
+    "author": "Ralph Waldo Emerson",
+    "dimension": "physical"
+  },
+  {
+    "text": "Those who think they have not time for bodily exercise will sooner or later have to find time for illness.",
+    "author": "Edward Stanley",
+    "dimension": "physical"
+  },
+  {
+    "text": "Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit. Then get back to work.",
+    "author": "Ralph Marston",
+    "dimension": "physical"
+  },
+  {
+    "text": "True enjoyment comes from activity of the mind and exercise of the body; the two are ever united.",
+    "author": "Wilhelm von Humboldt",
+    "dimension": "physical"
+  },
+  {
+    "text": "Health is not valued until sickness comes.",
+    "author": "Thomas Fuller",
+    "dimension": "physical"
+  },
+  {
+    "text": "The greatest wealth is health.",
+    "author": "Virgil",
+    "dimension": "physical"
+  },
+  {
+    "text": "A fit body, a calm mind, a house full of love. These things cannot be bought — they must be earned.",
+    "author": "Naval Ravikant",
+    "dimension": "physical"
+  },
+  {
+    "text": "People do not decide their futures. They decide their habits, and their habits decide their futures.",
+    "author": "F.M. Alexander",
+    "dimension": "general"
+  },
+  {
+    "text": "The people who are crazy enough to think they can change the world are the ones who do.",
+    "author": "Steve Jobs",
+    "dimension": "general"
+  },
+  {
+    "text": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "author": "Winston Churchill",
+    "dimension": "general"
+  },
+  {
+    "text": "It always seems impossible until it's done.",
+    "author": "Nelson Mandela",
+    "dimension": "general"
+  },
+  {
+    "text": "The secret of getting ahead is getting started.",
+    "author": "Mark Twain",
+    "dimension": "general"
+  },
+  {
+    "text": "You do not rise to the level of your goals. You fall to the level of your systems.",
+    "author": "James Clear",
+    "dimension": "general"
+  },
+  {
+    "text": "The best time to plant a tree was 20 years ago. The second best time is now.",
+    "author": "Chinese Proverb",
+    "dimension": "general"
+  },
+  {
+    "text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+    "author": "Will Durant",
+    "dimension": "general"
+  },
+  {
+    "text": "Fall seven times, stand up eight.",
+    "author": "Japanese Proverb",
+    "dimension": "general"
+  },
+  {
+    "text": "The only person you are destined to become is the person you decide to be.",
+    "author": "Ralph Waldo Emerson",
+    "dimension": "general"
+  },
+  {
+    "text": "A journey of a thousand miles begins with a single step.",
+    "author": "Lao Tzu",
+    "dimension": "general"
+  },
+  {
+    "text": "Darkness cannot drive out darkness; only light can do that. Hate cannot drive out hate; only love can do that.",
+    "author": "Martin Luther King Jr.",
+    "dimension": "emotional"
+  },
+  {
+    "text": "People will forget what you said, people will forget what you did, but people will never forget how you made them feel.",
+    "author": "Maya Angelou",
+    "dimension": "emotional"
+  },
+  {
+    "text": "If you don't love yourself, how in the hell you gonna love somebody else?",
+    "author": "Maya Angelou",
+    "dimension": "emotional"
+  },
+  {
+    "text": "There is no greater agony than bearing an untold story inside you.",
+    "author": "Maya Angelou",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Be kind, for everyone you meet is fighting a hard battle.",
+    "author": "Plato",
+    "dimension": "emotional"
+  },
+  {
+    "text": "The wound is the place where the light enters you.",
+    "author": "Rumi",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Your task is not to seek for love, but merely to seek and find all the barriers within yourself that you have built against it.",
+    "author": "Rumi",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Do not feel lonely, the entire universe is inside you.",
+    "author": "Rumi",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Set your life on fire. Seek those who fan your flames.",
+    "author": "Rumi",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Let yourself be silently drawn by the strange pull of what you really love. It will not lead you astray.",
+    "author": "Rumi",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Gratitude unlocks the fullness of life. It turns what we have into enough.",
+    "author": "Melody Beattie",
+    "dimension": "emotional"
+  },
+  {
+    "text": "The greatest gift you can give someone is your time, your attention, your love, your concern.",
+    "author": "Joel Osteen",
+    "dimension": "emotional"
+  },
+  {
+    "text": "We don't see things as they are, we see them as we are.",
+    "author": "Anais Nin",
+    "dimension": "emotional"
+  },
+  {
+    "text": "If you want to lift yourself up, lift up someone else.",
+    "author": "Booker T. Washington",
+    "dimension": "emotional"
+  },
+  {
+    "text": "Forgiveness is the attribute of the strong.",
+    "author": "Mahatma Gandhi",
+    "dimension": "emotional"
+  },
+  {
+    "text": "The most precious gift we can offer anyone is our attention.",
+    "author": "Thich Nhat Hanh",
+    "dimension": "emotional"
+  },
+  {
+    "text": "We must learn to live together as brothers or perish together as fools.",
+    "author": "Martin Luther King Jr.",
+    "dimension": "emotional"
+  },
+  {
+    "text": "The best way to find yourself is to lose yourself in the service of others.",
+    "author": "Mahatma Gandhi",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "If you want others to be happy, practice compassion. If you want to be happy, practice compassion.",
+    "author": "Dalai Lama",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Be kind whenever possible. It is always possible.",
+    "author": "Dalai Lama",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Walk as if you are kissing the Earth with your feet.",
+    "author": "Thich Nhat Hanh",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The present moment is filled with joy and happiness. If you are attentive, you will see it.",
+    "author": "Thich Nhat Hanh",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Peace comes from within. Do not seek it without.",
+    "author": "Buddha",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Look deep into nature, and then you will understand everything better.",
+    "author": "Albert Einstein",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "In every walk with nature one receives far more than he seeks.",
+    "author": "John Muir",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Keep close to Nature's heart and break clear away, once in a while. Wash your spirit clean.",
+    "author": "John Muir",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The meaning of life is to find your gift. The purpose of life is to give it away.",
+    "author": "Pablo Picasso",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "You are not a drop in the ocean. You are the entire ocean in a drop.",
+    "author": "Rumi",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The goal of life is to make your heartbeat match the beat of the universe, to match your nature with nature.",
+    "author": "Joseph Campbell",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Wherever you are, be all there.",
+    "author": "Jim Elliot",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "You must be the change you wish to see in the world.",
+    "author": "Mahatma Gandhi",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "There is something infinitely healing in the repeated refrains of nature — the assurance that dawn comes after night, and spring after winter.",
+    "author": "Rachel Carson",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Nothing binds you except your thoughts; nothing limits you except your fear; nothing controls you except your beliefs.",
+    "author": "Marianne Williamson",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "The privilege of a lifetime is being who you are.",
+    "author": "Joseph Campbell",
+    "dimension": "spiritual"
+  },
+  {
+    "text": "Simplicity is the ultimate sophistication.",
+    "author": "Leonardo da Vinci",
+    "dimension": "general"
+  },
+  {
+    "text": "Your time is limited, so don't waste it living someone else's life.",
+    "author": "Steve Jobs",
+    "dimension": "general"
+  },
+  {
+    "text": "What you get by achieving your goals is not as important as what you become by achieving your goals.",
+    "author": "Zig Ziglar",
+    "dimension": "general"
+  },
+  {
+    "text": "The only way to do great work is to love what you do.",
+    "author": "Steve Jobs",
+    "dimension": "general"
+  },
+  {
+    "text": "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.",
+    "author": "Ralph Waldo Emerson",
+    "dimension": "general"
+  },
+  {
+    "text": "Energy and persistence conquer all things.",
+    "author": "Benjamin Franklin",
+    "dimension": "general"
+  },
+  {
+    "text": "Discipline equals freedom.",
+    "author": "Jocko Willink",
+    "dimension": "general"
+  },
+  {
+    "text": "Nothing endures but change.",
+    "author": "Heraclitus",
+    "dimension": "general"
+  },
+  {
+    "text": "One day or day one. You decide.",
+    "author": "Paulo Coelho",
+    "dimension": "general"
+  }
 ]

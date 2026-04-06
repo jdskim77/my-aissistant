@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class CheckInPreference {
-    var id: String
-    var windowRaw: String
-    var isEnabled: Bool
-    var customHour: Int
-    var customMinute: Int
+    var id: String = UUID().uuidString
+    var windowRaw: String = ""
+    var isEnabled: Bool = true
+    var customHour: Int = 8
+    var customMinute: Int = 0
     var customTitle: String?
-    var isSystemGenerated: Bool
-    var createdAt: Date
+    var isSystemGenerated: Bool = true
+    var createdAt: Date = Date()
 
     @Transient
     var checkInTime: CheckInTime? {
@@ -25,24 +25,12 @@ final class CheckInPreference {
         checkInTime?.icon ?? "⏰"
     }
 
-    var displayColor: String {
-        switch checkInTime {
-        case .morning: return "FF9500"
-        case .midday: return "34C759"
-        case .afternoon: return "007AFF"
-        case .night: return "5856D6"
-        case nil: return "8E8E93"
-        }
-    }
-
     var scheduledTimeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
         var components = DateComponents()
         components.hour = customHour
         components.minute = customMinute
         let date = Calendar.current.date(from: components) ?? Date()
-        return formatter.string(from: date)
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
     init(

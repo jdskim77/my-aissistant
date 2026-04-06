@@ -133,29 +133,30 @@ final class CheckInBehaviorEngine {
 
     private func calculateConsecutiveSkips(windowRaw: String, from startDate: Date) -> Int {
         let calendar = Calendar.current
+        let windowStart = calendar.date(byAdding: .day, value: -AppConstants.behaviorWindowDays, to: startDate)!
+
+        // Single fetch: all completed check-ins for this window in the rolling period
+        let descriptor = FetchDescriptor<CheckInRecord>(
+            predicate: #Predicate { record in
+                record.timeSlotRaw == windowRaw &&
+                record.completed == true &&
+                record.date >= windowStart
+            }
+        )
+        let records = (try? modelContext.fetch(descriptor)) ?? []
+
+        // Build set of days that had completions
+        let completedDays = Set(records.map { calendar.startOfDay(for: $0.date) })
+
+        // Count backward from startDate until we hit a day with a completion
         var skips = 0
         var checkDate = startDate
-
         for _ in 0..<AppConstants.behaviorWindowDays {
-            let dayStart = calendar.startOfDay(for: checkDate)
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
-
-            let descriptor = FetchDescriptor<CheckInRecord>(
-                predicate: #Predicate { record in
-                    record.timeSlotRaw == windowRaw &&
-                    record.completed == true &&
-                    record.date >= dayStart &&
-                    record.date < dayEnd
-                }
-            )
-            let count = (try? modelContext.fetchCount(descriptor)) ?? 0
-
-            if count == 0 {
-                skips += 1
-            } else {
+            let day = calendar.startOfDay(for: checkDate)
+            if completedDays.contains(day) {
                 break
             }
-
+            skips += 1
             checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
         }
 
@@ -366,14 +367,14 @@ final class CheckInBehaviorEngine {
             }
         }
 
-        suggestion.status = .accepted
+        suggestion.statusRaw = SuggestionStatus.accepted.rawValue
         modelContext.safeSave()
         activeSuggestion = nil
         syncWidgetData()
     }
 
     func dismissSuggestion(_ suggestion: CheckInSuggestion) {
-        suggestion.status = .dismissed
+        suggestion.statusRaw = SuggestionStatus.dismissed.rawValue
         suggestion.dismissedUntil = Calendar.current.date(
             byAdding: .day,
             value: AppConstants.suggestionCooldownDays,
@@ -425,6 +426,7 @@ final class CheckInBehaviorEngine {
             WidgetCheckInWindow(
                 name: pref.displayTitle,
                 hour: pref.customHour,
+                minute: pref.customMinute,
                 greeting: pref.checkInTime?.greeting ?? "Time for a check-in!"
             )
         }

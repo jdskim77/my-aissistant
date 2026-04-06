@@ -5,44 +5,40 @@ import UserNotifications
 @main
 struct MyAIssistantApp: App {
     let modelContainer: ModelContainer
-    @State private var showDatabaseRecoveryAlert = false
     @State private var taskManager: TaskManager
     @State private var patternEngine: PatternEngine
     @State private var checkInManager: CheckInManager
     @State private var calendarSyncManager: CalendarSyncManager
     @State private var usageGateManager: UsageGateManager
-    @State private var balanceManager: BalanceManager
-    @State private var chatManager: ChatManager
-    @State private var habitManager: HabitManager
-    @State private var checkInBehaviorEngine: CheckInBehaviorEngine
-    @State private var subscriptionManager = SubscriptionManager()
+    @State private var wisdomManager: WisdomManager
+    @StateObject private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
+        let schema = Schema(versionedSchema: SchemaV1.self)
+        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false)
         let container: ModelContainer
-
-        // Attempt 1: CloudKit-synced store
-        if let cloud = Self.createCloudContainer() {
-            container = cloud
-        }
-        // Attempt 2: Local-only single store (no CloudKit — graceful degradation)
-        else if let local = Self.createLocalOnlyContainer() {
-            #if DEBUG
-            print("[DB Recovery] CloudKit container failed, using local-only storage")
-            #endif
-            UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
-            container = local
-        }
-        // Attempt 3: In-memory fallback (data won't persist)
-        else {
-            #if DEBUG
-            print("[DB Recovery] All persistent containers failed, using in-memory")
-            #endif
-            UserDefaults.standard.set(true, forKey: "databaseRecoveryOccurred")
-            container = Self.createInMemoryContainer()
+        do {
+            container = try ModelContainer(
+                for: schema,
+                migrationPlan: MyAIssistantMigrationPlan.self,
+                configurations: [config]
+            )
+        } catch {
+            // Database corrupted — delete and recreate to prevent permanent launch crash
+            let storeURL = config.url
+            try? FileManager.default.removeItem(at: storeURL)
+            // Also remove WAL/SHM sidecar files
+            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+            try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+            container = (try? ModelContainer(
+                for: schema,
+                migrationPlan: MyAIssistantMigrationPlan.self,
+                configurations: [config]
+            )) ?? ModelContainer.fallbackInMemory(schema: schema)
         }
 
         self.modelContainer = container
@@ -56,25 +52,13 @@ struct MyAIssistantApp: App {
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
         self._calendarSyncManager = State(initialValue: csm)
         self._usageGateManager = State(initialValue: UsageGateManager(modelContext: context))
-        self._balanceManager = State(initialValue: BalanceManager(modelContext: context))
-        self._habitManager = State(initialValue: HabitManager(modelContext: context))
-
-        let cbe = CheckInBehaviorEngine(modelContext: context)
-        self._checkInBehaviorEngine = State(initialValue: cbe)
-
-        let cm = ChatManager(modelContext: context)
-        cm.taskManager = tm
-        cm.patternEngine = pe
-        cm.keychainService = keychainService
-        cm.calendarSyncManager = csm
-        self._chatManager = State(initialValue: cm)
+        self._wisdomManager = State(initialValue: WisdomManager(modelContext: context))
 
         // Background task manager
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
-            calendarSyncManager: csm,
-            checkInBehaviorEngine: cbe
+            calendarSyncManager: csm
         )
 
         // Register background tasks (must happen during init, before app finishes launching)
@@ -98,32 +82,14 @@ struct MyAIssistantApp: App {
                 .environment(\.checkInManager, checkInManager)
                 .environment(\.calendarSyncManager, calendarSyncManager)
                 .environment(\.usageGateManager, usageGateManager)
-                .environment(\.balanceManager, balanceManager)
-                .environment(\.chatManager, chatManager)
-                .environment(\.habitManager, habitManager)
-                .environment(\.checkInBehaviorEngine, checkInBehaviorEngine)
+                .environment(\.wisdomManager, wisdomManager)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
-                .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
-                .alert("Data Reset", isPresented: $showDatabaseRecoveryAlert) {
-                    Button("OK", role: .cancel) { }
-                } message: {
-                    Text("The app's database was reset due to an update. Your previous data has been backed up but a fresh start was needed. We apologize for the inconvenience.")
-                }
-                .onAppear {
-                    if UserDefaults.standard.bool(forKey: "databaseRecoveryOccurred") {
-                        showDatabaseRecoveryAlert = true
-                        UserDefaults.standard.set(false, forKey: "databaseRecoveryOccurred")
-                    }
-                }
+                .environmentObject(subscriptionManager)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
-
-                    // Seed default check-in preferences and recalculate behavior
-                    checkInBehaviorEngine.seedDefaultPreferencesIfNeeded()
-                    checkInBehaviorEngine.recalculateIfNeeded()
 
                     // Schedule background tasks
                     backgroundTaskManager?.scheduleDailySnapshot()
@@ -235,46 +201,15 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-// MARK: - ModelContainer Factory Methods
-
-extension MyAIssistantApp {
-    /// Single store with CloudKit sync for all models
-    static func createCloudContainer() -> ModelContainer? {
-        let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration(
-            "MyAIssistant",
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-        return try? ModelContainer(for: schema, configurations: [config])
-    }
-
-    /// Single local-only store for all models (no CloudKit, no split)
-    static func createLocalOnlyContainer() -> ModelContainer? {
-        let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
-        return try? ModelContainer(for: schema, configurations: [config])
-    }
-
-    /// In-memory fallback — data won't persist but the app can launch
-    static func createInMemoryContainer() -> ModelContainer {
-        let schema = Schema(AppSchema.allModels)
-        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            fatalError("Cannot create even an in-memory ModelContainer: \(error)")
-        }
-    }
-}
-
-// MARK: - ModelContainer Fallback (used by IntentModelContainer)
+// MARK: - ModelContainer Recovery
 
 extension ModelContainer {
+    /// Last-resort in-memory container so the app can at least launch.
     static func fallbackInMemory(schema: Schema) -> ModelContainer {
-        let config = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let inMemory = ModelConfiguration("MyAIssistant-fallback", isStoredInMemoryOnly: true)
+        // This is the absolute last resort — if even in-memory fails, the app cannot function
         do {
-            return try ModelContainer(for: schema, configurations: [config])
+            return try ModelContainer(for: schema, configurations: [inMemory])
         } catch {
             fatalError("Cannot create even an in-memory ModelContainer: \(error)")
         }

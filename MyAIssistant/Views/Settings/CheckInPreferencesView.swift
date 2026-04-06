@@ -203,8 +203,7 @@ struct CheckInPreferencesView: View {
     private func rescheduleNotifications() {
         guard let engine = behaviorEngine else { return }
         let activePrefs = engine.activePreferences()
-        let notificationManager = NotificationManager()
-        notificationManager.scheduleCheckInReminders(preferences: activePrefs)
+        NotificationManager.scheduleCheckInReminders(preferences: activePrefs)
         engine.syncWidgetData()
     }
 

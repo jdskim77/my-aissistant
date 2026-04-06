@@ -5,5 +5,6 @@ import Foundation
 struct WidgetCheckInWindow: Codable {
     let name: String
     let hour: Int
+    let minute: Int
     let greeting: String
 }

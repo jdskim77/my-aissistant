@@ -92,6 +92,19 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - WisdomManager Environment Key
+
+struct WisdomManagerKey: EnvironmentKey {
+    static let defaultValue: WisdomManager? = nil
+}
+
+extension EnvironmentValues {
+    var wisdomManager: WisdomManager? {
+        get { self[WisdomManagerKey.self] }
+        set { self[WisdomManagerKey.self] = newValue }
+    }
+}
+
 // MARK: - UsageGateManager Environment Key
 
 struct UsageGateManagerKey: EnvironmentKey {
@@ -102,70 +115,5 @@ extension EnvironmentValues {
     var usageGateManager: UsageGateManager? {
         get { self[UsageGateManagerKey.self] }
         set { self[UsageGateManagerKey.self] = newValue }
-    }
-}
-
-// MARK: - BalanceManager Environment Key
-
-struct BalanceManagerKey: EnvironmentKey {
-    static let defaultValue: BalanceManager? = nil
-}
-
-extension EnvironmentValues {
-    var balanceManager: BalanceManager? {
-        get { self[BalanceManagerKey.self] }
-        set { self[BalanceManagerKey.self] = newValue }
-    }
-}
-
-// MARK: - ChatManager Environment Key
-
-struct ChatManagerKey: EnvironmentKey {
-    static let defaultValue: ChatManager? = nil
-}
-
-extension EnvironmentValues {
-    var chatManager: ChatManager? {
-        get { self[ChatManagerKey.self] }
-        set { self[ChatManagerKey.self] = newValue }
-    }
-}
-
-// MARK: - HabitManager Environment Key
-
-struct HabitManagerKey: EnvironmentKey {
-    static let defaultValue: HabitManager? = nil
-}
-
-extension EnvironmentValues {
-    var habitManager: HabitManager? {
-        get { self[HabitManagerKey.self] }
-        set { self[HabitManagerKey.self] = newValue }
-    }
-}
-
-// MARK: - CheckInBehaviorEngine Environment Key
-
-struct CheckInBehaviorEngineKey: EnvironmentKey {
-    static let defaultValue: CheckInBehaviorEngine? = nil
-}
-
-extension EnvironmentValues {
-    var checkInBehaviorEngine: CheckInBehaviorEngine? {
-        get { self[CheckInBehaviorEngineKey.self] }
-        set { self[CheckInBehaviorEngineKey.self] = newValue }
-    }
-}
-
-// MARK: - SubscriptionManager Environment Key
-
-struct SubscriptionManagerKey: EnvironmentKey {
-    static let defaultValue: SubscriptionManager? = nil
-}
-
-extension EnvironmentValues {
-    var subscriptionManager: SubscriptionManager? {
-        get { self[SubscriptionManagerKey.self] }
-        set { self[SubscriptionManagerKey.self] = newValue }
     }
 }

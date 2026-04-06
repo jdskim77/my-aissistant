@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class CheckInSuggestion {
-    var id: String
-    var typeRaw: String
+    var id: String = UUID().uuidString
+    var typeRaw: String = "disable_window"
     var targetWindowRaw: String?
-    var reason: String
+    var reason: String = ""
     var suggestedHour: Int?
     var suggestedMinute: Int?
-    var statusRaw: String
-    var createdAt: Date
+    var statusRaw: String = "pending"
+    var createdAt: Date = Date()
     var dismissedUntil: Date?
 
     @Transient
@@ -45,13 +45,11 @@ final class CheckInSuggestion {
     var suggestedTimeString: String? {
         guard let hour = suggestedHour else { return nil }
         let minute = suggestedMinute ?? 0
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
         var components = DateComponents()
         components.hour = hour
         components.minute = minute
         let date = Calendar.current.date(from: components) ?? Date()
-        return formatter.string(from: date)
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
     init(

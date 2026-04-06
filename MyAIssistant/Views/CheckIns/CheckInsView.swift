@@ -81,6 +81,11 @@ struct CheckInsView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
+            // Clamp selection to enabled windows (BUG-07 fix)
+            if !enabledCheckInTimes.contains(selectedCheckIn),
+               let first = enabledCheckInTimes.first {
+                selectedCheckIn = first
+            }
             withAnimation(reduceMotion ? .none : .easeOut(duration: 0.5)) {
                 appeared = true
             }

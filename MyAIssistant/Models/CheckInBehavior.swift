@@ -3,16 +3,16 @@ import SwiftData
 
 @Model
 final class CheckInBehavior {
-    var id: String
-    var windowRaw: String
-    var completionRate: Double
-    var averageCompletionHour: Int
-    var averageCompletionMinute: Int
-    var consecutiveSkips: Int
-    var totalCompleted: Int
-    var totalOpportunities: Int
+    var id: String = UUID().uuidString
+    var windowRaw: String = ""
+    var completionRate: Double = 0
+    var averageCompletionHour: Int = 0
+    var averageCompletionMinute: Int = 0
+    var consecutiveSkips: Int = 0
+    var totalCompleted: Int = 0
+    var totalOpportunities: Int = 0
     var lastCompletedDate: Date?
-    var lastCalculatedDate: Date
+    var lastCalculatedDate: Date = Date()
 
     @Transient
     var checkInTime: CheckInTime? {
@@ -24,13 +24,11 @@ final class CheckInBehavior {
     }
 
     var averageTimeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
         var components = DateComponents()
         components.hour = averageCompletionHour
         components.minute = averageCompletionMinute
         let date = Calendar.current.date(from: components) ?? Date()
-        return formatter.string(from: date)
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
     init(

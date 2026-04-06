@@ -27,8 +27,13 @@ struct NextCheckInProvider: TimelineProvider {
         let currentMinutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
 
         let windows = enabledWindows()
-        let (slot, greeting, nextHour) = nextCheckIn(currentMinutes: currentMinutes, windows: windows)
-        var nextDate = calendar.date(bySetting: .hour, value: nextHour, of: now) ?? now
+        let (slot, greeting, nextHour, nextMinute) = nextCheckIn(currentMinutes: currentMinutes, windows: windows)
+
+        // Build target date using both hour and minute
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = nextHour
+        components.minute = nextMinute
+        var nextDate = calendar.date(from: components) ?? now
         if nextDate <= now {
             nextDate = calendar.date(byAdding: .day, value: 1, to: nextDate) ?? now
         }
@@ -42,42 +47,43 @@ struct NextCheckInProvider: TimelineProvider {
 
     /// Read enabled windows from App Group UserDefaults (written by main app).
     /// Falls back to hardcoded defaults if no data is available.
-    private func enabledWindows() -> [(name: String, hour: Int, greeting: String)] {
+    private func enabledWindows() -> [WidgetCheckInWindow] {
         let defaults = UserDefaults(suiteName: "group.com.myaissistant.shared")
 
         if let data = defaults?.data(forKey: "enabledCheckInWindows"),
            let decoded = try? JSONDecoder().decode([WidgetCheckInWindow].self, from: data) {
-            return decoded.map { ($0.name, $0.hour, $0.greeting) }
+            return decoded
         }
 
         // Fallback to hardcoded defaults
         return [
-            ("Morning", 8, "Good morning!"),
-            ("Midday", 13, "How's your morning going?"),
-            ("Afternoon", 18, "Afternoon check-in"),
-            ("Night", 22, "Evening reflection")
+            WidgetCheckInWindow(name: "Morning", hour: 8, minute: 0, greeting: "Good morning!"),
+            WidgetCheckInWindow(name: "Midday", hour: 13, minute: 0, greeting: "How's your morning going?"),
+            WidgetCheckInWindow(name: "Afternoon", hour: 18, minute: 0, greeting: "Afternoon check-in"),
+            WidgetCheckInWindow(name: "Night", hour: 22, minute: 0, greeting: "Evening reflection"),
         ]
     }
 
     private func nextCheckIn(
         currentMinutes: Int,
-        windows: [(name: String, hour: Int, greeting: String)]
-    ) -> (slot: String, greeting: String, nextHour: Int) {
-        let sorted = windows.sorted { $0.hour < $1.hour }
+        windows: [WidgetCheckInWindow]
+    ) -> (slot: String, greeting: String, nextHour: Int, nextMinute: Int) {
+        let sorted = windows.sorted { $0.hour * 60 + $0.minute < $1.hour * 60 + $1.minute }
 
         // Find next window that hasn't passed yet
         for window in sorted {
-            if currentMinutes < window.hour * 60 {
-                return (window.name, window.greeting, window.hour)
+            let windowMinutes = window.hour * 60 + window.minute
+            if currentMinutes < windowMinutes {
+                return (window.name, window.greeting, window.hour, window.minute)
             }
         }
 
         // All passed — wrap to first window tomorrow
         if let first = sorted.first {
-            return (first.name, first.greeting, first.hour)
+            return (first.name, first.greeting, first.hour, first.minute)
         }
 
-        return ("Morning", "Good morning!", 8)
+        return ("Morning", "Good morning!", 8, 0)
     }
 }
 
@@ -86,6 +92,7 @@ struct NextCheckInProvider: TimelineProvider {
 struct WidgetCheckInWindow: Codable {
     let name: String
     let hour: Int
+    let minute: Int
     let greeting: String
 }
 

@@ -5,8 +5,7 @@ struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
-    @Environment(\.habitManager) private var habitManager
-    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
+    @Environment(\.wisdomManager) private var wisdomManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -22,7 +21,7 @@ struct HomeView: View {
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var celebrationMilestone: Int?
 
     // MARK: - Computed
 
@@ -114,24 +113,6 @@ struct HomeView: View {
                 }
             }
 
-            // Check-in behavior suggestion
-            if let suggestion = checkInBehaviorEngine?.activeSuggestion {
-                Section {
-                    CheckInSuggestionCard(
-                        suggestion: suggestion,
-                        onAccept: {
-                            checkInBehaviorEngine?.applySuggestion(suggestion)
-                            let prefs = checkInBehaviorEngine?.activePreferences() ?? []
-                            NotificationManager().scheduleCheckInReminders(preferences: prefs)
-                        },
-                        onDismiss: { checkInBehaviorEngine?.dismissSuggestion(suggestion) }
-                    )
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-            }
-
             // Compact header
             Section {
                 headerView
@@ -139,8 +120,12 @@ struct HomeView: View {
                     .listRowBackground(Color.clear)
             }
 
-            // Daily wisdom
-            if let quote = WisdomManager.todayQuote() {
+            // Daily wisdom (70/20/10 intelligent selection)
+            if let quote = wisdomManager?.todayQuote(
+                compassScores: nil,  // Compass scores wired in Phase 2
+                currentMood: nil,    // Mood from check-ins wired in Phase 2
+                streak: streak
+            ) ?? WisdomManager.todayQuote() {
                 Section {
                     wisdomCard(quote: quote)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
@@ -169,7 +154,7 @@ struct HomeView: View {
                     } label: {
                         HStack {
                             Image(systemName: "leaf.fill")
-                                .font(AppFonts.caption(13))
+                                .font(.system(size: 13))
                                 .foregroundColor(AppColors.accent)
                             Text("Habits")
                                 .font(AppFonts.heading(15))
@@ -180,7 +165,7 @@ struct HomeView: View {
                                 .font(AppFonts.caption(12))
                                 .foregroundColor(AppColors.accent)
                             Image(systemName: "chevron.right")
-                                .font(AppFonts.label(11))
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(AppColors.accent)
                         }
                     }
@@ -195,7 +180,7 @@ struct HomeView: View {
                         ForEach(overdueTasks, id: \.id) { task in
                             TaskCard(task: task, isOverdue: true) {
                                 Haptics.success()
-                                withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             }
@@ -218,7 +203,7 @@ struct HomeView: View {
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
                                     Haptics.success()
-                                    withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                    withAnimation(.spring(response: 0.3)) {
                                         taskManager?.toggleCompletion(task)
                                     }
                                 } label: {
@@ -245,13 +230,13 @@ struct HomeView: View {
                 ForEach(todayCalendarEvents, id: \.id) { event in
                     CalendarEventRow(task: event) {
                         Haptics.success()
-                        withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                        withAnimation(.spring(response: 0.3)) {
                             taskManager?.toggleCompletion(event)
                         }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
-                            withAnimation(reduceMotion ? .none : .default) {
+                            withAnimation {
                                 Task { await calendarSyncManager?.deleteCalendarEvent(for: event) }
                                 taskManager?.deleteTask(event)
                             }
@@ -262,7 +247,7 @@ struct HomeView: View {
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button {
                             Haptics.success()
-                            withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                            withAnimation(.spring(response: 0.3)) {
                                 taskManager?.toggleCompletion(event)
                             }
                         } label: {
@@ -282,14 +267,14 @@ struct HomeView: View {
                     ForEach(todayActiveTasks, id: \.id) { task in
                         TaskCard(task: task) {
                             Haptics.success()
-                            withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                            withAnimation(.spring(response: 0.3)) {
                                 taskManager?.toggleCompletion(task)
                             }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 Haptics.heavy()
-                                withAnimation(reduceMotion ? .none : .default) {
+                                withAnimation {
                                     if task.externalCalendarID != nil {
                                         Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
                                     }
@@ -310,7 +295,7 @@ struct HomeView: View {
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 Haptics.success()
-                                withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             } label: {
@@ -345,13 +330,13 @@ struct HomeView: View {
                     if completedExpanded {
                         ForEach(todayCompletedTasks, id: \.id) { task in
                             TaskCard(task: task) {
-                                withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    withAnimation(reduceMotion ? .none : .default) {
+                                    withAnimation {
                                         if task.externalCalendarID != nil {
                                             Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
                                         }
@@ -363,7 +348,7 @@ struct HomeView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
-                                    withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                    withAnimation(.spring(response: 0.3)) {
                                         taskManager?.toggleCompletion(task)
                                     }
                                 } label: {
@@ -391,13 +376,13 @@ struct HomeView: View {
                     if tomorrowExpanded {
                         ForEach(tomorrowTasks, id: \.id) { task in
                             TaskCard(task: task) {
-                                withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    withAnimation(reduceMotion ? .none : .default) {
+                                    withAnimation {
                                         if task.externalCalendarID != nil {
                                             Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
                                         }
@@ -416,7 +401,7 @@ struct HomeView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
-                                    withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
+                                    withAnimation(.spring(response: 0.3)) {
                                         taskManager?.toggleCompletion(task)
                                     }
                                 } label: {
@@ -440,8 +425,21 @@ struct HomeView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(AppColors.background.ignoresSafeArea())
+        .overlay {
+            if let milestone = celebrationMilestone {
+                CelebrationView(milestone: milestone) {
+                    StreakMilestone.markCelebrated(streak: milestone)
+                    celebrationMilestone = nil
+                }
+            }
+        }
         .onAppear {
-            withAnimation(reduceMotion ? .none : .easeOut(duration: 0.5)) {
+            // Check for streak milestone celebration
+            let currentStreak = patternEngine?.currentStreak() ?? 0
+            if StreakMilestone.shouldCelebrate(streak: currentStreak) {
+                celebrationMilestone = currentStreak
+            }
+            withAnimation(.easeOut(duration: 0.5)) {
                 appeared = true
             }
 
@@ -487,7 +485,7 @@ struct HomeView: View {
             Button("Delete", role: .destructive) {
                 guard let task = taskToDelete else { return }
                 Haptics.heavy()
-                withAnimation(reduceMotion ? .none : .default) {
+                withAnimation {
                     if task.externalCalendarID != nil {
                         Task { await calendarSyncManager?.deleteCalendarEvent(for: task) }
                     }
@@ -507,7 +505,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .font(AppFonts.label(12))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(AppColors.accentWarm)
                 Text("Daily Wisdom")
                     .font(AppFonts.label(12))
@@ -529,7 +527,7 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(AppColors.card)
-                .shadow(color: AppColors.textPrimary.opacity(0.04), radius: 6, y: 2)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
@@ -559,7 +557,7 @@ struct HomeView: View {
                 let next = CheckInTime.next()
                 HStack(spacing: 6) {
                     Text(next.icon)
-                        .font(AppFonts.body(14))
+                        .font(.system(size: 14))
                     Text(next.timeLabel)
                         .font(AppFonts.label(12))
                         .foregroundColor(AppColors.textSecondary)
@@ -574,8 +572,6 @@ struct HomeView: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Next check-in: \(CheckInTime.next().rawValue) at \(CheckInTime.next().timeLabel)")
-            .accessibilityHint("Opens the check-in form")
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -619,7 +615,7 @@ struct HomeView: View {
             if !overdueTasks.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(AppFonts.caption(12))
+                        .font(.system(size: 12))
                     Text("\(overdueTasks.count) overdue")
                         .font(AppFonts.label(12))
                 }
@@ -634,7 +630,7 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(AppColors.card)
-                .shadow(color: AppColors.textPrimary.opacity(0.04), radius: 6, y: 2)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
         .offset(y: appeared ? 0 : 15)
         .opacity(appeared ? 1 : 0)
@@ -644,13 +640,13 @@ struct HomeView: View {
 
     private func collapsibleHeader(title: String, count: Int, isExpanded: Binding<Bool>, tintColor: Color) -> some View {
         Button {
-            withAnimation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 isExpanded.wrappedValue.toggle()
             }
         } label: {
             HStack {
                 Image(systemName: title == "Overdue" ? "exclamationmark.triangle.fill" : title == "Tomorrow" ? "sunrise.fill" : "checkmark.circle.fill")
-                    .font(AppFonts.caption(13))
+                    .font(.system(size: 13))
                     .foregroundColor(tintColor)
                 Text("\(title) (\(count))")
                     .font(AppFonts.heading(15))
@@ -658,7 +654,7 @@ struct HomeView: View {
                     .textCase(nil)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(AppFonts.label(12))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(AppColors.textMuted)
                     .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
             }
@@ -671,7 +667,7 @@ struct HomeView: View {
     private var emptyActiveState: some View {
         VStack(spacing: 16) {
             Image(systemName: "sun.max")
-                .font(AppFonts.icon(40))
+                .font(.system(size: 40))
                 .foregroundColor(AppColors.accentWarm)
             Text("No tasks today")
                 .font(AppFonts.heading(18))
@@ -687,7 +683,7 @@ struct HomeView: View {
     private var allDoneState: some View {
         VStack(spacing: 16) {
             Image(systemName: "checkmark.circle.fill")
-                .font(AppFonts.icon(40))
+                .font(.system(size: 40))
                 .foregroundColor(AppColors.completionGreen)
             Text("All done for today!")
                 .font(AppFonts.heading(18))
@@ -712,8 +708,9 @@ struct HomeView: View {
                 HStack(spacing: 10) {
                     Button {
                         Haptics.success()
-                        withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
-                            habitManager?.toggleCompletion(habit, for: today)
+                        withAnimation(.spring(response: 0.3)) {
+                            habit.toggleCompletion(for: today)
+                            try? modelContext.save()
                         }
                     } label: {
                         ZStack {
@@ -725,7 +722,7 @@ struct HomeView: View {
                                     .fill(AppColors.completionGreen)
                                     .frame(width: 22, height: 22)
                                 Image(systemName: "checkmark")
-                                    .font(AppFonts.label(11))
+                                    .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.white)
                             }
                         }
@@ -733,12 +730,9 @@ struct HomeView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(habit.title), \(isDone ? "completed" : "not completed")")
-                    .accessibilityHint(isDone ? "Double tap to mark as not completed" : "Double tap to mark as completed")
 
                     Text(habit.icon)
-                        .font(AppFonts.body(16))
-                        .accessibilityHidden(true)
+                        .font(.system(size: 16))
                     Text(habit.title)
                         .font(AppFonts.body(14))
                         .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
@@ -769,7 +763,7 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(AppColors.card)
-                .shadow(color: AppColors.textPrimary.opacity(0.04), radius: 6, y: 2)
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
     }
 
