@@ -9,23 +9,51 @@
 /* Begin PBXBuildFile section */
 		00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */; };
 		0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C847075057F68B9E39C52A /* NLTaskParserView.swift */; };
+		1421C3325C32ABC2E421D763 /* UserDimensionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */; };
+		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
+		188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45180E1CF55D484DE91629E /* AppLogger.swift */; };
+		2263E169947C166FDE04815D /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97ACE583981903B7525F883 /* CelebrationView.swift */; };
+		2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */; };
+		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
+		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
+		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
 		4583C2E92F7A1EFB00603B08 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4583C2E82F7A1EFB00603B08 /* Assets.xcassets */; };
 		45D328A72F7AE94900293A7A /* TextSizeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D328A62F7AE94900293A7A /* TextSizeManager.swift */; };
 		45D328A82F7AE94900293A7A /* TextSizeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D328A62F7AE94900293A7A /* TextSizeManager.swift */; };
+		479FF8D6BD0058E321B2A75C /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */; };
 		51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B94FBDE7397641F976C27E /* HabitItem.swift */; };
+		590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */; };
+		5C772A75756E87215ECC7801 /* CheckInSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */; };
 		5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */; };
+		65EB481849E9730352A7CA70 /* ScaleButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */; };
+		6AA3906C71A7E8173ACFF83A /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B55648FDB5CA4DA422F9FB9 /* LegalView.swift */; };
 		6BA75D17B68D641674ADDAC5 /* ErrorBoundary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B926BB655C77BB678211F85 /* ErrorBoundary.swift */; };
+		6CDDABABC538E72FD992603C /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB633F86C9577EC419AB596 /* LifeDimension.swift */; };
+		6DD99E2D8576CC22012C02EE /* WidgetCheckInWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */; };
 		6E36D169BBE4C9EC99A2444B /* AddTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */; };
 		6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9C0B175716E6DC712AF766 /* HabitFormView.swift */; };
+		6F3EF2736BD358CA9D3B6FE4 /* NudgeBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6913F3351F7E9853DAC699A0 /* NudgeBannerView.swift */; };
+		6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6169581E8F0F1202E4E6F1FF /* AppRadius.swift */; };
+		712945758B24C67C5737D0B4 /* SeasonGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */; };
+		729BAB7E9B4D2F53BA07F952 /* CheckInBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2902A18176BF58C082BECA96 /* CheckInBehavior.swift */; };
+		78CC99A8F6F1D3D8B0098D2B /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CB2D6EA910D159998AA87F /* InsightEngine.swift */; };
 		7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
 		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
+		826568DF5F9981992E1543A6 /* CheckInPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */; };
+		82D8451AA02798FED6E546A3 /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36715A70A41F1E323B785B09 /* CompassTabView.swift */; };
+		8625C363339EFF477EF5C7FF /* DimensionSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */; };
+		879011535AE68D1E23D62734 /* OnboardingQuickRateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */; };
+		8A03BC14443F5CBA9C85CD8E /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0361C01081332E88C1EF61 /* OnboardingIntroView.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
+		8BAC2619A39D0CCD5CA274D2 /* EveningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */; };
 		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
+		9A6851143418D4E3501DFAF5 /* BalanceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E972B6EABF4699BFF00E4683 /* BalanceManager.swift */; };
+		9D1A0B7D13107C124899EF2F /* OnboardingCompassRevealView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */; };
 		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000 /* MyAIssistantApp.swift */; };
 		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000 /* ContentView.swift */; };
 		A100000005000000 /* CheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005000000 /* CheckIn.swift */; };
@@ -44,7 +72,6 @@
 		A200000003000000 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003000000 /* TaskItem.swift */; };
 		A200000004000000 /* TaskCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004000000 /* TaskCategory.swift */; };
 		A200000005000000 /* TaskPriority.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005000000 /* TaskPriority.swift */; };
-		A200000099000001 /* TaskBuilderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000099000001 /* TaskBuilderState.swift */; };
 		A200000006000000 /* CheckInRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006000000 /* CheckInRecord.swift */; };
 		A200000007000000 /* DailySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000007000000 /* DailySnapshot.swift */; };
 		A200000008000000 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000008000000 /* UserProfile.swift */; };
@@ -54,6 +81,7 @@
 		A200000012000000 /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000012000000 /* DataSeeder.swift */; };
 		A200000013000000 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000013000000 /* PreviewHelpers.swift */; };
 		A200000014000000 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000014000000 /* Haptics.swift */; };
+		A200000099000001 /* TaskBuilderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000099000001 /* TaskBuilderState.swift */; };
 		A300000001000000 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001000000 /* AIProvider.swift */; };
 		A300000002000000 /* AIPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002000000 /* AIPromptBuilder.swift */; };
 		A300000003000000 /* AnthropicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003000000 /* AnthropicProvider.swift */; };
@@ -112,6 +140,8 @@
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
 		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */; };
 		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
+		AAEB380490879F3B53121260 /* CheckInPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */; };
+		AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */; };
 		AC00000001000000 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000001000000 /* SpeechRecognizer.swift */; };
 		AC00000002000000 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000002000000 /* CustomTabBar.swift */; };
 		AC00000003000000 /* SpeechSynthesizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000003000000 /* SpeechSynthesizer.swift */; };
@@ -136,8 +166,16 @@
 		AW00000004000000 /* StreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000004000000 /* StreakWidget.swift */; };
 		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
 		AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000 /* MyAIssistantWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */; };
+		B6DAFEE3962D481100F25951 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */; };
 		B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */; };
+		BDBEBBDC00DF8A70EAE56633 /* WeeklyReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B081FE087983FAC2B82C47 /* WeeklyReflectionView.swift */; };
 		C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */; };
+		CE3C774BA2A1C1742E13E453 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */; };
+		D3954166C7DA9E696106C367 /* SeasonGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */; };
+		D786B93E854002B1393E7E08 /* CompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CFAD9307698492ECF74393 /* CompassView.swift */; };
+		DC00B58B6CC46AEB7EDA0313 /* CheckInSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */; };
+		E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
 /* End PBXBuildFile section */
@@ -208,11 +246,21 @@
 /* Begin PBXFileReference section */
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
+		0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCompassRevealView.swift; sourceTree = "<group>"; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
+		24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
+		27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingSuggestedTasksView.swift; sourceTree = "<group>"; };
+		2902A18176BF58C082BECA96 /* CheckInBehavior.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehavior.swift; sourceTree = "<group>"; };
+		29CFAD9307698492ECF74393 /* CompassView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
+		2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyBalanceCheckIn.swift; sourceTree = "<group>"; };
+		33B081FE087983FAC2B82C47 /* WeeklyReflectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionView.swift; sourceTree = "<group>"; };
 		34B94FBDE7397641F976C27E /* HabitItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitItem.swift; sourceTree = "<group>"; };
+		36715A70A41F1E323B785B09 /* CompassTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassTabView.swift; sourceTree = "<group>"; };
 		3DAF4C57CDAFC86BF968C4F3 /* HabitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitsView.swift; sourceTree = "<group>"; };
+		3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityPattern.swift; sourceTree = "<group>"; };
+		406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInSuggestionCard.swift; sourceTree = "<group>"; };
 		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
 		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -221,9 +269,23 @@
 		4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchScheduleData.swift; sourceTree = "<group>"; };
 		4583C2E82F7A1EFB00603B08 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		45D328A62F7AE94900293A7A /* TextSizeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeManager.swift; sourceTree = "<group>"; };
+		4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StarterTaskPool.swift; sourceTree = "<group>"; };
+		51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleVoiceProvider.swift; sourceTree = "<group>"; };
+		57CB2D6EA910D159998AA87F /* InsightEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InsightEngine.swift; sourceTree = "<group>"; };
+		5FB633F86C9577EC419AB596 /* LifeDimension.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LifeDimension.swift; sourceTree = "<group>"; };
+		6169581E8F0F1202E4E6F1FF /* AppRadius.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
+		6913F3351F7E9853DAC699A0 /* NudgeBannerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeBannerView.swift; sourceTree = "<group>"; };
 		6A9C0B175716E6DC712AF766 /* HabitFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitFormView.swift; sourceTree = "<group>"; };
+		6B55648FDB5CA4DA422F9FB9 /* LegalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
+		6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSpacing.swift; sourceTree = "<group>"; };
+		72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DimensionSuggester.swift; sourceTree = "<group>"; };
+		7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScaleButtonStyle.swift; sourceTree = "<group>"; };
+		976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreferencesView.swift; sourceTree = "<group>"; };
 		9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentModelContainer.swift; sourceTree = "<group>"; };
+		9FEE61F904669C1F28F816A9 /* HabitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitManager.swift; sourceTree = "<group>"; };
+		A45180E1CF55D484DE91629E /* AppLogger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DimensionPickerView.swift; sourceTree = "<group>"; };
 		B100000001000000 /* MyAIssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
 		B100000002000000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B100000005000000 /* CheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckIn.swift; sourceTree = "<group>"; };
@@ -242,7 +304,6 @@
 		B200000003000000 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
 		B200000004000000 /* TaskCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCategory.swift; sourceTree = "<group>"; };
 		B200000005000000 /* TaskPriority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPriority.swift; sourceTree = "<group>"; };
-		B200000099000001 /* TaskBuilderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskBuilderState.swift; sourceTree = "<group>"; };
 		B200000006000000 /* CheckInRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInRecord.swift; sourceTree = "<group>"; };
 		B200000007000000 /* DailySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySnapshot.swift; sourceTree = "<group>"; };
 		B200000008000000 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
@@ -252,6 +313,7 @@
 		B200000012000000 /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
 		B200000013000000 /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
 		B200000014000000 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		B200000099000001 /* TaskBuilderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskBuilderState.swift; sourceTree = "<group>"; };
 		B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyStatsIntent.swift; sourceTree = "<group>"; };
 		B300000001000000 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
 		B300000002000000 /* AIPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
@@ -324,8 +386,10 @@
 		BD00000004000000 /* AIGreetingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGreetingCard.swift; sourceTree = "<group>"; };
 		BE00000001000000 /* ActivityEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEntry.swift; sourceTree = "<group>"; };
 		BE00000002000000 /* ActivityTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
+		BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingQuickRateView.swift; sourceTree = "<group>"; };
 		BF00000001000000 /* AlarmEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntry.swift; sourceTree = "<group>"; };
 		BF00000002000000 /* SchemaVersioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersioning.swift; sourceTree = "<group>"; };
+		BF0361C01081332E88C1EF61 /* OnboardingIntroView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingIntroView.swift; sourceTree = "<group>"; };
 		BW00000001000000 /* WidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBundle.swift; sourceTree = "<group>"; };
 		BW00000002000000 /* NextCheckInWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCheckInWidget.swift; sourceTree = "<group>"; };
 		BW00000003000000 /* TodayProgressWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayProgressWidget.swift; sourceTree = "<group>"; };
@@ -335,18 +399,60 @@
 		C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayScheduleIntent.swift; sourceTree = "<group>"; };
 		C4EC24E793485FD28F82D50E /* FocusSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
 		C5C847075057F68B9E39C52A /* NLTaskParserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLTaskParserView.swift; sourceTree = "<group>"; };
+		C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInSuggestion.swift; sourceTree = "<group>"; };
 		C85E40C1975819FFCA2410F6 /* DailyWisdom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = DailyWisdom.json; path = MyAIssistant/Resources/DailyWisdom.json; sourceTree = SOURCE_ROOT; };
+		C97ACE583981903B7525F883 /* CelebrationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
 		C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartFocusIntent.swift; sourceTree = "<group>"; };
+		CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
+		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
+		D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
+		DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetCheckInWindow.swift; sourceTree = "<group>"; };
 		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassInfoSheet.swift; sourceTree = "<group>"; };
 		E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusTimerView.swift; sourceTree = "<group>"; };
 		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E972B6EABF4699BFF00E4683 /* BalanceManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
+		EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreference.swift; sourceTree = "<group>"; };
 		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoalView.swift; sourceTree = "<group>"; };
+		F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
+		FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch App";
+			sourceTree = "<group>";
+		};
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppTests";
+			sourceTree = "<group>";
+		};
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppUITests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -411,6 +517,22 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		5EB6FDA6E88DF875575A8ED4 /* Compass */ = {
+			isa = PBXGroup;
+			children = (
+				36715A70A41F1E323B785B09 /* CompassTabView.swift */,
+				29CFAD9307698492ECF74393 /* CompassView.swift */,
+				24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */,
+				F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */,
+				E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */,
+				33B081FE087983FAC2B82C47 /* WeeklyReflectionView.swift */,
+				6913F3351F7E9853DAC699A0 /* NudgeBannerView.swift */,
+				AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */,
+			);
+			name = Compass;
+			path = Compass;
+			sourceTree = "<group>";
+		};
 		D100000001000000 = {
 			isa = PBXGroup;
 			children = (
@@ -465,6 +587,15 @@
 				C4EC24E793485FD28F82D50E /* FocusSession.swift */,
 				34B94FBDE7397641F976C27E /* HabitItem.swift */,
 				BF00000002000000 /* SchemaVersioning.swift */,
+				C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */,
+				FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */,
+				2902A18176BF58C082BECA96 /* CheckInBehavior.swift */,
+				3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */,
+				EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */,
+				5FB633F86C9577EC419AB596 /* LifeDimension.swift */,
+				F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */,
+				DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */,
+				2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -477,6 +608,9 @@
 				B100000010000000 /* AppFonts.swift */,
 				BC00000008000000 /* ColorTheme.swift */,
 				BC00000009000000 /* ThemeManager.swift */,
+				6169581E8F0F1202E4E6F1FF /* AppRadius.swift */,
+				7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */,
+				6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -508,6 +642,7 @@
 				D500000002000000 /* Settings */,
 				EFAC014373457DBAE7937331 /* Focus */,
 				3B4A6C51FA5F00EF5D88E395 /* Habits */,
+				5EB6FDA6E88DF875575A8ED4 /* Compass */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -523,6 +658,8 @@
 				B800000003000000 /* LoadingView.swift */,
 				BC00000002000000 /* CustomTabBar.swift */,
 				BD00000001000000 /* AIActivityOrb.swift */,
+				406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */,
+				C97ACE583981903B7525F883 /* CelebrationView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -619,6 +756,12 @@
 				B600000003000000 /* UsageGateManager.swift */,
 				B800000001000000 /* BackgroundTaskManager.swift */,
 				BD00000003000000 /* GreetingManager.swift */,
+				57CB2D6EA910D159998AA87F /* InsightEngine.swift */,
+				51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */,
+				E972B6EABF4699BFF00E4683 /* BalanceManager.swift */,
+				9FEE61F904669C1F28F816A9 /* HabitManager.swift */,
+				D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */,
+				72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -630,6 +773,8 @@
 				B200000012000000 /* DataSeeder.swift */,
 				B200000013000000 /* PreviewHelpers.swift */,
 				B200000014000000 /* Haptics.swift */,
+				D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */,
+				A45180E1CF55D484DE91629E /* AppLogger.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -671,6 +816,12 @@
 				B400000009000000 /* SubscriptionOfferView.swift */,
 				B400000010000000 /* OnboardingCompleteView.swift */,
 				BC00000006000000 /* VoiceModeSelectionView.swift */,
+				27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */,
+				CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */,
+				BF0361C01081332E88C1EF61 /* OnboardingIntroView.swift */,
+				0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */,
+				4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */,
+				BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -695,6 +846,8 @@
 				BC00000005000000 /* VoiceSettingsView.swift */,
 				BC00000010000000 /* ThemePickerView.swift */,
 				BC00000011000000 /* TextSizeSettingsView.swift */,
+				6B55648FDB5CA4DA422F9FB9 /* LegalView.swift */,
+				976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -822,8 +975,6 @@
 				4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */,
 			);
 			name = "MyAIssistantWatch Watch App";
-			packageProductDependencies = (
-			);
 			productName = "MyAIssistantWatch Watch App";
 			productReference = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
@@ -845,8 +996,6 @@
 				4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */,
 			);
 			name = "MyAIssistantWatch Watch AppTests";
-			packageProductDependencies = (
-			);
 			productName = "MyAIssistantWatch Watch AppTests";
 			productReference = 4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -868,8 +1017,6 @@
 				4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
 			);
 			name = "MyAIssistantWatch Watch AppUITests";
-			packageProductDependencies = (
-			);
 			productName = "MyAIssistantWatch Watch AppUITests";
 			productReference = 4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -1158,6 +1305,44 @@
 				5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */,
 				6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */,
 				A8A62D0788AB8113AB70DB92 /* HabitsView.swift in Sources */,
+				78CC99A8F6F1D3D8B0098D2B /* InsightEngine.swift in Sources */,
+				479FF8D6BD0058E321B2A75C /* ChatManager.swift in Sources */,
+				9A6851143418D4E3501DFAF5 /* BalanceManager.swift in Sources */,
+				3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */,
+				82D8451AA02798FED6E546A3 /* CompassTabView.swift in Sources */,
+				590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */,
+				8625C363339EFF477EF5C7FF /* DimensionSuggester.swift in Sources */,
+				5C772A75756E87215ECC7801 /* CheckInSuggestion.swift in Sources */,
+				D3954166C7DA9E696106C367 /* SeasonGoal.swift in Sources */,
+				729BAB7E9B4D2F53BA07F952 /* CheckInBehavior.swift in Sources */,
+				3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */,
+				826568DF5F9981992E1543A6 /* CheckInPreference.swift in Sources */,
+				6CDDABABC538E72FD992603C /* LifeDimension.swift in Sources */,
+				1421C3325C32ABC2E421D763 /* UserDimensionPreference.swift in Sources */,
+				6DD99E2D8576CC22012C02EE /* WidgetCheckInWindow.swift in Sources */,
+				B6DAFEE3962D481100F25951 /* DailyBalanceCheckIn.swift in Sources */,
+				2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */,
+				188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */,
+				6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */,
+				65EB481849E9730352A7CA70 /* ScaleButtonStyle.swift in Sources */,
+				AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */,
+				6AA3906C71A7E8173ACFF83A /* LegalView.swift in Sources */,
+				AAEB380490879F3B53121260 /* CheckInPreferencesView.swift in Sources */,
+				DC00B58B6CC46AEB7EDA0313 /* CheckInSuggestionCard.swift in Sources */,
+				2263E169947C166FDE04815D /* CelebrationView.swift in Sources */,
+				D786B93E854002B1393E7E08 /* CompassView.swift in Sources */,
+				8BAC2619A39D0CCD5CA274D2 /* EveningCheckInView.swift in Sources */,
+				712945758B24C67C5737D0B4 /* SeasonGoalView.swift in Sources */,
+				CE3C774BA2A1C1742E13E453 /* CompassInfoSheet.swift in Sources */,
+				BDBEBBDC00DF8A70EAE56633 /* WeeklyReflectionView.swift in Sources */,
+				6F3EF2736BD358CA9D3B6FE4 /* NudgeBannerView.swift in Sources */,
+				B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */,
+				40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */,
+				1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */,
+				8A03BC14443F5CBA9C85CD8E /* OnboardingIntroView.swift in Sources */,
+				9D1A0B7D13107C124899EF2F /* OnboardingCompassRevealView.swift in Sources */,
+				E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */,
+				879011535AE68D1E23D62734 /* OnboardingQuickRateView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
