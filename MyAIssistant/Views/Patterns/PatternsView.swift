@@ -89,6 +89,8 @@ struct PatternsView: View {
                 Text(value)
                     .font(AppFonts.displayBold(32))
                     .foregroundColor(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                 if !unit.isEmpty {
                     Text(unit)
                         .font(AppFonts.bodyMedium(14))
