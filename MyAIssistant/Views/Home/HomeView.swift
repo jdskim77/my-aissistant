@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.wisdomManager) private var wisdomManager
+    @Environment(\.balanceManager) private var balanceManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -123,8 +124,8 @@ struct HomeView: View {
 
             // Daily wisdom (70/20/10 intelligent selection)
             if let quote = wisdomManager?.todayQuote(
-                compassScores: nil,  // Compass scores wired in Phase 2
-                currentMood: nil,    // Mood from check-ins wired in Phase 2
+                compassScores: balanceManager?.weeklyScores().reduce(into: [:]) { $0[$1.key.rawValue] = $1.value },
+                currentMood: nil,
                 streak: streak
             ) ?? WisdomManager.todayQuote() {
                 Section {
@@ -447,6 +448,10 @@ struct HomeView: View {
         .onAppear {
             // Check for streak milestone celebration
             let currentStreak = patternEngine?.currentStreak() ?? 0
+            // Reset celebration tracking when streak breaks so milestones can re-trigger
+            if currentStreak == 0 {
+                StreakMilestone.resetCelebrations()
+            }
             if StreakMilestone.shouldCelebrate(streak: currentStreak) {
                 celebrationMilestone = currentStreak
             }

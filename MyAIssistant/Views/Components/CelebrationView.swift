@@ -50,7 +50,7 @@ struct CelebrationView: View {
 
                 Text(milestoneEmoji)
                     .font(.system(size: 72))
-                    .scaleEffect(showConfetti ? 1.0 : 0.3)
+                    .scaleEffect(reduceMotion ? 1.0 : (showConfetti ? 1.0 : 0.3))
                     .accessibilityHidden(true)
 
                 Text(milestoneMessage)
@@ -103,7 +103,8 @@ struct CelebrationView: View {
         withAnimation(.easeOut(duration: 0.2)) {
             opacity = 0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
             onDismiss()
         }
     }
