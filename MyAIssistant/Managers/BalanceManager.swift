@@ -17,9 +17,10 @@ final class BalanceManager {
     private static let defaultTarget = 10
 
     /// Cache for weekly breakdowns — invalidated after 30 seconds or on data mutation.
-    private var cachedBreakdowns: [LifeDimension: DimensionBreakdown]?
-    private var cachedBreakdownsWeekStart: Date?
-    private var cacheTimestamp: Date?
+    /// @ObservationIgnored prevents cache writes from triggering view re-renders (infinite loop).
+    @ObservationIgnored private var cachedBreakdowns: [LifeDimension: DimensionBreakdown]?
+    @ObservationIgnored private var cachedBreakdownsWeekStart: Date?
+    @ObservationIgnored private var cacheTimestamp: Date?
     private static let cacheTTL: TimeInterval = 30
 
     init(modelContext: ModelContext) {
