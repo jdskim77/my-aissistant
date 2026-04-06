@@ -130,3 +130,16 @@ extension EnvironmentValues {
         set { self[NotificationManagerKey.self] = newValue }
     }
 }
+
+// MARK: - InsightEngine Environment Key
+
+struct InsightEngineKey: EnvironmentKey {
+    static let defaultValue: InsightEngine? = nil
+}
+
+extension EnvironmentValues {
+    var insightEngine: InsightEngine? {
+        get { self[InsightEngineKey.self] }
+        set { self[InsightEngineKey.self] = newValue }
+    }
+}

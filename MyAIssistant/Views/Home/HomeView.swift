@@ -3,6 +3,7 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.taskManager) private var taskManager
+    @Environment(\.insightEngine) private var insightEngine
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.wisdomManager) private var wisdomManager
@@ -128,6 +129,16 @@ struct HomeView: View {
             ) ?? WisdomManager.todayQuote() {
                 Section {
                     wisdomCard(quote: quote)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
+            // Micro-insight
+            if let insight = insightEngine?.todayInsight() {
+                Section {
+                    insightCard(insight)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -532,6 +543,40 @@ struct HomeView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(AppColors.accentWarm.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Insight Card
+
+    private func insightCard(_ insight: InsightEngine.Insight) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: insight.icon)
+                .font(AppFonts.heading(20))
+                .foregroundColor(AppColors.accent)
+                .frame(width: 36, height: 36)
+                .background(AppColors.accent.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Pattern Insight")
+                    .font(AppFonts.label(11))
+                    .foregroundColor(AppColors.accent)
+                Text(insight.text)
+                    .font(AppFonts.body(14))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(AppColors.card)
+                .shadow(color: Color.black.opacity(0.04), radius: 4, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
         )
     }
 

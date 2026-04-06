@@ -11,6 +11,7 @@ struct MyAIssistantApp: App {
     @State private var calendarSyncManager: CalendarSyncManager
     @State private var usageGateManager: UsageGateManager
     @State private var wisdomManager: WisdomManager
+    @State private var insightEngine: InsightEngine
     @StateObject private var subscriptionManager = SubscriptionManager()
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
@@ -54,6 +55,7 @@ struct MyAIssistantApp: App {
         self._calendarSyncManager = State(initialValue: csm)
         self._usageGateManager = State(initialValue: UsageGateManager(modelContext: context))
         self._wisdomManager = State(initialValue: WisdomManager(modelContext: context))
+        self._insightEngine = State(initialValue: InsightEngine(modelContext: context))
 
         // Background task manager
         self.backgroundTaskManager = BackgroundTaskManager(
@@ -84,6 +86,7 @@ struct MyAIssistantApp: App {
                 .environment(\.calendarSyncManager, calendarSyncManager)
                 .environment(\.usageGateManager, usageGateManager)
                 .environment(\.wisdomManager, wisdomManager)
+                .environment(\.insightEngine, insightEngine)
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)

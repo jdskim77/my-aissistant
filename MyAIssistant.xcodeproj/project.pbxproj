@@ -25,6 +25,7 @@
 		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
+		IE10000001000000 /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = IE10000002000000 /* InsightEngine.swift */; };
 		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
 		A100000001000000 /* MyAIssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001000000 /* MyAIssistantApp.swift */; };
 		A100000002000000 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002000000 /* ContentView.swift */; };
@@ -209,6 +210,7 @@
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
+		IE10000002000000 /* InsightEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightEngine.swift; sourceTree = "<group>"; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
 		34B94FBDE7397641F976C27E /* HabitItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitItem.swift; sourceTree = "<group>"; };
@@ -422,6 +424,7 @@
 				4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */,
 				D100000010000000 /* Products */,
 				12CC4D3DBACA141D3B64244D /* WisdomManager.swift */,
+				IE10000002000000 /* InsightEngine.swift */,
 				C85E40C1975819FFCA2410F6 /* DailyWisdom.json */,
 				4532A6E62F7A4B8D00739994 /* Frameworks */,
 			);
@@ -1140,6 +1143,7 @@
 				AF00000001000000 /* AlarmEntry.swift in Sources */,
 				AF00000002000000 /* SchemaVersioning.swift in Sources */,
 				8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */,
+				IE10000001000000 /* InsightEngine.swift in Sources */,
 				7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */,
 				51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */,
 				7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */,
