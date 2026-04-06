@@ -11,10 +11,8 @@ struct WatchVoiceChatView: View {
     @State private var errorMessage: String?
     @State private var apiTask: Task<Void, Never>?
     @State private var actionPerformed: String?
-    @State private var micPulse = false
 
-    // Text input (dictation / keyboard flow)
-    @State private var showingTextInput = false
+    // Text input (inline — user taps TextField to trigger watchOS dictation picker)
     @State private var textInputValue = ""
     @FocusState private var isInputFocused: Bool
 
@@ -41,9 +39,7 @@ struct WatchVoiceChatView: View {
             .padding(.vertical, 4)
         }
         .navigationTitle("AI Assistant")
-        .sheet(isPresented: $showingTextInput) {
-            textInputSheet
-        }
+        // Sheet removed — input is inline
         .onDisappear {
             synthesizer.stopSpeaking(at: .immediate)
             apiTask?.cancel()
@@ -156,123 +152,45 @@ struct WatchVoiceChatView: View {
 
     // MARK: - Input Controls
 
-    /// Two distinct input modes: voice (primary) and keyboard (secondary)
+    /// Single input: tap the TextField to trigger watchOS input picker (dictation / scribble / keyboard).
+    /// This is one tap — no intermediate sheet.
     private var inputControls: some View {
-        VStack(spacing: 8) {
-            // Primary: Voice dictation button
-            Button {
-                guard !isProcessing else { return }
-                WKInterfaceDevice.current().play(.click)
-                startDictation()
-            } label: {
-                HStack(spacing: 8) {
-                    ZStack {
-                        // Pulse ring
-                        if !isProcessing {
-                            Circle()
-                                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1.5)
-                                .frame(width: 40, height: 40)
-                                .scaleEffect(micPulse ? 1.2 : 1.0)
-                                .opacity(micPulse ? 0 : 0.5)
-                                .animation(
-                                    .easeOut(duration: 1.5).repeatForever(autoreverses: false),
-                                    value: micPulse
-                                )
-                        }
+        HStack(spacing: 8) {
+            TextField("Speak or type…", text: $textInputValue)
+                .font(.body)
+                .focused($isInputFocused)
+                .onSubmit { submitInlineInput() }
 
-                        Circle()
-                            .fill(isProcessing ? Color.gray : Color.accentColor)
-                            .frame(width: 36, height: 36)
-
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Tap to speak")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(.primary)
-                        Text("Dictation opens immediately")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.accentColor.opacity(0.08))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.accentColor.opacity(0.15), lineWidth: 1)
-                        )
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(isProcessing)
-            .padding(.horizontal, 4)
-
-            // Secondary: Keyboard text input
-            Button {
-                guard !isProcessing else { return }
-                showingTextInput = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "keyboard")
-                        .font(.caption2)
-                    Text("Type instead")
-                        .font(.caption2)
-                }
-                .foregroundColor(.secondary)
-            }
-            .buttonStyle(.plain)
-            .disabled(isProcessing)
-        }
-        .onAppear { micPulse = true }
-    }
-
-    // MARK: - Text Input Sheet (keyboard flow)
-
-    private var textInputSheet: some View {
-        NavigationStack {
-            VStack(spacing: 12) {
-                TextField("Speak or type…", text: $textInputValue)
-                    .font(.body)
-                    .focused($isInputFocused)
-                    .onSubmit {
-                        submitTextInput()
-                    }
-
+            if !textInputValue.trimmingCharacters(in: .whitespaces).isEmpty {
                 Button {
-                    submitTextInput()
+                    submitInlineInput()
                 } label: {
-                    Text("Send")
-                        .frame(maxWidth: .infinity)
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(textInputValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding()
-            .navigationTitle("Ask AI")
-            .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                // Don't auto-focus — let the user tap the TextField so watchOS
-                // presents its input method picker (dictation / scribble / keyboard).
-                // Auto-focusing skips the picker and goes straight to scribble.
+                .buttonStyle(.plain)
+            } else {
+                // Mic icon hint (decorative — tapping the TextField opens dictation)
+                Image(systemName: "mic.fill")
+                    .font(.subheadline)
+                    .foregroundColor(.accentColor.opacity(0.6))
             }
         }
+        .padding(.horizontal, 4)
+        .disabled(isProcessing)
     }
 
-    private func submitTextInput() {
+    private func submitInlineInput() {
         let query = textInputValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        showingTextInput = false
         isInputFocused = false
         textInputValue = ""
         if !query.isEmpty {
             sendTextQuery(query)
         }
     }
+
+    // Text input sheet removed — input is now inline in the main view.
 
     // MARK: - Quick Prompts
 
@@ -311,15 +229,7 @@ struct WatchVoiceChatView: View {
         .disabled(isProcessing)
     }
 
-    // MARK: - Dictation
-
-    /// Opens the text input sheet. On watchOS, tapping into the TextField
-    /// presents the system input method picker (dictation / scribble / keyboard).
-    /// We delay focus slightly to ensure the picker appears reliably.
-    private func startDictation() {
-        textInputValue = ""
-        showingTextInput = true
-    }
+    // Dictation is now triggered by tapping the inline TextField directly.
 
     // MARK: - Send to Claude
 
