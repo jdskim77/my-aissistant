@@ -257,6 +257,17 @@ struct SettingsView: View {
 
                 // About
                 Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Our Vision")
+                            .font(AppFonts.label(13))
+                            .foregroundColor(AppColors.accent)
+                        Text("Excel at life by finding balance. Thrivn reveals where you're thriving and where you need attention — across your physical, mental, emotional, and spiritual well-being. Through daily check-ins, habit tracking, and an AI coach that understands your goals, it helps you align how you spend your time with what truly matters.")
+                            .font(AppFonts.body(14))
+                            .foregroundColor(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+
                     HStack {
                         Text("Version")
                             .font(AppFonts.body(15))
