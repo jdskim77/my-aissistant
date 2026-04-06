@@ -10,7 +10,7 @@ struct CheckInDetailView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.checkInManager) private var checkInManager
     @Environment(\.usageGateManager) private var usageGateManager
-    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
+    @Environment(\.notificationManager) private var notificationManager
     @State private var currentStep: CheckInStep = .greeting
     @State private var isGated = false
     @State private var selectedMood: Int? = nil
@@ -119,7 +119,7 @@ struct CheckInDetailView: View {
     private var greetingStep: some View {
         VStack(spacing: 20) {
             Text(timeSlot.icon)
-                .font(AppFonts.icon(56))
+                .font(.system(size: 56))
 
             Text(timeSlot.title)
                 .font(AppFonts.display(28))
@@ -145,7 +145,7 @@ struct CheckInDetailView: View {
     private var moodStep: some View {
         VStack(spacing: 24) {
             Text(timeSlot.icon)
-                .font(AppFonts.icon(40))
+                .font(.system(size: 40))
 
             MoodPicker(selectedMood: $selectedMood)
         }
@@ -194,7 +194,7 @@ struct CheckInDetailView: View {
                             }
 
                             Text(energyLabel(level))
-                                .font(AppFonts.caption(11))
+                                .font(AppFonts.caption(10))
                                 .foregroundColor(AppColors.textMuted)
                         }
                     }
@@ -236,7 +236,7 @@ struct CheckInDetailView: View {
     private var completeStep: some View {
         VStack(spacing: 20) {
             Text("✅")
-                .font(AppFonts.icon(56))
+                .font(.system(size: 56))
 
             Text("Check-in Complete!")
                 .font(AppFonts.display(24))
@@ -376,7 +376,9 @@ struct CheckInDetailView: View {
             aiSummary: aiGreeting
         )
         usageGateManager?.recordCheckIn()
-        checkInBehaviorEngine?.recordCompletion(window: timeSlot)
+
+        // Cancel streak-at-risk reminder since user has checked in today
+        notificationManager?.cancelStreakReminder()
     }
 
     private func energyLabel(_ level: Int) -> String {

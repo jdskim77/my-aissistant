@@ -1,10 +1,27 @@
 import Foundation
-import Observation
 import UserNotifications
 
-@Observable @MainActor
-final class NotificationManager {
-    var isAuthorized = false
+// MARK: - Notification Frequency
+
+enum NotificationFrequency: String {
+    case full       // All 4 check-in reminders (streak 0-7)
+    case moderate   // 2 reminders: morning + evening (streak 8-21)
+    case minimal    // Streak-at-risk only (streak 22+)
+
+    static func forStreak(_ streak: Int) -> NotificationFrequency {
+        if streak >= AppConstants.minimalStreakThreshold {
+            return .minimal
+        } else if streak >= AppConstants.moderateStreakThreshold {
+            return .moderate
+        } else {
+            return .full
+        }
+    }
+}
+
+@MainActor
+final class NotificationManager: ObservableObject {
+    @Published var isAuthorized = false
 
     // MARK: - Authorization
 
@@ -29,45 +46,10 @@ final class NotificationManager {
 
     // MARK: - Check-in Reminders
 
-    /// Schedule reminders using persisted preferences (adaptive system).
-    /// Static because it only talks to the UNUserNotificationCenter singleton.
-    static func scheduleCheckInReminders(preferences: [CheckInPreference]) {
-        let center = UNUserNotificationCenter.current()
-
-        // Remove all known check-in notifications deterministically
-        let defaultIDs = CheckInTime.allCases.map { "checkin-\($0.rawValue)" }
-        let prefIDs = preferences.map { "checkin-\($0.windowRaw)" }
-        center.removePendingNotificationRequests(withIdentifiers: defaultIDs + prefIDs)
-
-        for pref in preferences where pref.isEnabled {
-            let checkInTime = pref.checkInTime
-            let content = UNMutableNotificationContent()
-            content.title = pref.displayTitle
-            content.body = checkInTime?.greeting ?? "Time for a check-in!"
-            content.sound = .default
-            content.categoryIdentifier = "CHECKIN"
-            content.userInfo = ["timeSlot": pref.windowRaw]
-
-            var dateComponents = DateComponents()
-            dateComponents.hour = pref.customHour
-            dateComponents.minute = pref.customMinute
-
-            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-            let request = UNNotificationRequest(
-                identifier: "checkin-\(pref.windowRaw)",
-                content: content,
-                trigger: trigger
-            )
-
-            center.add(request)
-        }
-    }
-
-    /// Legacy convenience — schedules the 4 default windows at hardcoded times.
-    /// Used when no CheckInPreference records exist yet.
     func scheduleCheckInReminders() {
         let center = UNUserNotificationCenter.current()
 
+        // Remove existing check-in notifications
         center.removePendingNotificationRequests(withIdentifiers:
             CheckInTime.allCases.map { "checkin-\($0.rawValue)" }
         )
@@ -168,6 +150,107 @@ final class NotificationManager {
             .removePendingNotificationRequests(withIdentifiers: ["alarm-\(notificationID)"])
     }
 
+    // MARK: - Adaptive Check-in Scheduling
+
+    /// Schedules check-in reminders based on the user's current streak.
+    /// Higher streaks mean fewer reminders (the habit is forming).
+    func scheduleAdaptiveCheckInReminders(currentStreak: Int) {
+        let frequency = NotificationFrequency.forStreak(currentStreak)
+
+        // Persist the frequency tier
+        UserDefaults.standard.set(frequency.rawValue, forKey: AppConstants.notificationFrequencyKey)
+
+        let center = UNUserNotificationCenter.current()
+
+        // Remove all existing check-in notifications
+        center.removePendingNotificationRequests(withIdentifiers:
+            CheckInTime.allCases.map { "checkin-\($0.rawValue)" }
+        )
+
+        let slotsToSchedule: [CheckInTime]
+        switch frequency {
+        case .full:
+            slotsToSchedule = Array(CheckInTime.allCases)
+        case .moderate:
+            slotsToSchedule = [.morning, .night]
+        case .minimal:
+            // No regular check-in reminders — rely on streak-at-risk only
+            slotsToSchedule = []
+        }
+
+        for checkIn in slotsToSchedule {
+            let content = UNMutableNotificationContent()
+            content.title = checkIn.title
+            content.body = checkIn.greeting
+            content.sound = .default
+            content.categoryIdentifier = "CHECKIN"
+            content.userInfo = ["timeSlot": checkIn.rawValue]
+
+            var dateComponents = DateComponents()
+            dateComponents.hour = checkIn.hour
+            dateComponents.minute = 0
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+            let request = UNNotificationRequest(
+                identifier: "checkin-\(checkIn.rawValue)",
+                content: content,
+                trigger: trigger
+            )
+
+            center.add(request)
+        }
+
+        // Always schedule streak-at-risk for streaks > 0
+        scheduleStreakAtRiskReminder(currentStreak: currentStreak)
+    }
+
+    // MARK: - Streak-at-Risk Notifications
+
+    /// Schedules an evening reminder (8 PM) if the user has an active streak.
+    /// Message varies by streak length to increase urgency proportionally.
+    func scheduleStreakAtRiskReminder(currentStreak: Int) {
+        let center = UNUserNotificationCenter.current()
+        let identifier = AppConstants.streakReminderIdentifier
+
+        // Remove any existing streak reminder
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+
+        guard currentStreak > 0 else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Streak Reminder"
+        content.sound = .default
+        content.categoryIdentifier = "STREAK_REMINDER"
+
+        switch currentStreak {
+        case 1...6:
+            content.body = "Don't forget to check in today!"
+        case 7...20:
+            content.body = "Your \(currentStreak)-day streak is on the line! Check in before midnight."
+        default:
+            content.body = "You've built something incredible — \(currentStreak) days strong. Don't let it slip tonight."
+        }
+
+        var dateComponents = DateComponents()
+        dateComponents.hour = AppConstants.streakReminderHour
+        dateComponents.minute = 0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
+    }
+
+    /// Cancels the streak-at-risk reminder (call after user checks in).
+    func cancelStreakReminder() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [AppConstants.streakReminderIdentifier])
+    }
+
     // MARK: - Cancel All
 
     func cancelAllReminders() {
@@ -221,7 +304,18 @@ final class NotificationManager {
             intentIdentifiers: []
         )
 
+        let streakCheckInAction = UNNotificationAction(
+            identifier: "COMPLETE_CHECKIN",
+            title: "Check In Now",
+            options: [.foreground]
+        )
+        let streakCategory = UNNotificationCategory(
+            identifier: "STREAK_REMINDER",
+            actions: [streakCheckInAction, dismissAction],
+            intentIdentifiers: []
+        )
+
         UNUserNotificationCenter.current()
-            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory])
+            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory, streakCategory])
     }
 }

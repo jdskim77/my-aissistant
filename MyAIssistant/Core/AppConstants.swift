@@ -62,6 +62,13 @@ enum AppConstants {
     static let googleClientID = "124674263612-m8h7hifl06m3ru01k3fvtbmmjleoatfp.apps.googleusercontent.com"
     static let googleClientIDKey = "googleClientID"
 
+    // MARK: - Streak Notifications
+    static let streakReminderHour = 20 // 8 PM
+    static let streakReminderIdentifier = "streak-at-risk"
+    static let notificationFrequencyKey = "notificationFrequency"
+    static let moderateStreakThreshold = 8
+    static let minimalStreakThreshold = 22
+
     // MARK: - Keychain Keys (Google Calendar)
     static let googleAccessTokenKey = "com.myaissistant.google-access-token"
     static let googleRefreshTokenKey = "com.myaissistant.google-refresh-token"

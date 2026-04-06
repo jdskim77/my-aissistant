@@ -15,6 +15,7 @@ struct MyAIssistantApp: App {
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
+    @State private var notificationManager = NotificationManager()
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
@@ -86,10 +87,15 @@ struct MyAIssistantApp: App {
                 .environment(\.subscriptionTier, subscriptionManager.currentTier)
                 .environment(\.keychainService, keychainService)
                 .environment(\.greetingManager, greetingManager)
+                .environment(\.notificationManager, notificationManager)
                 .environmentObject(subscriptionManager)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
+
+                    // Schedule adaptive check-in reminders based on streak
+                    let streak = patternEngine.currentStreak()
+                    notificationManager.scheduleAdaptiveCheckInReminders(currentStreak: streak)
 
                     // Schedule background tasks
                     backgroundTaskManager?.scheduleDailySnapshot()
@@ -166,7 +172,7 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         // Determine which screen to open
         let destination: String
         switch category {
-        case "CHECKIN":
+        case "CHECKIN", "STREAK_REMINDER":
             destination = "home"
         case "TASK":
             destination = "schedule"
