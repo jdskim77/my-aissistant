@@ -47,7 +47,8 @@ struct AppIconPreview: View {
                 size: size * 0.58,
                 isAnimating: false,
                 strokeColor: markStrokeColor,
-                strokeWidth: markStrokeWidth
+                strokeWidth: markStrokeWidth,
+                centerDotColor: centerDotColor
             )
         }
         .frame(width: size, height: size)
@@ -87,10 +88,12 @@ struct AppIconPreview: View {
             }
 
         case .diagonalDuotone, .duotoneGold:
+            // More dramatic gradient — light indigo top-left → deep violet
+            // bottom-right. Visible at small sizes and reads as "depth + magic".
             LinearGradient(
                 colors: [
-                    Color(hex: "4F46E5"), // indigo-600
-                    Color(hex: "7C3AED")  // violet-600
+                    Color(hex: "818CF8"), // indigo-400 (top-left, lighter)
+                    Color(hex: "5B21B6")  // violet-800 (bottom-right, deeper)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -152,6 +155,13 @@ struct AppIconPreview: View {
     /// 4pt at 1024×1024 = ~visible edge at all sizes.
     private var markStrokeWidth: CGFloat {
         isGoldVariant ? max(1, size / 1024 * 4) : 0
+    }
+
+    /// Center dot color — for gold variants, the dot becomes a deep indigo
+    /// accent that visually anchors against the gold star body. Without this
+    /// override the dot is the same color as the star and disappears.
+    private var centerDotColor: Color? {
+        isGoldVariant ? Color(hex: "1E1B4B") : nil  // indigo-950 — sharp contrast on gold
     }
 }
 

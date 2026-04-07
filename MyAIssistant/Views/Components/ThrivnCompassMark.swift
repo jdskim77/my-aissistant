@@ -24,6 +24,12 @@ struct ThrivnCompassMark: View {
     var strokeColor: Color? = nil
     var strokeWidth: CGFloat = 0
 
+    /// Optional override for the center dot color.
+    /// When nil (default), the dot uses the same color as the star — looks like
+    /// part of the star body. When set, the dot becomes a contrasting accent
+    /// (e.g. darker indigo dot inside a gold star for the app icon).
+    var centerDotColor: Color? = nil
+
     @State private var orbitRotation: Double = 0
     @State private var pulseScale: CGFloat = 1.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -69,9 +75,11 @@ struct ThrivnCompassMark: View {
             }
 
             // 3. Center dot — the user / "you are here" anchor
+            // Uses centerDotColor when set, otherwise the star color (invisible
+            // inside the star body — fine for small button contexts).
             Circle()
-                .fill(color)
-                .frame(width: size * 0.10, height: size * 0.10)
+                .fill(centerDotColor ?? color)
+                .frame(width: size * 0.13, height: size * 0.13)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true) // Decorative — parent view should label
