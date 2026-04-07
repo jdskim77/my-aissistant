@@ -150,6 +150,67 @@ struct AppIconPreview: View {
     }
 }
 
+// MARK: - Gallery (runtime view for picking icon variants on-device)
+
+/// Scrollable gallery showing every AppIconPreview variant at multiple sizes.
+/// Wired into SettingsView temporarily so you can pick the winning icon
+/// directly on the simulator/device without waiting for Xcode previews to render.
+/// Remove the SettingsView NavigationLink once the icon is finalized.
+struct AppIconPreviewGallery: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                // Section 1: Hero (large, one per row)
+                Text("Full Size (1024×1024 rendered at 280pt)")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+
+                ForEach(AppIconPreview.BackgroundStyle.allCases) { style in
+                    VStack(spacing: 8) {
+                        AppIconPreview(style: style, size: 280)
+                            .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
+                        Text(style.rawValue)
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .padding(.horizontal)
+                }
+
+                Divider().padding(.vertical, 8)
+
+                // Section 2: Home screen size realism check
+                Text("Home Screen Size (60×60pt) — what users will actually see")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 90))],
+                    spacing: 16
+                ) {
+                    ForEach(AppIconPreview.BackgroundStyle.allCases) { style in
+                        VStack(spacing: 6) {
+                            AppIconPreview(style: style, size: 60)
+                            Text(style.rawValue)
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .frame(width: 80)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                Spacer(minLength: 40)
+            }
+            .padding(.vertical, 20)
+        }
+        .navigationTitle("App Icon Preview")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 // MARK: - Previews
 
 /// Side-by-side comparison of all background styles at thumbnail size.

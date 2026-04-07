@@ -6,8 +6,8 @@ struct SettingsView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.modelContext) private var modelContext
     @State private var appeared = false
-    @State private var exportURL: URL?
-    @State private var showingExportShare = false
+    @State private var exportItem: ExportItem?
+    private struct ExportItem: Identifiable { let id = UUID(); let url: URL }
     @State private var versionTapCount = 0
     @State private var showDeveloperModeAlert = false
     @State private var exportError: String?
@@ -30,6 +30,18 @@ struct SettingsView: View {
                             color: AppColors.skyBlue,
                             title: "Appearance",
                             subtitle: ThemeManager.shared.selectedTheme.rawValue
+                        )
+                    }
+
+                    // TEMP: App Icon Preview (remove when icon is finalized)
+                    NavigationLink {
+                        AppIconPreviewGallery()
+                    } label: {
+                        settingsRow(
+                            icon: "app.badge.fill",
+                            color: AppColors.accent,
+                            title: "App Icon Preview",
+                            subtitle: "Compare brand mark variants"
                         )
                     }
 
@@ -167,8 +179,8 @@ struct SettingsView: View {
                         Haptics.light()
                         do {
                             let service = DataExportService(modelContext: modelContext)
-                            exportURL = try service.exportFileURL()
-                            showingExportShare = true
+                            let url = try service.exportFileURL()
+                            exportItem = ExportItem(url: url)
                         } catch {
                             exportError = error.localizedDescription
                         }
@@ -322,10 +334,8 @@ struct SettingsView: View {
                     appeared = true
                 }
             }
-            .sheet(isPresented: $showingExportShare) {
-                if let url = exportURL {
-                    ShareSheet(items: [url])
-                }
+            .sheet(item: $exportItem) { item in
+                ShareSheet(items: [item.url])
             }
             .alert("Export Failed", isPresented: .init(
                 get: { exportError != nil },
