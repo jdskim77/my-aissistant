@@ -3,19 +3,19 @@ import SwiftData
 
 @Model
 final class HabitItem {
-    var id: String
-    var title: String
-    var icon: String              // emoji
-    var colorHex: String          // hex color for display
-    var createdAt: Date
+    var id: String = UUID().uuidString
+    var title: String = ""
+    var icon: String = "✅"          // emoji
+    var colorHex: String = "#2D5016" // hex color for display
+    var createdAt: Date = Date()
     var archivedAt: Date?
-    var targetDaysRaw: String     // comma-separated day numbers (1=Sun, 2=Mon, ... 7=Sat), or "daily"
-    var reminderHour: Int?        // optional reminder time
+    var targetDaysRaw: String = "daily"  // comma-separated day numbers, or "daily"
+    var reminderHour: Int?
     var reminderMinute: Int?
 
     /// Tracks which dates this habit was completed on.
     /// Stored as comma-separated "yyyy-MM-dd" strings for SwiftData compatibility.
-    var completionDatesRaw: String
+    var completionDatesRaw: String = ""
 
     // MARK: - Computed
 

@@ -7,14 +7,14 @@ import SwiftData
 @Model
 final class UserDimensionPreference {
     /// Lowercased activity keyword (e.g., "yoga", "journaling", "cooking")
-    var keyword: String
+    var keyword: String = ""
     /// The dimension the user most often assigns to this keyword
-    var dimensionRaw: String
+    var dimensionRaw: String = "practical"
     /// Number of times this keyword was tagged with this dimension
-    var confirmCount: Int
+    var confirmCount: Int = 0
     /// Total times this keyword was tagged with any dimension
-    var totalCount: Int
-    var lastUpdated: Date
+    var totalCount: Int = 0
+    var lastUpdated: Date = Date()
 
     @Transient
     var dimension: LifeDimension {

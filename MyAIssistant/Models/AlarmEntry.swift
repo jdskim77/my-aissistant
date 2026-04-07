@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 final class AlarmEntry {
-    var id: String
-    var label: String
-    var time: Date
-    var repeatsDaily: Bool
-    var notificationID: String
-    var createdAt: Date
+    var id: String = UUID().uuidString
+    var label: String = ""
+    var time: Date = Date()
+    var repeatsDaily: Bool = false
+    var notificationID: String = UUID().uuidString
+    var createdAt: Date = Date()
 
     init(
         id: String = UUID().uuidString,

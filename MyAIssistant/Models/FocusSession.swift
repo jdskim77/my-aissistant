@@ -3,17 +3,17 @@ import SwiftData
 
 @Model
 final class FocusSession {
-    var id: String
+    var id: String = UUID().uuidString
     var taskID: String?
-    var taskTitle: String
-    var startedAt: Date
+    var taskTitle: String = "Focus Session"
+    var startedAt: Date = Date()
     var endedAt: Date?
-    var workDuration: Int          // seconds per work interval
-    var breakDuration: Int         // seconds per break interval
-    var intervalsCompleted: Int
-    var intervalsTarget: Int
-    var totalFocusSeconds: Int     // actual accumulated focus time
-    var completed: Bool            // did user finish all intervals?
+    var workDuration: Int = 1500          // seconds per work interval
+    var breakDuration: Int = 300          // seconds per break interval
+    var intervalsCompleted: Int = 0
+    var intervalsTarget: Int = 4
+    var totalFocusSeconds: Int = 0        // actual accumulated focus time
+    var completed: Bool = false           // did user finish all intervals?
 
     init(
         id: String = UUID().uuidString,

@@ -56,15 +56,15 @@ enum TaskRecurrence: String, CaseIterable, Identifiable, Codable {
 
 @Model
 final class TaskItem {
-    var id: String
-    var title: String
-    var categoryRaw: String
-    var priorityRaw: String
-    var date: Date
-    var done: Bool
-    var icon: String
-    var notes: String
-    var createdAt: Date
+    var id: String = UUID().uuidString
+    var title: String = ""
+    var categoryRaw: String = "personal"
+    var priorityRaw: String = "medium"
+    var date: Date = Date()
+    var done: Bool = false
+    var icon: String = "circle"
+    var notes: String = ""
+    var createdAt: Date = Date()
     var completedAt: Date?
     var externalCalendarID: String?
     var recurrenceRaw: String?

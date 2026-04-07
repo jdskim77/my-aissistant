@@ -3,12 +3,12 @@ import SwiftData
 
 @Model
 final class UserProfile {
-    var id: String
-    var displayName: String
-    var onboardingCompleted: Bool
-    var notificationsEnabled: Bool
-    var calendarSyncEnabled: Bool
-    var createdAt: Date
+    var id: String = UUID().uuidString
+    var displayName: String = ""
+    var onboardingCompleted: Bool = false
+    var notificationsEnabled: Bool = false
+    var calendarSyncEnabled: Bool = false
+    var createdAt: Date = Date()
 
     init(
         id: String = UUID().uuidString,

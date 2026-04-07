@@ -7,11 +7,11 @@ import SwiftData
 /// (morning, midday, afternoon, evening).
 @Model
 final class DailyBalanceCheckIn {
-    var id: String
-    var date: Date
+    var id: String = UUID().uuidString
+    var date: Date = Date()
 
     /// Which dimension received the user's best energy today (legacy / evening summary)
-    var dimensionRaw: String
+    var dimensionRaw: String = "practical"
 
     /// Daily energy level: -3 (drained) to +3 (energized). Nil if not rated.
     var energyRating: Int?

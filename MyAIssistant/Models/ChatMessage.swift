@@ -8,11 +8,11 @@ enum MessageRole: String, Codable {
 
 @Model
 final class ChatMessage {
-    var id: String
-    var roleRaw: String
-    var content: String
-    var timestamp: Date
-    var conversationID: String
+    var id: String = UUID().uuidString
+    var roleRaw: String = "assistant"
+    var content: String = ""
+    var timestamp: Date = Date()
+    var conversationID: String = "main"
 
     @Transient
     var role: MessageRole {

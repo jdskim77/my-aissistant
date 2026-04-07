@@ -3,10 +3,10 @@ import SwiftData
 
 @Model
 final class CheckInRecord {
-    var id: String
-    var timeSlotRaw: String
-    var date: Date
-    var completed: Bool
+    var id: String = UUID().uuidString
+    var timeSlotRaw: String = "morning"
+    var date: Date = Date()
+    var completed: Bool = false
     var mood: Int?
     var energyLevel: Int?
     var notes: String?

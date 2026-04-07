@@ -4,18 +4,18 @@ import CryptoKit
 
 @Model
 final class UsageTracker {
-    var id: String
-    var monthKey: String          // "2026-02" format for monthly reset
-    var weekKey: String            // "2026-W07" format for weekly reset (legacy, kept for schema)
-    var dayKey: String             // "2026-04-01" format for daily reset
-    var chatMessagesThisMonth: Int
-    var checkInsThisWeek: Int      // legacy — kept for schema compatibility
-    var checkInsToday: Int
-    var totalInputTokens: Int
-    var totalOutputTokens: Int
-    var lastUpdated: Date
+    var id: String = "usage-singleton"
+    var monthKey: String = ""
+    var weekKey: String = ""
+    var dayKey: String = ""
+    var chatMessagesThisMonth: Int = 0
+    var checkInsThisWeek: Int = 0
+    var checkInsToday: Int = 0
+    var totalInputTokens: Int = 0
+    var totalOutputTokens: Int = 0
+    var lastUpdated: Date = Date()
     /// HMAC signature of counters — verified against Keychain-stored key to detect tampering
-    var integrityHash: String
+    var integrityHash: String = ""
 
     init() {
         self.id = "usage-singleton"

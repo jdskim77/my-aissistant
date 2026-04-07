@@ -5,12 +5,12 @@ import SwiftData
 /// to intentionally invest in for 28 days. Nudges are weighted toward this dimension.
 @Model
 final class SeasonGoal {
-    var id: String
-    var dimensionRaw: String
-    var startDate: Date
-    var endDate: Date
+    var id: String = UUID().uuidString
+    var dimensionRaw: String = "physical"
+    var startDate: Date = Date()
+    var endDate: Date = Date()
     /// User's free-text intention, e.g. "Get back to running 3x/week"
-    var intention: String
+    var intention: String = ""
     var completedAt: Date?
 
     @Transient

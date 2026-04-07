@@ -2,8 +2,17 @@ import SwiftUI
 import SwiftData
 
 struct CheckInDetailView: View {
-    let timeSlot: CheckInTime
+    let initialSlot: CheckInTime
+    @State private var timeSlot: CheckInTime
+    @State private var isYesterday: Bool = false
+
+    init(timeSlot: CheckInTime) {
+        self.initialSlot = timeSlot
+        _timeSlot = State(initialValue: timeSlot)
+    }
     @Environment(\.dismiss) private var dismiss
+    @Query(filter: #Predicate<CheckInRecord> { $0.completed == true },
+           sort: \CheckInRecord.date, order: .reverse) private var allCheckIns: [CheckInRecord]
     @Environment(\.taskManager) private var taskManager
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.keychainService) private var keychainService
@@ -82,7 +91,12 @@ struct CheckInDetailView: View {
                 }
             }
             .onAppear {
-                // Check usage gate for free tier
+                // If the initial slot is already completed today, advance to
+                // the first uncompleted slot so the user lands on something useful.
+                if completedSlotsForDay.contains(timeSlot.rawValue),
+                   let firstOpen = CheckInTime.allCases.first(where: { !completedSlotsForDay.contains($0.rawValue) }) {
+                    timeSlot = firstOpen
+                }
                 if let gate = usageGateManager, !gate.canDoCheckIn(tier: tier) {
                     isGated = true
                 } else {
@@ -116,8 +130,85 @@ struct CheckInDetailView: View {
 
     // MARK: - Greeting Step
 
+    /// Slots already completed for the date being logged (today or yesterday).
+    private var completedSlotsForDay: Set<String> {
+        let cal = Calendar.current
+        let dayBase = isYesterday
+            ? (cal.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+            : Date()
+        let start = cal.startOfDay(for: dayBase)
+        let end = cal.date(byAdding: .day, value: 1, to: start) ?? start
+        return Set(allCheckIns.filter { $0.date >= start && $0.date < end }.map(\.timeSlotRaw))
+    }
+
+    private var slotPicker: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                ForEach(CheckInTime.allCases) { slot in
+                    let alreadyDone = completedSlotsForDay.contains(slot.rawValue)
+                    Button {
+                        guard !alreadyDone else { return }
+                        Haptics.selection()
+                        withAnimation(.easeInOut(duration: 0.2)) { timeSlot = slot }
+                    } label: {
+                        VStack(spacing: 2) {
+                            ZStack(alignment: .topTrailing) {
+                                Text(slot.icon).font(.system(size: 18))
+                                if alreadyDone {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(AppColors.completionGreen)
+                                        .background(Circle().fill(AppColors.surface))
+                                        .offset(x: 6, y: -6)
+                                }
+                            }
+                            Text(slot.rawValue)
+                                .font(AppFonts.label(10))
+                                .foregroundColor(
+                                    alreadyDone ? AppColors.textMuted
+                                    : (timeSlot == slot ? .white : AppColors.textSecondary)
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            alreadyDone ? AppColors.surface.opacity(0.5)
+                            : (timeSlot == slot ? slot.color : AppColors.surface)
+                        )
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(timeSlot == slot && !alreadyDone ? Color.clear : AppColors.border, lineWidth: 1)
+                        )
+                        .opacity(alreadyDone ? 0.55 : 1)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(alreadyDone)
+                    .accessibilityLabel("\(slot.rawValue)\(alreadyDone ? ", already checked in" : "")")
+                }
+            }
+
+            Button {
+                Haptics.selection()
+                withAnimation(.easeInOut(duration: 0.2)) { isYesterday.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isYesterday ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 13))
+                    Text("Backfill yesterday")
+                        .font(AppFonts.caption(12))
+                }
+                .foregroundColor(isYesterday ? AppColors.accent : AppColors.textMuted)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+    }
+
     private var greetingStep: some View {
         VStack(spacing: 20) {
+            slotPicker
+
             Text(timeSlot.icon)
                 .font(.system(size: 56))
 
@@ -311,6 +402,17 @@ struct CheckInDetailView: View {
 
     // MARK: - Logic
 
+    /// Anchor date for this check-in: today (or yesterday if backfilling),
+    /// snapped to the slot's anchor hour so insights bucket correctly.
+    private var anchorDate: Date {
+        let cal = Calendar.current
+        let dayBase = isYesterday
+            ? (cal.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+            : Date()
+        // Use bySettingHour so DST transitions don't shift the anchor by 1h.
+        return cal.date(bySettingHour: timeSlot.hour, minute: 0, second: 0, of: dayBase) ?? dayBase
+    }
+
     private var canAdvance: Bool {
         switch currentStep {
         case .greeting: return !isLoadingGreeting
@@ -324,7 +426,7 @@ struct CheckInDetailView: View {
     private func goForward() {
         switch currentStep {
         case .greeting:
-            record = checkInManager?.startCheckIn(timeSlot: timeSlot)
+            record = checkInManager?.startCheckIn(timeSlot: timeSlot, date: anchorDate)
             currentStep = .mood
         case .mood:
             currentStep = .energy

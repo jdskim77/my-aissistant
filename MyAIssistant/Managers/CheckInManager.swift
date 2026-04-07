@@ -12,8 +12,8 @@ final class CheckInManager {
 
     // MARK: - Start Check-in
 
-    func startCheckIn(timeSlot: CheckInTime) -> CheckInRecord {
-        let record = CheckInRecord(timeSlot: timeSlot)
+    func startCheckIn(timeSlot: CheckInTime, date: Date = Date()) -> CheckInRecord {
+        let record = CheckInRecord(timeSlot: timeSlot, date: date)
         modelContext.insert(record)
         modelContext.safeSave()
         return record

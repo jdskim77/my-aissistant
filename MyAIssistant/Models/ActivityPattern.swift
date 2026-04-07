@@ -5,40 +5,18 @@ import SwiftData
 /// Used by Smart Activity Recall to suggest unlogged activities during the evening check-in.
 @Model
 final class ActivityPattern {
-    var id: String
-
-    /// Normalized activity name (lowercased, e.g., "yoga", "morning run")
-    var activityName: String
-
-    /// The dimension the user typically tags this activity with
-    var dimensionRaw: String
-
-    /// Most common duration in minutes (e.g., 30 for a 30-min yoga session)
-    var typicalDurationMinutes: Int
-
-    /// Days of the week this activity typically occurs (1=Sun, 2=Mon, ... 7=Sat)
-    var weekdayPatternRaw: String // Comma-separated ints: "2,4,6" for Mon/Wed/Fri
-
-    /// How many times per week this activity typically occurs
-    var weeklyFrequency: Int
-
-    /// Number of times the recall suggestion was shown for this pattern
-    var totalSuggested: Int
-
-    /// Number of times the user confirmed "yes I did this"
-    var totalAccepted: Int
-
-    /// Consecutive times the user dismissed the suggestion (resets on accept)
-    var consecutiveDismissals: Int
-
-    /// Last time this pattern was suggested in a recall prompt
+    var id: String = UUID().uuidString
+    var activityName: String = ""
+    var dimensionRaw: String = "physical"
+    var typicalDurationMinutes: Int = 30
+    var weekdayPatternRaw: String = ""
+    var weeklyFrequency: Int = 0
+    var totalSuggested: Int = 0
+    var totalAccepted: Int = 0
+    var consecutiveDismissals: Int = 0
     var lastSuggested: Date?
-
-    /// Last time the user confirmed doing this activity
     var lastConfirmed: Date?
-
-    /// When this pattern was first detected
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     // MARK: - Transient Accessors
 

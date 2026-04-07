@@ -224,17 +224,43 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 // MARK: - ModelContainer Factory Methods
 
 extension MyAIssistantApp {
+    private static let appGroupID = "group.com.myaissistant.shared"
+    private static let storeFilename = "MyAIssistant.store"
+
+    /// Resolves the SwiftData store URL inside the App Group's Application Support
+    /// directory, creating intermediate directories first. Returns nil if the
+    /// App Group container is unavailable (e.g. entitlements mismatch).
+    private static func appGroupStoreURL() -> URL? {
+        let fm = FileManager.default
+        guard let containerURL = fm.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) else {
+            return nil
+        }
+        let appSupport = containerURL.appendingPathComponent("Library/Application Support", isDirectory: true)
+        do {
+            try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
+        } catch {
+            return nil
+        }
+        return appSupport.appendingPathComponent(storeFilename)
+    }
+
     static func createCloudContainer(schema: Schema) -> ModelContainer? {
-        let config = ModelConfiguration(
-            "MyAIssistant",
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
+        let config: ModelConfiguration
+        if let url = appGroupStoreURL() {
+            config = ModelConfiguration("MyAIssistant", schema: schema, url: url, cloudKitDatabase: .automatic)
+        } else {
+            config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
+        }
         return try? ModelContainer(for: schema, configurations: [config])
     }
 
     static func createLocalOnlyContainer(schema: Schema) -> ModelContainer? {
-        let config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        let config: ModelConfiguration
+        if let url = appGroupStoreURL() {
+            config = ModelConfiguration("MyAIssistant", schema: schema, url: url, cloudKitDatabase: .none)
+        } else {
+            config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        }
         return try? ModelContainer(for: schema, configurations: [config])
     }
 }

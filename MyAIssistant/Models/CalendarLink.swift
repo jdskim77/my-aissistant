@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class CalendarLink {
-    var id: String
-    var source: String          // "apple" or "google"
-    var calendarID: String      // EKCalendar.calendarIdentifier or Google Calendar ID
-    var name: String
-    var color: String           // Hex color from calendar
-    var enabled: Bool
+    var id: String = UUID().uuidString
+    var source: String = "apple"
+    var calendarID: String = ""
+    var name: String = ""
+    var color: String = "#2D5016"
+    var enabled: Bool = true
     var lastSynced: Date?
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     // MARK: - Computed source accessor
 

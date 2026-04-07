@@ -87,4 +87,5 @@ enum CheckInTime: String, CaseIterable, Identifiable {
         if hour < 22 { return .night }
         return .morning // next day
     }
+
 }

@@ -3,11 +3,11 @@ import SwiftData
 
 @Model
 final class ActivityEntry {
-    var id: String
-    var activity: String
-    var category: String
-    var date: Date
-    var source: String
+    var id: String = UUID().uuidString
+    var activity: String = ""
+    var category: String = ""
+    var date: Date = Date()
+    var source: String = "chat"
 
     init(
         id: String = UUID().uuidString,

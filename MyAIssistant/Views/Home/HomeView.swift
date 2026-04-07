@@ -11,6 +11,8 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
+    @Query(filter: #Predicate<CheckInRecord> { $0.completed == true },
+           sort: \CheckInRecord.date, order: .reverse) private var allCheckIns: [CheckInRecord]
 
     @State private var appeared = false
     @State private var showingCheckIn = false
@@ -24,6 +26,7 @@ struct HomeView: View {
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
     @State private var celebrationMilestone: Int?
+    @ScaledMetric(relativeTo: .caption) private var chipDotSize: CGFloat = 6
 
     // MARK: - Computed
 
@@ -32,6 +35,38 @@ struct HomeView: View {
         if hour < 12 { return "Good morning" }
         if hour < 17 { return "Good afternoon" }
         return "Good evening"
+    }
+
+    // MARK: - Check-in State
+
+    /// Slots completed today, deduped by slot (one record per slot per day).
+    private var todayCompletedSlots: Set<String> {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        return Set(allCheckIns.filter { $0.date >= startOfDay }.map(\.timeSlotRaw))
+    }
+
+    private var todayCheckInCount: Int { todayCompletedSlots.count }
+
+    private func isSlotCompletedToday(_ slot: CheckInTime) -> Bool {
+        todayCompletedSlots.contains(slot.rawValue)
+    }
+
+    private enum CheckInCardState {
+        case prominent(slot: CheckInTime)
+        case progress
+        case complete
+    }
+
+    private var checkInCardState: CheckInCardState {
+        if todayCheckInCount >= 4 { return .complete }
+        // Show the prominent card whenever the slot the user is currently in
+        // hasn't been logged yet. No artificial windowing — if it's that slot's
+        // hours and the user hasn't checked in, they should see it.
+        let current = CheckInTime.current()
+        if !isSlotCompletedToday(current) {
+            return .prominent(slot: current)
+        }
+        return .progress
     }
 
     private var formattedDate: String {
@@ -130,6 +165,16 @@ struct HomeView: View {
             ) ?? WisdomManager.todayQuote() {
                 Section {
                     wisdomCard(quote: quote)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
+            // Prominent check-in card (only during active slot window)
+            if case let .prominent(slot) = checkInCardState {
+                Section {
+                    checkInPromptCard(slot: slot)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -551,6 +596,57 @@ struct HomeView: View {
         .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
     }
 
+    // MARK: - Prominent Check-in Card
+
+    private func checkInPromptCard(slot: CheckInTime) -> some View {
+        Button { showingCheckIn = true } label: {
+            HStack(spacing: 14) {
+                Text(slot.icon)
+                    .font(.system(size: 32))
+                    .frame(width: 52, height: 52)
+                    .background(slot.color.opacity(0.15))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(slot.rawValue) check-in")
+                        .font(AppFonts.heading(16))
+                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: 4) {
+                        ForEach(CheckInTime.allCases) { s in
+                            Circle()
+                                .fill(isSlotCompletedToday(s) ? s.color : AppColors.border)
+                                .frame(width: chipDotSize, height: chipDotSize)
+                        }
+                        Text("· 30 sec to reflect")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textSecondary)
+                            .padding(.leading, 4)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(slot.color)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(AppColors.card)
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(slot.color.opacity(0.3), lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(slot.rawValue) check-in available. \(todayCheckInCount) of 4 done today. Tap to start.")
+    }
+
     // MARK: - Insight Card
 
     private func insightCard(_ insight: InsightEngine.Insight) -> some View {
@@ -602,28 +698,43 @@ struct HomeView: View {
 
             Spacer()
 
-            // Next check-in pill
-            Button {
-                showingCheckIn = true
-            } label: {
-                let next = CheckInTime.next()
-                HStack(spacing: 6) {
-                    Text(next.icon)
-                        .font(.system(size: 14))
-                    Text(next.timeLabel)
-                        .font(AppFonts.label(12))
-                        .foregroundColor(AppColors.textSecondary)
+            // Compact check-in chip (driven by single-source state)
+            switch checkInCardState {
+            case .prominent:
+                // Hidden — prominent card replaces it below
+                EmptyView()
+            case .progress, .complete:
+                Button { showingCheckIn = true } label: {
+                    HStack(spacing: 6) {
+                        if case .complete = checkInCardState {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(AppColors.completionGreen)
+                            Text("Day done")
+                                .font(AppFonts.label(12))
+                                .foregroundColor(AppColors.completionGreen)
+                        } else {
+                            HStack(spacing: 3) {
+                                ForEach(CheckInTime.allCases) { slot in
+                                    Circle()
+                                        .fill(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
+                                        .frame(width: chipDotSize, height: chipDotSize)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(AppColors.card)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                    )
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(AppColors.card)
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                )
+                .buttonStyle(.plain)
+                .accessibilityLabel("Check-ins: \(todayCheckInCount) of 4 done today. Tap to add a check-in.")
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -650,14 +761,26 @@ struct HomeView: View {
                     .foregroundColor(AppColors.textSecondary)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(completedTodayCount) of \(totalTodayCount) done")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(completedTodayCount) of \(totalTodayCount) tasks")
                     .font(AppFonts.bodyMedium(14))
                     .foregroundColor(AppColors.textPrimary)
-                if streak > 0 {
-                    Text("\(streak)-day streak 🔥")
+                HStack(spacing: 6) {
+                    HStack(spacing: 3) {
+                        ForEach(CheckInTime.allCases) { slot in
+                            Circle()
+                                .fill(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
+                                .frame(width: chipDotSize, height: chipDotSize)
+                        }
+                    }
+                    Text("\(todayCheckInCount)/4 check-ins")
                         .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.textSecondary)
+                    if streak > 0 {
+                        Text("· \(streak)🔥")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.accentWarm)
+                    }
                 }
             }
 

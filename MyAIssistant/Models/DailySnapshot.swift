@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class DailySnapshot {
-    var id: String
-    var date: Date
-    var tasksTotal: Int
-    var tasksCompleted: Int
-    var checkInsCompleted: Int
-    var checkInsTotal: Int
+    var id: String = UUID().uuidString
+    var date: Date = Date()
+    var tasksTotal: Int = 0
+    var tasksCompleted: Int = 0
+    var checkInsCompleted: Int = 0
+    var checkInsTotal: Int = 4
     var averageMood: Double?
-    var streakCount: Int
+    var streakCount: Int = 0
 
     init(
         id: String = UUID().uuidString,
