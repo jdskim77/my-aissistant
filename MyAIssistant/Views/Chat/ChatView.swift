@@ -333,11 +333,9 @@ struct ChatView: View {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var actionButtonIcon: String {
-        // Recording uses mic.fill (matches recording state); has-text uses arrow; empty uses mic
-        if speechRecognizer.isRecording || !hasText { return "mic.fill" }
-        return "arrow.up"
-    }
+    // Note: actionButtonIcon was removed — the button now uses a SwiftUI
+    // ThrivnCompassMark for idle/recording states and an SF Symbol arrow
+    // only for the send state. Branching happens inline in the button label.
 
     private var actionButtonColor: Color {
         // Coral signals "actively recording"; accent for everything else
@@ -443,7 +441,7 @@ struct ChatView: View {
                     }
                 } label: {
                     ZStack {
-                        // Pulsing ring when recording
+                        // Outer pulsing ring when recording (kept for accent, in addition to compass orbit)
                         if speechRecognizer.isRecording {
                             Circle()
                                 .stroke(AppColors.coral.opacity(0.3), lineWidth: 3)
@@ -453,12 +451,23 @@ struct ChatView: View {
                                 .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false), value: micPulse)
                         }
 
-                        Image(systemName: actionButtonIcon)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(.white)
+                        // Filled circular background — coral when recording, accent otherwise
+                        Circle()
+                            .fill(actionButtonColor)
                             .frame(width: 44, height: 44)
-                            .background(actionButtonColor)
-                            .cornerRadius(22)
+
+                        // Foreground glyph: compass mark for idle/recording, arrow for send
+                        if hasText && !speechRecognizer.isRecording {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(.white)
+                        } else {
+                            ThrivnCompassMark(
+                                color: .white,
+                                size: 30,
+                                isAnimating: speechRecognizer.isRecording
+                            )
+                        }
                     }
                 }
                 .accessibilityLabel(actionButtonAccessibilityLabel)

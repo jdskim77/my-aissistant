@@ -43,6 +43,7 @@
 		78CC99A8F6F1D3D8B0098D2B /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CB2D6EA910D159998AA87F /* InsightEngine.swift */; };
 		7A408BB64039A1AF3B31A379 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
 		7B82EA587B3218BAA2FD803C /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */; };
+		80F1B9807AFEFCF47C3D4278 /* ThrivnCompassMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
 		826568DF5F9981992E1543A6 /* CheckInPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */; };
 		82D8451AA02798FED6E546A3 /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36715A70A41F1E323B785B09 /* CompassTabView.swift */; };
@@ -248,6 +249,7 @@
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCompassRevealView.swift; sourceTree = "<group>"; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
+		1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThrivnCompassMark.swift; sourceTree = "<group>"; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
 		27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingSuggestedTasksView.swift; sourceTree = "<group>"; };
@@ -660,6 +662,7 @@
 				BD00000001000000 /* AIActivityOrb.swift */,
 				406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */,
 				C97ACE583981903B7525F883 /* CelebrationView.swift */,
+				1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1343,6 +1346,7 @@
 				9D1A0B7D13107C124899EF2F /* OnboardingCompassRevealView.swift in Sources */,
 				E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */,
 				879011535AE68D1E23D62734 /* OnboardingQuickRateView.swift in Sources */,
+				80F1B9807AFEFCF47C3D4278 /* ThrivnCompassMark.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
