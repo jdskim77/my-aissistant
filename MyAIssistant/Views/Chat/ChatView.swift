@@ -328,6 +328,29 @@ struct ChatView: View {
 
     @State private var micPulse = false
 
+    /// Context-aware button state — depends on text presence + recording state.
+    private var hasText: Bool {
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var actionButtonIcon: String {
+        if speechRecognizer.isRecording { return "mic.fill" }
+        if hasText { return "arrow.up" }
+        return "mic.fill"
+    }
+
+    private var actionButtonColor: Color {
+        if speechRecognizer.isRecording { return AppColors.coral }
+        if hasText { return AppColors.accent }
+        return AppColors.accent
+    }
+
+    private var actionButtonAccessibilityLabel: String {
+        if speechRecognizer.isRecording { return "Stop recording" }
+        if hasText { return "Send message" }
+        return "Start voice input"
+    }
+
     private var inputBar: some View {
         VStack(spacing: 0) {
             // Free tier remaining messages indicator
@@ -373,10 +396,12 @@ struct ChatView: View {
                 .onDisappear { micPulse = false }
             }
 
-            HStack(spacing: 10) {
-                TextField("Ask your assistant...", text: $inputText, axis: .vertical)
+            // Single context-aware button: mic when empty, send when text present.
+            // TextField auto-grows up to 5 lines so dictated text is fully visible.
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("Tap mic to speak or type...", text: $inputText, axis: .vertical)
                     .font(AppFonts.body(15))
-                    .lineLimit(1...4)
+                    .lineLimit(1...5)
                     .focused($isInputFocused)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -390,9 +415,19 @@ struct ChatView: View {
                             )
                     )
 
-                // Microphone button
+                // Single context-aware action button
                 Button {
-                    handleMicTap()
+                    let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmed.isEmpty {
+                        // Empty → start/stop dictation
+                        handleMicTap()
+                    } else {
+                        // Has text → send (or stop recording first if still active)
+                        if speechRecognizer.isRecording {
+                            handleMicTap()
+                        }
+                        sendMessage(trimmed)
+                    }
                 } label: {
                     ZStack {
                         // Pulsing ring when recording
@@ -405,26 +440,15 @@ struct ChatView: View {
                                 .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false), value: micPulse)
                         }
 
-                        Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic")
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundColor(speechRecognizer.isRecording ? .white : AppColors.accent)
+                        Image(systemName: actionButtonIcon)
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.white)
                             .frame(width: 44, height: 44)
-                            .background(speechRecognizer.isRecording ? AppColors.coral : AppColors.accentLight)
+                            .background(actionButtonColor)
                             .cornerRadius(22)
                     }
                 }
-
-                // Send button
-                Button {
-                    let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !text.isEmpty else { return }
-                    sendMessage(text)
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AppColors.textMuted : AppColors.accent)
-                }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel(actionButtonAccessibilityLabel)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
