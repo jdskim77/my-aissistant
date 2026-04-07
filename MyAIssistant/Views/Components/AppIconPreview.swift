@@ -48,7 +48,12 @@ struct AppIconPreview: View {
                 isAnimating: false,
                 strokeColor: markStrokeColor,
                 strokeWidth: markStrokeWidth,
-                centerDotColor: centerDotColor
+                centerDotColor: centerDotColor,
+                // App icons follow the "rule of one thing" — a single bold mark
+                // on a colored background. Notion, Linear, Music, Calm, Things 3
+                // all use a single silhouette with no internal element. The dot
+                // creates visual noise at icon scale and reads like a "hole."
+                hideCenterDot: true
             )
         }
         .frame(width: size, height: size)

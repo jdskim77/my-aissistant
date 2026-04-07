@@ -30,6 +30,11 @@ struct ThrivnCompassMark: View {
     /// (e.g. darker indigo dot inside a gold star for the app icon).
     var centerDotColor: Color? = nil
 
+    /// When true, hides the center dot entirely. Used by the app icon variants
+    /// where a dot inside the star creates visual noise at icon scale.
+    /// The chat button keeps the dot for personality at small sizes.
+    var hideCenterDot: Bool = false
+
     @State private var orbitRotation: Double = 0
     @State private var pulseScale: CGFloat = 1.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -77,9 +82,12 @@ struct ThrivnCompassMark: View {
             // 3. Center dot — the user / "you are here" anchor
             // Uses centerDotColor when set, otherwise the star color (invisible
             // inside the star body — fine for small button contexts).
-            Circle()
-                .fill(centerDotColor ?? color)
-                .frame(width: size * 0.13, height: size * 0.13)
+            // hideCenterDot suppresses it entirely (used by app icon variants).
+            if !hideCenterDot {
+                Circle()
+                    .fill(centerDotColor ?? color)
+                    .frame(width: size * 0.13, height: size * 0.13)
+            }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true) // Decorative — parent view should label
