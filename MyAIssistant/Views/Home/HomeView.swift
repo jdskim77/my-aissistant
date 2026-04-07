@@ -543,7 +543,9 @@ struct HomeView: View {
             }
         }
         .padding(.vertical, 8)
-        .padding(.horizontal, 4)
+        // No horizontal padding — listRowInsets at the call site already
+        // applies 16pt horizontal so the accent bar aligns flush with the
+        // Pattern Insight card edge directly below it.
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
