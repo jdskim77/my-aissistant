@@ -153,7 +153,9 @@ struct CheckInDetailView: View {
                     } label: {
                         VStack(spacing: 2) {
                             ZStack(alignment: .topTrailing) {
-                                Text(slot.icon).font(.system(size: 18))
+                                Image(systemName: slot.sfSymbol)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(timeSlot == slot && !alreadyDone ? .white : slot.color)
                                 if alreadyDone {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 10))
@@ -209,8 +211,9 @@ struct CheckInDetailView: View {
         VStack(spacing: 20) {
             slotPicker
 
-            Text(timeSlot.icon)
-                .font(.system(size: 56))
+            Image(systemName: timeSlot.sfSymbol)
+                .font(.system(size: 56, weight: .semibold))
+                .foregroundColor(timeSlot.color)
 
             Text(timeSlot.title)
                 .font(AppFonts.display(28))
@@ -235,8 +238,9 @@ struct CheckInDetailView: View {
 
     private var moodStep: some View {
         VStack(spacing: 24) {
-            Text(timeSlot.icon)
-                .font(.system(size: 40))
+            Image(systemName: timeSlot.sfSymbol)
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundColor(timeSlot.color)
 
             MoodPicker(selectedMood: $selectedMood)
         }

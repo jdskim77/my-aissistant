@@ -26,7 +26,6 @@ struct HomeView: View {
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
     @State private var celebrationMilestone: Int?
-    @ScaledMetric(relativeTo: .caption) private var chipDotSize: CGFloat = 6
 
     // MARK: - Computed
 
@@ -171,14 +170,12 @@ struct HomeView: View {
                 }
             }
 
-            // Prominent check-in card (only during active slot window)
-            if case let .prominent(slot) = checkInCardState {
-                Section {
-                    checkInPromptCard(slot: slot)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
+            // Today hero card (tasks + check-ins + streak + contextual action)
+            Section {
+                todayHeroCard
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
 
             // Micro-insight
@@ -189,13 +186,6 @@ struct HomeView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-            }
-
-            // Stats bar
-            Section {
-                statsBar
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 0, trailing: 16))
-                    .listRowBackground(Color.clear)
             }
 
             // Habits section
@@ -596,55 +586,220 @@ struct HomeView: View {
         .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
     }
 
-    // MARK: - Prominent Check-in Card
+    // MARK: - Today Hero Card
+    //
+    // Single source of truth for "today's progress + today's action".
+    // Replaces the old separate stats card and prominent check-in card.
+    // Adaptive bottom slot will absorb future actions (goal task, season plan, etc.).
 
-    private func checkInPromptCard(slot: CheckInTime) -> some View {
-        Button { showingCheckIn = true } label: {
-            HStack(spacing: 14) {
-                Text(slot.icon)
-                    .font(.system(size: 32))
-                    .frame(width: 52, height: 52)
-                    .background(slot.color.opacity(0.15))
-                    .clipShape(Circle())
+    /// Blended day completion: tasks + check-ins as a single 0..1 fraction.
+    /// Apple Fitness pattern — one number that captures "how much of today did I do".
+    private var dayCompletionFraction: Double {
+        let totalUnits = totalTodayCount + 4
+        guard totalUnits > 0 else { return 0 }
+        let doneUnits = completedTodayCount + todayCheckInCount
+        return min(1.0, Double(doneUnits) / Double(totalUnits))
+    }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(slot.rawValue) check-in")
-                        .font(AppFonts.heading(16))
-                        .foregroundColor(AppColors.textPrimary)
-                    HStack(spacing: 4) {
-                        ForEach(CheckInTime.allCases) { s in
-                            Circle()
-                                .fill(isSlotCompletedToday(s) ? s.color : AppColors.border)
-                                .frame(width: chipDotSize, height: chipDotSize)
-                        }
-                        Text("· 30 sec to reflect")
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textSecondary)
-                            .padding(.leading, 4)
+    private var todayHeroCard: some View {
+        VStack(spacing: 12) {
+            // Top: header strip (TODAY + streak only — date already in greeting above)
+            HStack {
+                Text("TODAY")
+                    .font(AppFonts.label(11))
+                    .tracking(0.8)
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+                if streak > 0 {
+                    HStack(spacing: 3) {
+                        Text("\(streak)")
+                            .font(AppFonts.bodyMedium(13))
+                            .foregroundColor(AppColors.accentWarm)
+                        Text("🔥").font(.system(size: 13))
                     }
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(slot.color)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(AppColors.card)
-                    .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(slot.color.opacity(0.3), lineWidth: 1.5)
-            )
+
+            // Hero ring — single iconic focal point (smaller, confident)
+            ZStack {
+                Circle()
+                    .stroke(AppColors.border, lineWidth: 7)
+                    .frame(width: 108, height: 108)
+                Circle()
+                    .trim(from: 0, to: max(0, min(1, dayCompletionFraction)))
+                    .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                    .frame(width: 108, height: 108)
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 0) {
+                    Text("\(Int(dayCompletionFraction * 100))%")
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .monospacedDigit()
+                    Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                }
+            }
+            .padding(.top, 2)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Today: \(Int(dayCompletionFraction * 100)) percent done. \(completedTodayCount) of \(totalTodayCount) tasks, \(todayCheckInCount) of 4 check-ins.")
+
+            // Breakdown row — symmetric two halves with center divider
+            HStack(spacing: 0) {
+                heroBreakdownStat(
+                    label: "Tasks",
+                    value: "\(completedTodayCount)/\(totalTodayCount)",
+                    color: AppColors.completionGreen
+                )
+                .frame(maxWidth: .infinity)
+
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 28)
+
+                heroBreakdownStat(
+                    label: "Check-ins",
+                    value: "\(todayCheckInCount)/4",
+                    color: AppColors.accent
+                )
+                .frame(maxWidth: .infinity)
+            }
+
+            // Slot icons row — centered below both halves so neither side feels heavier
+            HStack(spacing: 8) {
+                ForEach(CheckInTime.allCases) { slot in
+                    Image(systemName: slot.sfSymbol)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
+                }
+            }
+
+            if !overdueTasks.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(AppColors.overdueRed)
+                    Text("\(overdueTasks.count) overdue")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.overdueRed)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
+            }
+
+            // Action slot — only renders in .prominent / .complete states.
+            // In .progress (between slots) the card stops here for a cleaner look.
+            if case .progress = checkInCardState {
+                EmptyView()
+            } else {
+                heroActionRow
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(slot.rawValue) check-in available. \(todayCheckInCount) of 4 done today. Tap to start.")
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(AppColors.card)
+                .overlay(
+                    // Subtle radial gradient for premium feel
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(
+                            RadialGradient(
+                                colors: [AppColors.accent.opacity(0.05), Color.clear],
+                                center: .top,
+                                startRadius: 10,
+                                endRadius: 220
+                            )
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 2)
+        )
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
+    }
+
+    /// One half of the breakdown row under the hero ring: small color dot + label + count.
+    private func heroBreakdownStat(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 6, height: 6)
+                Text(label.uppercased())
+                    .font(AppFonts.label(10))
+                    .tracking(0.6)
+                    .foregroundColor(AppColors.textMuted)
+            }
+            Text(value)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(AppColors.textPrimary)
+                .monospacedDigit()
+        }
+    }
+
+    /// Adaptive bottom slot: shows whichever action is most relevant.
+    /// Today this is "current check-in needed" or "day complete".
+    /// Future Phases will plug in goal tasks and season plan progress here.
+    @ViewBuilder
+    private var heroActionRow: some View {
+        switch checkInCardState {
+        case .prominent(let slot):
+            Button { showingCheckIn = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: slot.sfSymbol)
+                        .font(.system(size: 16, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundColor(slot.color)
+                        .frame(width: 28, height: 28)
+                        .background(slot.color.opacity(0.15))
+                        .clipShape(Circle())
+                    Text("\(slot.rawValue) check-in")
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(slot.color)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(slot.color.opacity(0.08))
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(slot.rawValue) check-in available. \(todayCheckInCount) of 4 done today. Tap to start.")
+        case .complete:
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.completionGreen)
+                Text("All check-ins done — see you tomorrow")
+                    .font(AppFonts.caption(12))
+                    .foregroundColor(AppColors.completionGreen)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 4)
+        case .progress:
+            // Between active windows — no urgent action.
+            // Tap target so users can still log a backfill check-in.
+            Button { showingCheckIn = true } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.accent)
+                    Text("Add a check-in")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.accent)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 4)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Insight Card
@@ -698,115 +853,11 @@ struct HomeView: View {
 
             Spacer()
 
-            // Compact check-in chip (driven by single-source state)
-            switch checkInCardState {
-            case .prominent:
-                // Hidden — prominent card replaces it below
-                EmptyView()
-            case .progress, .complete:
-                Button { showingCheckIn = true } label: {
-                    HStack(spacing: 6) {
-                        if case .complete = checkInCardState {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppColors.completionGreen)
-                            Text("Day done")
-                                .font(AppFonts.label(12))
-                                .foregroundColor(AppColors.completionGreen)
-                        } else {
-                            HStack(spacing: 3) {
-                                ForEach(CheckInTime.allCases) { slot in
-                                    Circle()
-                                        .fill(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
-                                        .frame(width: chipDotSize, height: chipDotSize)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(AppColors.card)
-                    .cornerRadius(14)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Check-ins: \(todayCheckInCount) of 4 done today. Tap to add a check-in.")
-            }
+            // Header chip removed — Today hero card surfaces all check-in info now.
+            EmptyView()
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .offset(y: appeared ? 0 : 15)
-        .opacity(appeared ? 1 : 0)
-    }
-
-    // MARK: - Stats Bar
-
-    private var statsBar: some View {
-        HStack(spacing: 16) {
-            // Progress ring
-            ZStack {
-                Circle()
-                    .stroke(AppColors.border, lineWidth: 3)
-                    .frame(width: 36, height: 36)
-                Circle()
-                    .trim(from: 0, to: completionFraction)
-                    .stroke(AppColors.completionGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
-                Text("\(Int(completionFraction * 100))%")
-                    .font(AppFonts.label(9))
-                    .foregroundColor(AppColors.textSecondary)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(completedTodayCount) of \(totalTodayCount) tasks")
-                    .font(AppFonts.bodyMedium(14))
-                    .foregroundColor(AppColors.textPrimary)
-                HStack(spacing: 6) {
-                    HStack(spacing: 3) {
-                        ForEach(CheckInTime.allCases) { slot in
-                            Circle()
-                                .fill(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
-                                .frame(width: chipDotSize, height: chipDotSize)
-                        }
-                    }
-                    Text("\(todayCheckInCount)/4 check-ins")
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.textSecondary)
-                    if streak > 0 {
-                        Text("· \(streak)🔥")
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.accentWarm)
-                    }
-                }
-            }
-
-            Spacer()
-
-            // Overdue badge
-            if !overdueTasks.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 12))
-                    Text("\(overdueTasks.count) overdue")
-                        .font(AppFonts.label(12))
-                }
-                .foregroundColor(AppColors.overdueRed)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(AppColors.overdueBg)
-                .cornerRadius(12)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppColors.card)
-                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
-        )
         .offset(y: appeared ? 0 : 15)
         .opacity(appeared ? 1 : 0)
     }

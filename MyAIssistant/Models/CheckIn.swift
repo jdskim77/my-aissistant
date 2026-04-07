@@ -8,6 +8,15 @@ enum CheckInTime: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var sfSymbol: String {
+        switch self {
+        case .morning:   return "sunrise.fill"
+        case .midday:    return "sun.max.fill"
+        case .afternoon: return "sunset.fill"
+        case .night:     return "moon.stars.fill"
+        }
+    }
+
     var icon: String {
         switch self {
         case .morning: return "🌅"
