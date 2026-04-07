@@ -28,8 +28,18 @@ struct AppIconPreview: View {
         case darkIndigoGold = "Dark Indigo + Gold"
         case verticalIndigoGold = "Vertical Gradient + Gold"
         case duotoneGold = "Diagonal Duotone + Gold"
+        // Venn diagram variants — 4 overlapping translucent circles representing
+        // Mind/Body/Heart/Soul intersecting at center (the ikigai sweet spot).
+        // No labels — the shape encodes the meaning.
+        case vennOnDarkIndigo = "Venn — Dark Indigo"
+        case vennOnIndigo = "Venn — Indigo Gradient"
+        case vennOnCream = "Venn — Cream"
 
         var id: String { rawValue }
+
+        var isVennVariant: Bool {
+            self == .vennOnDarkIndigo || self == .vennOnIndigo || self == .vennOnCream
+        }
     }
 
     var style: BackgroundStyle = .duotoneGold  // Variant #11 — production choice
@@ -39,37 +49,46 @@ struct AppIconPreview: View {
         ZStack {
             background
 
-            // Compass mark — sized at ~58% of canvas (Apple recommends ~60%
-            // of icon canvas for the visual centerpiece, with safe padding
-            // around the edges so the rounded mask doesn't clip details).
-            ThrivnCompassMark(
-                color: markColor,
-                size: size * 0.58,
-                isAnimating: false,
-                strokeColor: markStrokeColor,
-                strokeWidth: markStrokeWidth,
-                centerDotColor: centerDotColor,
-                // App icons follow the "rule of one thing" — a single bold mark
-                // on a colored background. Notion, Linear, Music, Calm, Things 3
-                // all use a single silhouette with no internal element. The dot
-                // creates visual noise at icon scale and reads like a "hole."
-                hideCenterDot: true,
-                // Thicker waist (0.45 vs default 0.32) gives the compass arms
-                // visual weight — confident compass needle, not thin asterisk.
-                waistRatio: 0.45,
-                // Optical correction: compress vertical 3% / stretch horizontal 3%
-                // to compensate for the eye's tendency to perceive vertical as
-                // longer. The result feels visually balanced even though it's
-                // mathematically asymmetric. Logo designers call this "optical
-                // alignment" — see Apple logo, Spotify logo, Google G.
-                verticalScale: 0.97,
-                horizontalScale: 1.03
-            )
+            if style.isVennVariant {
+                // Venn diagram: 4 overlapping translucent circles
+                // (Mind / Body / Heart / Soul intersecting at center)
+                ThrivnVennMark(
+                    backgroundIsDark: vennBackgroundIsDark,
+                    size: size * 0.78
+                )
+            } else {
+                // Compass mark — sized at ~58% of canvas
+                ThrivnCompassMark(
+                    color: markColor,
+                    size: size * 0.58,
+                    isAnimating: false,
+                    strokeColor: markStrokeColor,
+                    strokeWidth: markStrokeWidth,
+                    centerDotColor: centerDotColor,
+                    hideCenterDot: true,
+                    waistRatio: 0.45,
+                    verticalScale: 0.97,
+                    horizontalScale: 1.03
+                )
+            }
         }
         .frame(width: size, height: size)
         // iOS app icons use a continuous corner with ~22.37% radius of size
         // (Apple's "squircle" superellipse). Approximated here.
         .clipShape(RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous))
+    }
+
+    /// Venn variants need to know whether the background is dark so the
+    /// translucent circles can pick the right blend mode and saturation.
+    private var vennBackgroundIsDark: Bool {
+        switch style {
+        case .vennOnDarkIndigo, .vennOnIndigo:
+            return true
+        case .vennOnCream:
+            return false
+        default:
+            return false
+        }
     }
 
     @ViewBuilder
@@ -135,6 +154,25 @@ struct AppIconPreview: View {
                     endRadius: size * 0.55
                 )
             }
+
+        case .vennOnDarkIndigo:
+            // Deep indigo so the bright translucent circles glow against it
+            Color(hex: "1E1B4B") // indigo-950
+
+        case .vennOnIndigo:
+            // Subtle indigo gradient — circles still pop but feel more dimensional
+            LinearGradient(
+                colors: [
+                    Color(hex: "312E81"), // indigo-900 (top, slightly lighter)
+                    Color(hex: "1E1B4B")  // indigo-950 (bottom, deeper)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+        case .vennOnCream:
+            // Editorial cream — circles use deeper saturated colors and multiply blend
+            Color(hex: "F8F5F0") // warm cream
         }
     }
 
@@ -182,6 +220,89 @@ struct AppIconPreview: View {
     /// override the dot is the same color as the star and disappears.
     private var centerDotColor: Color? {
         isGoldVariant ? Color(hex: "1E1B4B") : nil  // indigo-950 — sharp contrast on gold
+    }
+}
+
+// MARK: - Venn Diagram Mark (alternative to compass)
+
+/// A 4-circle Venn diagram representing Mind / Body / Heart / Soul
+/// intersecting at the center — the "ikigai sweet spot." No labels:
+/// the shape encodes the meaning. Used as an alternative app icon
+/// centerpiece to the ThrivnCompassMark.
+///
+/// Each circle is positioned at one of the four cardinal directions
+/// from the center, with significant overlap so the intersection
+/// region forms a clear visual focal point.
+private struct ThrivnVennMark: View {
+    let backgroundIsDark: Bool
+    let size: CGFloat
+
+    var body: some View {
+        // Circle radius is large enough that all 4 overlap heavily at center.
+        // Offset distance is smaller than radius so they overlap by ~50%.
+        let circleRadius = size * 0.32
+        let offset = size * 0.18
+
+        ZStack {
+            // Top — Mind (cool blue)
+            circle(color: mindColor)
+                .offset(y: -offset)
+
+            // Right — Body (warm coral/red)
+            circle(color: bodyColor)
+                .offset(x: offset)
+
+            // Bottom — Heart (warm pink)
+            circle(color: heartColor)
+                .offset(y: offset)
+
+            // Left — Soul (warm gold)
+            circle(color: soulColor)
+                .offset(x: -offset)
+        }
+        .frame(width: circleRadius * 2, height: circleRadius * 2)
+        // The blend mode creates the proper Venn overlap effect:
+        // .plusLighter on dark backgrounds (additive blending — overlaps brighten)
+        // .multiply on light backgrounds (subtractive — overlaps darken)
+        .compositingGroup()
+    }
+
+    // Helper: render one circle of the Venn diagram
+    @ViewBuilder
+    private func circle(color: Color) -> some View {
+        let circleRadius = size * 0.32
+        Circle()
+            .fill(color.opacity(backgroundIsDark ? 0.65 : 0.55))
+            .frame(width: circleRadius * 2, height: circleRadius * 2)
+            .blendMode(backgroundIsDark ? .screen : .multiply)
+    }
+
+    // Color choices for each life dimension. Tuned per-background for legibility.
+    // On dark backgrounds, we want luminous saturated colors.
+    // On light backgrounds, we want richer mid-tone colors.
+
+    private var mindColor: Color {
+        backgroundIsDark
+            ? Color(hex: "60A5FA")  // sky-blue (cool, mental)
+            : Color(hex: "3B82F6")  // deeper blue
+    }
+
+    private var bodyColor: Color {
+        backgroundIsDark
+            ? Color(hex: "F87171")  // soft red (physical, vital)
+            : Color(hex: "EF4444")  // deeper red
+    }
+
+    private var heartColor: Color {
+        backgroundIsDark
+            ? Color(hex: "F472B6")  // pink (emotional, warm)
+            : Color(hex: "EC4899")  // deeper pink
+    }
+
+    private var soulColor: Color {
+        backgroundIsDark
+            ? Color(hex: "FCD34D")  // gold (spiritual, transcendent)
+            : Color(hex: "F59E0B")  // amber
     }
 }
 
