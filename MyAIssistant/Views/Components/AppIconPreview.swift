@@ -32,7 +32,7 @@ struct AppIconPreview: View {
         var id: String { rawValue }
     }
 
-    var style: BackgroundStyle = .verticalGradient
+    var style: BackgroundStyle = .duotoneGold  // Variant #11 — production choice
     var size: CGFloat = 1024
 
     var body: some View {
@@ -162,11 +162,57 @@ struct AppIconPreview: View {
 /// directly on the simulator/device without waiting for Xcode previews to render.
 /// Remove the SettingsView NavigationLink once the icon is finalized.
 struct AppIconPreviewGallery: View {
+    @State private var exportedURL: URL?
+    @State private var showExportShare = false
+    @State private var exportError: String?
+
+    /// The chosen production icon — variant #11.
+    private let productionStyle: AppIconPreview.BackgroundStyle = .duotoneGold
+
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
+                // PRODUCTION CHOICE — Variant #11
+                VStack(spacing: 12) {
+                    Text("Production Icon — Variant #11")
+                        .font(.title3.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(productionStyle.rawValue)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    AppIconPreview(style: productionStyle, size: 280)
+                        .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
+
+                    Button {
+                        exportIconAsPNG()
+                    } label: {
+                        Label("Export 1024×1024 PNG", systemImage: "square.and.arrow.up")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.accentColor)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+
+                    Text("Tap export, then tap the share button that appears to save to Photos or Files. Use the saved PNG to replace `app-icon-1024.png` in `Assets.xcassets/AppIcon.appiconset/`.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.accentColor.opacity(0.08))
+                )
+                .padding(.horizontal)
+
+                Divider().padding(.vertical, 8)
+
                 // Section 1: Hero (large, one per row)
-                Text("Full Size (1024×1024 rendered at 280pt)")
+                Text("All Variants (1024×1024 rendered at 280pt)")
                     .font(.headline)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
@@ -213,7 +259,65 @@ struct AppIconPreviewGallery: View {
         }
         .navigationTitle("App Icon Preview")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showExportShare) {
+            if let url = exportedURL {
+                IconShareSheet(items: [url])
+            }
+        }
+        .alert("Export Failed", isPresented: .init(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
     }
+
+    /// Renders the production icon to a 1024×1024 PNG and saves it
+    /// to Documents/, then opens a share sheet so the user can save
+    /// it to Photos or Files. The PNG can be dropped into
+    /// Assets.xcassets/AppIcon.appiconset/ to replace the current icon.
+    @MainActor
+    private func exportIconAsPNG() {
+        let iconView = AppIconPreview(style: productionStyle, size: 1024)
+            .frame(width: 1024, height: 1024)
+
+        let renderer = ImageRenderer(content: iconView)
+        renderer.scale = 1.0  // Render at exact 1024×1024 (not Retina-multiplied)
+
+        guard let uiImage = renderer.uiImage else {
+            exportError = "Failed to render icon view"
+            return
+        }
+        guard let pngData = uiImage.pngData() else {
+            exportError = "Failed to convert to PNG"
+            return
+        }
+
+        let fileName = "thrivn-app-icon-\(Int(Date().timeIntervalSince1970)).png"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        do {
+            try pngData.write(to: url)
+            exportedURL = url
+            showExportShare = true
+        } catch {
+            exportError = "Failed to save: \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Share Sheet Wrapper
+
+private struct IconShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Previews
