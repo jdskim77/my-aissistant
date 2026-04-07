@@ -88,4 +88,18 @@ struct AIShortcuts: AppShortcutsProvider {
     }
 }
 
+#else
+
+// iOS fallback stub: lets the target link when xcodebuild is invoked with
+// `-sdk iphonesimulator` (which overrides the target's watchOS SDK). This
+// code is never executed — it only satisfies the linker's _main requirement.
+import SwiftUI
+
+@main
+struct MyAIssistantWatchAppiOSStub: App {
+    var body: some Scene {
+        WindowGroup { EmptyView() }
+    }
+}
+
 #endif
