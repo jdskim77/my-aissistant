@@ -38,6 +38,12 @@ final class UsageGateManager {
         return t.canDoCheckIn(tier: tier)
     }
 
+    func canSuggestGoalTasks(tier: SubscriptionTier) -> Bool {
+        let t = tracker()
+        guard t.verifyIntegrity() else { return false }
+        return t.canSuggestGoalTasks(tier: tier)
+    }
+
     // MARK: - Usage Info
 
     var remainingChatMessages: Int {
@@ -46,6 +52,10 @@ final class UsageGateManager {
 
     var remainingCheckIns: Int {
         tracker().remainingCheckIns
+    }
+
+    var remainingGoalSuggestions: Int {
+        tracker().remainingGoalSuggestions
     }
 
     var chatUsedThisMonth: Int {
@@ -67,6 +77,12 @@ final class UsageGateManager {
     func recordCheckIn() {
         let t = tracker()
         t.recordCheckIn()
+        modelContext.safeSave()
+    }
+
+    func recordGoalSuggestion() {
+        let t = tracker()
+        t.recordGoalSuggestion()
         modelContext.safeSave()
     }
 }

@@ -15,6 +15,7 @@ enum AppConstants {
     static let freeCheckInsPerDayNewUser = 10
     static let newUserGracePeriodDays = 3
     static let freeChatMessagesPerMonth = 10
+    static let freeGoalSuggestionsPerWeek = 3
 
     // MARK: - Developer Mode
     static let developerModeKey = "developerModeEnabled"

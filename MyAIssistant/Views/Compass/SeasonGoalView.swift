@@ -9,6 +9,13 @@ struct SeasonGoalView: View {
     @State private var intention = ""
     @State private var showConfirmation = false
     @State private var showEndGoalConfirmation = false
+    @State private var suggestionsSheetGoal: GoalSheetIdentifier?
+
+    /// Wrapper so we can use `.sheet(item:)` with a SeasonGoal (which is a SwiftData @Model).
+    private struct GoalSheetIdentifier: Identifiable {
+        let id: String
+        let goal: SeasonGoal
+    }
 
     private var existingGoal: SeasonGoal? { balanceManager.activeSeasonGoal() }
 
@@ -47,6 +54,9 @@ struct SeasonGoalView: View {
             } message: {
                 Text("This will end your current 4-week focus. You can start a new one anytime.")
             }
+            .sheet(item: $suggestionsSheetGoal) { item in
+                GoalSuggestionsSheet(goal: item.goal)
+            }
         }
     }
 
@@ -68,6 +78,9 @@ struct SeasonGoalView: View {
 
             // 5. AI Suggestion
             suggestionCard(goal)
+
+            // 5b. Suggest Tasks CTA — opens AI goal-task suggester sheet
+            suggestTasksButton(goal)
 
             // 6. End Goal (de-emphasized)
             Button {
@@ -427,6 +440,33 @@ struct SeasonGoalView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(AppColors.gold.opacity(0.15), lineWidth: 1)
         )
+    }
+
+    // MARK: - 5b. Suggest Tasks Button
+
+    private func suggestTasksButton(_ goal: SeasonGoal) -> some View {
+        Button {
+            Haptics.light()
+            suggestionsSheetGoal = GoalSheetIdentifier(id: goal.id, goal: goal)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "wand.and.stars")
+                    .font(AppFonts.body(14))
+                Text("Suggest tasks")
+                    .font(AppFonts.bodyMedium(15))
+            }
+            .foregroundColor(AppColors.onAccent)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(
+                LinearGradient(
+                    colors: [goal.dimension.color, goal.dimension.color.opacity(0.85)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(14)
+        }
+        .accessibilityLabel("Suggest tasks for your season goal")
     }
 
     // MARK: - New Goal Flow

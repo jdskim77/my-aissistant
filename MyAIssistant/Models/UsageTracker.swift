@@ -11,6 +11,7 @@ final class UsageTracker {
     var chatMessagesThisMonth: Int = 0
     var checkInsThisWeek: Int = 0
     var checkInsToday: Int = 0
+    var goalSuggestionsThisWeek: Int = 0
     var totalInputTokens: Int = 0
     var totalOutputTokens: Int = 0
     var lastUpdated: Date = Date()
@@ -26,6 +27,7 @@ final class UsageTracker {
         self.chatMessagesThisMonth = 0
         self.checkInsThisWeek = 0
         self.checkInsToday = 0
+        self.goalSuggestionsThisWeek = 0
         self.totalInputTokens = 0
         self.totalOutputTokens = 0
         self.lastUpdated = now
@@ -58,12 +60,20 @@ final class UsageTracker {
     func resetIfNeeded() {
         let now = Date()
         let currentMonth = UsageTracker.monthKey(for: now)
+        let currentWeek = UsageTracker.weekKey(for: now)
         let currentDay = UsageTracker.dayKey(for: now)
         var didReset = false
 
         if monthKey != currentMonth {
             monthKey = currentMonth
             chatMessagesThisMonth = 0
+            didReset = true
+        }
+
+        if weekKey != currentWeek {
+            weekKey = currentWeek
+            checkInsThisWeek = 0
+            goalSuggestionsThisWeek = 0
             didReset = true
         }
 
@@ -93,6 +103,12 @@ final class UsageTracker {
         updateIntegrityHash()
     }
 
+    func recordGoalSuggestion() {
+        resetIfNeeded()
+        goalSuggestionsThisWeek += 1
+        updateIntegrityHash()
+    }
+
     // MARK: - Limit Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
@@ -117,12 +133,27 @@ final class UsageTracker {
         }
     }
 
+    func canSuggestGoalTasks(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
+        resetIfNeeded()
+        switch tier {
+        case .free:
+            return goalSuggestionsThisWeek < AppConstants.freeGoalSuggestionsPerWeek
+        case .pro, .student, .powerUser:
+            return true
+        }
+    }
+
     var remainingChatMessages: Int {
         max(0, AppConstants.freeChatMessagesPerMonth - chatMessagesThisMonth)
     }
 
     var remainingCheckIns: Int {
         max(0, AppConstants.freeCheckInsPerDay - checkInsToday)
+    }
+
+    var remainingGoalSuggestions: Int {
+        max(0, AppConstants.freeGoalSuggestionsPerWeek - goalSuggestionsThisWeek)
     }
 
     // MARK: - Integrity Verification
