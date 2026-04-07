@@ -334,15 +334,14 @@ struct ChatView: View {
     }
 
     private var actionButtonIcon: String {
-        if speechRecognizer.isRecording { return "mic.fill" }
-        if hasText { return "arrow.up" }
-        return "mic.fill"
+        // Recording uses mic.fill (matches recording state); has-text uses arrow; empty uses mic
+        if speechRecognizer.isRecording || !hasText { return "mic.fill" }
+        return "arrow.up"
     }
 
     private var actionButtonColor: Color {
-        if speechRecognizer.isRecording { return AppColors.coral }
-        if hasText { return AppColors.accent }
-        return AppColors.accent
+        // Coral signals "actively recording"; accent for everything else
+        speechRecognizer.isRecording ? AppColors.coral : AppColors.accent
     }
 
     private var actionButtonAccessibilityLabel: String {
@@ -385,9 +384,17 @@ struct ChatView: View {
                         .font(AppFonts.bodyMedium(13))
                         .foregroundColor(AppColors.coral)
                     Spacer()
-                    Text("Tap mic to send")
-                        .font(AppFonts.caption(11))
-                        .foregroundColor(AppColors.textMuted)
+                    Button {
+                        // Cancel recording without sending
+                        speechRecognizer.stopRecording()
+                        inputText = ""
+                        speechRecognizer.transcript = ""
+                    } label: {
+                        Text("Cancel")
+                            .font(AppFonts.caption(11).weight(.medium))
+                            .foregroundColor(AppColors.coral)
+                    }
+                    .accessibilityLabel("Cancel recording")
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 8)
@@ -415,18 +422,24 @@ struct ChatView: View {
                             )
                     )
 
-                // Single context-aware action button
+                // Single context-aware action button.
+                // States:
+                //   - Recording (regardless of text): tap stops recording and auto-sends
+                //     if there's text (handleMicTap already does this)
+                //   - Has text, not recording: send the message
+                //   - Empty, not recording: start dictation
                 Button {
-                    let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if trimmed.isEmpty {
-                        // Empty → start/stop dictation
+                    if speechRecognizer.isRecording {
+                        // handleMicTap will stop recording AND send if there's text.
+                        // Do NOT call sendMessage again — that would double-send.
                         handleMicTap()
                     } else {
-                        // Has text → send (or stop recording first if still active)
-                        if speechRecognizer.isRecording {
-                            handleMicTap()
+                        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.isEmpty {
+                            handleMicTap() // Start dictation
+                        } else {
+                            sendMessage(trimmed)
                         }
-                        sendMessage(trimmed)
                     }
                 } label: {
                     ZStack {
