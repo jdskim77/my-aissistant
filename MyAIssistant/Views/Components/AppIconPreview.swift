@@ -53,7 +53,17 @@ struct AppIconPreview: View {
                 // on a colored background. Notion, Linear, Music, Calm, Things 3
                 // all use a single silhouette with no internal element. The dot
                 // creates visual noise at icon scale and reads like a "hole."
-                hideCenterDot: true
+                hideCenterDot: true,
+                // Thicker waist (0.45 vs default 0.32) gives the compass arms
+                // visual weight — confident compass needle, not thin asterisk.
+                waistRatio: 0.45,
+                // Optical correction: compress vertical 3% / stretch horizontal 3%
+                // to compensate for the eye's tendency to perceive vertical as
+                // longer. The result feels visually balanced even though it's
+                // mathematically asymmetric. Logo designers call this "optical
+                // alignment" — see Apple logo, Spotify logo, Google G.
+                verticalScale: 0.97,
+                horizontalScale: 1.03
             )
         }
         .frame(width: size, height: size)
@@ -146,7 +156,12 @@ struct AppIconPreview: View {
             return Color(hex: "4F46E5")     // indigo-600 mark on cream
         }
         if isGoldVariant {
-            return Color(hex: "FCD34D")     // pale gold (amber-300) — premium accent
+            // Champagne gold (#E8C77F) — desaturated, warm, premium.
+            // Replaces the previous bright amber-300 (#FCD34D) which read as
+            // "school-bus yellow" / playful. Champagne reads as antique compass
+            // face, brushed brass, premium luxury. This is the same tone used
+            // by university crest gold leaf and high-end watch faces.
+            return Color(hex: "E8C77F")
         }
         return .white                        // white mark on all dark/colored bgs
     }

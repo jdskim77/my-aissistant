@@ -33,6 +33,18 @@ struct SettingsView: View {
                         )
                     }
 
+                    // TEMP: App Icon Preview (for re-exporting the refined icon)
+                    NavigationLink {
+                        AppIconPreviewGallery()
+                    } label: {
+                        settingsRow(
+                            icon: "app.badge.fill",
+                            color: AppColors.accent,
+                            title: "App Icon Preview",
+                            subtitle: "Re-export refined icon"
+                        )
+                    }
+
 
                     NavigationLink {
                         TextSizeSettingsView()

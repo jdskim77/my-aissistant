@@ -35,6 +35,21 @@ struct ThrivnCompassMark: View {
     /// The chat button keeps the dot for personality at small sizes.
     var hideCenterDot: Bool = false
 
+    /// Inner radius ratio (waist thickness). Controls how thick the compass arms
+    /// look at their narrowest point. Range 0.20–0.55:
+    /// - 0.32 = thin asterisk/sparkle (old default)
+    /// - 0.45 = confident compass needle (new default for icons)
+    /// - 0.55 = chunky diamond
+    var waistRatio: CGFloat = 0.32
+
+    /// Optical correction: real logo designers compress symmetric shapes slightly
+    /// to compensate for how the eye perceives vertical vs horizontal length.
+    /// At 1.0 (default), no correction applied — used by the chat button at small sizes.
+    /// At 0.95/1.05, the star is squashed vertically and stretched horizontally,
+    /// making it look more visually balanced at icon scale.
+    var verticalScale: CGFloat = 1.0
+    var horizontalScale: CGFloat = 1.0
+
     @State private var orbitRotation: Double = 0
     @State private var pulseScale: CGFloat = 1.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -62,15 +77,20 @@ struct ThrivnCompassMark: View {
             // 2. The compass mark itself — 4-point star (Mind/Body/Heart/Soul)
             // Optionally stroked when strokeColor is set (premium icon variant).
             ZStack {
-                CompassStarShape()
+                CompassStarShape(waistRatio: waistRatio)
                     .fill(color)
                 if let strokeColor, strokeWidth > 0 {
-                    CompassStarShape()
+                    CompassStarShape(waistRatio: waistRatio)
                         .stroke(strokeColor, lineWidth: strokeWidth)
                 }
             }
             .frame(width: size * 0.62, height: size * 0.62)
-            .scaleEffect(isAnimating && !reduceMotion ? pulseScale : 1.0)
+            // Optical correction: squash vertical / stretch horizontal so the
+            // mathematically symmetric star looks visually balanced.
+            .scaleEffect(
+                x: horizontalScale,
+                y: verticalScale * (isAnimating && !reduceMotion ? pulseScale : 1.0)
+            )
             .onAppear {
                 if isAnimating && !reduceMotion {
                     withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
@@ -98,14 +118,17 @@ struct ThrivnCompassMark: View {
 
 /// A 4-pointed star where each point represents one of the life dimensions
 /// (Mind, Body, Heart, Soul). The narrow waist between points creates
-/// the iconic compass-needle silhouette.
+/// the iconic compass-needle silhouette. Waist thickness is configurable
+/// for different visual weight (thin sparkle vs confident compass).
 private struct CompassStarShape: Shape {
+    var waistRatio: CGFloat = 0.32
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
 
         let center = CGPoint(x: rect.midX, y: rect.midY)
         let outerRadius = min(rect.width, rect.height) / 2
-        let innerRadius = outerRadius * 0.32 // Controls "waist" thickness
+        let innerRadius = outerRadius * waistRatio
 
         // Generate 8 vertices: alternating outer point + inner waist
         // Starting from top (12 o'clock), going clockwise.
