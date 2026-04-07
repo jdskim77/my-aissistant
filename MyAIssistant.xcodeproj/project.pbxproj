@@ -175,6 +175,7 @@
 		CE3C774BA2A1C1742E13E453 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */; };
 		D3954166C7DA9E696106C367 /* SeasonGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */; };
 		D786B93E854002B1393E7E08 /* CompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CFAD9307698492ECF74393 /* CompassView.swift */; };
+		D846CA8A63B950844CDF4B59 /* AppIconPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D8A11BA0FB83C9835D4275 /* AppIconPreview.swift */; };
 		DC00B58B6CC46AEB7EDA0313 /* CheckInSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */; };
 		E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
@@ -249,6 +250,7 @@
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCompassRevealView.swift; sourceTree = "<group>"; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
+		14D8A11BA0FB83C9835D4275 /* AppIconPreview.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIconPreview.swift; sourceTree = "<group>"; };
 		1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThrivnCompassMark.swift; sourceTree = "<group>"; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
@@ -663,6 +665,7 @@
 				406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */,
 				C97ACE583981903B7525F883 /* CelebrationView.swift */,
 				1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */,
+				14D8A11BA0FB83C9835D4275 /* AppIconPreview.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1347,6 +1350,7 @@
 				E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */,
 				879011535AE68D1E23D62734 /* OnboardingQuickRateView.swift in Sources */,
 				80F1B9807AFEFCF47C3D4278 /* ThrivnCompassMark.swift in Sources */,
+				D846CA8A63B950844CDF4B59 /* AppIconPreview.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

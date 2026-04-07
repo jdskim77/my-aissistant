@@ -20,7 +20,9 @@ final class ThemeManager {
 
     private init() {
         let saved = UserDefaults.standard.string(forKey: AppConstants.appThemeKey) ?? ""
-        self.selectedTheme = AppTheme(rawValue: saved) ?? .natural
+        // Indigo is the brand-default theme for fresh installs.
+        // Existing users keep whatever they had selected (rawValue lookup).
+        self.selectedTheme = AppTheme(rawValue: saved) ?? .indigo
     }
 
     func setTheme(_ theme: AppTheme) {
@@ -31,6 +33,7 @@ final class ThemeManager {
 
     static func theme(for appTheme: AppTheme) -> ColorTheme {
         switch appTheme {
+        case .indigo: return indigo
         case .natural: return natural
         case .ocean: return ocean
         case .paper: return paper
@@ -41,6 +44,51 @@ final class ThemeManager {
         case .accessibleDark: return accessibleDark
         }
     }
+
+    // MARK: - 0. Indigo (Brand Default — Thoughtful AI Identity)
+    // Deep indigo signals "intelligent + introspective" — the same color
+    // family used by Anthropic Claude, Linear, Vercel, and Perplexity.
+    // Distinct from the green/blue wellness category, this is Thrivn's
+    // signature visual identity. Pairs with the ThrivnCompassMark and
+    // matches the indigo-blue tones in the Mind/Body/Heart Venn logo.
+
+    private static let indigo = ColorTheme(
+        background: Color(hex: "F8F7FB"),     // Soft lavender-tinted white
+        surface: Color.white,
+        card: Color(hex: "FDFCFE"),           // Brightest paper
+        border: Color(hex: "E5E2EE"),         // Subtle indigo-tinted border
+        accent: Color(hex: "4F46E5"),         // indigo-600 — primary brand color
+        accentWarm: Color(hex: "6366F1"),     // indigo-500 — slightly lighter for emphasis
+        accentLight: Color(hex: "EEF2FF"),    // indigo-50 — very subtle backgrounds
+        gold: Color(hex: "D97706"),           // amber-600 — distinct from accent
+        coral: Color(hex: "DC2626"),          // red-600
+        skyBlue: Color(hex: "0284C7"),        // sky-600
+        textPrimary: Color(hex: "1E1B2E"),    // Deep indigo-tinted ink (not pure black)
+        textSecondary: Color(hex: "4B4862"),  // Muted indigo-gray
+        textMuted: Color(hex: "7C7896"),      // Light indigo-gray
+        morning: Color(hex: "F59E0B"),        // amber
+        noon: Color(hex: "10B981"),           // emerald
+        afternoon: Color(hex: "0284C7"),      // sky-600
+        night: Color(hex: "7C3AED"),          // violet-600 (close to brand)
+        overdueRed: Color(hex: "DC2626"),
+        overdueBg: Color(hex: "FEF2F2"),
+        completionGreen: Color(hex: "059669"),// emerald-600
+        userBubbleText: Color.white,
+        aiBubble: Color.white,
+        aiBubbleText: Color(hex: "1E1B2E"),
+        aiBubbleBorder: Color(hex: "E5E2EE"),
+        checkboxHigh: Color(hex: "DC2626"),
+        checkboxMedium: Color(hex: "D97706"),
+        checkboxLow: Color(hex: "4F46E5"),    // Brand indigo for low priority
+        error: Color(hex: "DC2626"),
+        errorBg: Color(hex: "FEF2F2"),
+        warning: Color(hex: "D97706"),
+        warningBg: Color(hex: "FFFBEB"),
+        success: Color(hex: "059669"),
+        successBg: Color(hex: "ECFDF5"),
+        disabled: Color(hex: "D6D3E5"),
+        textDisabled: Color(hex: "9F9BB5")
+    )
 
     // MARK: - 1. Natural (Improved Current)
 

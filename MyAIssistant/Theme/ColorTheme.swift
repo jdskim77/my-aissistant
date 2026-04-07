@@ -3,7 +3,8 @@ import SwiftUI
 // MARK: - Theme Enumeration
 
 enum AppTheme: String, CaseIterable, Identifiable {
-    // Light themes
+    // Light themes — Indigo is the brand default (signature Thrivn identity)
+    case indigo = "Indigo"
     case natural = "Natural"
     case ocean = "Ocean"
     case paper = "Paper"
@@ -25,6 +26,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     /// User-facing name shown in the picker.
     var displayName: String {
         switch self {
+        case .indigo: return "Indigo"
         case .natural: return "Natural"
         case .ocean: return "Ocean"
         case .paper: return "Paper"
@@ -38,6 +40,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .indigo: return "sparkle"
         case .natural: return "leaf.fill"
         case .ocean: return "water.waves"
         case .paper: return "book.pages.fill"
@@ -51,6 +54,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
+        case .indigo: return "Thoughtful & intelligent · Default"
         case .natural: return "Warm & earthy"
         case .ocean: return "Cool & professional"
         case .paper: return "Editorial cream & sepia"

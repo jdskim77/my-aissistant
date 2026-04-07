@@ -464,7 +464,7 @@ struct ChatView: View {
                         } else {
                             ThrivnCompassMark(
                                 color: .white,
-                                size: 30,
+                                size: 33,
                                 isAnimating: speechRecognizer.isRecording
                             )
                         }
