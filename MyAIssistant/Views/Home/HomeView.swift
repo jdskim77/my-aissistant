@@ -517,38 +517,36 @@ struct HomeView: View {
 
     // MARK: - Daily Wisdom Card
 
+    /// Blockquote-style wisdom: no card, no shadow, no border.
+    /// Visual differentiation comes from form (left accent bar + italic text),
+    /// not from another colored box. This keeps the home screen calm while
+    /// still distinguishing the quote from the surrounding pattern insight card.
+    /// Theme-safe: uses semantic AppColors that adapt across all color schemes.
     private func wisdomCard(quote: WisdomManager.Quote) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.accentWarm)
-                Text("Daily Wisdom")
-                    .font(AppFonts.label(12))
-                    .foregroundColor(AppColors.accentWarm)
+        HStack(alignment: .top, spacing: 14) {
+            // Vertical accent bar (the "blockquote" indicator)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(AppColors.accentWarm)
+                .frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\u{201C}\(quote.text)\u{201D}")
+                    .font(AppFonts.display(17))
+                    .foregroundColor(AppColors.textPrimary)
+                    .italic()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+
+                Text("\u{2014} \(quote.author)")
+                    .font(AppFonts.bodyMedium(12))
+                    .foregroundColor(AppColors.textSecondary)
             }
-
-            Text("\"\(quote.text)\"")
-                .font(AppFonts.display(16))
-                .foregroundColor(AppColors.textPrimary)
-                .italic()
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text("- \(quote.author)")
-                .font(AppFonts.bodyMedium(13))
-                .foregroundColor(AppColors.textSecondary)
         }
-        .padding(16)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppColors.card)
-                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColors.accentWarm.opacity(0.2), lineWidth: 1)
-        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
     }
 
     // MARK: - Insight Card
@@ -583,6 +581,8 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pattern insight: \(insight.text)")
     }
 
     // MARK: - Header
