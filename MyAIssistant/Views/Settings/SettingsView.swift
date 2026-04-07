@@ -33,18 +33,6 @@ struct SettingsView: View {
                         )
                     }
 
-                    // TEMP: App Icon Preview (remove when icon is finalized)
-                    NavigationLink {
-                        AppIconPreviewGallery()
-                    } label: {
-                        settingsRow(
-                            icon: "app.badge.fill",
-                            color: AppColors.accent,
-                            title: "App Icon Preview",
-                            subtitle: "Compare brand mark variants"
-                        )
-                    }
-
 
                     NavigationLink {
                         TextSizeSettingsView()
