@@ -22,6 +22,8 @@ struct AppIconPreview: View {
         case diagonalDuotone = "Diagonal Duotone"
         case darkIndigo = "Dark Indigo"
         case cream = "Cream + Indigo Mark"
+        // New "premium" variant: deep radial glow + pale gold mark + subtle stroke
+        case radialGoldPremium = "Radial Glow + Gold (Premium)"
 
         var id: String { rawValue }
     }
@@ -39,7 +41,9 @@ struct AppIconPreview: View {
             ThrivnCompassMark(
                 color: markColor,
                 size: size * 0.58,
-                isAnimating: false
+                isAnimating: false,
+                strokeColor: markStrokeColor,
+                strokeWidth: markStrokeWidth
             )
         }
         .frame(width: size, height: size)
@@ -93,6 +97,22 @@ struct AppIconPreview: View {
 
         case .cream:
             Color(hex: "F8F7FB") // matches Indigo theme background
+
+        case .radialGoldPremium:
+            // Deep radial glow: indigo-500 center fading to indigo-950 edges
+            ZStack {
+                Color(hex: "1E1B4B") // indigo-950 base
+                RadialGradient(
+                    colors: [
+                        Color(hex: "6366F1").opacity(0.95), // indigo-500 inner glow
+                        Color(hex: "4338CA").opacity(0.40), // indigo-700 mid
+                        Color(hex: "1E1B4B").opacity(0)     // fully transparent at edge
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: size * 0.55
+                )
+            }
         }
     }
 
@@ -100,9 +120,32 @@ struct AppIconPreview: View {
     private var markColor: Color {
         switch style {
         case .cream:
-            return Color(hex: "4F46E5") // indigo-600 mark on cream
+            return Color(hex: "4F46E5")     // indigo-600 mark on cream
+        case .radialGoldPremium:
+            return Color(hex: "FCD34D")     // pale gold (amber-300) — premium accent
         default:
-            return .white                // white mark on all dark/colored bgs
+            return .white                    // white mark on all dark/colored bgs
+        }
+    }
+
+    /// Optional stroke color (used by premium variant only).
+    private var markStrokeColor: Color? {
+        switch style {
+        case .radialGoldPremium:
+            return Color.white.opacity(0.20)  // subtle white edge definition
+        default:
+            return nil
+        }
+    }
+
+    /// Stroke width — scales with canvas size so it stays proportional.
+    /// 1pt at 1024px ≈ 1px on a real iOS icon.
+    private var markStrokeWidth: CGFloat {
+        switch style {
+        case .radialGoldPremium:
+            return max(1, size / 1024 * 4)   // 4pt at 1024 = ~visible edge at all sizes
+        default:
+            return 0
         }
     }
 }
@@ -151,6 +194,12 @@ struct AppIconPreview: View {
 
 #Preview("Full Size — Diagonal Duotone") {
     AppIconPreview(style: .diagonalDuotone, size: 1024)
+        .padding(40)
+        .background(Color(white: 0.95))
+}
+
+#Preview("Full Size — Radial Glow + Gold (Premium)") {
+    AppIconPreview(style: .radialGoldPremium, size: 1024)
         .padding(40)
         .background(Color(white: 0.95))
 }

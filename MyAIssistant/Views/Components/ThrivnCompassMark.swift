@@ -18,6 +18,12 @@ struct ThrivnCompassMark: View {
     /// When true, shows an animated orbit ring (use during AI processing).
     var isAnimating: Bool = false
 
+    /// Optional stroke around the compass star outline.
+    /// Set to nil for no stroke (default — used in chat button + small contexts).
+    /// Used by the premium app icon variant for refined edge definition.
+    var strokeColor: Color? = nil
+    var strokeWidth: CGFloat = 0
+
     @State private var orbitRotation: Double = 0
     @State private var pulseScale: CGFloat = 1.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -43,17 +49,24 @@ struct ThrivnCompassMark: View {
             }
 
             // 2. The compass mark itself — 4-point star (Mind/Body/Heart/Soul)
-            CompassStarShape()
-                .fill(color)
-                .frame(width: size * 0.62, height: size * 0.62)
-                .scaleEffect(isAnimating && !reduceMotion ? pulseScale : 1.0)
-                .onAppear {
-                    if isAnimating && !reduceMotion {
-                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                            pulseScale = 1.08
-                        }
+            // Optionally stroked when strokeColor is set (premium icon variant).
+            ZStack {
+                CompassStarShape()
+                    .fill(color)
+                if let strokeColor, strokeWidth > 0 {
+                    CompassStarShape()
+                        .stroke(strokeColor, lineWidth: strokeWidth)
+                }
+            }
+            .frame(width: size * 0.62, height: size * 0.62)
+            .scaleEffect(isAnimating && !reduceMotion ? pulseScale : 1.0)
+            .onAppear {
+                if isAnimating && !reduceMotion {
+                    withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                        pulseScale = 1.08
                     }
                 }
+            }
 
             // 3. Center dot — the user / "you are here" anchor
             Circle()
