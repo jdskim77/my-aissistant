@@ -22,6 +22,30 @@ struct ThemePickerView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+
+                // Contextual accessibility note — only shown for themes that have one
+                if let note = selected.accessibilityNote {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.accent)
+                            .padding(.top, 2)
+
+                        Text(note)
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppColors.accent.opacity(0.08))
+                    )
+                    .padding(.horizontal, 20)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(note)
+                }
             }
             .padding(.vertical, 16)
         }
@@ -91,7 +115,7 @@ struct ThemePickerView: View {
                         .font(AppFonts.caption(13))
                         .foregroundColor(isSelected ? AppColors.accent : AppColors.textSecondary)
 
-                    Text(theme.rawValue)
+                    Text(theme.displayName)
                         .font(AppFonts.bodyMedium(14))
                         .foregroundColor(AppColors.textPrimary)
                 }

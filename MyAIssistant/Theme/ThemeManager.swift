@@ -33,9 +33,10 @@ final class ThemeManager {
         switch appTheme {
         case .natural: return natural
         case .ocean: return ocean
-        case .highContrast: return highContrast
+        case .accessible: return accessible
         case .midnight: return midnight
         case .twilight: return twilight
+        case .slate: return slate
         }
     }
 
@@ -119,9 +120,9 @@ final class ThemeManager {
         textDisabled: Color(hex: "9CA3AF")
     )
 
-    // MARK: - 3. High Contrast (Colorblind-Friendly, WCAG AAA)
+    // MARK: - 3. Accessible (Colorblind-Friendly, WCAG AAA)
 
-    private static let highContrast = ColorTheme(
+    private static let accessible = ColorTheme(
         background: Color.white,
         surface: Color(hex: "F5F5F5"),
         card: Color.white,
@@ -237,5 +238,48 @@ final class ThemeManager {
         successBg: Color(hex: "1C2E1C"),
         disabled: Color(hex: "48484A"),
         textDisabled: Color(hex: "636366")
+    )
+
+    // MARK: - 6. Slate (Cool Blue-Gray Dark)
+    // Inspired by Linear, Vercel, and Things 3 dark mode aesthetics.
+    // Cool desaturated blue-gray surfaces with an indigo accent —
+    // distinct from Midnight (warm-neutral OLED) and Twilight (warm gray).
+
+    private static let slate = ColorTheme(
+        background: Color(hex: "0F172A"),     // slate-900
+        surface: Color(hex: "1E293B"),        // slate-800
+        card: Color(hex: "263449"),           // slate-800 lifted
+        border: Color(hex: "334155"),         // slate-700
+        accent: Color(hex: "818CF8"),         // indigo-400
+        accentWarm: Color(hex: "A5B4FC"),     // indigo-300 (lighter for emphasis on dark)
+        accentLight: Color(hex: "1E1B4B"),    // indigo-950 (subtle backgrounds)
+        gold: Color(hex: "FBBF24"),           // amber-400
+        coral: Color(hex: "F87171"),          // red-400
+        skyBlue: Color(hex: "38BDF8"),        // sky-400
+        textPrimary: Color(hex: "F1F5F9"),    // slate-100
+        textSecondary: Color(hex: "CBD5E1"),  // slate-300
+        textMuted: Color(hex: "94A3B8"),      // slate-400
+        morning: Color(hex: "FBBF24"),        // amber
+        noon: Color(hex: "34D399"),           // emerald-400
+        afternoon: Color(hex: "60A5FA"),      // blue-400
+        night: Color(hex: "A78BFA"),          // violet-400
+        overdueRed: Color(hex: "F87171"),
+        overdueBg: Color(hex: "3F1F1F"),
+        completionGreen: Color(hex: "34D399"),
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "263449"),
+        aiBubbleText: Color(hex: "F1F5F9"),
+        aiBubbleBorder: Color(hex: "334155"),
+        checkboxHigh: Color(hex: "F87171"),
+        checkboxMedium: Color(hex: "FBBF24"),
+        checkboxLow: Color(hex: "60A5FA"),
+        error: Color(hex: "F87171"),
+        errorBg: Color(hex: "3F1F1F"),
+        warning: Color(hex: "FBBF24"),
+        warningBg: Color(hex: "3F2F1F"),
+        success: Color(hex: "34D399"),
+        successBg: Color(hex: "1F3F2F"),
+        disabled: Color(hex: "334155"),
+        textDisabled: Color(hex: "64748B")
     )
 }

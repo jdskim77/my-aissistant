@@ -5,23 +5,39 @@ import SwiftUI
 enum AppTheme: String, CaseIterable, Identifiable {
     case natural = "Natural"
     case ocean = "Ocean"
-    case highContrast = "High Contrast"
+    // Note: rawValue kept as "High Contrast" for backward compatibility
+    // with existing UserDefaults values. Display name uses `displayName` below.
+    case accessible = "High Contrast"
     case midnight = "Midnight"
     case twilight = "Twilight"
+    case slate = "Slate"
 
     var id: String { rawValue }
 
     var isDark: Bool {
-        self == .midnight || self == .twilight
+        self == .midnight || self == .twilight || self == .slate
+    }
+
+    /// User-facing name shown in the picker.
+    var displayName: String {
+        switch self {
+        case .natural: return "Natural"
+        case .ocean: return "Ocean"
+        case .accessible: return "Accessible"
+        case .midnight: return "Midnight"
+        case .twilight: return "Twilight"
+        case .slate: return "Slate"
+        }
     }
 
     var icon: String {
         switch self {
         case .natural: return "leaf.fill"
         case .ocean: return "water.waves"
-        case .highContrast: return "eye.fill"
+        case .accessible: return "accessibility"
         case .midnight: return "moon.stars.fill"
         case .twilight: return "sunset.fill"
+        case .slate: return "circle.lefthalf.filled"
         }
     }
 
@@ -29,9 +45,20 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .natural: return "Warm & earthy"
         case .ocean: return "Cool & professional"
-        case .highContrast: return "Maximum readability"
+        case .accessible: return "Colorblind-friendly · WCAG AAA"
         case .midnight: return "True dark (OLED)"
         case .twilight: return "Soft dark mode"
+        case .slate: return "Cool blue-gray dark"
+        }
+    }
+
+    /// Detailed accessibility note shown only when the Accessible theme is selected.
+    var accessibilityNote: String? {
+        switch self {
+        case .accessible:
+            return "Designed for users with deuteranopia, protanopia, and tritanopia. Uses blue instead of green for success states. Meets WCAG AAA contrast standards (7:1+)."
+        default:
+            return nil
         }
     }
 }
