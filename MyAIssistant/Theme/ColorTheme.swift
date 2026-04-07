@@ -3,19 +3,23 @@ import SwiftUI
 // MARK: - Theme Enumeration
 
 enum AppTheme: String, CaseIterable, Identifiable {
+    // Light themes
     case natural = "Natural"
     case ocean = "Ocean"
+    case paper = "Paper"
     // Note: rawValue kept as "High Contrast" for backward compatibility
     // with existing UserDefaults values. Display name uses `displayName` below.
     case accessible = "High Contrast"
+    // Dark themes
     case midnight = "Midnight"
     case twilight = "Twilight"
     case slate = "Slate"
+    case accessibleDark = "Accessible Dark"
 
     var id: String { rawValue }
 
     var isDark: Bool {
-        self == .midnight || self == .twilight || self == .slate
+        self == .midnight || self == .twilight || self == .slate || self == .accessibleDark
     }
 
     /// User-facing name shown in the picker.
@@ -23,10 +27,12 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .natural: return "Natural"
         case .ocean: return "Ocean"
+        case .paper: return "Paper"
         case .accessible: return "Accessible"
         case .midnight: return "Midnight"
         case .twilight: return "Twilight"
         case .slate: return "Slate"
+        case .accessibleDark: return "Accessible Dark"
         }
     }
 
@@ -34,10 +40,12 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .natural: return "leaf.fill"
         case .ocean: return "water.waves"
+        case .paper: return "book.pages.fill"
         case .accessible: return "accessibility"
         case .midnight: return "moon.stars.fill"
         case .twilight: return "sunset.fill"
         case .slate: return "circle.lefthalf.filled"
+        case .accessibleDark: return "accessibility"
         }
     }
 
@@ -45,18 +53,22 @@ enum AppTheme: String, CaseIterable, Identifiable {
         switch self {
         case .natural: return "Warm & earthy"
         case .ocean: return "Cool & professional"
+        case .paper: return "Editorial cream & sepia"
         case .accessible: return "Colorblind-friendly · WCAG AAA"
         case .midnight: return "True dark (OLED)"
         case .twilight: return "Soft dark mode"
         case .slate: return "Cool blue-gray dark"
+        case .accessibleDark: return "Colorblind-friendly · Dark mode"
         }
     }
 
-    /// Detailed accessibility note shown only when the Accessible theme is selected.
+    /// Detailed accessibility note shown only when an accessible theme is selected.
     var accessibilityNote: String? {
         switch self {
         case .accessible:
             return "Designed for users with deuteranopia, protanopia, and tritanopia. Uses blue instead of green for success states. Meets WCAG AAA contrast standards (7:1+)."
+        case .accessibleDark:
+            return "Dark mode variant of Accessible. Same colorblind-safe palette (blue for success, orange for warnings) on a true black background. Designed for users who need both colorblind support and dark mode (e.g. light sensitivity)."
         default:
             return nil
         }

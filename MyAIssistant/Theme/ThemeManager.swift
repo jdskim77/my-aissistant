@@ -33,10 +33,12 @@ final class ThemeManager {
         switch appTheme {
         case .natural: return natural
         case .ocean: return ocean
+        case .paper: return paper
         case .accessible: return accessible
         case .midnight: return midnight
         case .twilight: return twilight
         case .slate: return slate
+        case .accessibleDark: return accessibleDark
         }
     }
 
@@ -120,7 +122,52 @@ final class ThemeManager {
         textDisabled: Color(hex: "9CA3AF")
     )
 
-    // MARK: - 3. Accessible (Colorblind-Friendly, WCAG AAA)
+    // MARK: - 3. Paper (Editorial Cream & Sepia)
+    // Inspired by iA Writer, Kindle Paperwhite, Bear, and Day One.
+    // Warm cream background with sepia/burgundy accents — feels like
+    // a notebook or hardback book. Pairs with Thrivn's reflective tone
+    // (daily wisdom, check-ins, journaling). Cream is also gentler on
+    // photosensitive eyes than pure white.
+
+    private static let paper = ColorTheme(
+        background: Color(hex: "F5EFE0"),     // Warm cream (Kindle-inspired)
+        surface: Color(hex: "FBF6E9"),        // Lighter cream — like a page lifted from the stack
+        card: Color(hex: "FFFAEC"),           // Brightest cream for foreground content
+        border: Color(hex: "E0D5BD"),         // Soft sepia border
+        accent: Color(hex: "8B3A2F"),         // Deep burgundy / sepia ink
+        accentWarm: Color(hex: "A85C42"),     // Lighter burgundy / brick
+        accentLight: Color(hex: "F0E2D0"),    // Very pale parchment
+        gold: Color(hex: "B5894A"),           // Antique gold
+        coral: Color(hex: "B84A2E"),          // Vermillion
+        skyBlue: Color(hex: "4A6B7C"),        // Muted slate-blue (subtle, not modern)
+        textPrimary: Color(hex: "2B1F14"),    // Dark coffee — softer than pure black
+        textSecondary: Color(hex: "5C4A35"),  // Walnut
+        textMuted: Color(hex: "8A7556"),      // Light sepia
+        morning: Color(hex: "C77B30"),        // Burnt orange
+        noon: Color(hex: "7A8C3A"),           // Olive
+        afternoon: Color(hex: "4A6B7C"),      // Slate blue
+        night: Color(hex: "5D4B7C"),          // Plum
+        overdueRed: Color(hex: "A8321E"),     // Iron oxide red
+        overdueBg: Color(hex: "F5E0D8"),
+        completionGreen: Color(hex: "5A7A2E"),// Olive green
+        userBubbleText: Color(hex: "FBF6E9"), // Cream on burgundy
+        aiBubble: Color(hex: "FFFAEC"),
+        aiBubbleText: Color(hex: "2B1F14"),
+        aiBubbleBorder: Color(hex: "E0D5BD"),
+        checkboxHigh: Color(hex: "A8321E"),
+        checkboxMedium: Color(hex: "C77B30"),
+        checkboxLow: Color(hex: "4A6B7C"),
+        error: Color(hex: "A8321E"),
+        errorBg: Color(hex: "F5E0D8"),
+        warning: Color(hex: "C77B30"),
+        warningBg: Color(hex: "F8EBD5"),
+        success: Color(hex: "5A7A2E"),
+        successBg: Color(hex: "EDF0DA"),
+        disabled: Color(hex: "D4C8AE"),
+        textDisabled: Color(hex: "A89878")
+    )
+
+    // MARK: - 4. Accessible (Colorblind-Friendly, WCAG AAA)
 
     private static let accessible = ColorTheme(
         background: Color.white,
@@ -281,5 +328,50 @@ final class ThemeManager {
         successBg: Color(hex: "1F3F2F"),
         disabled: Color(hex: "334155"),
         textDisabled: Color(hex: "64748B")
+    )
+
+    // MARK: - 8. Accessible Dark (Colorblind-Friendly Dark Mode, WCAG AAA)
+    // Dark counterpart to the Accessible theme. Same colorblind-safe palette
+    // strategy (blue replaces green for success; orange + blue for priority)
+    // but on a true black background. Designed for users who need both
+    // colorblind support AND dark mode (e.g. light sensitivity, photophobia,
+    // late-night use). Text colors meet WCAG AAA contrast on black.
+
+    private static let accessibleDark = ColorTheme(
+        background: Color.black,                  // True black for OLED + max contrast
+        surface: Color(hex: "0F0F0F"),
+        card: Color(hex: "1A1A1A"),
+        border: Color(hex: "404040"),             // Lighter border for clear separation
+        accent: Color(hex: "60A5FA"),             // Bright blue (replaces green for success)
+        accentWarm: Color(hex: "93C5FD"),         // Lighter blue for emphasis
+        accentLight: Color(hex: "1E3A5F"),
+        gold: Color(hex: "FB923C"),               // Orange (not yellow — avoids confusion)
+        coral: Color(hex: "FB923C"),              // Orange-red
+        skyBlue: Color(hex: "60A5FA"),
+        textPrimary: Color(hex: "FFFFFF"),        // 21:1 on black
+        textSecondary: Color(hex: "E5E5E5"),      // ~16:1 on black
+        textMuted: Color(hex: "BBBBBB"),          // ~10:1 on black (WCAG AAA)
+        morning: Color(hex: "FB923C"),            // Orange
+        noon: Color(hex: "60A5FA"),               // Blue
+        afternoon: Color(hex: "93C5FD"),          // Light blue
+        night: Color(hex: "C4B5FD"),              // Light violet (distinguishable from blues)
+        overdueRed: Color(hex: "F87171"),         // Bright red — distinguishable from orange
+        overdueBg: Color(hex: "3F1F1F"),
+        completionGreen: Color(hex: "60A5FA"),    // Blue not green — colorblind-safe
+        userBubbleText: Color.white,
+        aiBubble: Color(hex: "1A1A1A"),
+        aiBubbleText: Color(hex: "FFFFFF"),
+        aiBubbleBorder: Color(hex: "404040"),
+        checkboxHigh: Color(hex: "F87171"),       // Red
+        checkboxMedium: Color(hex: "FB923C"),     // Orange
+        checkboxLow: Color(hex: "60A5FA"),        // Blue
+        error: Color(hex: "F87171"),
+        errorBg: Color(hex: "3F1F1F"),
+        warning: Color(hex: "FB923C"),
+        warningBg: Color(hex: "3F2F1F"),
+        success: Color(hex: "60A5FA"),            // Blue not green
+        successBg: Color(hex: "1F2F3F"),
+        disabled: Color(hex: "404040"),
+        textDisabled: Color(hex: "808080")
     )
 }
