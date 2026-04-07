@@ -11,7 +11,11 @@ final class WisdomManager {
     }
 
     private let modelContext: ModelContext
-    private static var cachedQuotes: [Quote]?
+    // Process-local quote cache. Guarded by `cacheLock` so the legacy static
+    // accessors used by Watch/Widget timeline code (which may run off the main
+    // actor) cannot race with the @MainActor iOS app instance.
+    nonisolated(unsafe) private static var cachedQuotes: [Quote]?
+    private static let cacheLock = NSLock()
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -19,7 +23,9 @@ final class WisdomManager {
 
     // MARK: - Quote Loading
 
-    static func loadQuotes() -> [Quote] {
+    nonisolated static func loadQuotes() -> [Quote] {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
         if let cached = cachedQuotes { return cached }
         guard let url = Bundle.main.url(forResource: "DailyWisdom", withExtension: "json"),
               let data = try? Data(contentsOf: url),
@@ -70,8 +76,9 @@ final class WisdomManager {
         return pool[daySeed % pool.count]
     }
 
-    /// Legacy static method for backward compatibility (Watch, Widgets)
-    static func todayQuote() -> Quote? {
+    /// Legacy static method for backward compatibility (Watch, Widgets).
+    /// Nonisolated so widget timeline providers can call it from non-Main contexts.
+    nonisolated static func todayQuote() -> Quote? {
         let quotes = loadQuotes()
         guard !quotes.isEmpty else { return nil }
         let daySeed = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0

@@ -31,6 +31,17 @@ final class ChatManager {
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
+    /// Inserts a message into a conversation without going through the AI.
+    /// Used by Task Builder, Watch, voice flows, and any feature that needs to
+    /// post a local-only assistant or user message.
+    @discardableResult
+    func insertLocalMessage(role: MessageRole, content: String, conversationID: String) -> ChatMessage {
+        let msg = ChatMessage(role: role, content: content, conversationID: conversationID)
+        modelContext.insert(msg)
+        modelContext.safeSave()
+        return msg
+    }
+
     func deleteConversation(_ conversationID: String) {
         let messages = loadMessages(for: conversationID)
         for message in messages {

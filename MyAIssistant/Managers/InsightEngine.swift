@@ -23,9 +23,18 @@ final class InsightEngine {
         let insights = generateAllInsights()
         guard !insights.isEmpty else { return nil }
 
-        // Deterministic daily selection (same insight all day)
+        // Deterministic daily selection cached per ordinal day so the chosen
+        // insight is stable even if the available pool grows mid-day.
         let daySeed = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
-        return insights[daySeed % insights.count]
+        let cacheKey = "insightEngine.cachedIndex.\(daySeed)"
+        let defaults = UserDefaults.standard
+        let cachedIndex = defaults.object(forKey: cacheKey) as? Int
+        if let cachedIndex, cachedIndex >= 0, cachedIndex < insights.count {
+            return insights[cachedIndex]
+        }
+        let index = daySeed % insights.count
+        defaults.set(index, forKey: cacheKey)
+        return insights[index]
     }
 
     /// Generate all available insights from current data.
@@ -37,19 +46,22 @@ final class InsightEngine {
         let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: Date()) ?? Date()
 
         // Fetch recent tasks
-        let taskDescriptor = FetchDescriptor<TaskItem>(
+        var taskDescriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate<TaskItem> { $0.date >= twoWeeksAgo }
         )
+        taskDescriptor.fetchLimit = 500
         let recentTasks = (try? modelContext.fetch(taskDescriptor)) ?? []
 
         // Fetch recent check-ins
-        let checkInDescriptor = FetchDescriptor<CheckInRecord>(
+        var checkInDescriptor = FetchDescriptor<CheckInRecord>(
             predicate: #Predicate<CheckInRecord> { $0.date >= twoWeeksAgo }
         )
+        checkInDescriptor.fetchLimit = 500
         let recentCheckIns = (try? modelContext.fetch(checkInDescriptor)) ?? []
 
         // Fetch all habits (active ones filtered below)
-        let habitDescriptor = FetchDescriptor<HabitItem>()
+        var habitDescriptor = FetchDescriptor<HabitItem>()
+        habitDescriptor.fetchLimit = 100
         let habits = (try? modelContext.fetch(habitDescriptor)) ?? []
 
         guard recentTasks.count >= 5 || recentCheckIns.count >= 3 else {
@@ -77,8 +89,8 @@ final class InsightEngine {
             insights.append(moodInsight)
         }
 
-        // 4. Streak encouragement
-        if let streakInsight = streakInsight(tasks: recentTasks) {
+        // 4. Streak encouragement (uses a wider fetch so streaks > 14 days aren't capped)
+        if let streakInsight = streakInsight() {
             insights.append(streakInsight)
         }
 
@@ -118,8 +130,11 @@ final class InsightEngine {
             countByDay[weekday, default: 0] += 1
         }
 
-        guard let best = countByDay.max(by: { $0.value < $1.value }),
-              best.value >= 2 else { return nil }
+        // Sort by count desc, weekday asc for deterministic tie-breaking
+        let sorted = countByDay.sorted { lhs, rhs in
+            lhs.value != rhs.value ? lhs.value > rhs.value : lhs.key < rhs.key
+        }
+        guard let best = sorted.first, best.value >= 2 else { return nil }
 
         let dayNames = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         return dayNames[best.key]
@@ -184,26 +199,30 @@ final class InsightEngine {
         let highAvg = Double(highMoodTasks.reduce(0, +)) / Double(highMoodTasks.count)
         let lowAvg = Double(lowMoodTasks.reduce(0, +)) / Double(lowMoodTasks.count)
 
-        if highAvg > lowAvg * 1.5 {
-            let multiplier = String(format: "%.1f", highAvg / max(lowAvg, 0.1))
-            return Insight(text: "You're \(multiplier)x more productive on days you rate your mood highly.", icon: "face.smiling.fill", dimension: "emotional")
-        }
-        return nil
+        // Require a meaningful baseline so we don't divide by ~0 and report "47x".
+        guard lowAvg >= 1.0, highAvg > lowAvg * 1.5 else { return nil }
+        let raw = highAvg / lowAvg
+        let capped = min(raw, 5.0)
+        let multiplier = String(format: "%.1f", capped)
+        return Insight(text: "You're \(multiplier)x more productive on days you rate your mood highly.", icon: "face.smiling.fill", dimension: "emotional")
     }
 
-    private func streakInsight(tasks: [TaskItem]) -> Insight? {
+    private func streakInsight() -> Insight? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        // Wider fetch (1 year) so we don't artificially cap the streak at 14.
+        let oneYearAgo = calendar.date(byAdding: .day, value: -365, to: today) ?? today
+        var descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate<TaskItem> { $0.date >= oneYearAgo && $0.done == true }
+        )
+        descriptor.fetchLimit = 2000
+        let completedTasks = (try? modelContext.fetch(descriptor)) ?? []
+
         var streak = 0
         var checkDate = today
-
         while true {
-            let dayTasks = tasks.filter {
-                calendar.isDate($0.date, inSameDayAs: checkDate)
-            }
-            let completed = dayTasks.filter { $0.done }
-
-            if dayTasks.isEmpty || completed.isEmpty {
+            let hasCompletion = completedTasks.contains { calendar.isDate($0.date, inSameDayAs: checkDate) }
+            if !hasCompletion {
                 if calendar.isDate(checkDate, inSameDayAs: today) {
                     checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
                     continue
