@@ -12,6 +12,7 @@ final class ChatManager {
     // Dependencies injected after init (set by the app entry point or view)
     var taskManager: TaskManager?
     var patternEngine: PatternEngine?
+    var balanceManager: BalanceManager?
     var keychainService: KeychainService = KeychainService()
     var calendarSyncManager: CalendarSyncManager?
     var usageGateManager: UsageGateManager?
@@ -124,21 +125,39 @@ final class ChatManager {
             let hasApple = enabledLinks.contains { $0.calendarSource == .apple }
                 || calendarSyncManager?.appleCalendarAuthorized == true
 
-            let systemPrompt = AIPromptBuilder.chatSystemPrompt(
+            // Stable block (cached): identity, instructions, patterns, balance, tag formats.
+            let systemPromptStable = AIPromptBuilder.chatSystemPromptStable(
+                hasGoogleCalendar: hasGoogle,
+                hasAppleCalendar: hasApple,
+                patternInsights: patternEngine?.patternInsightsText() ?? "",
+                balanceSummary: balanceManager?.balanceSummaryForAI() ?? ""
+            )
+
+            // Volatile block (not cached): today's date, schedule, stats, recent activity.
+            let systemPromptVolatile = AIPromptBuilder.chatSystemPromptVolatile(
                 scheduleSummary: taskManager?.scheduleSummary() ?? "",
                 completionRate: patternEngine?.completionRate() ?? 0,
                 streak: patternEngine?.currentStreak() ?? 0,
-                hasGoogleCalendar: hasGoogle,
-                hasAppleCalendar: hasApple,
-                activitySummary: patternEngine?.activitySummaryText() ?? "",
-                patternInsights: patternEngine?.patternInsightsText() ?? ""
+                activitySummary: patternEngine?.activitySummaryText() ?? ""
             )
 
             let aiResponse = try await provider.sendMessage(
                 userMessage: text,
                 conversationHistory: Array(priorHistory.suffix(10)),
-                systemPrompt: systemPrompt
+                systemPromptStable: systemPromptStable,
+                systemPromptVolatile: systemPromptVolatile
             )
+
+            #if DEBUG
+            let cacheCreate = aiResponse.cacheCreationInputTokens ?? 0
+            let cacheRead = aiResponse.cacheReadInputTokens ?? 0
+            let cacheStatus: String = {
+                if cacheRead > 0 { return "HIT (\(cacheRead) tokens read)" }
+                if cacheCreate > 0 { return "MISS — wrote \(cacheCreate) tokens" }
+                return "no cache (block too small or disabled)"
+            }()
+            print("[ChatManager] Prompt cache: \(cacheStatus). Input \(aiResponse.inputTokens), output \(aiResponse.outputTokens).")
+            #endif
 
             let parsed = parseResponseTags(from: aiResponse.content)
 

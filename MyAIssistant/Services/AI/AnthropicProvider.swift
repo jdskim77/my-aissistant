@@ -44,6 +44,41 @@ actor AnthropicProvider: AIProvider {
         return try parseResponse(response.data)
     }
 
+    func sendMessage(
+        userMessage: String,
+        conversationHistory: [ChatMessage],
+        systemPromptStable: String,
+        systemPromptVolatile: String
+    ) async throws -> AIResponse {
+        let messages = buildMessages(conversationHistory: conversationHistory, userMessage: userMessage)
+        let body = buildSplitRequestBody(
+            systemPromptStable: systemPromptStable,
+            systemPromptVolatile: systemPromptVolatile,
+            messages: messages
+        )
+
+        let jsonData = try JSONSerialization.data(withJSONObject: body)
+
+        let headers: [String: String] = [
+            "content-type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": AppConstants.anthropicAPIVersion
+        ]
+
+        let response = try await client.post(url: endpoint, headers: headers, body: jsonData)
+
+        if response.statusCode == 429 {
+            throw AIError.rateLimited
+        }
+
+        guard response.statusCode == 200 else {
+            let errorBody = String(data: response.data, encoding: .utf8) ?? "Unknown error"
+            throw AIError.apiError(statusCode: response.statusCode, message: errorBody)
+        }
+
+        return try parseResponse(response.data)
+    }
+
     func sendVisionMessage(
         prompt: String,
         imageData: Data,
@@ -106,7 +141,9 @@ actor AnthropicProvider: AIProvider {
     }
 
     private func buildRequestBody(systemPrompt: String, messages: [[String: Any]]) -> [String: Any] {
-        // Use prompt caching for system prompt to reduce costs
+        // Single-block path: cache the entire prompt. Note that if the prompt includes
+        // volatile content (today's schedule, stats), the cache will miss every call.
+        // Prefer the split path (buildSplitRequestBody) for chat.
         let systemBlock: [[String: Any]] = [
             [
                 "type": "text",
@@ -123,6 +160,39 @@ actor AnthropicProvider: AIProvider {
         ]
     }
 
+    private func buildSplitRequestBody(
+        systemPromptStable: String,
+        systemPromptVolatile: String,
+        messages: [[String: Any]]
+    ) -> [String: Any] {
+        var systemBlocks: [[String: Any]] = []
+
+        // Stable block: cached. Must be the FIRST block and meet Anthropic's
+        // minimum cacheable size (~1024 tokens for Sonnet) for the cache to engage.
+        if !systemPromptStable.isEmpty {
+            systemBlocks.append([
+                "type": "text",
+                "text": systemPromptStable,
+                "cache_control": ["type": "ephemeral"]
+            ])
+        }
+
+        // Volatile block: not cached. Changes per request (date, schedule, stats).
+        if !systemPromptVolatile.isEmpty {
+            systemBlocks.append([
+                "type": "text",
+                "text": systemPromptVolatile
+            ])
+        }
+
+        return [
+            "model": model,
+            "max_tokens": AppConstants.defaultMaxTokens,
+            "system": systemBlocks,
+            "messages": messages
+        ]
+    }
+
     // MARK: - Response Parsing
 
     private func parseResponse(_ data: Data) throws -> AIResponse {
@@ -133,15 +203,19 @@ actor AnthropicProvider: AIProvider {
             throw AIError.parsingError
         }
 
-        // Extract token usage
+        // Extract token usage (including cache stats when available)
         let usage = json["usage"] as? [String: Any]
         let inputTokens = usage?["input_tokens"] as? Int ?? 0
         let outputTokens = usage?["output_tokens"] as? Int ?? 0
+        let cacheCreation = usage?["cache_creation_input_tokens"] as? Int
+        let cacheRead = usage?["cache_read_input_tokens"] as? Int
 
         return AIResponse(
             content: text,
             inputTokens: inputTokens,
-            outputTokens: outputTokens
+            outputTokens: outputTokens,
+            cacheCreationInputTokens: cacheCreation,
+            cacheReadInputTokens: cacheRead
         )
     }
 }

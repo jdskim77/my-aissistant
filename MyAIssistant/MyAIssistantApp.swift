@@ -54,13 +54,16 @@ struct MyAIssistantApp: App {
         self._wisdomManager = State(initialValue: WisdomManager(modelContext: context))
         self._insightEngine = State(initialValue: InsightEngine(modelContext: context))
 
+        let bm = BalanceManager(modelContext: context)
+
         let cm = ChatManager(modelContext: context)
         cm.taskManager = tm
         cm.patternEngine = pe
+        cm.balanceManager = bm
         cm.keychainService = keychainService
         cm.calendarSyncManager = csm
         self._chatManager = State(initialValue: cm)
-        self._balanceManager = State(initialValue: BalanceManager(modelContext: context))
+        self._balanceManager = State(initialValue: bm)
         self._habitManager = State(initialValue: HabitManager(modelContext: context))
         self._checkInBehaviorEngine = State(initialValue: CheckInBehaviorEngine(modelContext: context))
 
