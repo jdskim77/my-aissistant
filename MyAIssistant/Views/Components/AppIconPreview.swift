@@ -22,8 +22,12 @@ struct AppIconPreview: View {
         case diagonalDuotone = "Diagonal Duotone"
         case darkIndigo = "Dark Indigo"
         case cream = "Cream + Indigo Mark"
-        // New "premium" variant: deep radial glow + pale gold mark + subtle stroke
-        case radialGoldPremium = "Radial Glow + Gold (Premium)"
+        // Gold + indigo variants — exploring the premium luxury direction
+        case radialGoldPremium = "Radial Gold (Premium)"
+        case solidIndigoGold = "Solid Indigo + Gold"
+        case darkIndigoGold = "Dark Indigo + Gold"
+        case verticalIndigoGold = "Vertical Gradient + Gold"
+        case duotoneGold = "Diagonal Duotone + Gold"
 
         var id: String { rawValue }
     }
@@ -55,10 +59,10 @@ struct AppIconPreview: View {
     @ViewBuilder
     private var background: some View {
         switch style {
-        case .solidIndigo:
+        case .solidIndigo, .solidIndigoGold:
             Color(hex: "4F46E5")
 
-        case .verticalGradient:
+        case .verticalGradient, .verticalIndigoGold:
             LinearGradient(
                 colors: [
                     Color(hex: "6366F1"), // indigo-500 (top — lighter)
@@ -82,7 +86,7 @@ struct AppIconPreview: View {
                 )
             }
 
-        case .diagonalDuotone:
+        case .diagonalDuotone, .duotoneGold:
             LinearGradient(
                 colors: [
                     Color(hex: "4F46E5"), // indigo-600
@@ -92,7 +96,7 @@ struct AppIconPreview: View {
                 endPoint: .bottomTrailing
             )
 
-        case .darkIndigo:
+        case .darkIndigo, .darkIndigoGold:
             Color(hex: "1E1B4B") // indigo-950
 
         case .cream:
@@ -116,37 +120,38 @@ struct AppIconPreview: View {
         }
     }
 
-    /// Mark color contrasts with the chosen background.
-    private var markColor: Color {
+    /// All gold variants share the same gold mark + subtle stroke recipe.
+    /// Lets us explore which background pairs best with the premium gold treatment.
+    private var isGoldVariant: Bool {
         switch style {
-        case .cream:
-            return Color(hex: "4F46E5")     // indigo-600 mark on cream
-        case .radialGoldPremium:
-            return Color(hex: "FCD34D")     // pale gold (amber-300) — premium accent
+        case .radialGoldPremium, .solidIndigoGold, .darkIndigoGold,
+             .verticalIndigoGold, .duotoneGold:
+            return true
         default:
-            return .white                    // white mark on all dark/colored bgs
+            return false
         }
     }
 
-    /// Optional stroke color (used by premium variant only).
-    private var markStrokeColor: Color? {
-        switch style {
-        case .radialGoldPremium:
-            return Color.white.opacity(0.20)  // subtle white edge definition
-        default:
-            return nil
+    /// Mark color contrasts with the chosen background.
+    private var markColor: Color {
+        if style == .cream {
+            return Color(hex: "4F46E5")     // indigo-600 mark on cream
         }
+        if isGoldVariant {
+            return Color(hex: "FCD34D")     // pale gold (amber-300) — premium accent
+        }
+        return .white                        // white mark on all dark/colored bgs
+    }
+
+    /// Optional stroke color — applied to all gold variants for edge definition.
+    private var markStrokeColor: Color? {
+        isGoldVariant ? Color.white.opacity(0.20) : nil
     }
 
     /// Stroke width — scales with canvas size so it stays proportional.
-    /// 1pt at 1024px ≈ 1px on a real iOS icon.
+    /// 4pt at 1024×1024 = ~visible edge at all sizes.
     private var markStrokeWidth: CGFloat {
-        switch style {
-        case .radialGoldPremium:
-            return max(1, size / 1024 * 4)   // 4pt at 1024 = ~visible edge at all sizes
-        default:
-            return 0
-        }
+        isGoldVariant ? max(1, size / 1024 * 4) : 0
     }
 }
 
