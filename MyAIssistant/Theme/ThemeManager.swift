@@ -345,8 +345,8 @@ final class ThemeManager {
         accent: Color(hex: "60A5FA"),             // Bright blue (replaces green for success)
         accentWarm: Color(hex: "93C5FD"),         // Lighter blue for emphasis
         accentLight: Color(hex: "1E3A5F"),
-        gold: Color(hex: "FB923C"),               // Orange (not yellow — avoids confusion)
-        coral: Color(hex: "FB923C"),              // Orange-red
+        gold: Color(hex: "FBBF24"),               // Amber (warnings/secondary — distinct from coral)
+        coral: Color(hex: "FB923C"),              // Orange (urgent/high priority)
         skyBlue: Color(hex: "60A5FA"),
         textPrimary: Color(hex: "FFFFFF"),        // 21:1 on black
         textSecondary: Color(hex: "E5E5E5"),      // ~16:1 on black
