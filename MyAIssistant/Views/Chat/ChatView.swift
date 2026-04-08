@@ -19,7 +19,7 @@ struct ChatView: View {
     @State private var appeared = false
     @State private var errorMessage: String?
     @State private var showingConversations = false
-    @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = true
+    @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = false
     @AppStorage(AppConstants.selectedVoiceIDKey) private var selectedVoiceID = ""
     @AppStorage(AppConstants.voiceProviderKey) private var voiceProviderRaw = VoiceProviderType.apple.rawValue
     @State private var speechRecognizer = SpeechRecognizer()

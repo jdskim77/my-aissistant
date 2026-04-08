@@ -307,7 +307,30 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    if AppConstants.isDeveloperMode {
+                    if AppConstants.isBetaUnlimited {
+                        HStack(spacing: 10) {
+                            Image(systemName: "testtube.2")
+                                .foregroundColor(AppColors.accent)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Beta Tester")
+                                    .font(AppFonts.bodyMedium(15))
+                                    .foregroundColor(AppColors.textPrimary)
+                                Text("All limits removed during beta")
+                                    .font(AppFonts.caption(12))
+                                    .foregroundColor(AppColors.textMuted)
+                            }
+                            Spacer()
+                            Text("BETA")
+                                .font(AppFonts.label(11))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(AppColors.accent)
+                                .cornerRadius(6)
+                        }
+                    }
+
+                    if AppConstants.isDeveloperMode && !AppConstants.isBetaUnlimited {
                         HStack {
                             Image(systemName: "hammer.fill")
                                 .foregroundColor(AppColors.accentWarm)

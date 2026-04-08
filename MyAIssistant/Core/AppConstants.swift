@@ -17,12 +17,21 @@ enum AppConstants {
     static let freeChatMessagesPerMonth = 10
     static let freeGoalSuggestionsPerWeek = 3
 
+    // MARK: - Beta Period
+    /// Beta period flag — when true, all usage limits are disabled for testers.
+    /// Set to false before App Store public release to re-enable free-tier limits.
+    /// One-line revert: change `true` to `false`, rebuild, ship.
+    static let isBetaUnlimited = true
+
     // MARK: - Developer Mode
     static let developerModeKey = "developerModeEnabled"
 
     /// Returns true if developer mode is active — bypasses all usage limits.
+    /// Also returns true during the beta period (`isBetaUnlimited`) so testers
+    /// have unlimited chat messages, check-ins, tasks, and goal suggestions.
     static var isDeveloperMode: Bool {
-        UserDefaults.standard.bool(forKey: developerModeKey)
+        if isBetaUnlimited { return true }
+        return UserDefaults.standard.bool(forKey: developerModeKey)
     }
 
     // MARK: - Check-in Defaults

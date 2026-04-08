@@ -2,7 +2,7 @@ import SwiftUI
 import AVFoundation
 
 struct VoiceSettingsView: View {
-    @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = true
+    @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = false
     @AppStorage(AppConstants.selectedVoiceIDKey) private var selectedVoiceID = ""
     @AppStorage(AppConstants.voiceProviderKey) private var voiceProviderRaw = VoiceProviderType.apple.rawValue
 
