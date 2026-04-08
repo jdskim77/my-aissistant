@@ -197,6 +197,7 @@ struct HabitFormView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle(isEditing ? "Edit Habit" : "New Habit")
             .navigationBarTitleDisplayMode(.inline)

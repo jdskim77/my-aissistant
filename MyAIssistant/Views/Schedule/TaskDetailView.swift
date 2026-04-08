@@ -212,6 +212,7 @@ struct TaskDetailView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Task Details")
             .navigationBarTitleDisplayMode(.inline)
