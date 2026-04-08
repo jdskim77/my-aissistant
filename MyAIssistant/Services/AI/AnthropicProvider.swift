@@ -161,9 +161,12 @@ actor AnthropicProvider: AIProvider {
     }
 
     /// Anthropic silently disables prompt caching when a cached block falls below
-    /// the per-model minimum (~1024 tokens for Sonnet). 1 token ≈ 4 chars, so we
-    /// require >= 4096 stable chars before splitting into a cached block.
-    private static let minStableCacheChars = 4096
+    /// the per-model minimum (1024 tokens for Sonnet 4.5). Live testing on device
+    /// showed 5598 chars produced only ~930 real tokens — Claude tokenizes English
+    /// prose at ~6 chars/token, not the optimistic 4. So we require >= 6500 stable
+    /// chars (~1080 real tokens) before splitting into a cached block. Below this,
+    /// fall back to the legacy single-block path to avoid wasted overhead.
+    private static let minStableCacheChars = 6500
 
     private func buildSplitRequestBody(
         systemPromptStable: String,
@@ -175,8 +178,8 @@ actor AnthropicProvider: AIProvider {
         // sits on the combined text — no worse than today, and avoids confusing logs.
         if systemPromptStable.count < Self.minStableCacheChars {
             #if DEBUG
-            let estTokens = systemPromptStable.count / 4
-            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) tokens) — below \(Self.minStableCacheChars) threshold, falling back to single-block")
+            let estTokens = systemPromptStable.count / 6
+            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — below \(Self.minStableCacheChars) threshold, falling back to single-block")
             #endif
             let combined: String
             if systemPromptVolatile.isEmpty {
@@ -190,8 +193,8 @@ actor AnthropicProvider: AIProvider {
         }
 
         #if DEBUG
-        let estTokens = systemPromptStable.count / 4
-        print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) tokens) — caching enabled")
+        let estTokens = systemPromptStable.count / 6
+        print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — caching enabled")
         #endif
 
         var systemBlocks: [[String: Any]] = []
@@ -236,6 +239,10 @@ actor AnthropicProvider: AIProvider {
         let outputTokens = usage?["output_tokens"] as? Int ?? 0
         let cacheCreation = usage?["cache_creation_input_tokens"] as? Int
         let cacheRead = usage?["cache_read_input_tokens"] as? Int
+
+        #if DEBUG
+        print("[AnthropicProvider] Raw usage: \(usage ?? [:])")
+        #endif
 
         return AIResponse(
             content: text,
