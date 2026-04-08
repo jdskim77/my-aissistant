@@ -32,10 +32,16 @@ struct OnboardingQuickRateView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    Text("Rate Your Life")
-                        .font(AppFonts.display(24))
-                        .foregroundColor(AppColors.textPrimary)
-                        .padding(.top, 20)
+                    VStack(spacing: 6) {
+                        Text("Rate Your Life")
+                            .font(AppFonts.display(24))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        Text("No wrong answers — go with your gut.")
+                            .font(AppFonts.body(14))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    .padding(.top, 20)
 
                     ForEach(dimensions, id: \.0) { dim, question, subtitle in
                         dimensionCard(dim: dim, question: question, subtitle: subtitle)

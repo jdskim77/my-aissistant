@@ -9,10 +9,15 @@ struct OnboardingContainerView: View {
     @State private var addedTaskIndices: Set<Int> = []
     @State private var appeared = false
 
+    /// Captured during the new onboarding screens (Phase 1 AI context).
+    @State private var capturedName: String = ""
+    @State private var capturedIntention: String = ""
+    @State private var capturedGoalDimension: LifeDimension = .physical
+
     /// The starter task templates selected for the weakest dimension
     @State private var suggestedTasks: [StarterTask] = []
 
-    private let totalPages = 6
+    private let totalPages = 9
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,40 +28,65 @@ struct OnboardingContainerView: View {
             }
 
             TabView(selection: $currentPage) {
-                // Screen 1: Welcome
+                // Screen 0: Welcome
                 WelcomeView(onContinue: { advance() })
                     .tag(0)
 
+                // Screen 1: Name Capture (NEW — personalize AI from msg 1)
+                NameCaptureView(
+                    name: $capturedName,
+                    onContinue: { advance() },
+                    onSkip: { advance() }
+                )
+                .tag(1)
+
                 // Screen 2: Compass Intro
                 OnboardingIntroView(onContinue: { advance() })
-                    .tag(1)
+                    .tag(2)
 
                 // Screen 3: Quick Rate
                 OnboardingQuickRateView(ratings: $ratings, onContinue: {
                     suggestedTasks = StarterTaskPool.tasksForWeakest(ratings: ratings)
                     advance()
                 })
-                .tag(2)
+                .tag(3)
 
                 // Screen 4: Compass Reveal
                 OnboardingCompassRevealView(
                     ratings: ratings,
                     onContinue: { advance() }
                 )
-                .tag(3)
+                .tag(4)
 
-                // Screen 5: Suggested Tasks
+                // Screen 5: Intention Capture (NEW — creates SeasonGoal for Phase 1 AI)
+                IntentionCaptureView(
+                    weakestDimension: weakestDimension,
+                    intention: $capturedIntention,
+                    goalDimension: $capturedGoalDimension,
+                    onContinue: { advance() },
+                    onSkip: { advance() }
+                )
+                .tag(5)
+
+                // Screen 6: Suggested Tasks
                 OnboardingSuggestedTasksView(
                     tasks: suggestedTasks,
                     addedIndices: $addedTaskIndices,
                     weakestDimension: weakestDimension,
                     onContinue: { advance() }
                 )
-                .tag(4)
+                .tag(6)
 
-                // Screen 6: Check-in Schedule + Finish
-                OnboardingScheduleView(onFinish: { completeOnboarding() })
-                    .tag(5)
+                // Screen 7: Check-in Schedule (now advances instead of finishing)
+                OnboardingScheduleView(onFinish: { advance() })
+                    .tag(7)
+
+                // Screen 8: Notification Permission (NEW — final step)
+                NotificationPermissionView(
+                    onAllow: { completeOnboarding() },
+                    onSkip: { completeOnboarding() }
+                )
+                .tag(8)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -127,12 +157,29 @@ struct OnboardingContainerView: View {
             modelContext.insert(task)
         }
 
-        // 3. Mark onboarding complete
+        // 3. Persist captured intention as a SeasonGoal (Phase 1 AI context)
+        let trimmedIntention = capturedIntention.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedIntention.isEmpty {
+            let goal = SeasonGoal(
+                dimension: capturedGoalDimension,
+                intention: trimmedIntention
+            )
+            modelContext.insert(goal)
+        }
+
+        // 4. Mark onboarding complete + persist captured display name
+        let trimmedName = capturedName.trimmingCharacters(in: .whitespacesAndNewlines)
         let descriptor = FetchDescriptor<UserProfile>()
         if let profile = try? modelContext.fetch(descriptor).first {
             profile.onboardingCompleted = true
+            if !trimmedName.isEmpty {
+                profile.displayName = trimmedName
+            }
         } else {
-            let profile = UserProfile(onboardingCompleted: true)
+            let profile = UserProfile(
+                displayName: trimmedName,
+                onboardingCompleted: true
+            )
             modelContext.insert(profile)
         }
         modelContext.safeSave()

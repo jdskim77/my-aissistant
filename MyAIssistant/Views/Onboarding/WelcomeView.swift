@@ -20,11 +20,11 @@ struct WelcomeView: View {
                         .font(AppFonts.display(36))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Excel at life by finding balance.")
+                    Text("A coach for the whole you.")
                         .font(AppFonts.heading(17))
                         .foregroundColor(AppColors.accent)
 
-                    Text("Thrivn reveals where you're thriving and where you need attention — across your physical, mental, emotional, and spiritual well-being. Through daily check-ins, habit tracking, and an AI coach that understands your goals, it helps you align how you spend your time with what truly matters.")
+                    Text("Most apps optimize your to-do list. Thrivn looks at your whole life — body, mind, heart, spirit — and helps you spend your time on what actually matters.")
                         .font(AppFonts.body(14))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -34,10 +34,9 @@ struct WelcomeView: View {
                 .opacity(appeared ? 1 : 0)
 
                 VStack(alignment: .leading, spacing: 16) {
-                    featureRow(icon: "🌅", title: "Daily Check-ins", subtitle: "Track mood, energy, and progress")
-                    featureRow(icon: "🧭", title: "Life Compass", subtitle: "See your balance across all dimensions")
-                    featureRow(icon: "✦", title: "AI Coach", subtitle: "Personalized guidance toward your goals")
-                    featureRow(icon: "📊", title: "Pattern Insights", subtitle: "Discover what's working and what's not")
+                    featureRow(icon: "🧭", title: "See your whole life", subtitle: "A weekly compass across four dimensions")
+                    featureRow(icon: "✦", title: "Talk to a coach who knows you", subtitle: "Context-aware AI, not a generic chatbot")
+                    featureRow(icon: "🌅", title: "15 seconds, 4 times a day", subtitle: "Quick check-ins build the picture over time")
                 }
                 .padding(.top, 16)
                 .offset(y: appeared ? 0 : 30)

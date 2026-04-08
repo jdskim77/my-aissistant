@@ -18,6 +18,9 @@
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
+		F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */; };
+		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
+		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
@@ -100,8 +103,6 @@
 		A400000005000000 /* CheckInHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000000 /* CheckInHistoryView.swift */; };
 		A400000006000000 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000006000000 /* OnboardingContainerView.swift */; };
 		A400000007000000 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000007000000 /* WelcomeView.swift */; };
-		A400000008000000 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000008000000 /* PermissionsView.swift */; };
-		A400000009000000 /* SubscriptionOfferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000009000000 /* SubscriptionOfferView.swift */; };
 		A400000010000000 /* OnboardingCompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000010000000 /* OnboardingCompleteView.swift */; };
 		A500000001000000 /* CalendarLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000001000000 /* CalendarLink.swift */; };
 		A500000002000000 /* EventKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B500000002000000 /* EventKitService.swift */; };
@@ -149,7 +150,6 @@
 		AC00000002000000 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000002000000 /* CustomTabBar.swift */; };
 		AC00000003000000 /* SpeechSynthesizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000003000000 /* SpeechSynthesizer.swift */; };
 		AC00000005000000 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000005000000 /* VoiceSettingsView.swift */; };
-		AC00000006000000 /* VoiceModeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000006000000 /* VoiceModeSelectionView.swift */; };
 		AC00000007000000 /* CalendarEventRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000007000000 /* CalendarEventRow.swift */; };
 		AC00000008000000 /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000008000000 /* ColorTheme.swift */; };
 		AC00000009000000 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
@@ -257,6 +257,9 @@
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
 		27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingSuggestedTasksView.swift; sourceTree = "<group>"; };
+		F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NameCaptureView.swift; sourceTree = "<group>"; };
+		F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionCaptureView.swift; sourceTree = "<group>"; };
+		F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
 		2902A18176BF58C082BECA96 /* CheckInBehavior.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehavior.swift; sourceTree = "<group>"; };
 		29CFAD9307698492ECF74393 /* CompassView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
@@ -338,8 +341,6 @@
 		B400000005000000 /* CheckInHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
 		B400000006000000 /* OnboardingContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingContainerView.swift; sourceTree = "<group>"; };
 		B400000007000000 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		B400000008000000 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
-		B400000009000000 /* SubscriptionOfferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferView.swift; sourceTree = "<group>"; };
 		B400000010000000 /* OnboardingCompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompleteView.swift; sourceTree = "<group>"; };
 		B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EdgeVoiceProvider.swift; sourceTree = "<group>"; };
 		B500000001000000 /* CalendarLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarLink.swift; sourceTree = "<group>"; };
@@ -382,7 +383,6 @@
 		BC00000002000000 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		BC00000003000000 /* SpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
 		BC00000005000000 /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
-		BC00000006000000 /* VoiceModeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceModeSelectionView.swift; sourceTree = "<group>"; };
 		BC00000007000000 /* CalendarEventRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventRow.swift; sourceTree = "<group>"; };
 		BC00000008000000 /* ColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
 		BC00000009000000 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -793,12 +793,12 @@
 			children = (
 				B400000006000000 /* OnboardingContainerView.swift */,
 				B400000007000000 /* WelcomeView.swift */,
-				B400000008000000 /* PermissionsView.swift */,
-				B400000009000000 /* SubscriptionOfferView.swift */,
 				B400000010000000 /* OnboardingCompleteView.swift */,
-				BC00000006000000 /* VoiceModeSelectionView.swift */,
 				27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */,
 				CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */,
+				F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */,
+				F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */,
+				F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */,
 				BF0361C01081332E88C1EF61 /* OnboardingIntroView.swift */,
 				0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */,
 				4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */,
@@ -1221,8 +1221,6 @@
 				A400000005000000 /* CheckInHistoryView.swift in Sources */,
 				A400000006000000 /* OnboardingContainerView.swift in Sources */,
 				A400000007000000 /* WelcomeView.swift in Sources */,
-				A400000008000000 /* PermissionsView.swift in Sources */,
-				A400000009000000 /* SubscriptionOfferView.swift in Sources */,
 				A400000010000000 /* OnboardingCompleteView.swift in Sources */,
 				A500000001000000 /* CalendarLink.swift in Sources */,
 				A500000002000000 /* EventKitService.swift in Sources */,
@@ -1256,7 +1254,6 @@
 				AC00000002000000 /* CustomTabBar.swift in Sources */,
 				AC00000003000000 /* SpeechSynthesizer.swift in Sources */,
 				AC00000005000000 /* VoiceSettingsView.swift in Sources */,
-				AC00000006000000 /* VoiceModeSelectionView.swift in Sources */,
 				AC00000008000000 /* ColorTheme.swift in Sources */,
 				AC00000009000000 /* ThemeManager.swift in Sources */,
 				AC00000010000000 /* ThemePickerView.swift in Sources */,
@@ -1322,6 +1319,9 @@
 				B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */,
 				40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */,
 				1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */,
+				F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */,
+				F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */,
+				F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */,
 				8A03BC14443F5CBA9C85CD8E /* OnboardingIntroView.swift in Sources */,
 				9D1A0B7D13107C124899EF2F /* OnboardingCompassRevealView.swift in Sources */,
 				E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */,
