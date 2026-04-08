@@ -51,37 +51,66 @@ struct SignInWithAppleView: View {
 
             // Error message
             if let errorMessage {
-                Text(errorMessage)
-                    .font(AppFonts.caption(12))
-                    .foregroundColor(AppColors.coral)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 8)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(AppFonts.body(14))
+                        .foregroundColor(AppColors.coral)
+                    Text(errorMessage)
+                        .font(AppFonts.body(14))
+                        .foregroundColor(AppColors.coral)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 12)
             }
 
-            // Apple Sign-In button
-            SignInWithAppleButton(.signIn) { request in
-                request.requestedScopes = [.fullName, .email]
-            } onCompletion: { result in
-                handleAppleSignIn(result)
+            // Apple Sign-In button (with loading overlay)
+            ZStack {
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { result in
+                    handleAppleSignIn(result)
+                }
+                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                .frame(height: 52)
+                .cornerRadius(14)
+                .disabled(isProcessing)
+                .opacity(isProcessing ? 0.5 : 1)
+
+                if isProcessing {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(colorScheme == .dark ? .black : .white)
+                        Text("Signing you in…")
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(colorScheme == .dark ? .black : .white)
+                    }
+                    .accessibilityLabel("Signing in, please wait")
+                }
             }
-            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-            .frame(height: 52)
-            .cornerRadius(14)
             .padding(.horizontal, 24)
-            .disabled(isProcessing)
-            .opacity(isProcessing ? 0.5 : 1)
 
-            // Skip option
+            // Privacy disclosure under the button
+            Text("We use your name and email only to sync across devices. No marketing.")
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textMuted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+
+            // Skip option — plain English, larger touch target
             Button {
+                Haptics.selection()
                 onSkip()
             } label: {
-                Text("Skip — I'll bring my own API key")
-                    .font(AppFonts.caption(13))
+                Text("Continue without an account")
+                    .font(AppFonts.body(14))
                     .foregroundColor(AppColors.textMuted)
-                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
+            .padding(.horizontal, 24)
             .padding(.bottom, 24)
+            .accessibilityHint("Skip sign-in and continue with limited features")
             .opacity(appeared ? 1 : 0)
         }
         .background(AppColors.background.ignoresSafeArea())

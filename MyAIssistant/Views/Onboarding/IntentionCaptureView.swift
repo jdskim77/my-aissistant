@@ -67,6 +67,15 @@ struct IntentionCaptureView: View {
                             .foregroundColor(AppColors.textPrimary)
                             .lineLimit(2...4)
                             .focused($isFocused)
+                            .submitLabel(.done)
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Done") { isFocused = false }
+                                        .font(AppFonts.bodyMedium(15))
+                                        .foregroundColor(AppColors.accent)
+                                }
+                            }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
                             .background(AppColors.card)
@@ -93,6 +102,7 @@ struct IntentionCaptureView: View {
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 20)
             }
+            .scrollDismissesKeyboard(.interactively)
 
             VStack(spacing: 12) {
                 Divider()
@@ -121,8 +131,7 @@ struct IntentionCaptureView: View {
                     Text("Maybe later")
                         .font(AppFonts.bodyMedium(15))
                         .foregroundColor(AppColors.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .padding(.bottom, 40)
                 .accessibilityHint("Skips this step and continues")

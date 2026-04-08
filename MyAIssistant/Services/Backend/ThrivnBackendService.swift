@@ -4,7 +4,8 @@ import Foundation
 /// Handles Sign in with Apple, JWT lifecycle, and authenticated AI chat.
 ///
 /// The backend URL is configured via `AppConstants.thrivnBackendURL`.
-/// Tokens are stored in the Keychain and refreshed automatically on 401.
+/// Tokens are stored in the Keychain (`whenUnlockedThisDeviceOnly`) and refreshed
+/// automatically on 401. Concurrent refreshes are coalesced into a single network call.
 actor ThrivnBackendService: AIProvider {
 
     // MARK: - Configuration
@@ -14,6 +15,18 @@ actor ThrivnBackendService: AIProvider {
     private let session: URLSession
     private let keychain: KeychainService
 
+    /// Coalesces concurrent refresh-token calls into a single network request.
+    /// Without this, two parallel chat 401s would each call refreshTokens() and
+    /// the first one's success would revoke the token the second one is using.
+    private var inFlightRefresh: Task<Void, Error>?
+
+    /// Static encoder/decoder reused across requests for performance.
+    private static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        return e
+    }()
+    private static let decoder: JSONDecoder = JSONDecoder()
+
     /// Anthropic-compatible message structure used in /v1/chat payloads
     private struct ChatRequestMessage: Encodable {
         let role: String
@@ -21,7 +34,10 @@ actor ThrivnBackendService: AIProvider {
     }
 
     init(model: String = AppConstants.haikuModel, keychain: KeychainService) {
-        self.baseURL = URL(string: AppConstants.thrivnBackendURL)!
+        // Fall back to a known-good URL if AppConstants is misconfigured at runtime.
+        // Avoids the force-unwrap crash on app launch if the constant is ever changed.
+        self.baseURL = URL(string: AppConstants.thrivnBackendURL)
+            ?? URL(string: "https://thrivn-api.jdskim77.workers.dev")!
         self.model = model
         self.keychain = keychain
         let config = URLSessionConfiguration.default
@@ -73,19 +89,39 @@ actor ThrivnBackendService: AIProvider {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
+        request.httpBody = try Self.encoder.encode(body)
 
         let (data, response) = try await session.data(for: request)
         try validateHTTPResponse(response, data: data)
 
-        let envelope = try JSONDecoder().decode(AuthEnvelope.self, from: data)
-        keychain.save(key: AppConstants.thrivnAccessTokenKey, value: envelope.data.access_token)
-        keychain.save(key: AppConstants.thrivnRefreshTokenKey, value: envelope.data.refresh_token)
+        let envelope = try Self.decoder.decode(AuthEnvelope.self, from: data)
+        try persistTokens(
+            accessToken: envelope.data.access_token,
+            refreshToken: envelope.data.refresh_token
+        )
         return envelope.data.user
     }
 
-    /// Refresh the access token using the stored refresh token. Throws if no refresh token exists.
+    /// Refresh the access token using the stored refresh token.
+    /// Coalesces concurrent calls — if a refresh is already in flight, waits for it
+    /// instead of triggering a second one (which would race and revoke each other).
     func refreshTokens() async throws {
+        // If a refresh is already running, await its result
+        if let existing = inFlightRefresh {
+            try await existing.value
+            return
+        }
+
+        let task = Task<Void, Error> {
+            try await self.performRefresh()
+        }
+        inFlightRefresh = task
+        defer { inFlightRefresh = nil }
+
+        try await task.value
+    }
+
+    private func performRefresh() async throws {
         guard let refreshToken = keychain.read(key: AppConstants.thrivnRefreshTokenKey),
               !refreshToken.isEmpty else {
             throw AIError.noAPIKey
@@ -96,14 +132,53 @@ actor ThrivnBackendService: AIProvider {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(Body(refresh_token: refreshToken))
+        request.httpBody = try Self.encoder.encode(Body(refresh_token: refreshToken))
 
         let (data, response) = try await session.data(for: request)
+
+        // Special case: if the refresh token itself is invalid (401/403), the session
+        // is dead. Clear local tokens so the next AIProviderFactory.provider() call
+        // falls through to "noAPIKey" and the user is prompted to sign in again.
+        if let http = response as? HTTPURLResponse, (http.statusCode == 401 || http.statusCode == 403) {
+            clearLocalTokens()
+            throw AIError.noAPIKey
+        }
         try validateHTTPResponse(response, data: data)
 
-        let envelope = try JSONDecoder().decode(RefreshEnvelope.self, from: data)
-        keychain.save(key: AppConstants.thrivnAccessTokenKey, value: envelope.data.access_token)
-        keychain.save(key: AppConstants.thrivnRefreshTokenKey, value: envelope.data.refresh_token)
+        let envelope = try Self.decoder.decode(RefreshEnvelope.self, from: data)
+        try persistTokens(
+            accessToken: envelope.data.access_token,
+            refreshToken: envelope.data.refresh_token
+        )
+    }
+
+    /// Persist tokens to Keychain with `whenUnlockedThisDeviceOnly` protection.
+    /// Throws if the Keychain write fails so the caller can surface the error
+    /// instead of returning success with stale credentials.
+    private func persistTokens(accessToken: String, refreshToken: String) throws {
+        let savedAccess = keychain.save(
+            key: AppConstants.thrivnAccessTokenKey,
+            value: accessToken,
+            protection: .whenUnlockedThisDeviceOnly
+        )
+        let savedRefresh = keychain.save(
+            key: AppConstants.thrivnRefreshTokenKey,
+            value: refreshToken,
+            protection: .whenUnlockedThisDeviceOnly
+        )
+        guard savedAccess && savedRefresh else {
+            throw AIError.apiError(
+                statusCode: 0,
+                message: "Couldn't store credentials. Please try again."
+            )
+        }
+    }
+
+    /// Clear stored tokens locally without contacting the server.
+    /// Used when the server tells us the session is permanently expired.
+    private func clearLocalTokens() {
+        keychain.delete(key: AppConstants.thrivnAccessTokenKey)
+        keychain.delete(key: AppConstants.thrivnRefreshTokenKey)
     }
 
     /// Logout: revoke refresh token server-side and clear stored credentials.
@@ -160,22 +235,30 @@ actor ThrivnBackendService: AIProvider {
         )
 
         let url = baseURL.appendingPathComponent("v1/chat")
+        let encodedBody = try Self.encoder.encode(body)
 
-        // Try once, refresh on 401, retry once
+        // Try once. On 401, refresh once and retry. If that 401s again the session
+        // is permanently dead — refreshTokens() already cleared the local tokens.
         do {
-            return try await performChatRequest(url: url, body: body)
+            return try await performChatRequest(url: url, encodedBody: encodedBody)
         } catch AIError.apiError(statusCode: 401, _) {
             try await refreshTokens()
-            return try await performChatRequest(url: url, body: body)
+            do {
+                return try await performChatRequest(url: url, encodedBody: encodedBody)
+            } catch AIError.apiError(statusCode: 401, _) {
+                // Second 401 after refresh = session unrecoverable
+                clearLocalTokens()
+                throw AIError.noAPIKey
+            }
         }
     }
 
-    private func performChatRequest<B: Encodable>(url: URL, body: B) async throws -> AIResponse {
+    private func performChatRequest(url: URL, encodedBody: Data) async throws -> AIResponse {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(try await accessToken())", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(body)
+        request.httpBody = encodedBody
 
         let (data, response) = try await session.data(for: request)
         try validateHTTPResponse(response, data: data)

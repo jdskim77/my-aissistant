@@ -44,8 +44,22 @@ class KeychainService: @unchecked Sendable {
 
     // MARK: - Write
 
+    /// Save a value to the Keychain.
+    ///
+    /// - Parameters:
+    ///   - key: Account/key identifier
+    ///   - value: Value to store
+    ///   - protection: Keychain access class. Default is `.afterFirstUnlock` so the
+    ///     Watch extension can read shared keys in the background. For sensitive
+    ///     bearer tokens (Thrivn JWT/refresh token, OAuth refresh tokens), pass
+    ///     `.whenUnlockedThisDeviceOnly` so they don't migrate to other devices via
+    ///     iCloud Keychain backup.
     @discardableResult
-    func save(key: String, value: String) -> Bool {
+    func save(
+        key: String,
+        value: String,
+        protection: KeychainProtection = .afterFirstUnlock
+    ) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
 
         // Delete existing item first
@@ -56,7 +70,7 @@ class KeychainService: @unchecked Sendable {
             kSecAttrAccount as String: key,
             kSecAttrAccessGroup as String: accessGroup,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: protection.attributeValue
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
@@ -100,5 +114,30 @@ class KeychainService: @unchecked Sendable {
 
     func saveOpenAIAPIKey(_ key: String) -> Bool {
         save(key: AppConstants.openAIAPIKeyKey, value: key)
+    }
+}
+
+/// Keychain item protection class.
+/// Determines when the item is accessible and whether it migrates to other
+/// devices via iCloud Keychain backup.
+enum KeychainProtection {
+    /// Available after first unlock post-boot, including in the background.
+    /// Migrates to other devices via iCloud Keychain backup.
+    /// Use for: shared data needed by extensions (Watch app), non-sensitive caches.
+    case afterFirstUnlock
+
+    /// Available only when the device is unlocked, and **does not migrate**
+    /// to other devices via iCloud Keychain backup.
+    /// Use for: bearer tokens, refresh tokens, OAuth credentials, anything
+    /// that should not survive iCloud restore to a different device.
+    case whenUnlockedThisDeviceOnly
+
+    var attributeValue: CFString {
+        switch self {
+        case .afterFirstUnlock:
+            return kSecAttrAccessibleAfterFirstUnlock
+        case .whenUnlockedThisDeviceOnly:
+            return kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        }
     }
 }

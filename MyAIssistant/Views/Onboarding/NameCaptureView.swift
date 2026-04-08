@@ -63,6 +63,14 @@ struct NameCaptureView: View {
                             onContinue()
                         }
                     }
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { isFocused = false }
+                                .font(AppFonts.bodyMedium(15))
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
             }
             .offset(y: appeared ? 0 : 20)
             .opacity(appeared ? 1 : 0)
@@ -92,8 +100,7 @@ struct NameCaptureView: View {
                     Text("Skip")
                         .font(AppFonts.bodyMedium(15))
                         .foregroundColor(AppColors.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .accessibilityHint("Skips naming and continues")
             }

@@ -76,8 +76,7 @@ struct NotificationPermissionView: View {
                     Text("Not now")
                         .font(AppFonts.bodyMedium(15))
                         .foregroundColor(AppColors.textMuted)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .accessibilityHint("Skips this step and continues")
             }

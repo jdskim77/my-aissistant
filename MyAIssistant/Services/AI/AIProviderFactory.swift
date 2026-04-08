@@ -18,9 +18,14 @@ enum AIProviderFactory {
     /// Returns the appropriate AI provider and model for the given tier and use case.
     ///
     /// Resolution priority (in order):
-    ///   1. **Signed in with Apple AND no BYOK key** → Thrivn backend (uses our Anthropic key, server-side quota)
-    ///   2. **BYOK key set** → Direct AnthropicProvider with user's key (privacy mode, unlimited)
-    ///   3. **OpenAI key set (powerUser only)** → Direct OpenAIProvider
+    ///   1. **Signed in with Apple** → Thrivn backend (server-side quota, our Anthropic key)
+    ///   2. **BYOK Anthropic key** → Direct AnthropicProvider with user's key (privacy mode)
+    ///   3. **PowerUser + OpenAI key** → Direct OpenAIProvider
+    ///   4. **Nothing configured** → throws `noAPIKey`
+    ///
+    /// Note: The backend takes priority over BYOK for signed-in users to ensure server-side
+    /// quota tracking and consistent cost accounting. Users who want to use their own key
+    /// can sign out (which deletes the refresh token) and then enter a BYOK key.
     ///
     /// - Parameters:
     ///   - tier: The user's subscription tier
@@ -33,23 +38,24 @@ enum AIProviderFactory {
     ) throws -> any AIProvider {
         let model = modelFor(tier: tier, useCase: useCase)
 
-        // 1. BYOK Anthropic key takes priority — if the user explicitly set their own key,
-        //    they want to use it (privacy mode, unlimited usage on their dime).
+        // 1. Signed in with Apple → use Thrivn backend (uses our key, server-side quota).
+        //    This is the default path for new users who completed onboarding.
+        if let refresh = keychain.read(key: AppConstants.thrivnRefreshTokenKey),
+           !refresh.isEmpty {
+            return ThrivnBackendService(model: model, keychain: keychain)
+        }
+
+        // 2. BYOK Anthropic key — privacy mode for users who skipped sign-in or signed out.
         if let anthropicKey = keychain.anthropicAPIKey(), !anthropicKey.isEmpty {
             return AnthropicProvider(apiKey: anthropicKey, model: model)
         }
 
-        // 2. PowerUser tier with OpenAI key — supported as a fallback for OpenAI users.
+        // 3. PowerUser tier with OpenAI key — fallback for OpenAI users.
         if tier == .powerUser, let openAIKey = keychain.openAIAPIKey(), !openAIKey.isEmpty {
             return OpenAIProvider(apiKey: openAIKey)
         }
 
-        // 3. Signed in with Apple → use Thrivn backend (uses our key, server-side quota)
-        if keychain.read(key: AppConstants.thrivnRefreshTokenKey)?.isEmpty == false {
-            return ThrivnBackendService(model: model, keychain: keychain)
-        }
-
-        // 4. Nothing configured — surface a clear error
+        // 4. Nothing configured — surface a clear error.
         throw AIError.noAPIKey
     }
 

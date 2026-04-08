@@ -17,6 +17,12 @@ struct OnboardingContainerView: View {
     /// The starter task templates selected for the weakest dimension
     @State private var suggestedTasks: [StarterTask] = []
 
+    /// Re-entrancy guard for completeOnboarding (prevents double-tap duplicates).
+    @State private var isCompleting = false
+
+    /// Save error surfaced via alert when SwiftData persistence fails.
+    @State private var saveErrorMessage: String?
+
     private let totalPages = 10
 
     var body: some View {
@@ -32,13 +38,16 @@ struct OnboardingContainerView: View {
                 WelcomeView(onContinue: { advance() })
                     .tag(0)
 
-                // Screen 1: Sign in with Apple (NEW — auth + free tier unlock)
+                // Screen 1: Sign in with Apple (auth + free tier unlock)
                 SignInWithAppleView(
                     onSignedIn: { name in
-                        if let name, !name.isEmpty, capturedName.isEmpty {
+                        // If Apple shared a name, save it and skip the name capture screen
+                        if let name, !name.isEmpty {
                             capturedName = name
+                            advanceBy(2)  // Skip past Name Capture (page 2)
+                        } else {
+                            advance()
                         }
-                        advance()
                     },
                     onSkip: { advance() }
                 )
@@ -105,6 +114,14 @@ struct OnboardingContainerView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .ignoresSafeArea(.keyboard)
+        .alert("Setup Failed", isPresented: Binding(
+            get: { saveErrorMessage != nil },
+            set: { if !$0 { saveErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { saveErrorMessage = nil }
+        } message: {
+            Text(saveErrorMessage ?? "")
+        }
     }
 
     // MARK: - Progress Dots
@@ -123,9 +140,13 @@ struct OnboardingContainerView: View {
     // MARK: - Navigation
 
     private func advance() {
+        advanceBy(1)
+    }
+
+    private func advanceBy(_ steps: Int) {
         Haptics.light()
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentPage = min(currentPage + 1, totalPages - 1)
+            currentPage = min(currentPage + steps, totalPages - 1)
         }
     }
 
@@ -136,6 +157,10 @@ struct OnboardingContainerView: View {
     // MARK: - Complete Onboarding
 
     private func completeOnboarding() {
+        // Re-entrancy guard — prevent double-tap from creating duplicate records
+        guard !isCompleting else { return }
+        isCompleting = true
+
         Haptics.success()
 
         // 1. Save dimension ratings as a DailyBalanceCheckIn
@@ -194,7 +219,13 @@ struct OnboardingContainerView: View {
             )
             modelContext.insert(profile)
         }
-        modelContext.safeSave()
+
+        // 5. Save and bail loudly on failure — don't advance to home with no data persisted
+        guard modelContext.safeSave() else {
+            isCompleting = false
+            saveErrorMessage = "Couldn't save your setup. Please check your storage space and try again."
+            return
+        }
 
         withAnimation(.easeInOut(duration: 0.4)) {
             onboardingComplete = true
