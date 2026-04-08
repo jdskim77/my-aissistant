@@ -7,6 +7,7 @@ struct ConversationListView: View {
     @Query(sort: \ChatMessage.timestamp, order: .reverse) private var allMessages: [ChatMessage]
     @Binding var selectedConversationID: String
     @Environment(\.dismiss) private var dismiss
+    @State private var pendingDeleteOffsets: IndexSet?
 
     private var conversations: [(id: String, title: String, lastDate: Date, messageCount: Int)] {
         let grouped = Dictionary(grouping: allMessages) { $0.conversationID }
@@ -88,7 +89,7 @@ struct ConversationListView: View {
                     .listRowBackground(AppColors.card)
                 }
                 .onDelete { indexSet in
-                    deleteConversations(at: indexSet)
+                    pendingDeleteOffsets = indexSet
                 }
             }
             .scrollContentBackground(.hidden)
@@ -101,7 +102,38 @@ struct ConversationListView: View {
                         .font(AppFonts.bodyMedium(15))
                 }
             }
+            .confirmationDialog(
+                deletePromptTitle,
+                isPresented: Binding(
+                    get: { pendingDeleteOffsets != nil },
+                    set: { if !$0 { pendingDeleteOffsets = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let offsets = pendingDeleteOffsets {
+                        deleteConversations(at: offsets)
+                    }
+                    pendingDeleteOffsets = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingDeleteOffsets = nil
+                }
+            } message: {
+                Text("This permanently deletes every message in this conversation. This cannot be undone.")
+            }
         }
+    }
+
+    private var deletePromptTitle: String {
+        guard let offsets = pendingDeleteOffsets, let first = offsets.first else {
+            return "Delete conversation?"
+        }
+        if offsets.count > 1 {
+            return "Delete \(offsets.count) conversations?"
+        }
+        let title = conversations[first].title
+        return "Delete \"\(title)\"?"
     }
 
     private func conversationTitle(id: String, messages: [ChatMessage]) -> String {

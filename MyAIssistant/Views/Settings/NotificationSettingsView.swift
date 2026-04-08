@@ -2,13 +2,42 @@ import SwiftUI
 import UserNotifications
 
 struct NotificationSettingsView: View {
+    // Persisted preferences. Stored as Double (TimeInterval) so AppStorage works for Date.
+    // Default values map to: 8:00, 13:00, 18:00, 22:00 local time.
+    @AppStorage("notif.checkInReminders") private var checkInReminders = true
+    @AppStorage("notif.taskAlerts") private var taskAlerts = true
+    @AppStorage("notif.morningTime") private var morningTimeRaw: Double = Self.defaultTimeInterval(hour: 8)
+    @AppStorage("notif.middayTime") private var middayTimeRaw: Double = Self.defaultTimeInterval(hour: 13)
+    @AppStorage("notif.afternoonTime") private var afternoonTimeRaw: Double = Self.defaultTimeInterval(hour: 18)
+    @AppStorage("notif.nightTime") private var nightTimeRaw: Double = Self.defaultTimeInterval(hour: 22)
+
     @State private var notificationsEnabled = false
-    @State private var checkInReminders = true
-    @State private var taskAlerts = true
-    @State private var morningTime = defaultTime(hour: 8)
-    @State private var middayTime = defaultTime(hour: 13)
-    @State private var afternoonTime = defaultTime(hour: 18)
-    @State private var nightTime = defaultTime(hour: 22)
+    @State private var showSavedConfirmation = false
+
+    private var morningTime: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: morningTimeRaw) },
+            set: { morningTimeRaw = $0.timeIntervalSince1970 }
+        )
+    }
+    private var middayTime: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: middayTimeRaw) },
+            set: { middayTimeRaw = $0.timeIntervalSince1970 }
+        )
+    }
+    private var afternoonTime: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: afternoonTimeRaw) },
+            set: { afternoonTimeRaw = $0.timeIntervalSince1970 }
+        )
+    }
+    private var nightTime: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: nightTimeRaw) },
+            set: { nightTimeRaw = $0.timeIntervalSince1970 }
+        )
+    }
 
     var body: some View {
         List {
@@ -69,10 +98,10 @@ struct NotificationSettingsView: View {
 
             if checkInReminders {
                 Section {
-                    checkInTimeRow("Morning", icon: "🌅", time: $morningTime)
-                    checkInTimeRow("Midday", icon: "☀️", time: $middayTime)
-                    checkInTimeRow("Afternoon", icon: "🌤️", time: $afternoonTime)
-                    checkInTimeRow("Night", icon: "🌙", time: $nightTime)
+                    checkInTimeRow("Morning", icon: "🌅", time: morningTime)
+                    checkInTimeRow("Midday", icon: "☀️", time: middayTime)
+                    checkInTimeRow("Afternoon", icon: "🌤️", time: afternoonTime)
+                    checkInTimeRow("Night", icon: "🌙", time: nightTime)
                 } header: {
                     Text("Check-in Times")
                 } footer: {
@@ -93,6 +122,17 @@ struct NotificationSettingsView: View {
                     .foregroundColor(AppColors.accent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
+                }
+
+                if showSavedConfirmation {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.completionGreen)
+                        Text("Schedule updated")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.completionGreen)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -140,12 +180,19 @@ struct NotificationSettingsView: View {
     private func rescheduleNotifications() {
         let manager = NotificationManager()
         manager.scheduleCheckInReminders()
+        Haptics.success()
+        withAnimation { showSavedConfirmation = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation { showSavedConfirmation = false }
+        }
     }
 
-    private static func defaultTime(hour: Int) -> Date {
+    /// Default time stored as a TimeInterval relative to today at the given hour.
+    /// Only the hour/minute components are read by `DatePicker(displayedComponents: .hourAndMinute)`.
+    private static func defaultTimeInterval(hour: Int) -> Double {
         var components = DateComponents()
         components.hour = hour
         components.minute = 0
-        return Calendar.current.date(from: components) ?? Date()
+        return (Calendar.current.date(from: components) ?? Date()).timeIntervalSince1970
     }
 }

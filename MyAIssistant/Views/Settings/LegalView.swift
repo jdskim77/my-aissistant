@@ -6,7 +6,7 @@ struct PrivacyPolicyView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Last updated: April 1, 2026")
+                Text("Last updated: April 8, 2026")
                     .font(AppFonts.caption(12))
                     .foregroundColor(AppColors.textMuted)
 
@@ -76,7 +76,7 @@ struct PrivacyPolicyView: View {
 
                 section("Contact") {
                     """
-                    For questions about this privacy policy, contact us at support@myaissistant.app.
+                    For questions about this privacy policy, contact us at support@thrivn.app.
                     """
                 }
             }
@@ -106,7 +106,7 @@ struct TermsOfServiceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Last updated: April 1, 2026")
+                Text("Last updated: April 8, 2026")
                     .font(AppFonts.caption(12))
                     .foregroundColor(AppColors.textMuted)
 
@@ -166,7 +166,7 @@ struct TermsOfServiceView: View {
 
                 section("Contact") {
                     """
-                    For questions about these terms, contact us at support@myaissistant.app.
+                    For questions about these terms, contact us at support@thrivn.app.
                     """
                 }
             }
