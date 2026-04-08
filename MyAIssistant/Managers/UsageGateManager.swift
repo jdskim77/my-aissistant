@@ -13,10 +13,29 @@ final class UsageGateManager {
 
     // MARK: - Fetch or Create Tracker
 
+    /// Fetches the usage tracker for THIS device. The store is CloudKit-synced
+    /// across devices on the same iCloud account, so multiple devices each have
+    /// their own row scoped by `deviceID`. Without this scoping, `.first` could
+    /// return another device's row (with a mismatched HMAC integrity key) and
+    /// permanently lock the user out of chat. Real per-account limits are still
+    /// enforced server-side by the Thrivn backend.
     private func tracker() -> UsageTracker {
-        let descriptor = FetchDescriptor<UsageTracker>()
+        let myDeviceID = UsageTracker.currentDeviceID()
+        let descriptor = FetchDescriptor<UsageTracker>(
+            predicate: #Predicate { $0.deviceID == myDeviceID }
+        )
         if let existing = try? modelContext.fetch(descriptor).first {
             return existing
+        }
+        // Migration: existing pre-deviceID rows have an empty deviceID. Adopt
+        // the first orphan row as this device's row instead of creating a new one.
+        let orphanDescriptor = FetchDescriptor<UsageTracker>(
+            predicate: #Predicate { $0.deviceID == "" }
+        )
+        if let orphan = try? modelContext.fetch(orphanDescriptor).first {
+            orphan.deviceID = myDeviceID
+            modelContext.safeSave()
+            return orphan
         }
         let new = UsageTracker()
         modelContext.insert(new)
