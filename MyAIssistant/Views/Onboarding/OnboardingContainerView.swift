@@ -17,7 +17,7 @@ struct OnboardingContainerView: View {
     /// The starter task templates selected for the weakest dimension
     @State private var suggestedTasks: [StarterTask] = []
 
-    private let totalPages = 9
+    private let totalPages = 10
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,33 +32,45 @@ struct OnboardingContainerView: View {
                 WelcomeView(onContinue: { advance() })
                     .tag(0)
 
-                // Screen 1: Name Capture (NEW — personalize AI from msg 1)
+                // Screen 1: Sign in with Apple (NEW — auth + free tier unlock)
+                SignInWithAppleView(
+                    onSignedIn: { name in
+                        if let name, !name.isEmpty, capturedName.isEmpty {
+                            capturedName = name
+                        }
+                        advance()
+                    },
+                    onSkip: { advance() }
+                )
+                .tag(1)
+
+                // Screen 2: Name Capture (skipped if Apple already provided name)
                 NameCaptureView(
                     name: $capturedName,
                     onContinue: { advance() },
                     onSkip: { advance() }
                 )
-                .tag(1)
+                .tag(2)
 
-                // Screen 2: Compass Intro
+                // Screen 3: Compass Intro
                 OnboardingIntroView(onContinue: { advance() })
-                    .tag(2)
+                    .tag(3)
 
-                // Screen 3: Quick Rate
+                // Screen 4: Quick Rate
                 OnboardingQuickRateView(ratings: $ratings, onContinue: {
                     suggestedTasks = StarterTaskPool.tasksForWeakest(ratings: ratings)
                     advance()
                 })
-                .tag(3)
+                .tag(4)
 
-                // Screen 4: Compass Reveal
+                // Screen 5: Compass Reveal
                 OnboardingCompassRevealView(
                     ratings: ratings,
                     onContinue: { advance() }
                 )
-                .tag(4)
+                .tag(5)
 
-                // Screen 5: Intention Capture (NEW — creates SeasonGoal for Phase 1 AI)
+                // Screen 6: Intention Capture (creates SeasonGoal for Phase 1 AI)
                 IntentionCaptureView(
                     weakestDimension: weakestDimension,
                     intention: $capturedIntention,
@@ -66,27 +78,27 @@ struct OnboardingContainerView: View {
                     onContinue: { advance() },
                     onSkip: { advance() }
                 )
-                .tag(5)
+                .tag(6)
 
-                // Screen 6: Suggested Tasks
+                // Screen 7: Suggested Tasks
                 OnboardingSuggestedTasksView(
                     tasks: suggestedTasks,
                     addedIndices: $addedTaskIndices,
                     weakestDimension: weakestDimension,
                     onContinue: { advance() }
                 )
-                .tag(6)
+                .tag(7)
 
-                // Screen 7: Check-in Schedule (now advances instead of finishing)
+                // Screen 8: Check-in Schedule
                 OnboardingScheduleView(onFinish: { advance() })
-                    .tag(7)
+                    .tag(8)
 
-                // Screen 8: Notification Permission (NEW — final step)
+                // Screen 9: Notification Permission (final step)
                 NotificationPermissionView(
                     onAllow: { completeOnboarding() },
                     onSkip: { completeOnboarding() }
                 )
-                .tag(8)
+                .tag(9)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut(duration: 0.3), value: currentPage)

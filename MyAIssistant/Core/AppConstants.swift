@@ -47,6 +47,12 @@ enum AppConstants {
     static let anthropicAPIKeyKey = "com.myaissistant.anthropic-api-key"
     static let openAIAPIKeyKey = "com.myaissistant.openai-api-key"
 
+    // MARK: - Thrivn Backend
+    static let thrivnBackendURL = "https://thrivn-api.jdskim77.workers.dev"
+    static let thrivnAccessTokenKey = "com.myaissistant.thrivn-access-token"
+    static let thrivnRefreshTokenKey = "com.myaissistant.thrivn-refresh-token"
+    static let thrivnUserIDKey = "com.myaissistant.thrivn-user-id"
+
     // MARK: - UserDefaults Keys (Voice)
     static let voiceModeDefaultKey = "voiceModeDefault"
     static let selectedVoiceIDKey = "selectedVoiceID"

@@ -16,43 +16,57 @@ enum AIUseCase {
 enum AIProviderFactory {
 
     /// Returns the appropriate AI provider and model for the given tier and use case.
+    ///
+    /// Resolution priority (in order):
+    ///   1. **Signed in with Apple AND no BYOK key** → Thrivn backend (uses our Anthropic key, server-side quota)
+    ///   2. **BYOK key set** → Direct AnthropicProvider with user's key (privacy mode, unlimited)
+    ///   3. **OpenAI key set (powerUser only)** → Direct OpenAIProvider
+    ///
     /// - Parameters:
     ///   - tier: The user's subscription tier
     ///   - useCase: What the AI will be used for
     ///   - keychain: Keychain service for retrieving API keys
-    /// - Returns: An AIProvider configured with the correct model
     static func provider(
         for tier: SubscriptionTier,
         useCase: AIUseCase,
         keychain: KeychainService
     ) throws -> any AIProvider {
-        switch tier {
-        case .free:
-            return try anthropicProvider(model: AppConstants.haikuModel, keychain: keychain)
+        let model = modelFor(tier: tier, useCase: useCase)
 
-        case .pro, .student:
-            let model: String
-            switch useCase {
-            case .chat, .weeklyReview:
-                model = AppConstants.sonnetModel
-            case .checkIn:
-                model = AppConstants.haikuModel
-            }
-            return try anthropicProvider(model: model, keychain: keychain)
-
-        case .powerUser:
-            // BYOK: prefer user's OpenAI key if set, fall back to Anthropic
-            if let openAIKey = keychain.openAIAPIKey(), !openAIKey.isEmpty {
-                return OpenAIProvider(apiKey: openAIKey)
-            }
-            return try anthropicProvider(model: AppConstants.sonnetModel, keychain: keychain)
+        // 1. BYOK Anthropic key takes priority — if the user explicitly set their own key,
+        //    they want to use it (privacy mode, unlimited usage on their dime).
+        if let anthropicKey = keychain.anthropicAPIKey(), !anthropicKey.isEmpty {
+            return AnthropicProvider(apiKey: anthropicKey, model: model)
         }
+
+        // 2. PowerUser tier with OpenAI key — supported as a fallback for OpenAI users.
+        if tier == .powerUser, let openAIKey = keychain.openAIAPIKey(), !openAIKey.isEmpty {
+            return OpenAIProvider(apiKey: openAIKey)
+        }
+
+        // 3. Signed in with Apple → use Thrivn backend (uses our key, server-side quota)
+        if keychain.read(key: AppConstants.thrivnRefreshTokenKey)?.isEmpty == false {
+            return ThrivnBackendService(model: model, keychain: keychain)
+        }
+
+        // 4. Nothing configured — surface a clear error
+        throw AIError.noAPIKey
     }
 
-    private static func anthropicProvider(model: String, keychain: KeychainService) throws -> AnthropicProvider {
-        guard let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty else {
-            throw AIError.noAPIKey
+    /// Picks the appropriate model based on tier + use case.
+    private static func modelFor(tier: SubscriptionTier, useCase: AIUseCase) -> String {
+        switch tier {
+        case .free:
+            return AppConstants.haikuModel
+        case .pro, .student:
+            switch useCase {
+            case .chat, .weeklyReview:
+                return AppConstants.sonnetModel
+            case .checkIn:
+                return AppConstants.haikuModel
+            }
+        case .powerUser:
+            return AppConstants.sonnetModel
         }
-        return AnthropicProvider(apiKey: apiKey, model: model)
     }
 }

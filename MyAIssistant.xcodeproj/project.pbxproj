@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00064EC18C58AAB2779738DB /* EdgeVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B468E4B5B7EED7C2E663238E /* EdgeVoiceProvider.swift */; };
+		047BEAD36E4745BCD01B53FF /* ThrivnBackendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C205430EF2CD31C5F03F4162 /* ThrivnBackendService.swift */; };
 		0547F14C918F1A8EE1FEA066 /* NLTaskParserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C847075057F68B9E39C52A /* NLTaskParserView.swift */; };
 		1421C3325C32ABC2E421D763 /* UserDimensionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */; };
 		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
@@ -18,9 +19,7 @@
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
-		F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */; };
-		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
-		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
+		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
@@ -89,13 +88,13 @@
 		A300000001000000 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000001000000 /* AIProvider.swift */; };
 		A300000002000000 /* AIPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000002000000 /* AIPromptBuilder.swift */; };
 		A300000003000000 /* AnthropicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000003000000 /* AnthropicProvider.swift */; };
-		A3A200P2000000000001 /* GoalTaskSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000001 /* GoalTaskSuggester.swift */; };
-		A3A200P2000000000002 /* GoalSuggestionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000002 /* GoalSuggestionsSheet.swift */; };
 		A300000004000000 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000004000000 /* OpenAIProvider.swift */; };
 		A300000005000000 /* AIProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005000000 /* AIProviderFactory.swift */; };
 		A300000006000000 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006000000 /* KeychainService.swift */; };
 		A300000007000000 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007000000 /* APIClient.swift */; };
 		A300000008000000 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008000000 /* UsageTracker.swift */; };
+		A3A200P2000000000001 /* GoalTaskSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000001 /* GoalTaskSuggester.swift */; };
+		A3A200P2000000000002 /* GoalSuggestionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000002 /* GoalSuggestionsSheet.swift */; };
 		A400000001000000 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001000000 /* NotificationManager.swift */; };
 		A400000002000000 /* CheckInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002000000 /* CheckInManager.swift */; };
 		A400000003000000 /* MoodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000003000000 /* MoodPicker.swift */; };
@@ -181,6 +180,9 @@
 		DC00B58B6CC46AEB7EDA0313 /* CheckInSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */; };
 		E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
+		F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */; };
+		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
+		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
 /* End PBXBuildFile section */
 
@@ -257,9 +259,6 @@
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
 		24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EveningCheckInView.swift; sourceTree = "<group>"; };
 		27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingSuggestedTasksView.swift; sourceTree = "<group>"; };
-		F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NameCaptureView.swift; sourceTree = "<group>"; };
-		F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionCaptureView.swift; sourceTree = "<group>"; };
-		F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
 		2902A18176BF58C082BECA96 /* CheckInBehavior.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehavior.swift; sourceTree = "<group>"; };
 		29CFAD9307698492ECF74393 /* CompassView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
@@ -327,13 +326,13 @@
 		B300000001000000 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProvider.swift; sourceTree = "<group>"; };
 		B300000002000000 /* AIPromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilder.swift; sourceTree = "<group>"; };
 		B300000003000000 /* AnthropicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicProvider.swift; sourceTree = "<group>"; };
-		B3A200P2000000000001 /* GoalTaskSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTaskSuggester.swift; sourceTree = "<group>"; };
-		B3A200P2000000000002 /* GoalSuggestionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSuggestionsSheet.swift; sourceTree = "<group>"; };
 		B300000004000000 /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
 		B300000005000000 /* AIProviderFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
 		B300000006000000 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B300000007000000 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		B300000008000000 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
+		B3A200P2000000000001 /* GoalTaskSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTaskSuggester.swift; sourceTree = "<group>"; };
+		B3A200P2000000000002 /* GoalSuggestionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSuggestionsSheet.swift; sourceTree = "<group>"; };
 		B400000001000000 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		B400000002000000 /* CheckInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
 		B400000003000000 /* MoodPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
@@ -404,6 +403,7 @@
 		BW00000004000000 /* StreakWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakWidget.swift; sourceTree = "<group>"; };
 		BW00000005000000 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportService.swift; sourceTree = "<group>"; };
+		C205430EF2CD31C5F03F4162 /* ThrivnBackendService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThrivnBackendService.swift; sourceTree = "<group>"; };
 		C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayScheduleIntent.swift; sourceTree = "<group>"; };
 		C4EC24E793485FD28F82D50E /* FocusSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
 		C5C847075057F68B9E39C52A /* NLTaskParserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLTaskParserView.swift; sourceTree = "<group>"; };
@@ -411,6 +411,7 @@
 		C85E40C1975819FFCA2410F6 /* DailyWisdom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = DailyWisdom.json; path = MyAIssistant/Resources/DailyWisdom.json; sourceTree = SOURCE_ROOT; };
 		C97ACE583981903B7525F883 /* CelebrationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
 		C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartFocusIntent.swift; sourceTree = "<group>"; };
+		CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInWithAppleView.swift; sourceTree = "<group>"; };
 		CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
 		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
 		D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
@@ -422,15 +423,48 @@
 		E972B6EABF4699BFF00E4683 /* BalanceManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
 		EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreference.swift; sourceTree = "<group>"; };
 		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NameCaptureView.swift; sourceTree = "<group>"; };
+		F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentionCaptureView.swift; sourceTree = "<group>"; };
+		F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationPermissionView.swift; sourceTree = "<group>"; };
 		F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoalView.swift; sourceTree = "<group>"; };
 		F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
 		FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch App";
+			sourceTree = "<group>";
+		};
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppTests";
+			sourceTree = "<group>";
+		};
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppUITests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -509,6 +543,15 @@
 				B3A200P2000000000002 /* GoalSuggestionsSheet.swift */,
 			);
 			path = Compass;
+			sourceTree = "<group>";
+		};
+		AF197A2BC6ECA6A2717B9314 /* Backend */ = {
+			isa = PBXGroup;
+			children = (
+				C205430EF2CD31C5F03F4162 /* ThrivnBackendService.swift */,
+			);
+			name = Backend;
+			path = Backend;
 			sourceTree = "<group>";
 		};
 		D100000001000000 = {
@@ -603,6 +646,7 @@
 				D600000001000000 /* StoreKit */,
 				DC00000001000000 /* Speech */,
 				C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */,
+				AF197A2BC6ECA6A2717B9314 /* Backend */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -803,6 +847,7 @@
 				0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */,
 				4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */,
 				BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */,
+				CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1328,6 +1373,8 @@
 				879011535AE68D1E23D62734 /* OnboardingQuickRateView.swift in Sources */,
 				80F1B9807AFEFCF47C3D4278 /* ThrivnCompassMark.swift in Sources */,
 				D846CA8A63B950844CDF4B59 /* AppIconPreview.swift in Sources */,
+				047BEAD36E4745BCD01B53FF /* ThrivnBackendService.swift in Sources */,
+				44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
