@@ -37,7 +37,10 @@ struct MyAIssistantApp: App {
             UserDefaults.standard.set(true, forKey: voiceMigrationKey)
         }
 
-        let schema = Schema(AppSchema.allModels)
+        // Use the versioned schema baseline. SchemaV1 is the v1.0 ship state;
+        // any future model change must add SchemaV2 + a MigrationStage in
+        // AppMigrationPlan.
+        let schema = Schema(versionedSchema: SchemaV1.self)
         let container: ModelContainer
 
         // Attempt 1: CloudKit-synced store
@@ -79,13 +82,16 @@ struct MyAIssistantApp: App {
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
         self._habitManager = State(initialValue: HabitManager(modelContext: context))
-        self._checkInBehaviorEngine = State(initialValue: CheckInBehaviorEngine(modelContext: context))
+        let cibe = CheckInBehaviorEngine(modelContext: context)
+        self._checkInBehaviorEngine = State(initialValue: cibe)
 
-        // Background task manager
+        // Background task manager — pass the behavior engine so daily snapshots
+        // can recalculate behavioral stats and use the active window count.
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
-            calendarSyncManager: csm
+            calendarSyncManager: csm,
+            checkInBehaviorEngine: cibe
         )
 
         // Register background tasks (must happen during init, before app finishes launching)
@@ -123,6 +129,11 @@ struct MyAIssistantApp: App {
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
+
+                    // Adaptive check-in engine: seed default preferences on first launch,
+                    // then recalculate behavioral stats (14-day rolling window). Idempotent.
+                    checkInBehaviorEngine.seedDefaultPreferencesIfNeeded()
+                    checkInBehaviorEngine.recalculateIfNeeded()
 
                     // Schedule adaptive check-in reminders based on streak
                     let streak = patternEngine.currentStreak()
@@ -268,7 +279,11 @@ extension MyAIssistantApp {
         } else {
             config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
         }
-        return try? ModelContainer(for: schema, configurations: [config])
+        return try? ModelContainer(
+            for: schema,
+            migrationPlan: AppMigrationPlan.self,
+            configurations: [config]
+        )
     }
 
     static func createLocalOnlyContainer(schema: Schema) -> ModelContainer? {
@@ -278,7 +293,11 @@ extension MyAIssistantApp {
         } else {
             config = ModelConfiguration("MyAIssistant", isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         }
-        return try? ModelContainer(for: schema, configurations: [config])
+        return try? ModelContainer(
+            for: schema,
+            migrationPlan: AppMigrationPlan.self,
+            configurations: [config]
+        )
     }
 }
 
