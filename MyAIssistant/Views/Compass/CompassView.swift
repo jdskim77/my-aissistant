@@ -124,7 +124,8 @@ struct CompassView: View {
                     dimension: dim,
                     breakdown: breakdowns[dim] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
                 )
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             case .coachMarks:
                 CompassCoachMarks()
                     .presentationDetents([.medium, .large])
@@ -309,40 +310,40 @@ struct DimensionDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                // Header
-                HStack(spacing: 12) {
-                    Image(systemName: dimension.icon)
-                        .font(AppFonts.display(28).weight(.medium))
-                        .foregroundColor(dimension.color)
-                        .frame(width: 48, height: 48)
-                        .background(dimension.color.opacity(0.1))
-                        .cornerRadius(12)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Hero score + summary (no duplicate dimension label —
+                    // navigationTitle already shows it)
+                    HStack(spacing: 16) {
+                        Image(systemName: dimension.icon)
+                            .font(AppFonts.display(28).weight(.medium))
+                            .foregroundColor(dimension.color)
+                            .frame(width: 56, height: 56)
+                            .background(dimension.color.opacity(0.1))
+                            .cornerRadius(14)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(dimension.label)
-                            .font(AppFonts.heading(20))
-                            .foregroundColor(AppColors.textPrimary)
-                        Text(dimension.summary)
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textMuted)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(String(format: "%.1f", min(10, breakdown.composite)))
+                                .font(AppFonts.display(34))
+                                .foregroundColor(dimension.color)
+                                .monospacedDigit()
+                            Text(dimension.summary)
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                                .lineLimit(2)
+                        }
+                        Spacer()
                     }
-                    Spacer()
+                    .padding(.top, 8)
 
-                    Text(String(format: "%.1f", min(10, breakdown.composite)))
-                        .font(AppFonts.display(28))
-                        .foregroundColor(dimension.color)
-                        .monospacedDigit()
-                }
+                    Divider()
 
-                Divider()
-
-                // 3-Signal Breakdown
-                VStack(spacing: 16) {
-                    Text("Score Breakdown")
-                        .font(AppFonts.heading(15))
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // 3-Signal Breakdown
+                    VStack(spacing: 16) {
+                        Text("Score Breakdown")
+                            .font(AppFonts.heading(15))
+                            .foregroundColor(AppColors.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                     signalDetail(
                         icon: "flame",
@@ -370,11 +371,10 @@ struct DimensionDetailSheet: View {
                         weight: "30%",
                         color: .orange
                     )
+                    }
                 }
-
-                Spacer()
+                .padding(20)
             }
-            .padding(20)
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("\(dimension.label) Details")
             .navigationBarTitleDisplayMode(.inline)
