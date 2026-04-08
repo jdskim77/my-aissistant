@@ -91,7 +91,7 @@ actor GoogleCalendarService {
 
     func setAccessToken(_ token: String) {
         self.accessToken = token
-        keychain.save(key: AppConstants.googleAccessTokenKey, value: token)
+        keychain.save(key: AppConstants.googleAccessTokenKey, value: token, protection: .whenUnlockedThisDeviceOnly)
     }
 
     func signOut() {
@@ -103,15 +103,30 @@ actor GoogleCalendarService {
 
     // MARK: - Token Persistence
 
+    /// Google OAuth tokens are long-lived credentials that grant calendar
+    /// read/write access. Never let them migrate to another device via iCloud
+    /// Keychain backup — a restored device must re-authenticate.
     private func persistTokens() {
         if let accessToken {
-            keychain.save(key: AppConstants.googleAccessTokenKey, value: accessToken)
+            keychain.save(
+                key: AppConstants.googleAccessTokenKey,
+                value: accessToken,
+                protection: .whenUnlockedThisDeviceOnly
+            )
         }
         if let refreshToken {
-            keychain.save(key: AppConstants.googleRefreshTokenKey, value: refreshToken)
+            keychain.save(
+                key: AppConstants.googleRefreshTokenKey,
+                value: refreshToken,
+                protection: .whenUnlockedThisDeviceOnly
+            )
         }
         if let tokenExpiry {
-            keychain.save(key: AppConstants.googleTokenExpiryKey, value: String(tokenExpiry.timeIntervalSince1970))
+            keychain.save(
+                key: AppConstants.googleTokenExpiryKey,
+                value: String(tokenExpiry.timeIntervalSince1970),
+                protection: .whenUnlockedThisDeviceOnly
+            )
         }
     }
 

@@ -5,6 +5,12 @@ import CryptoKit
 @Model
 final class UsageTracker {
     var id: String = "usage-singleton"
+    /// Per-device scoping key. The store is CloudKit-synced so multiple
+    /// devices on the same iCloud account each insert their own row;
+    /// `UsageGateManager` filters by this field to read THIS device's row.
+    /// The backend enforces the real per-account limit; this local counter
+    /// is just a UX hint. Empty string default keeps CloudKit happy.
+    var deviceID: String = ""
     var monthKey: String = ""
     var weekKey: String = ""
     var dayKey: String = ""
@@ -20,6 +26,7 @@ final class UsageTracker {
 
     init() {
         self.id = "usage-singleton"
+        self.deviceID = UsageTracker.currentDeviceID()
         let now = Date()
         self.monthKey = UsageTracker.monthKey(for: now)
         self.weekKey = UsageTracker.weekKey(for: now)
@@ -32,6 +39,23 @@ final class UsageTracker {
         self.totalOutputTokens = 0
         self.lastUpdated = now
         self.integrityHash = ""
+    }
+
+    // MARK: - Device ID
+
+    /// Stable per-install device identifier. Stored in UserDefaults (not
+    /// Keychain) because UserDefaults does NOT migrate via iCloud Keychain
+    /// backup — a new device on the same iCloud gets a fresh ID.
+    /// `identifierForVendor` would also work, but UserDefaults survives
+    /// vendor reinstall edge cases more predictably.
+    static func currentDeviceID() -> String {
+        let key = "thrivn.usageTracker.deviceID"
+        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
+            return existing
+        }
+        let new = UUID().uuidString
+        UserDefaults.standard.set(new, forKey: key)
+        return new
     }
 
     // MARK: - Period Keys
@@ -194,6 +218,9 @@ final class UsageTracker {
 
     /// Returns a per-install symmetric key stored in the Keychain.
     /// The key lives in Keychain (not in the SQLite DB), so editing the DB alone won't help.
+    /// Stored with `whenUnlockedThisDeviceOnly` so it never migrates to other
+    /// devices via iCloud Keychain backup — each device generates and uses its
+    /// own integrity key, matching the per-device UsageTracker row.
     private static func integrityKey() -> SymmetricKey {
         let keychainKey = "com.myaissistant.usage-integrity-key"
         let query: [String: Any] = [
@@ -207,14 +234,14 @@ final class UsageTracker {
         if status == errSecSuccess, let data = result as? Data {
             return SymmetricKey(data: data)
         }
-        // Generate and persist a new key
+        // Generate and persist a new key, scoped to this device only.
         let newKey = SymmetricKey(size: .bits256)
         let keyData = newKey.withUnsafeBytes { Data($0) }
         let addQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: keychainKey,
             kSecValueData as String: keyData,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         SecItemAdd(addQuery as CFDictionary, nil)
         return newKey

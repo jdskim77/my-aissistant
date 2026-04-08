@@ -104,8 +104,11 @@ class KeychainService: @unchecked Sendable {
         read(key: AppConstants.anthropicAPIKeyKey)
     }
 
+    /// BYOK keys are user secrets — never sync them to other devices via iCloud
+    /// Keychain backup. Watch needs them, so the App Group access group still
+    /// applies (Watch shares the same iCloud account, same physical device).
     func saveAnthropicAPIKey(_ key: String) -> Bool {
-        save(key: AppConstants.anthropicAPIKeyKey, value: key)
+        save(key: AppConstants.anthropicAPIKeyKey, value: key, protection: .whenUnlockedThisDeviceOnly)
     }
 
     func openAIAPIKey() -> String? {
@@ -113,7 +116,7 @@ class KeychainService: @unchecked Sendable {
     }
 
     func saveOpenAIAPIKey(_ key: String) -> Bool {
-        save(key: AppConstants.openAIAPIKeyKey, value: key)
+        save(key: AppConstants.openAIAPIKeyKey, value: key, protection: .whenUnlockedThisDeviceOnly)
     }
 }
 
