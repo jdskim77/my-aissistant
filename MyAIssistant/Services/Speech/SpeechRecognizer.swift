@@ -66,6 +66,13 @@ final class SpeechRecognizer {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        // Privacy + offline: prefer on-device recognition when the device supports
+        // it (A12+ with the en-US model installed). Audio never leaves the phone
+        // in this path. Falls back to Apple's cloud transcription on older devices
+        // or when the on-device model isn't yet downloaded.
+        if speechRecognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        }
         self.recognitionRequest = request
 
         let engine = AVAudioEngine()
