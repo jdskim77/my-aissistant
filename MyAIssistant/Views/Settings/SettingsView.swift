@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.keychainService) private var keychainService
     @State private var appeared = false
     @State private var exportItem: ExportItem?
     private struct ExportItem: Identifiable { let id = UUID(); let url: URL }
@@ -16,6 +17,13 @@ struct SettingsView: View {
     @State private var importError: String?
     @State private var showingImportConfirm = false
     @State private var pendingImportURL: URL?
+
+    // Account state
+    @State private var isSignedIn = false
+    @State private var showingSignOutConfirm = false
+    @State private var showingDeleteAccountConfirm = false
+    @State private var isDeletingAccount = false
+    @State private var accountActionError: String?
 
     // Developer-only reset state
     @State private var showingResetOnboardingConfirm = false
@@ -39,18 +47,18 @@ struct SettingsView: View {
                         )
                     }
 
-                    // TEMP: App Icon Preview (for re-exporting the refined icon)
-                    NavigationLink {
-                        AppIconPreviewGallery()
-                    } label: {
-                        settingsRow(
-                            icon: "app.badge.fill",
-                            color: AppColors.accent,
-                            title: "App Icon Preview",
-                            subtitle: "Re-export refined icon"
-                        )
+                    if AppConstants.isDeveloperMode {
+                        NavigationLink {
+                            AppIconPreviewGallery()
+                        } label: {
+                            settingsRow(
+                                icon: "app.badge.fill",
+                                color: AppColors.accent,
+                                title: "App Icon Preview",
+                                subtitle: "Re-export refined icon"
+                            )
+                        }
                     }
-
 
                     NavigationLink {
                         TextSizeSettingsView()
@@ -89,8 +97,38 @@ struct SettingsView: View {
                             subtitle: "Manage your API keys"
                         )
                     }
+
+                    if isSignedIn {
+                        Button {
+                            Haptics.light()
+                            showingSignOutConfirm = true
+                        } label: {
+                            settingsRow(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                color: AppColors.textMuted,
+                                title: "Sign Out",
+                                subtitle: "Stay signed in on other devices"
+                            )
+                        }
+
+                        Button {
+                            Haptics.medium()
+                            showingDeleteAccountConfirm = true
+                        } label: {
+                            settingsRow(
+                                icon: "trash.fill",
+                                color: AppColors.coral,
+                                title: "Delete Account",
+                                subtitle: "Permanently delete your account & data"
+                            )
+                        }
+                    }
                 } header: {
                     Text("Account")
+                } footer: {
+                    if isSignedIn {
+                        Text("Deleting your account permanently removes your account, all chat history, tasks, check-ins, habits, and goals. This cannot be undone.")
+                    }
                 }
 
                 // App Settings
@@ -420,6 +458,56 @@ struct SettingsView: View {
                 withAnimation(.easeOut(duration: 0.4)) {
                     appeared = true
                 }
+                refreshSignInState()
+            }
+            .confirmationDialog(
+                "Sign out of Thrivn?",
+                isPresented: $showingSignOutConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Sign Out") {
+                    Task { await performSignOut() }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Your data on this device stays put. You can sign back in any time to resume syncing.")
+            }
+            .confirmationDialog(
+                "Delete your account?",
+                isPresented: $showingDeleteAccountConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Account", role: .destructive) {
+                    Task { await performDeleteAccount() }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This permanently deletes your Thrivn account on the server and wipes every task, check-in, chat, habit, and goal from this device. iCloud will sync the deletes to your other devices. This cannot be undone.")
+            }
+            .alert("Account", isPresented: .init(
+                get: { accountActionError != nil },
+                set: { if !$0 { accountActionError = nil } }
+            )) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(accountActionError ?? "")
+            }
+            .overlay {
+                if isDeletingAccount {
+                    ZStack {
+                        Color.black.opacity(0.4).ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Deleting account…")
+                                .font(AppFonts.body(14))
+                                .foregroundColor(.white)
+                        }
+                        .padding(24)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(12)
+                    }
+                }
             }
             .sheet(item: $exportItem) { item in
                 ShareSheet(items: [item.url])
@@ -484,6 +572,105 @@ struct SettingsView: View {
             Haptics.medium()
             importError = error.localizedDescription
             importResult = nil
+        }
+    }
+
+    // MARK: - Account Actions
+
+    /// Refresh the local sign-in indicator. Reads from the Keychain so it
+    /// reflects the actual stored refresh-token state, not a stale flag.
+    private func refreshSignInState() {
+        let refresh = keychainService.read(key: AppConstants.thrivnRefreshTokenKey) ?? ""
+        isSignedIn = !refresh.isEmpty
+    }
+
+    /// Sign out without deleting any local data. Clears the backend session
+    /// and the local tokens; tasks/check-ins/chats remain on the device.
+    private func performSignOut() async {
+        let backend = ThrivnBackendService(keychain: keychainService)
+        await backend.signOut()
+        await MainActor.run {
+            refreshSignInState()
+            Haptics.success()
+        }
+    }
+
+    /// Permanently delete the user's account. Order matters: clear local data
+    /// FIRST so even if the backend or network fails, the user is fully wiped
+    /// from the device. Backend deletion is best-effort.
+    private func performDeleteAccount() async {
+        await MainActor.run {
+            isDeletingAccount = true
+        }
+        defer {
+            Task { @MainActor in
+                isDeletingAccount = false
+            }
+        }
+
+        // 1. Wipe local SwiftData. This is the part Apple cares most about
+        //    for compliance — the on-device record must be gone.
+        var localWipeError: String?
+        do {
+            try wipeAllLocalData()
+        } catch {
+            localWipeError = error.localizedDescription
+        }
+
+        // 2. Tell the backend to delete the account. Best-effort: if the
+        //    network call fails or the endpoint isn't shipped yet, the local
+        //    wipe still stands and the user is signed out.
+        let backend = ThrivnBackendService(keychain: keychainService)
+        await backend.deleteAccount()
+
+        // 3. Clear remaining BYOK / OAuth credentials so the next launch
+        //    behaves like a fresh install.
+        keychainService.delete(key: AppConstants.anthropicAPIKeyKey)
+        keychainService.delete(key: AppConstants.openAIAPIKeyKey)
+        keychainService.delete(key: AppConstants.googleAccessTokenKey)
+        keychainService.delete(key: AppConstants.googleRefreshTokenKey)
+        keychainService.delete(key: AppConstants.googleTokenExpiryKey)
+
+        await MainActor.run {
+            refreshSignInState()
+            if let err = localWipeError {
+                accountActionError = "Account signed out and backend asked to delete, but local data wipe failed: \(err). Please reinstall the app to fully clean up."
+            } else {
+                Haptics.success()
+                accountActionError = "Your account has been deleted. Force-quit the app and reopen for a fresh start."
+            }
+        }
+    }
+
+    /// Wipes every row from every @Model + clears onboarding-related
+    /// UserDefaults. Throws if any individual delete or save fails.
+    private func wipeAllLocalData() throws {
+        _ = try wipe(TaskItem.self)
+        _ = try wipe(ChatMessage.self)
+        _ = try wipe(CheckInRecord.self)
+        _ = try wipe(DailyBalanceCheckIn.self)
+        _ = try wipe(DailySnapshot.self)
+        _ = try wipe(SeasonGoal.self)
+        _ = try wipe(HabitItem.self)
+        _ = try wipe(FocusSession.self)
+        _ = try wipe(ActivityEntry.self)
+        _ = try wipe(ActivityPattern.self)
+        _ = try wipe(AlarmEntry.self)
+        _ = try wipe(CalendarLink.self)
+        _ = try wipe(UsageTracker.self)
+        _ = try wipe(UserDimensionPreference.self)
+        _ = try wipe(UserProfile.self)
+        try modelContext.save()
+
+        let keysToReset = [
+            "compassCoachMarksSeen",
+            "didMigrateVoiceModeDefault_v1",
+            "thrivn.usageTracker.deviceID",
+            AppConstants.lastGreetedTimestampKey,
+            AppConstants.lastGreetingTextKey
+        ]
+        for key in keysToReset {
+            UserDefaults.standard.removeObject(forKey: key)
         }
     }
 

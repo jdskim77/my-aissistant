@@ -182,19 +182,45 @@ actor ThrivnBackendService: AIProvider {
     }
 
     /// Logout: revoke refresh token server-side and clear stored credentials.
+    /// Local tokens are cleared FIRST so the user is signed out immediately
+    /// even if the network call hangs.
     func signOut() async {
-        if let refreshToken = keychain.read(key: AppConstants.thrivnRefreshTokenKey),
-           !refreshToken.isEmpty {
+        let refreshToken = keychain.read(key: AppConstants.thrivnRefreshTokenKey)
+        keychain.delete(key: AppConstants.thrivnAccessTokenKey)
+        keychain.delete(key: AppConstants.thrivnRefreshTokenKey)
+
+        if let token = refreshToken, !token.isEmpty {
             struct Body: Encodable { let refresh_token: String }
             let url = baseURL.appendingPathComponent("v1/auth/logout")
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try? JSONEncoder().encode(Body(refresh_token: refreshToken))
+            request.httpBody = try? JSONEncoder().encode(Body(refresh_token: token))
             _ = try? await session.data(for: request)
         }
+    }
+
+    /// Delete the user's account on the backend. Best-effort: clears local
+    /// tokens regardless of server outcome so the user is signed out even if
+    /// the backend is unreachable. Apple requires in-app account deletion for
+    /// any app that supports account creation (App Store Guideline 5.1.1(v)).
+    func deleteAccount() async {
+        // Snapshot the access token BEFORE clearing — we need it to authorize
+        // the delete call. After this method returns, the local session is gone.
+        let token = keychain.read(key: AppConstants.thrivnAccessTokenKey)
         keychain.delete(key: AppConstants.thrivnAccessTokenKey)
         keychain.delete(key: AppConstants.thrivnRefreshTokenKey)
+
+        guard let token, !token.isEmpty else { return }
+
+        let url = baseURL.appendingPathComponent("v1/auth/delete")
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // Fire-and-forget. If the backend hasn't shipped the endpoint yet
+        // (404), the catch swallows it — local data wipe still proceeds in
+        // the calling view.
+        _ = try? await session.data(for: request)
     }
 
     /// Returns true if a refresh token is stored.
