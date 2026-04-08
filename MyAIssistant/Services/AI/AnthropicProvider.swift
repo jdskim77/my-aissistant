@@ -175,7 +175,8 @@ actor AnthropicProvider: AIProvider {
         // sits on the combined text — no worse than today, and avoids confusing logs.
         if systemPromptStable.count < Self.minStableCacheChars {
             #if DEBUG
-            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars — below \(Self.minStableCacheChars) threshold, falling back to single-block")
+            let estTokens = systemPromptStable.count / 4
+            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) tokens) — below \(Self.minStableCacheChars) threshold, falling back to single-block")
             #endif
             let combined: String
             if systemPromptVolatile.isEmpty {
@@ -187,6 +188,11 @@ actor AnthropicProvider: AIProvider {
             }
             return buildRequestBody(systemPrompt: combined, messages: messages)
         }
+
+        #if DEBUG
+        let estTokens = systemPromptStable.count / 4
+        print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) tokens) — caching enabled")
+        #endif
 
         var systemBlocks: [[String: Any]] = []
 
