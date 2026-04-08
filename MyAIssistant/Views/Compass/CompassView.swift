@@ -8,11 +8,25 @@ struct CompassView: View {
     let balanceStreak: Int
     let hasRealData: Bool
 
-    @State private var selectedDimension: LifeDimension?
-    @State private var showCoachMarks = false
+    /// Single source of truth for which sheet (if any) is presented.
+    /// Replaces the previous two stacked `.sheet` modifiers, which crashed
+    /// on iPhone X with EXC_BAD_ACCESS when both could fire simultaneously.
+    @State private var activeSheet: ActiveSheet?
 
     /// Track whether user has seen the explainer
     @AppStorage("compassCoachMarksSeen") private var coachMarksSeen = false
+
+    private enum ActiveSheet: Identifiable {
+        case dimension(LifeDimension)
+        case coachMarks
+
+        var id: String {
+            switch self {
+            case .dimension(let dim): return "dim-\(dim.rawValue)"
+            case .coachMarks: return "coachMarks"
+            }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -32,7 +46,7 @@ struct CompassView: View {
                 // Info button — always accessible
                 Button {
                     Haptics.light()
-                    showCoachMarks = true
+                    activeSheet = .coachMarks
                 } label: {
                     Image(systemName: "questionmark.circle")
                         .font(AppFonts.body(16))
@@ -92,24 +106,29 @@ struct CompassView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(AppColors.border, lineWidth: 1)
         )
-        .onAppear {
-            if !coachMarksSeen {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showCoachMarks = true
-                    coachMarksSeen = true
-                }
+        .task {
+            // First-launch coach marks: wait 0.5s then present, but only if no
+            // other sheet is already up. Replaces DispatchQueue.main.asyncAfter
+            // which couldn't be cancelled when the view disappeared — that
+            // unbounded timer + the second .sheet modifier was the crash chain.
+            guard !coachMarksSeen else { return }
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, activeSheet == nil else { return }
+            activeSheet = .coachMarks
+            coachMarksSeen = true
+        }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .dimension(let dim):
+                DimensionDetailSheet(
+                    dimension: dim,
+                    breakdown: breakdowns[dim] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
+                )
+                .presentationDetents([.medium])
+            case .coachMarks:
+                CompassCoachMarks()
+                    .presentationDetents([.medium, .large])
             }
-        }
-        .sheet(item: $selectedDimension) { dim in
-            DimensionDetailSheet(
-                dimension: dim,
-                breakdown: breakdowns[dim] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
-            )
-            .presentationDetents([.medium])
-        }
-        .sheet(isPresented: $showCoachMarks) {
-            CompassCoachMarks()
-                .presentationDetents([.medium, .large])
         }
     }
 
@@ -204,7 +223,7 @@ struct CompassView: View {
 
                 Button {
                     Haptics.light()
-                    selectedDimension = dim
+                    activeSheet = .dimension(dim)
                 } label: {
                     VStack(spacing: 6) {
                         Text(String(format: "%.1f", min(10, score)))
