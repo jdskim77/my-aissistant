@@ -160,22 +160,43 @@ actor AnthropicProvider: AIProvider {
         ]
     }
 
+    /// Anthropic silently disables prompt caching when a cached block falls below
+    /// the per-model minimum (~1024 tokens for Sonnet). 1 token ≈ 4 chars, so we
+    /// require >= 4096 stable chars before splitting into a cached block.
+    private static let minStableCacheChars = 4096
+
     private func buildSplitRequestBody(
         systemPromptStable: String,
         systemPromptVolatile: String,
         messages: [[String: Any]]
     ) -> [String: Any] {
+        // Below the cache threshold, splitting buys nothing and only adds structural
+        // overhead. Fall back to the legacy single-block path so cache_control still
+        // sits on the combined text — no worse than today, and avoids confusing logs.
+        if systemPromptStable.count < Self.minStableCacheChars {
+            #if DEBUG
+            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars — below \(Self.minStableCacheChars) threshold, falling back to single-block")
+            #endif
+            let combined: String
+            if systemPromptVolatile.isEmpty {
+                combined = systemPromptStable
+            } else if systemPromptStable.isEmpty {
+                combined = systemPromptVolatile
+            } else {
+                combined = systemPromptStable + "\n\n" + systemPromptVolatile
+            }
+            return buildRequestBody(systemPrompt: combined, messages: messages)
+        }
+
         var systemBlocks: [[String: Any]] = []
 
-        // Stable block: cached. Must be the FIRST block and meet Anthropic's
-        // minimum cacheable size (~1024 tokens for Sonnet) for the cache to engage.
-        if !systemPromptStable.isEmpty {
-            systemBlocks.append([
-                "type": "text",
-                "text": systemPromptStable,
-                "cache_control": ["type": "ephemeral"]
-            ])
-        }
+        // Stable block: cached. Must be the FIRST block and exceed the per-model
+        // minimum cacheable size for the cache to engage.
+        systemBlocks.append([
+            "type": "text",
+            "text": systemPromptStable,
+            "cache_control": ["type": "ephemeral"]
+        ])
 
         // Volatile block: not cached. Changes per request (date, schedule, stats).
         if !systemPromptVolatile.isEmpty {

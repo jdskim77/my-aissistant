@@ -45,16 +45,16 @@ struct MyAIssistantApp: App {
         let tm = TaskManager(modelContext: context)
         let pe = PatternEngine(modelContext: context, keychainService: keychainService)
         let csm = CalendarSyncManager(modelContext: context)
+        let ugm = UsageGateManager(modelContext: context)
+        let bm = BalanceManager(modelContext: context)
 
         self._taskManager = State(initialValue: tm)
         self._patternEngine = State(initialValue: pe)
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
         self._calendarSyncManager = State(initialValue: csm)
-        self._usageGateManager = State(initialValue: UsageGateManager(modelContext: context))
+        self._usageGateManager = State(initialValue: ugm)
         self._wisdomManager = State(initialValue: WisdomManager(modelContext: context))
         self._insightEngine = State(initialValue: InsightEngine(modelContext: context))
-
-        let bm = BalanceManager(modelContext: context)
 
         let cm = ChatManager(modelContext: context)
         cm.taskManager = tm
@@ -62,6 +62,7 @@ struct MyAIssistantApp: App {
         cm.balanceManager = bm
         cm.keychainService = keychainService
         cm.calendarSyncManager = csm
+        cm.usageGateManager = ugm
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
         self._habitManager = State(initialValue: HabitManager(modelContext: context))

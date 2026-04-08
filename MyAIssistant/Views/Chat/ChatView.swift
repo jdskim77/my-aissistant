@@ -11,6 +11,7 @@ struct ChatView: View {
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.usageGateManager) private var usageGateManager
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.chatManager) private var chatManager
     @Environment(\.modelContext) private var modelContext
     @State private var conversationID = "main"
     @State private var inputText = ""
@@ -489,138 +490,95 @@ struct ChatView: View {
 
         errorMessage = nil
 
-        // Enforce free tier chat limit
+        // Enforce free tier chat limit before delegating (paywall is a UI concern)
         if let gate = usageGateManager, !gate.canSendChat(tier: tier) {
             showChatPaywall = true
             return
         }
 
-        // Fetch prior history BEFORE inserting the new message to avoid duplicate
-        let convoID = conversationID
-        let descriptor = FetchDescriptor<ChatMessage>(
-            predicate: #Predicate { $0.conversationID == convoID },
-            sortBy: [SortDescriptor(\ChatMessage.timestamp)]
-        )
-        let priorHistory = (try? modelContext.fetch(descriptor)) ?? []
+        guard let chatManager else {
+            errorMessage = "Chat is unavailable."
+            return
+        }
 
-        let userMessage = ChatMessage(role: .user, content: text, conversationID: conversationID)
-        modelContext.insert(userMessage)
-        modelContext.safeSave()
         inputText = ""
         speechRecognizer.transcript = ""
         isInputFocused = false
         isAITyping = true
 
+        // Keep ChatManager's runtime tier in sync (subscription can change at runtime)
+        chatManager.subscriptionTier = tier
+
+        let convoID = conversationID
         Task {
-            do {
-                let provider = try AIProviderFactory.provider(
-                    for: tier,
-                    useCase: .chat,
-                    keychain: keychainService
-                )
+            // ChatManager handles: insert user msg → fetch history → build split prompt
+            // (cached stable + uncached volatile) → call provider → parse tags →
+            // insert assistant msg → record usage with cache token weighting → persist
+            // activity entries → insert error messages on failure.
+            let result = await chatManager.sendMessage(text, conversationID: convoID)
 
-                let enabledLinks = calendarSyncManager?.enabledCalendarLinks() ?? []
-                let hasGoogle = enabledLinks.contains { $0.calendarSource == .google }
-                let hasApple = enabledLinks.contains { $0.calendarSource == .apple }
-                    || calendarSyncManager?.appleCalendarAuthorized == true
+            await MainActor.run {
+                isAITyping = false
 
-                let systemPrompt = AIPromptBuilder.chatSystemPrompt(
-                    scheduleSummary: taskManager?.scheduleSummary() ?? "",
-                    completionRate: patternEngine?.completionRate() ?? 0,
-                    streak: patternEngine?.currentStreak() ?? 0,
-                    hasGoogleCalendar: hasGoogle,
-                    hasAppleCalendar: hasApple,
-                    activitySummary: patternEngine?.activitySummaryText() ?? "",
-                    patternInsights: patternEngine?.patternInsightsText() ?? ""
-                )
-
-                let aiResponse = try await provider.sendMessage(
-                    userMessage: text,
-                    conversationHistory: Array(priorHistory.suffix(10)),
-                    systemPrompt: systemPrompt
-                )
-
-                let parsed = parseResponseTags(from: aiResponse.content)
-
-                await MainActor.run {
-                    isAITyping = false
-
-                    let assistantMessage = ChatMessage(role: .assistant, content: parsed.displayText, conversationID: conversationID)
-                    modelContext.insert(assistantMessage)
-
-                    // Track usage
-                    usageGateManager?.recordChatMessage(inputTokens: aiResponse.inputTokens, outputTokens: aiResponse.outputTokens)
-
-                    // Queue calendar actions for user confirmation
-                    if !parsed.calendarActions.isEmpty {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            pendingCalendarActions = parsed.calendarActions
-                        }
-                    }
-
-                    // Store tracked activities
-                    for activity in parsed.activities {
-                        let entry = ActivityEntry(
-                            activity: activity.description,
-                            category: activity.category
-                        )
-                        modelContext.insert(entry)
-                    }
-
-                    // Speak response aloud if voice mode is on
-                    if voiceModeEnabled {
-                        speechSynthesizer.speak(parsed.displayText)
-                    }
-
-                    modelContext.safeSave()
-                }
-
-                // Schedule alarms async (requires auth check) — only show banner if at least one succeeded
-                if !parsed.alarms.isEmpty {
-                    var anyScheduled = false
-                    for alarm in parsed.alarms {
-                        if await scheduleAlarm(alarm) { anyScheduled = true }
-                    }
-                    if anyScheduled {
-                        await MainActor.run {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showClockAppPrompt = true
-                            }
-                        }
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    isAITyping = false
-                    if let aiError = error as? AIError, case .noAPIKey = aiError {
-                        errorMessage = "No API key set. Add one in Settings."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I need an API key to work. Please add your Anthropic API key in Settings to get started!",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
-                    } else if let aiError = error as? AIError, case .rateLimited = aiError {
-                        errorMessage = "Too many requests — please wait a moment."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I'm getting a lot of requests right now. Give me a moment and try again!",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
+                if result.hasError {
+                    if result.errorMessage == "paywall" {
+                        showChatPaywall = true
                     } else {
-                        errorMessage = "Connection issue — please try again."
-                        let msg = ChatMessage(
-                            role: .assistant,
-                            content: "I'm having trouble connecting right now. Please check your internet connection and try again.",
-                            conversationID: conversationID
-                        )
-                        modelContext.insert(msg)
+                        errorMessage = result.errorMessage
                     }
-                    modelContext.safeSave()
+                    return
+                }
+
+                // Queue calendar actions for user confirmation (UI concern)
+                if !result.calendarActions.isEmpty {
+                    let converted = result.calendarActions.map(Self.convert(_:))
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        pendingCalendarActions = converted
+                    }
+                }
+
+                // Speak response aloud if voice mode is on
+                if voiceModeEnabled {
+                    speechSynthesizer.speak(result.displayText)
+                }
+            }
+
+            // Schedule alarms async (auth check in scheduleAlarm) — banner only if any succeeded
+            if !result.alarms.isEmpty {
+                var anyScheduled = false
+                for managerAlarm in result.alarms {
+                    let alarm = Self.convert(managerAlarm)
+                    if await scheduleAlarm(alarm) { anyScheduled = true }
+                }
+                if anyScheduled {
+                    await MainActor.run {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showClockAppPrompt = true
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // MARK: - SendResult Type Bridges
+    //
+    // ChatManager defines its own nested CalendarAction / ParsedAlarm types. ChatView
+    // has long-standing local types of the same shape used by the pending-actions
+    // confirmation UI and scheduleAlarm. Bridge at the boundary to avoid touching
+    // either side's internals.
+
+    private static func convert(_ a: ChatManager.CalendarAction) -> CalendarAction {
+        switch a {
+        case .create(let title, let start, let end, let description, let recurrence):
+            return .create(title: title, start: start, end: end, description: description, recurrence: recurrence)
+        case .delete(let eventID):
+            return .delete(eventID: eventID)
+        }
+    }
+
+    private static func convert(_ a: ChatManager.ParsedAlarm) -> ParsedAlarm {
+        ParsedAlarm(timeString: a.timeString, label: a.label, repeatsDaily: a.repeatsDaily)
     }
 
     // MARK: - Task Builder Helpers
@@ -854,79 +812,6 @@ struct ChatView: View {
         let timeString: String
         let label: String
         let repeatsDaily: Bool
-    }
-
-    private struct ParsedResponse {
-        let displayText: String
-        let calendarActions: [CalendarAction]
-        let activities: [(category: String, description: String)]
-        let alarms: [ParsedAlarm]
-    }
-
-    private func parseResponseTags(from text: String) -> ParsedResponse {
-        var displayText = text
-        var calendarActions: [CalendarAction] = []
-        var activities: [(category: String, description: String)] = []
-        var alarms: [ParsedAlarm] = []
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-
-        // Parse CREATE_EVENT tags: [[CREATE_EVENT:title|start|end|desc]] or [[CREATE_EVENT:title|start|end|desc|recurrence]]
-        let createPattern = /\[\[CREATE_EVENT:(.+?)\|(.+?)\|(.+?)\|(.*?)(?:\|(daily|weekly|biweekly|monthly))?\]\]/
-        for match in text.matches(of: createPattern) {
-            let title = String(match.1).trimmingCharacters(in: .whitespaces)
-            let startStr = String(match.2).trimmingCharacters(in: .whitespaces)
-            let endStr = String(match.3).trimmingCharacters(in: .whitespaces)
-            let desc = String(match.4).trimmingCharacters(in: .whitespaces)
-            let recStr = match.5.map { String($0).lowercased() }
-            let recurrence = recStr.flatMap { TaskRecurrence(rawValue: $0.capitalized) } ?? .none
-
-            if let startDate = dateFormatter.date(from: startStr),
-               let endDate = dateFormatter.date(from: endStr) {
-                calendarActions.append(.create(
-                    title: title,
-                    start: startDate,
-                    end: endDate,
-                    description: desc.isEmpty ? nil : desc,
-                    recurrence: recurrence
-                ))
-            }
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse DELETE_EVENT tags
-        let deletePattern = /\[\[DELETE_EVENT:(.+?)\]\]/
-        for match in text.matches(of: deletePattern) {
-            let eventID = String(match.1).trimmingCharacters(in: .whitespaces)
-            calendarActions.append(.delete(eventID: eventID))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse ACTIVITY tags
-        let activityPattern = /\[\[ACTIVITY:(.+?)\|(.+?)\]\]/
-        for match in text.matches(of: activityPattern) {
-            let category = String(match.1).trimmingCharacters(in: .whitespaces)
-            let description = String(match.2).trimmingCharacters(in: .whitespaces)
-            activities.append((category: category, description: description))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        // Parse SET_ALARM tags: [[SET_ALARM:HH:mm|Label]] or [[SET_ALARM:HH:mm|Label|daily]]
-        let alarmPattern = /\[\[SET_ALARM:(.+?)\|(.+?)(?:\|(daily))?\]\]/
-        for match in text.matches(of: alarmPattern) {
-            let timeStr = String(match.1).trimmingCharacters(in: .whitespaces)
-            let label = String(match.2).trimmingCharacters(in: .whitespaces)
-            let repeats = match.3 != nil
-            alarms.append(ParsedAlarm(timeString: timeStr, label: label, repeatsDaily: repeats))
-            displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
-        }
-
-        return ParsedResponse(
-            displayText: displayText.trimmingCharacters(in: .whitespacesAndNewlines),
-            calendarActions: calendarActions,
-            activities: activities,
-            alarms: alarms
-        )
     }
 
     private func executeCalendarActions(_ actions: [CalendarAction]) async {

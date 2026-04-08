@@ -168,10 +168,12 @@ final class ChatManager {
             )
             modelContext.insert(assistantMessage)
 
-            // Track usage
+            // Track usage (cache counters folded into effective input cost)
             usageGateManager?.recordChatMessage(
                 inputTokens: aiResponse.inputTokens,
-                outputTokens: aiResponse.outputTokens
+                outputTokens: aiResponse.outputTokens,
+                cacheCreationTokens: aiResponse.cacheCreationInputTokens,
+                cacheReadTokens: aiResponse.cacheReadInputTokens
             )
 
             // Store tracked activities

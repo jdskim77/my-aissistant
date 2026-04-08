@@ -68,9 +68,20 @@ final class UsageGateManager {
 
     // MARK: - Recording
 
-    func recordChatMessage(inputTokens: Int, outputTokens: Int) {
+    func recordChatMessage(
+        inputTokens: Int,
+        outputTokens: Int,
+        cacheCreationTokens: Int? = nil,
+        cacheReadTokens: Int? = nil
+    ) {
+        // Anthropic prices: cache write ~125% of input, cache read ~10% of input.
+        // Collapse the cache counters into an effective input value so cost dashboards
+        // don't under-report once caching engages. Avoids a UsageTracker schema bump.
+        let creation = Double(cacheCreationTokens ?? 0)
+        let read = Double(cacheReadTokens ?? 0)
+        let effectiveInput = inputTokens + Int((creation * 1.25).rounded()) + Int((read * 0.10).rounded())
         let t = tracker()
-        t.recordChatMessage(inputTokens: inputTokens, outputTokens: outputTokens)
+        t.recordChatMessage(inputTokens: effectiveInput, outputTokens: outputTokens)
         modelContext.safeSave()
     }
 
