@@ -17,6 +17,12 @@ struct SettingsView: View {
     @State private var showingImportConfirm = false
     @State private var pendingImportURL: URL?
 
+    // Developer-only reset state
+    @State private var showingResetOnboardingConfirm = false
+    @State private var showingWipeDataConfirm = false
+    @State private var showingDevResetResultAlert = false
+    @State private var devResetResultMessage = ""
+
     var body: some View {
         NavigationStack {
             List {
@@ -317,11 +323,69 @@ struct SettingsView: View {
                 } header: {
                     Text("About")
                 }
+
+                // Developer Tools — only visible in developer mode
+                if AppConstants.isDeveloperMode {
+                    Section {
+                        Button {
+                            Haptics.light()
+                            showingResetOnboardingConfirm = true
+                        } label: {
+                            settingsRow(
+                                icon: "arrow.counterclockwise",
+                                color: AppColors.accentWarm,
+                                title: "Replay Onboarding",
+                                subtitle: "Re-run the FTUE flow (keeps your data)"
+                            )
+                        }
+
+                        Button {
+                            Haptics.light()
+                            showingWipeDataConfirm = true
+                        } label: {
+                            settingsRow(
+                                icon: "trash.fill",
+                                color: AppColors.coral,
+                                title: "Wipe All App Data",
+                                subtitle: "Delete everything and re-run onboarding"
+                            )
+                        }
+                    } header: {
+                        Text("Developer Tools")
+                    } footer: {
+                        Text("These actions only appear in developer mode. \"Wipe All App Data\" is destructive and cannot be undone — it deletes tasks, check-ins, chats, goals, and patterns from this device. iCloud will sync the deletes to other devices.")
+                    }
+                }
             }
             .alert("Developer Mode", isPresented: $showDeveloperModeAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(AppConstants.isDeveloperMode ? "Developer mode enabled. Usage limits bypassed." : "Developer mode disabled.")
+            }
+            .confirmationDialog(
+                "Replay Onboarding?",
+                isPresented: $showingResetOnboardingConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Replay") { performResetOnboarding() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will reset your onboarding flag so the FTUE flow runs again on next launch. Your tasks, check-ins, chats, and goals are kept.")
+            }
+            .confirmationDialog(
+                "Wipe ALL App Data?",
+                isPresented: $showingWipeDataConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Wipe Everything", role: .destructive) { performWipeAllData() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This permanently deletes every task, check-in, chat message, season goal, habit, focus session, pattern, and your profile from this device. iCloud will sync the deletes to other devices. Onboarding will run again on next launch. This cannot be undone.")
+            }
+            .alert("Done", isPresented: $showingDevResetResultAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(devResetResultMessage)
             }
             .scrollContentBackground(.hidden)
             .background(AppColors.background.ignoresSafeArea())
@@ -398,6 +462,90 @@ struct SettingsView: View {
             importError = error.localizedDescription
             importResult = nil
         }
+    }
+
+    // MARK: - Developer Reset Actions
+
+    /// Flips the onboarding flag to false. Keeps all data intact. The user
+    /// will see the FTUE flow on next app cold-launch (or by force-quitting
+    /// and reopening). Use this for fast iteration on onboarding copy/UX
+    /// without losing your test data.
+    private func performResetOnboarding() {
+        do {
+            let descriptor = FetchDescriptor<UserProfile>()
+            if let profile = try modelContext.fetch(descriptor).first {
+                profile.onboardingCompleted = false
+            }
+            // Reset coach-marks first-launch flag too so the Compass coach
+            // marks reappear during the redesign test.
+            UserDefaults.standard.removeObject(forKey: "compassCoachMarksSeen")
+
+            try modelContext.save()
+            Haptics.success()
+            devResetResultMessage = "Onboarding flag reset. Force-quit the app and reopen to see the FTUE flow."
+            showingDevResetResultAlert = true
+        } catch {
+            Haptics.medium()
+            devResetResultMessage = "Failed to reset onboarding: \(error.localizedDescription)"
+            showingDevResetResultAlert = true
+        }
+    }
+
+    /// Wipes every row from every @Model in the SwiftData store. Resets
+    /// onboarding-related UserDefaults. iCloud will sync the deletes.
+    /// Does NOT touch Keychain (your API key stays put).
+    private func performWipeAllData() {
+        var deletedCount = 0
+        do {
+            // SwiftData has no "drop everything" — fetch each model type and delete row-by-row.
+            // Order chosen so child rows go before parent rows where relationships exist.
+            deletedCount += try wipe(TaskItem.self)
+            deletedCount += try wipe(ChatMessage.self)
+            deletedCount += try wipe(CheckInRecord.self)
+            deletedCount += try wipe(DailyBalanceCheckIn.self)
+            deletedCount += try wipe(DailySnapshot.self)
+            deletedCount += try wipe(SeasonGoal.self)
+            deletedCount += try wipe(HabitItem.self)
+            deletedCount += try wipe(FocusSession.self)
+            deletedCount += try wipe(ActivityEntry.self)
+            deletedCount += try wipe(ActivityPattern.self)
+            deletedCount += try wipe(AlarmEntry.self)
+            deletedCount += try wipe(CalendarLink.self)
+            deletedCount += try wipe(UsageTracker.self)
+            deletedCount += try wipe(UserDimensionPreference.self)
+            deletedCount += try wipe(UserProfile.self)
+
+            try modelContext.save()
+
+            // Reset relevant UserDefaults flags so the next launch behaves like a fresh install.
+            let keysToReset = [
+                "compassCoachMarksSeen",
+                "didMigrateVoiceModeDefault_v1",
+                AppConstants.lastGreetedTimestampKey,
+                AppConstants.lastGreetingTextKey
+            ]
+            for key in keysToReset {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+
+            Haptics.success()
+            devResetResultMessage = "Wiped \(deletedCount) records. Force-quit the app and reopen to see the FTUE flow with a clean state."
+            showingDevResetResultAlert = true
+        } catch {
+            Haptics.medium()
+            devResetResultMessage = "Wipe failed after \(deletedCount) deletes: \(error.localizedDescription)"
+            showingDevResetResultAlert = true
+        }
+    }
+
+    /// Helper: fetch every row of `T` and delete each. Returns the count.
+    private func wipe<T: PersistentModel>(_ type: T.Type) throws -> Int {
+        let descriptor = FetchDescriptor<T>()
+        let rows = try modelContext.fetch(descriptor)
+        for row in rows {
+            modelContext.delete(row)
+        }
+        return rows.count
     }
 
     private struct ShareSheet: UIViewControllerRepresentable {
