@@ -24,6 +24,19 @@ struct MyAIssistantApp: App {
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
+        // Initialize crash reporting FIRST so we capture any startup crashes.
+        // No-op until SentryConfig.dsn is set.
+        SentryConfig.start()
+
+        // One-time migration: force voice mode OFF for existing testers who had it
+        // auto-enabled before the default was changed. Prevents unexpected mic
+        // auto-restart after AI replies. Runs once per install.
+        let voiceMigrationKey = "didMigrateVoiceModeDefault_v1"
+        if !UserDefaults.standard.bool(forKey: voiceMigrationKey) {
+            UserDefaults.standard.set(false, forKey: AppConstants.voiceModeDefaultKey)
+            UserDefaults.standard.set(true, forKey: voiceMigrationKey)
+        }
+
         let schema = Schema(AppSchema.allModels)
         let container: ModelContainer
 

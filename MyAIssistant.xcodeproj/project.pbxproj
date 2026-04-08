@@ -14,6 +14,7 @@
 		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
 		188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45180E1CF55D484DE91629E /* AppLogger.swift */; };
+		20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D874F054AA8C19805C3E250 /* SentryConfig.swift */; };
 		2263E169947C166FDE04815D /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97ACE583981903B7525F883 /* CelebrationView.swift */; };
 		2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */; };
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
@@ -277,6 +278,7 @@
 		4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchScheduleData.swift; sourceTree = "<group>"; };
 		4583C2E82F7A1EFB00603B08 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		45D328A62F7AE94900293A7A /* TextSizeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeManager.swift; sourceTree = "<group>"; };
+		4D874F054AA8C19805C3E250 /* SentryConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SentryConfig.swift; sourceTree = "<group>"; };
 		4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StarterTaskPool.swift; sourceTree = "<group>"; };
 		51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
 		53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleVoiceProvider.swift; sourceTree = "<group>"; };
@@ -529,6 +531,15 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		4CC6B61FF9098C6683B23662 /* Monitoring */ = {
+			isa = PBXGroup;
+			children = (
+				4D874F054AA8C19805C3E250 /* SentryConfig.swift */,
+			);
+			name = Monitoring;
+			path = Monitoring;
+			sourceTree = "<group>";
+		};
 		5EB6FDA6E88DF875575A8ED4 /* Compass */ = {
 			isa = PBXGroup;
 			children = (
@@ -647,6 +658,7 @@
 				DC00000001000000 /* Speech */,
 				C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */,
 				AF197A2BC6ECA6A2717B9314 /* Backend */,
+				4CC6B61FF9098C6683B23662 /* Monitoring */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1375,6 +1387,7 @@
 				D846CA8A63B950844CDF4B59 /* AppIconPreview.swift in Sources */,
 				047BEAD36E4745BCD01B53FF /* ThrivnBackendService.swift in Sources */,
 				44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */,
+				20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
