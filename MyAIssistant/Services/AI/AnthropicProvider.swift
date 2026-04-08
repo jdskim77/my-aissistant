@@ -165,11 +165,14 @@ actor AnthropicProvider: AIProvider {
     /// Live testing showed Claude tokenizes English prose at ~6 chars/token, so
     /// we add a safety buffer above the minimum to be confident the cache engages.
     private var minStableCacheChars: Int {
-        // Haiku has a 2x higher minimum cacheable size than Sonnet.
+        // Live testing: Haiku reported cache_creation=0 at 13406 chars, meaning
+        // real Anthropic tokens for our dense prose were under the 2048 floor.
+        // Empirical chars/token ratio for our stable block is closer to 8 (not
+        // the optimistic 6), so we need ~16500 chars to safely exceed 2048.
         if model.contains("haiku") {
-            return 13000 // ~2167 real tokens, safely above Haiku's 2048 floor
+            return 16500 // ~2062 real tokens, just above Haiku's 2048 floor
         }
-        return 6500 // ~1083 real tokens, safely above Sonnet's 1024 floor
+        return 8500 // ~1062 real tokens, above Sonnet's 1024 floor (also bumped for safety)
     }
 
     private func buildSplitRequestBody(
