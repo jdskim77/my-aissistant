@@ -552,17 +552,19 @@ struct HomeView: View {
 
     // MARK: - Daily Wisdom Card
 
-    /// Blockquote-style wisdom: no card, no shadow, no border.
-    /// Visual differentiation comes from form (left accent bar + italic text),
-    /// not from another colored box. This keeps the home screen calm while
-    /// still distinguishing the quote from the surrounding pattern insight card.
+    /// Editorial blockquote with a soft warm tint. The original "no chrome"
+    /// design was too restrained against the surrounding cards — it read as
+    /// whitespace, not content. The tint gives it a "different content type"
+    /// container without competing for attention with the functional cards
+    /// (Today Hero, Pattern Insight) above and below it.
     /// Theme-safe: uses semantic AppColors that adapt across all color schemes.
     private func wisdomCard(quote: WisdomManager.Quote) -> some View {
         HStack(alignment: .top, spacing: 14) {
-            // Vertical accent bar (the "blockquote" indicator)
+            // Vertical accent bar — bumped from 3pt to 4pt so it registers as
+            // a structural element instead of a divider line.
             RoundedRectangle(cornerRadius: 2)
                 .fill(AppColors.accentWarm)
-                .frame(width: 3)
+                .frame(width: 4)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("\u{201C}\(quote.text)\u{201D}")
@@ -575,13 +577,19 @@ struct HomeView: View {
                 Text("\u{2014} \(quote.author)")
                     .font(AppFonts.bodyMedium(12))
                     .foregroundColor(AppColors.textSecondary)
+                    .tracking(0.3)
             }
         }
-        .padding(.vertical, 8)
-        // No horizontal padding — listRowInsets at the call site already
-        // applies 16pt horizontal so the accent bar aligns flush with the
-        // Pattern Insight card edge directly below it.
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(AppColors.accentWarm.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AppColors.accentWarm.opacity(0.18), lineWidth: 1)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
     }
