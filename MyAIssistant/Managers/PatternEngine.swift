@@ -14,23 +14,57 @@ final class PatternEngine {
 
     // MARK: - Streak
 
+    /// Streak with a "today is a grace day" rule.
+    ///
+    /// The previous implementation walked backward from today and required a
+    /// completed task on the current day for the streak to be > 0. That meant
+    /// a real 30-day streak would display as 0 the moment the user opened the
+    /// app on a quiet Saturday with no tasks scheduled — and the streak-at-risk
+    /// notification would fire for a streak the same code reported as zero.
+    ///
+    /// New rule:
+    ///   - Today is always a grace day. The walk starts from yesterday.
+    ///   - A day with NO tasks scheduled does NOT break the streak — only a
+    ///     day where tasks existed and zero were completed counts as a break.
+    ///     This matches user intuition: "I show up when there's something to
+    ///     show up for."
     func currentStreak() -> Int {
         let calendar = Calendar.current
         var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
+        // Start from yesterday — today is grace.
+        var checkDate = calendar.safeDate(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))
 
-        while true {
+        // Hard cap the walk so a misbehaving DB can't infinite-loop.
+        let maxLookback = 365
+        var iterations = 0
+
+        while iterations < maxLookback {
+            iterations += 1
             let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: checkDate)
 
-            let descriptor = FetchDescriptor<TaskItem>(
+            // How many tasks were SCHEDULED for this day (regardless of done state)
+            let scheduledDescriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay }
+            )
+            let scheduledCount = (try? modelContext.fetchCount(scheduledDescriptor)) ?? 0
+
+            if scheduledCount == 0 {
+                // No tasks were scheduled — quiet day, doesn't break the streak
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                continue
+            }
+
+            // Tasks existed — did the user complete at least one?
+            let completedDescriptor = FetchDescriptor<TaskItem>(
                 predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay && $0.done == true }
             )
-            let completedCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+            let completedCount = (try? modelContext.fetchCount(completedDescriptor)) ?? 0
 
             if completedCount > 0 {
                 streak += 1
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
             } else {
+                // Active day with zero completed tasks → streak broken
                 break
             }
         }

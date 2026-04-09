@@ -280,17 +280,36 @@ final class TaskManager {
         )
     }
 
+    /// Streak with grace day for today and quiet days. Mirrors the canonical
+    /// implementation in PatternEngine.currentStreak() — keep them in sync if
+    /// either changes. (Both exist because TaskManager runs in widget contexts
+    /// where injecting PatternEngine would add more wiring than is worth it.)
     private func computeStreak() -> Int {
         let calendar = Calendar.current
         var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
-        while true {
+        var checkDate = calendar.safeDate(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))
+        var iterations = 0
+        let maxLookback = 365
+        while iterations < maxLookback {
+            iterations += 1
             let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: checkDate)
-            let descriptor = FetchDescriptor<TaskItem>(
+
+            let scheduledDescriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay }
+            )
+            let scheduledCount = (try? modelContext.fetchCount(scheduledDescriptor)) ?? 0
+
+            if scheduledCount == 0 {
+                // Quiet day — doesn't break the streak
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                continue
+            }
+
+            let completedDescriptor = FetchDescriptor<TaskItem>(
                 predicate: #Predicate { $0.date >= checkDate && $0.date < nextDay && $0.done == true }
             )
-            let count = (try? modelContext.fetchCount(descriptor)) ?? 0
-            if count > 0 {
+            let completedCount = (try? modelContext.fetchCount(completedDescriptor)) ?? 0
+            if completedCount > 0 {
                 streak += 1
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
             } else {
