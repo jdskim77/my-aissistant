@@ -791,6 +791,17 @@ struct SettingsView: View {
 
             try modelContext.save()
 
+            // Clear Thrivn auth tokens — without this, the wiped state still
+            // appears authenticated as the previous user, and any new tasks
+            // /check-ins get attributed server-side to the wrong account.
+            // Best-effort fire-and-forget signOut so the server-side refresh
+            // token is also revoked. Local tokens are cleared synchronously.
+            keychainService.delete(key: AppConstants.thrivnAccessTokenKey)
+            keychainService.delete(key: AppConstants.thrivnRefreshTokenKey)
+            Task {
+                await ThrivnBackendService(keychain: keychainService).signOut()
+            }
+
             // Reset relevant UserDefaults flags so the next launch behaves like a fresh install.
             let keysToReset = [
                 "compassCoachMarksSeen",
@@ -803,7 +814,7 @@ struct SettingsView: View {
             }
 
             Haptics.success()
-            devResetResultMessage = "Wiped \(deletedCount) records. Force-quit the app and reopen to see the FTUE flow with a clean state."
+            devResetResultMessage = "Wiped \(deletedCount) records and signed out. Force-quit the app and reopen to see the FTUE flow with a clean state."
             showingDevResetResultAlert = true
         } catch {
             Haptics.medium()

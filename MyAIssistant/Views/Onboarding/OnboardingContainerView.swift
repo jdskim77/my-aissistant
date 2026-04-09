@@ -27,10 +27,15 @@ struct OnboardingContainerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Top bar with back button (on screens 1-8, not Welcome or Notification)
+            if currentPage > 0 && currentPage < totalPages - 1 {
+                topBar
+            }
+
             // Progress dots
             if currentPage > 0 && currentPage < totalPages - 1 {
                 progressDots
-                    .padding(.top, 12)
+                    .padding(.top, 4)
             }
 
             TabView(selection: $currentPage) {
@@ -113,7 +118,6 @@ struct OnboardingContainerView: View {
             .animation(.easeInOut(duration: 0.3), value: currentPage)
         }
         .background(AppColors.background.ignoresSafeArea())
-        .ignoresSafeArea(.keyboard)
         .alert("Setup Failed", isPresented: Binding(
             get: { saveErrorMessage != nil },
             set: { if !$0 { saveErrorMessage = nil } }
@@ -148,6 +152,48 @@ struct OnboardingContainerView: View {
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = min(currentPage + steps, totalPages - 1)
         }
+    }
+
+    private func goBack() {
+        guard currentPage > 0 else { return }
+        Haptics.selection()
+
+        // Special-case the screens that we may have skipped over on the way
+        // forward. If the user reached page 3 (Compass Intro) via Apple
+        // sign-in (which jumps from 1 → 3), tapping back should land them
+        // back on the Sign-in screen, not the skipped Name Capture screen.
+        let trimmedName = capturedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let appleProvidedName = !trimmedName.isEmpty
+        let target: Int
+        if currentPage == 3 && appleProvidedName {
+            target = 1  // back to Sign in with Apple, skipping Name Capture
+        } else {
+            target = currentPage - 1
+        }
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentPage = target
+        }
+    }
+
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack {
+            Button(action: goBack) {
+                Image(systemName: "chevron.left")
+                    .font(AppFonts.bodyMedium(17))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Go back")
+            .accessibilityHint("Returns to the previous step")
+
+            Spacer()
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 
     private var weakestDimension: LifeDimension {
