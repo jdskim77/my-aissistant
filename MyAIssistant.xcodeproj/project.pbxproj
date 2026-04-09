@@ -145,6 +145,7 @@
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
 		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */; };
 		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
+		AA0000000B000000 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BA0000000B000000 /* PrivacyInfo.xcprivacy */; };
 		AAEB380490879F3B53121260 /* CheckInPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */; };
 		AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */; };
 		AC00000001000000 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000001000000 /* SpeechRecognizer.swift */; };
@@ -382,6 +383,7 @@
 		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
 		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
 		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BA0000000B000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BC00000001000000 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		BC00000002000000 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		BC00000003000000 /* SpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizer.swift; sourceTree = "<group>"; };
@@ -557,6 +559,7 @@
 				B100000001000000 /* MyAIssistantApp.swift */,
 				B100000002000000 /* ContentView.swift */,
 				BA00000001000000 /* Assets.xcassets */,
+				BA0000000B000000 /* PrivacyInfo.xcprivacy */,
 				D200000001000000 /* Core */,
 				D100000003000000 /* Models */,
 				D200000002000000 /* Managers */,
@@ -1159,6 +1162,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000001000000 /* Assets.xcassets in Resources */,
+				AA0000000B000000 /* PrivacyInfo.xcprivacy in Resources */,
 				8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1453,7 +1457,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1527,7 +1531,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1594,7 +1598,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1652,7 +1656,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1706,7 +1710,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1763,7 +1767,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1895,7 +1899,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1923,7 +1927,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1950,7 +1954,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.3.1;
@@ -1968,7 +1972,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.3.1;
@@ -1988,7 +1992,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -2017,7 +2021,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
