@@ -21,6 +21,7 @@ struct MyAIssistantApp: App {
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
     @State private var notificationManager = NotificationManager()
+    @State private var networkMonitor = NetworkMonitor()
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
@@ -126,6 +127,7 @@ struct MyAIssistantApp: App {
                 .environment(\.greetingManager, greetingManager)
                 .environment(\.notificationManager, notificationManager)
                 .environment(\.subscriptionManager, subscriptionManager)
+                .environment(\.networkMonitor, networkMonitor)
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()

@@ -79,6 +79,19 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - NetworkMonitor Environment Key
+
+struct NetworkMonitorKey: EnvironmentKey {
+    static let defaultValue: NetworkMonitor? = nil
+}
+
+extension EnvironmentValues {
+    var networkMonitor: NetworkMonitor? {
+        get { self[NetworkMonitorKey.self] }
+        set { self[NetworkMonitorKey.self] = newValue }
+    }
+}
+
 // MARK: - GreetingManager Environment Key
 
 struct GreetingManagerKey: EnvironmentKey {

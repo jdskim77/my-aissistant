@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.taskManager) private var taskManager
+    @Environment(\.networkMonitor) private var networkMonitor
     @Query private var profiles: [UserProfile]
     @Query(filter: #Predicate<TaskItem> { item in
         item.done == false
@@ -22,11 +23,14 @@ struct ContentView: View {
     }
 
     var body: some View {
-        if hasCompletedOnboarding || onboardingComplete {
-            mainView
-        } else {
-            OnboardingContainerView(onboardingComplete: $onboardingComplete)
+        Group {
+            if hasCompletedOnboarding || onboardingComplete {
+                mainView
+            } else {
+                OnboardingContainerView(onboardingComplete: $onboardingComplete)
+            }
         }
+        .offlineBanner()
     }
 
     private var mainView: some View {
