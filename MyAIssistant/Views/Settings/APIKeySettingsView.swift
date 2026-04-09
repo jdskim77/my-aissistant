@@ -35,6 +35,7 @@ struct APIKeySettingsView: View {
                                 .font(AppFonts.body(14))
                                 .foregroundColor(AppColors.textMuted)
                         }
+                        .accessibilityLabel(showAnthropicKey ? "Hide API key" : "Show API key")
                     }
                     .padding(12)
                     .background(AppColors.surface)
@@ -77,6 +78,7 @@ struct APIKeySettingsView: View {
                                 .font(AppFonts.body(14))
                                 .foregroundColor(AppColors.textMuted)
                         }
+                        .accessibilityLabel(showOpenAIKey ? "Hide API key" : "Show API key")
                     }
                     .padding(12)
                     .background(AppColors.surface)
@@ -128,6 +130,7 @@ struct APIKeySettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("API Keys")
         .navigationBarTitleDisplayMode(.inline)

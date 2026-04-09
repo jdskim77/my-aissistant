@@ -76,6 +76,7 @@ struct ChatView: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .bold))
                     }
+                    .accessibilityLabel("Dismiss error")
                 }
                 .foregroundColor(AppColors.coral)
                 .padding(.horizontal, 16)
@@ -112,6 +113,7 @@ struct ChatView: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .bold))
                     }
+                    .accessibilityLabel("Dismiss")
                 }
                 .foregroundColor(AppColors.accent)
                 .padding(.horizontal, 16)
@@ -261,6 +263,7 @@ struct ChatView: View {
                         .background(AppColors.surface)
                         .cornerRadius(8)
                 }
+                .accessibilityLabel("Close chat")
             }
 
             AIActivityOrb(
@@ -302,6 +305,8 @@ struct ChatView: View {
                             .stroke(voiceModeEnabled ? AppColors.accent.opacity(0.3) : Color.clear, lineWidth: 1)
                     )
             }
+            .accessibilityLabel(voiceModeEnabled ? "Turn off voice mode" : "Turn on voice mode")
+            .accessibilityHint("Toggles speaking and listening")
 
             Button {
                 showingConversations = true
@@ -313,6 +318,8 @@ struct ChatView: View {
                     .background(AppColors.accentLight)
                     .cornerRadius(8)
             }
+            .accessibilityLabel("Conversations")
+            .accessibilityHint("Switch between or create chat conversations")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
