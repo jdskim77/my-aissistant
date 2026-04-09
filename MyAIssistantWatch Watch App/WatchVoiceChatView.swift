@@ -247,7 +247,7 @@ struct WatchVoiceChatView: View {
 
         guard let apiKey = connectivity.apiKey, !apiKey.isEmpty else {
             isProcessing = false
-            errorMessage = "No API key. Set it in the iPhone app Settings."
+            errorMessage = "Watch chat needs an Anthropic API key. Open Thrivn on your iPhone → Settings → API Keys."
             return
         }
 

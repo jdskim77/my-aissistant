@@ -80,7 +80,7 @@ enum WatchAIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey: return "No API key. Set it on your iPhone."
+        case .noAPIKey: return "Watch chat needs an Anthropic API key. Open Thrivn on your iPhone → Settings → API Keys to add one."
         case .invalidAPIKey: return "Invalid API key. Update it in iPhone Settings."
         case .rateLimited: return "Too many requests. Wait a moment."
         case .serverError: return "AI service is temporarily down."
