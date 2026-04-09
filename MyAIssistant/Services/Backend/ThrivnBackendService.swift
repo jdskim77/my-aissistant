@@ -12,7 +12,14 @@ actor ThrivnBackendService: AIProvider {
 
     private let baseURL: URL
     private let model: String
+    /// Long-timeout session for AI chat — generation can legitimately take 30+
+    /// seconds. Used by /v1/chat.
     private let session: URLSession
+    /// Short-timeout session for blocking auth flows (sign-in, refresh, logout,
+    /// delete). 15s is enough for an interactive request and prevents the
+    /// "Signing you in…" spinner from hanging for a full minute on a flaky
+    /// network.
+    private let authSession: URLSession
     private let keychain: KeychainService
 
     /// Coalesces concurrent refresh-token calls into a single network request.
@@ -40,11 +47,23 @@ actor ThrivnBackendService: AIProvider {
             ?? URL(string: "https://thrivn-api.jdskim77.workers.dev")!
         self.model = model
         self.keychain = keychain
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 60
-        config.timeoutIntervalForResource = 120
-        config.waitsForConnectivity = true
-        self.session = URLSession(configuration: config)
+
+        // Chat session: long timeouts because AI generation is legitimately slow.
+        let chatConfig = URLSessionConfiguration.default
+        chatConfig.timeoutIntervalForRequest = 60
+        chatConfig.timeoutIntervalForResource = 120
+        chatConfig.waitsForConnectivity = true
+        self.session = URLSession(configuration: chatConfig)
+
+        // Auth session: short timeouts. waitsForConnectivity is OFF so a sign-in
+        // request fails fast if the user is offline, instead of pretending to
+        // work for 60 seconds. The UI calls NetworkMonitor as a pre-flight gate
+        // before reaching this code, so most offline cases never get here.
+        let authConfig = URLSessionConfiguration.default
+        authConfig.timeoutIntervalForRequest = 15
+        authConfig.timeoutIntervalForResource = 30
+        authConfig.waitsForConnectivity = false
+        self.authSession = URLSession(configuration: authConfig)
     }
 
     // MARK: - AIProvider conformance
@@ -91,7 +110,15 @@ actor ThrivnBackendService: AIProvider {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Self.encoder.encode(body)
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await authSession.data(for: request)
+        } catch {
+            // Wrap URLError so ChatManager / SignInWithAppleView see a typed
+            // network failure instead of a raw "The Internet connection appears
+            // to be offline" string they have no way to switch on.
+            throw AIError.networkError(error)
+        }
         try validateHTTPResponse(response, data: data)
 
         let envelope = try Self.decoder.decode(AuthEnvelope.self, from: data)
@@ -134,7 +161,12 @@ actor ThrivnBackendService: AIProvider {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try Self.encoder.encode(Body(refresh_token: refreshToken))
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await authSession.data(for: request)
+        } catch {
+            throw AIError.networkError(error)
+        }
 
         // Special case: if the refresh token itself is invalid (401/403), the session
         // is dead. Clear local tokens so the next AIProviderFactory.provider() call
@@ -196,7 +228,7 @@ actor ThrivnBackendService: AIProvider {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try? JSONEncoder().encode(Body(refresh_token: token))
-            _ = try? await session.data(for: request)
+            _ = try? await authSession.data(for: request)
         }
     }
 
@@ -220,7 +252,7 @@ actor ThrivnBackendService: AIProvider {
         // Fire-and-forget. If the backend hasn't shipped the endpoint yet
         // (404), the catch swallows it — local data wipe still proceeds in
         // the calling view.
-        _ = try? await session.data(for: request)
+        _ = try? await authSession.data(for: request)
     }
 
     /// Returns true if a refresh token is stored.
@@ -286,7 +318,12 @@ actor ThrivnBackendService: AIProvider {
         request.setValue("Bearer \(try await accessToken())", forHTTPHeaderField: "Authorization")
         request.httpBody = encodedBody
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw AIError.networkError(error)
+        }
         try validateHTTPResponse(response, data: data)
 
         // Backend returns the raw Anthropic response when stream=false.

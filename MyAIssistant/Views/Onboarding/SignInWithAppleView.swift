@@ -10,6 +10,7 @@ struct SignInWithAppleView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.keychainService) private var keychainService
+    @Environment(\.networkMonitor) private var networkMonitor
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var appeared = false
@@ -137,6 +138,17 @@ struct SignInWithAppleView: View {
     private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
         switch result {
         case .success(let authorization):
+            // Pre-flight: bail out fast if the device is offline. The Apple
+            // local credential exchange already succeeded — but we cannot
+            // exchange it with the Thrivn backend without a network. Showing
+            // this message immediately is far better than a 60-second hang
+            // followed by a raw URLError string.
+            if let monitor = networkMonitor, !monitor.isConnected {
+                Haptics.medium()
+                errorMessage = "You're offline. Connect to Wi-Fi or cellular to sign in, or tap \"Continue without an account\" below."
+                return
+            }
+
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
                   let identityTokenData = credential.identityToken,
                   let identityToken = String(data: identityTokenData, encoding: .utf8) else {
@@ -172,7 +184,7 @@ struct SignInWithAppleView: View {
                 } catch {
                     await MainActor.run {
                         isProcessing = false
-                        errorMessage = "Sign-in failed: \(error.localizedDescription)"
+                        errorMessage = friendlySignInErrorMessage(error)
                     }
                 }
             }
@@ -182,7 +194,39 @@ struct SignInWithAppleView: View {
             if (error as NSError).code == ASAuthorizationError.canceled.rawValue {
                 return
             }
-            errorMessage = "Sign-in failed: \(error.localizedDescription)"
+            errorMessage = friendlySignInErrorMessage(error)
         }
+    }
+
+    /// Maps a typed error from the sign-in flow to plain English. Falls back
+    /// to a generic message rather than dumping URLError descriptions on the
+    /// user. Network failures are caught here AND by the pre-flight check, so
+    /// this is the second line of defense for race conditions (network goes
+    /// down between the pre-flight and the request firing).
+    private func friendlySignInErrorMessage(_ error: Error) -> String {
+        if let aiError = error as? AIError {
+            switch aiError {
+            case .networkError:
+                return "Couldn't reach the Thrivn server. Check your connection and try again."
+            case .apiError(let code, _):
+                if code == 401 || code == 403 {
+                    return "Apple sign-in failed. Please try again."
+                }
+                return "Server error (\(code)). Please try again in a moment."
+            case .rateLimited:
+                return "Too many sign-in attempts. Please wait a minute and try again."
+            default:
+                return "Sign-in failed. Please try again."
+            }
+        }
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost:
+                return "Couldn't reach the Thrivn server. Check your connection and try again."
+            default:
+                return "Sign-in failed. Please try again."
+            }
+        }
+        return "Sign-in failed. Please try again."
     }
 }

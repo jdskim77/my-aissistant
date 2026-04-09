@@ -12,6 +12,7 @@ struct ChatView: View {
     @Environment(\.usageGateManager) private var usageGateManager
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.chatManager) private var chatManager
+    @Environment(\.networkMonitor) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
     @State private var conversationID = "main"
     @State private var inputText = ""
@@ -147,6 +148,11 @@ struct ChatView: View {
             inputBar
         }
         .background(AppColors.background.ignoresSafeArea())
+        // ChatView is presented in a fullScreenCover, which renders in its own
+        // scene — the global offline banner pinned at ContentView level does
+        // NOT propagate into a cover. Apply it locally so the user always sees
+        // ambient connectivity state in the most network-heavy screen.
+        .offlineBanner()
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
                 appeared = true
@@ -489,6 +495,16 @@ struct ChatView: View {
         }
 
         errorMessage = nil
+
+        // Pre-flight: short-circuit if offline so the user gets an instant
+        // explanation instead of waiting up to 60s for URLSession to give up.
+        // Critically, do NOT clear inputText — preserve the draft so the user
+        // can retry by tapping Send again once they're back online.
+        if let monitor = networkMonitor, !monitor.isConnected {
+            Haptics.medium()
+            errorMessage = "You're offline. Your message is saved — tap Send again when you're back online."
+            return
+        }
 
         // Enforce free tier chat limit before delegating (paywall is a UI concern)
         if let gate = usageGateManager, !gate.canSendChat(tier: tier) {
