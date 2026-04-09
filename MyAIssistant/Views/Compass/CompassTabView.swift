@@ -150,6 +150,13 @@ struct CompassTabView: View {
                         .font(AppFonts.caption(11))
                         .foregroundColor(AppColors.textMuted)
                 }
+
+                // Trailing chevron — the universal "this card opens detail"
+                // signal. Without this, the card was visually identical to a
+                // static info card and users had no cue it was tappable.
+                Image(systemName: "chevron.right")
+                    .font(AppFonts.label(13))
+                    .foregroundColor(AppColors.textMuted)
             }
             .padding(16)
             .background(AppColors.card)
@@ -159,8 +166,9 @@ struct CompassTabView: View {
                     .stroke(goal.dimension.color.opacity(0.2), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scale)
         .accessibilityLabel("Season Goal: \(goal.dimension.label), \(goal.daysRemaining) days left")
+        .accessibilityHint("Opens season goal detail")
     }
 
     private var newSeasonGoalPrompt: some View {
@@ -193,7 +201,7 @@ struct CompassTabView: View {
                     .stroke(AppColors.border, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scale)
         .accessibilityLabel("Set a Season Goal")
     }
 
@@ -334,7 +342,7 @@ struct CompassTabView: View {
                             .stroke(AppColors.border, lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.scale)
                 .accessibilityLabel("Evening Check-In")
             }
 
@@ -360,7 +368,7 @@ struct CompassTabView: View {
                         .stroke(AppColors.border, lineWidth: 1)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scale)
             .accessibilityLabel("View Detailed Patterns")
         }
     }

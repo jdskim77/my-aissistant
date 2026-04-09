@@ -216,7 +216,7 @@ struct HomeView: View {
                                 .foregroundColor(AppColors.accent)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scale)
                 }
             }
 
@@ -777,7 +777,7 @@ struct HomeView: View {
                         .fill(slot.color.opacity(0.08))
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scale)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(slot.rawValue) check-in available. \(todayCheckInCount) of 4 done today. Tap to start.")
         case .complete:
@@ -893,7 +893,7 @@ struct HomeView: View {
                     .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scale)
     }
 
     // MARK: - Empty States
@@ -1039,7 +1039,7 @@ struct HomeView: View {
                         .background(AppColors.accent)
                         .cornerRadius(12)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.scale)
 
                 Spacer()
             }
@@ -1069,6 +1069,6 @@ struct HomeView: View {
                 .background(AppColors.accentLight)
                 .cornerRadius(10)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scale)
     }
 }

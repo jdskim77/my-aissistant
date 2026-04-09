@@ -486,7 +486,7 @@ struct ScheduleView: View {
                         .fill(AppColors.accentWarm.opacity(0.08))
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scale)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
@@ -682,7 +682,7 @@ struct ScheduleView: View {
                 .background(AppColors.accentLight)
                 .cornerRadius(12)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scale)
     }
 
     // MARK: - Helpers
