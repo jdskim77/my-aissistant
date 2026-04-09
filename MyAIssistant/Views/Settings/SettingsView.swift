@@ -47,7 +47,7 @@ struct SettingsView: View {
                         )
                     }
 
-                    if AppConstants.isDeveloperMode {
+                    if AppConstants.isDeveloperToolsEnabled {
                         NavigationLink {
                             AppIconPreviewGallery()
                         } label: {
@@ -317,7 +317,7 @@ struct SettingsView: View {
                         Text("Our Vision")
                             .font(AppFonts.label(13))
                             .foregroundColor(AppColors.accent)
-                        Text("Excel at life by finding balance. Thrivn reveals where you're thriving and where you need attention — across your physical, mental, emotional, and spiritual well-being. Through daily check-ins, habit tracking, and an AI coach that understands your goals, it helps you align how you spend your time with what truly matters.")
+                        Text("Find balance across the four dimensions that matter most — physical, mental, emotional, and spiritual well-being. Thrivn turns daily check-ins, habit tracking, and a context-aware AI assistant into one place to see your week clearly and act on what matters.")
                             .font(AppFonts.body(14))
                             .foregroundColor(AppColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -328,7 +328,9 @@ struct SettingsView: View {
                         versionTapCount += 1
                         if versionTapCount >= 7 {
                             versionTapCount = 0
-                            let current = AppConstants.isDeveloperMode
+                            // Read/write the raw flag directly so the toggle isn't
+                            // poisoned by isBetaUnlimited returning true unconditionally.
+                            let current = AppConstants.isDeveloperToolsEnabled
                             UserDefaults.standard.set(!current, forKey: AppConstants.developerModeKey)
                             showDeveloperModeAlert = true
                         }
@@ -368,7 +370,23 @@ struct SettingsView: View {
                         }
                     }
 
-                    if AppConstants.isDeveloperMode && !AppConstants.isBetaUnlimited {
+                    // Send Feedback — opens Google Form during beta, Mail during public
+                    Button {
+                        Haptics.light()
+                        sendFeedback()
+                    } label: {
+                        settingsRow(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            color: AppColors.accent,
+                            title: "Send Feedback",
+                            subtitle: AppConstants.isBetaUnlimited
+                                ? "Anonymous form — ~5 min, every answer shapes what comes next"
+                                : "Report a bug or share an idea"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if AppConstants.isDeveloperToolsEnabled {
                         HStack {
                             Image(systemName: "hammer.fill")
                                 .foregroundColor(AppColors.accentWarm)
@@ -385,8 +403,10 @@ struct SettingsView: View {
                     Text("About")
                 }
 
-                // Developer Tools — only visible in developer mode
-                if AppConstants.isDeveloperMode {
+                // Developer Tools — only visible when the user explicitly enabled
+                // developer mode (NOT for all beta testers, since the section
+                // contains destructive Wipe All Data action).
+                if AppConstants.isDeveloperToolsEnabled {
                     Section {
                         Button {
                             Haptics.light()
@@ -421,7 +441,7 @@ struct SettingsView: View {
             .alert("Developer Mode", isPresented: $showDeveloperModeAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(AppConstants.isDeveloperMode ? "Developer mode enabled. Usage limits bypassed." : "Developer mode disabled.")
+                Text(AppConstants.isDeveloperToolsEnabled ? "Developer mode enabled. Usage limits bypassed." : "Developer mode disabled.")
             }
             .confirmationDialog(
                 "Replay Onboarding?",
@@ -576,6 +596,50 @@ struct SettingsView: View {
     }
 
     // MARK: - Account Actions
+
+    /// Open the right feedback channel for the current build phase.
+    /// - Beta (`isBetaUnlimited == true`): opens the structured Google Form in Safari.
+    ///   Anonymous, ~5 min, designed for high-signal beta feedback.
+    /// - Public: opens the system Mail composer pre-filled with device, OS, and
+    ///   app version diagnostics so support can debug without asking.
+    private func sendFeedback() {
+        if AppConstants.isBetaUnlimited {
+            if let url = URL(string: AppConstants.feedbackGoogleFormURL) {
+                UIApplication.shared.open(url)
+            }
+            return
+        }
+
+        // Public path: mailto with diagnostic context pre-filled.
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let device = UIDevice.current.model
+        let osVersion = UIDevice.current.systemVersion
+
+        let subject = "Thrivn Feedback (v\(appVersion))"
+        let body = """
+
+
+        ---
+        Please describe the issue or idea above this line.
+
+        Diagnostics (helps us debug — feel free to remove):
+        • App: \(appVersion) (\(buildNumber))
+        • Device: \(device)
+        • iOS: \(osVersion)
+        """
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = AppConstants.supportEmail
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+        if let url = components.url {
+            UIApplication.shared.open(url)
+        }
+    }
 
     /// Refresh the local sign-in indicator. Reads from the Keychain so it
     /// reflects the actual stored refresh-token state, not a stale flag.

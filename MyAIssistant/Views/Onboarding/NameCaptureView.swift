@@ -21,7 +21,7 @@ struct NameCaptureView: View {
             Spacer()
 
             VStack(spacing: 24) {
-                Image(systemName: "person.fill.questionmark")
+                Image(systemName: "person.fill")
                     .font(AppFonts.icon(64))
                     .foregroundColor(AppColors.accent)
                     .scaleEffect(appeared ? 1 : 0.6)

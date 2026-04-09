@@ -20,11 +20,11 @@ struct WelcomeView: View {
                         .font(AppFonts.display(36))
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("A coach for the whole you.")
+                    Text("Daily check-ins, weekly clarity.")
                         .font(AppFonts.heading(17))
                         .foregroundColor(AppColors.accent)
 
-                    Text("Most apps optimize your to-do list. Thrivn looks at your whole life — body, mind, heart, spirit — and helps you spend your time on what actually matters.")
+                    Text("Quick check-ins build a picture of your week across body, mind, heart, and spirit. A private AI helps you turn that into small, meaningful actions.")
                         .font(AppFonts.body(14))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -34,9 +34,9 @@ struct WelcomeView: View {
                 .opacity(appeared ? 1 : 0)
 
                 VStack(alignment: .leading, spacing: 16) {
-                    featureRow(icon: "🧭", title: "See your whole life", subtitle: "A weekly compass across four dimensions")
-                    featureRow(icon: "✦", title: "Talk to a coach who knows you", subtitle: "Context-aware AI, not a generic chatbot")
-                    featureRow(icon: "🌅", title: "15 seconds, 4 times a day", subtitle: "Quick check-ins build the picture over time")
+                    featureRow(icon: "🧭", title: "Your week, at a glance", subtitle: "A four-dimension compass that updates as you check in")
+                    featureRow(icon: "✦", title: "An AI assistant with context", subtitle: "Your check-ins inform every reply, so suggestions match your real week")
+                    featureRow(icon: "🌅", title: "Four quick check-ins a day", subtitle: "Each one adds to your weekly pattern")
                 }
                 .padding(.top, 16)
                 .offset(y: appeared ? 0 : 30)

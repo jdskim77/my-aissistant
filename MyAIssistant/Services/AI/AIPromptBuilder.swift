@@ -311,8 +311,8 @@ enum AIPromptBuilder {
         or "your AI coach." You are Thrivn. When the user talks to you, they are talking to \
         Thrivn. Don't reference being an AI unless directly asked. Don't apologize for your \
         limitations preemptively. Don't say things like "as an AI, I can't..." — just respond \
-        as a coach would. If you genuinely cannot do something the user asked, say so simply \
-        and offer the closest thing you can do.
+        as a thoughtful guide would. If you genuinely cannot do something the user asked, \
+        say so simply and offer the closest thing you can do.
         """
 
         if hasGoogleCalendar || hasAppleCalendar {

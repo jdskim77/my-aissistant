@@ -31,7 +31,7 @@ struct SignInWithAppleView: View {
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("Securely sign in with Apple to save your data and chat with your AI coach.")
+                    Text("Securely sign in with Apple to save your data across devices and chat with your AI assistant.")
                         .font(AppFonts.body(15))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -40,7 +40,7 @@ struct SignInWithAppleView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     benefitRow(icon: "lock.fill", text: "Your data syncs across devices")
-                    benefitRow(icon: "sparkles", text: "Free 100 AI messages per month")
+                    benefitRow(icon: "sparkles", text: "10 free AI messages per month")
                     benefitRow(icon: "hand.raised.fill", text: "No tracking, no spam, ever")
                 }
                 .padding(.top, 8)
