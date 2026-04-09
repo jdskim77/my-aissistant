@@ -33,6 +33,7 @@ struct SeasonGoalView: View {
                 .padding(.vertical, 16)
                 .padding(.bottom, 32)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Season Goal")
             .navigationBarTitleDisplayMode(.inline)
@@ -63,7 +64,14 @@ struct SeasonGoalView: View {
     // MARK: - Active Goal Content
 
     private func activeGoalContent(_ goal: SeasonGoal) -> some View {
-        VStack(spacing: 20) {
+        // Compute task count once so we can decide whether to show the tasks
+        // card. When the user has zero tasks this week, the tasks card and the
+        // old standalone suggestion card were both repeating the same "no
+        // activity" message — we hide the tasks card and let the merged
+        // suggestion + CTA card carry the call to action.
+        let weekTaskCount = balanceManager.thisWeekTaskCounts()[goal.dimension] ?? 0
+
+        return VStack(spacing: 20) {
             // 1. Hero — Icon, name, intention, progress ring
             heroSection(goal)
 
@@ -73,14 +81,17 @@ struct SeasonGoalView: View {
             // 3. Weekly Trend
             weeklyTrendCard(goal)
 
-            // 4. This Week's Tasks
-            tasksCard(goal)
+            // 4. Suggestion + CTA — promoted directly under the trend so the
+            // primary action is above the fold and adjacent to the negative
+            // signal that motivates it.
+            suggestionWithCTACard(goal)
 
-            // 5. AI Suggestion
-            suggestionCard(goal)
-
-            // 5b. Suggest Tasks CTA — opens AI goal-task suggester sheet
-            suggestTasksButton(goal)
+            // 5. Tasks This Week — only shown when the user actually has tasks.
+            // Empty-state used to live here but it duplicated the suggestion
+            // copy three times in a row.
+            if weekTaskCount > 0 {
+                tasksCard(goal)
+            }
 
             // 6. End Goal (de-emphasized)
             Button {
@@ -395,9 +406,15 @@ struct SeasonGoalView: View {
         )
     }
 
-    // MARK: - 5. AI Suggestion
+    // MARK: - 4. Suggestion + CTA (merged)
 
-    private func suggestionCard(_ goal: SeasonGoal) -> some View {
+    /// Merged "what's lowest" tip and the "Suggest tasks" primary action.
+    /// Previously these were two separate elements at the bottom of the
+    /// screen — the user had to scroll past an empty tasks card to find the
+    /// button that would actually do something about the suggestion. Now the
+    /// suggestion explains WHY the user should act and the action button
+    /// sits directly underneath, in one elevated card promoted above the fold.
+    private func suggestionWithCTACard(_ goal: SeasonGoal) -> some View {
         let breakdowns = balanceManager.weeklyBreakdowns()
         let bd = breakdowns[goal.dimension] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
 
@@ -410,7 +427,8 @@ struct SeasonGoalView: View {
 
         let weakest = signals.min(by: { $0.2 < $1.2 })!
 
-        return VStack(spacing: 10) {
+        return VStack(alignment: .leading, spacing: 14) {
+            // Header: lightbulb + "Suggestion" title + weakest signal pill
             HStack(spacing: 8) {
                 Image(systemName: "lightbulb.fill")
                     .font(AppFonts.body(14))
@@ -428,45 +446,48 @@ struct SeasonGoalView: View {
                 .foregroundColor(AppColors.textMuted)
             }
 
+            // Body: the human-readable rationale
             Text(weakest.3)
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Primary CTA — pinned directly to the suggestion that motivates it.
+            // Tinted with the dimension color so it inherits visual identity
+            // from the goal itself.
+            Button {
+                Haptics.light()
+                suggestionsSheetGoal = GoalSheetIdentifier(id: goal.id, goal: goal)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "wand.and.stars")
+                        .font(AppFonts.body(14))
+                    Text("Suggest tasks")
+                        .font(AppFonts.bodyMedium(15))
+                }
+                .foregroundColor(AppColors.onAccent)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(
+                    LinearGradient(
+                        colors: [goal.dimension.color, goal.dimension.color.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(12)
+            }
+            .accessibilityLabel("Suggest tasks for your season goal")
+            .accessibilityHint("Opens an AI helper that proposes tasks aligned with your \(goal.dimension.label.lowercased()) goal")
         }
         .padding(16)
-        .background(AppColors.gold.opacity(0.06))
+        .background(AppColors.gold.opacity(0.08))
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColors.gold.opacity(0.15), lineWidth: 1)
+                .stroke(AppColors.gold.opacity(0.25), lineWidth: 1)
         )
-    }
-
-    // MARK: - 5b. Suggest Tasks Button
-
-    private func suggestTasksButton(_ goal: SeasonGoal) -> some View {
-        Button {
-            Haptics.light()
-            suggestionsSheetGoal = GoalSheetIdentifier(id: goal.id, goal: goal)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "wand.and.stars")
-                    .font(AppFonts.body(14))
-                Text("Suggest tasks")
-                    .font(AppFonts.bodyMedium(15))
-            }
-            .foregroundColor(AppColors.onAccent)
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(
-                LinearGradient(
-                    colors: [goal.dimension.color, goal.dimension.color.opacity(0.85)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .cornerRadius(14)
-        }
-        .accessibilityLabel("Suggest tasks for your season goal")
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: - New Goal Flow
