@@ -97,6 +97,36 @@ struct ScheduleView: View {
             // Header
             headerSection
 
+            // Calendar sync error — surfaced inline so the user understands
+            // why their imported events aren't refreshing. Previously this
+            // error was set on the manager but only displayed deep in
+            // CalendarSettings, so users on Schedule saw stale data with no
+            // explanation.
+            if let syncError = calendarSyncManager?.lastError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(AppFonts.caption(12))
+                    Text("Calendar sync paused — \(syncError)")
+                        .font(AppFonts.caption(12))
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Button {
+                        Haptics.light()
+                        Task { await calendarSyncManager?.syncGoogleCalendar() }
+                    } label: {
+                        Text("Retry")
+                            .font(AppFonts.bodyMedium(12))
+                    }
+                    .buttonStyle(.scale)
+                }
+                .foregroundColor(AppColors.coral)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppColors.coral.opacity(0.08))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Calendar sync error: \(syncError). Tap retry to try again.")
+            }
+
             // DayTicker
             DayTickerView(selectedDate: $selectedDate, taskCounts: taskCountsByDay)
                 .padding(.vertical, 8)
