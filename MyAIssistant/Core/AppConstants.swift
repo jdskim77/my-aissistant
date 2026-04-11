@@ -34,6 +34,14 @@ enum AppConstants {
         return UserDefaults.standard.bool(forKey: developerModeKey)
     }
 
+    /// Returns true ONLY if the user explicitly enabled developer mode via the
+    /// 7-tap gesture in Settings. Ignores `isBetaUnlimited`. Use this to gate
+    /// destructive developer tools (Wipe Data, Reset Onboarding) so beta
+    /// testers don't see them by default — only the developer does.
+    static var isDeveloperToolsEnabled: Bool {
+        UserDefaults.standard.bool(forKey: developerModeKey)
+    }
+
     // MARK: - Check-in Defaults
     static let defaultCheckInTimes: [Int] = [8, 13, 18, 22] // hours
     static let taskReminderLeadMinutes = 30
@@ -61,6 +69,7 @@ enum AppConstants {
     static let thrivnAccessTokenKey = "com.myaissistant.thrivn-access-token"
     static let thrivnRefreshTokenKey = "com.myaissistant.thrivn-refresh-token"
     static let thrivnUserIDKey = "com.myaissistant.thrivn-user-id"
+    static let hasSignedInWithAppleKey = "hasSignedInWithApple"
 
     // MARK: - UserDefaults Keys (Voice)
     static let voiceModeDefaultKey = "voiceModeDefault"
@@ -93,6 +102,15 @@ enum AppConstants {
     // MARK: - UserDefaults Keys (Greeting)
     static let lastGreetedTimestampKey = "lastGreetedTimestamp"
     static let lastGreetingTextKey = "lastGreetingText"
+
+    // MARK: - Feedback
+    /// Beta feedback Google Form (anonymous, structured questions).
+    /// Used while `isBetaUnlimited == true`.
+    static let feedbackGoogleFormURL = "https://forms.gle/ZiS7R5kGBYi7poJ6A"
+
+    /// Public support email (Apple Hide My Email forwarding alias — anonymous,
+    /// can be disabled instantly if abused). Used after public release.
+    static let supportEmail = "t5rwp4dwgh@privaterelay.appleid.com"
 
     // MARK: - App Group
     static let appGroupID = "group.com.myaissistant.shared"

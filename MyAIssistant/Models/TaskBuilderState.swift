@@ -155,6 +155,88 @@ class TaskBuilderState {
         step = .priority
     }
 
+    /// Attempt to parse free-text date input like "today", "tomorrow", "friday", "april 15".
+    /// Returns true if parsing succeeded and the step advanced.
+    func setDateFromText(_ text: String) -> Bool {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+
+        var parsed: Date?
+
+        switch lower {
+        case "today", "now":
+            parsed = today
+        case "tomorrow", "tmrw", "tmr":
+            parsed = cal.date(byAdding: .day, value: 1, to: today)
+        case "this week":
+            parsed = cal.date(byAdding: .day, value: 3, to: today)
+        default:
+            // Try weekday names: "monday", "friday", "sat", etc.
+            let weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+            let shortWeekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+            if let idx = weekdays.firstIndex(of: lower) ?? shortWeekdays.firstIndex(of: lower) {
+                let targetWeekday = idx + 1 // Calendar weekday is 1-based
+                let currentWeekday = cal.component(.weekday, from: today)
+                var daysAhead = targetWeekday - currentWeekday
+                if daysAhead <= 0 { daysAhead += 7 }
+                parsed = cal.date(byAdding: .day, value: daysAhead, to: today)
+            }
+
+            // Try natural date parsing as fallback
+            if parsed == nil {
+                let formatter = DateFormatter()
+                formatter.locale = Locale.current
+                for format in ["MMM d", "MMMM d", "MM/dd", "M/d"] {
+                    formatter.dateFormat = format
+                    if let d = formatter.date(from: text.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                        // Set to current year
+                        var components = cal.dateComponents([.month, .day], from: d)
+                        components.year = cal.component(.year, from: today)
+                        if let result = cal.date(from: components) {
+                            parsed = result < today ? cal.date(byAdding: .year, value: 1, to: result) : result
+                        }
+                        break
+                    }
+                }
+            }
+        }
+
+        guard let date = parsed else { return false }
+        selectedDate = date
+        step = .time
+        return true
+    }
+
+    /// Attempt to parse free-text time input like "11:08pm", "9am", "2:30 PM", "14:00".
+    /// Returns true if parsing succeeded and the step advanced.
+    func setTimeFromText(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+
+        let formats = ["h:mma", "h:mm a", "ha", "h a", "HH:mm", "H:mm", "hmma", "hmm a"]
+        var parsedTime: Date?
+        for format in formats {
+            formatter.dateFormat = format
+            if let d = formatter.date(from: trimmed) {
+                parsedTime = d
+                break
+            }
+        }
+
+        guard let time = parsedTime, let base = selectedDate else { return false }
+
+        let cal = Calendar.current
+        let hour = cal.component(.hour, from: time)
+        let minute = cal.component(.minute, from: time)
+        selectedDate = cal.date(bySettingHour: hour, minute: minute, second: 0, of: base)
+        timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
+        step = .category
+        return true
+    }
+
     func start() {
         step = .title
         title = nil

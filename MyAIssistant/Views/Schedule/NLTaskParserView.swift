@@ -78,6 +78,14 @@ struct NLTaskParserView: View {
                     .focused($inputFocused)
                     .submitLabel(.send)
                     .onSubmit { parseInput() }
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { inputFocused = false }
+                                .font(AppFonts.bodyMedium(15))
+                                .foregroundColor(AppColors.accent)
+                        }
+                    }
 
                 if let error = errorMessage {
                     Text(error)
@@ -266,6 +274,7 @@ struct NLTaskParserView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 

@@ -93,8 +93,8 @@
 		A300000005000000 /* AIProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000005000000 /* AIProviderFactory.swift */; };
 		A300000006000000 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006000000 /* KeychainService.swift */; };
 		A300000007000000 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000007000000 /* APIClient.swift */; };
-		A30000000A000000 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000A000000 /* NetworkMonitor.swift */; };
 		A300000008000000 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008000000 /* UsageTracker.swift */; };
+		A30000000A000000 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000A000000 /* NetworkMonitor.swift */; };
 		A3A200P2000000000001 /* GoalTaskSuggester.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000001 /* GoalTaskSuggester.swift */; };
 		A3A200P2000000000002 /* GoalSuggestionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A200P2000000000002 /* GoalSuggestionsSheet.swift */; };
 		A400000001000000 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001000000 /* NotificationManager.swift */; };
@@ -187,6 +187,9 @@
 		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
 		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
+		FF11223344000001 /* Breadcrumb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000002000000 /* Breadcrumb.swift */; };
+		AA00000003000000 /* DiagnosticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000004000000 /* DiagnosticsManager.swift */; };
+		AB00000001000000 /* DailyRecapGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000002000000 /* DailyRecapGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -253,6 +256,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AB00000002000000 /* DailyRecapGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRecapGenerator.swift; sourceTree = "<group>"; };
+		AA00000002000000 /* Breadcrumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breadcrumb.swift; sourceTree = "<group>"; };
+		AA00000004000000 /* DiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsManager.swift; sourceTree = "<group>"; };
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCompassRevealView.swift; sourceTree = "<group>"; };
@@ -334,8 +340,8 @@
 		B300000005000000 /* AIProviderFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
 		B300000006000000 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B300000007000000 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		B30000000A000000 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B300000008000000 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
+		B30000000A000000 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B3A200P2000000000001 /* GoalTaskSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTaskSuggester.swift; sourceTree = "<group>"; };
 		B3A200P2000000000002 /* GoalSuggestionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSuggestionsSheet.swift; sourceTree = "<group>"; };
 		B400000001000000 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
@@ -749,6 +755,8 @@
 			children = (
 				B200000001000000 /* AppConstants.swift */,
 				B200000002000000 /* DependencyContainer.swift */,
+				AA00000002000000 /* Breadcrumb.swift */,
+				AA00000004000000 /* DiagnosticsManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -797,6 +805,7 @@
 				B300000004000000 /* OpenAIProvider.swift */,
 				B300000005000000 /* AIProviderFactory.swift */,
 				B3A200P2000000000001 /* GoalTaskSuggester.swift */,
+				AB00000002000000 /* DailyRecapGenerator.swift */,
 			);
 			path = AI;
 			sourceTree = "<group>";
@@ -1336,6 +1345,9 @@
 				B6DAFEE3962D481100F25951 /* DailyBalanceCheckIn.swift in Sources */,
 				2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */,
 				188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */,
+				FF11223344000001 /* Breadcrumb.swift in Sources */,
+				AA00000003000000 /* DiagnosticsManager.swift in Sources */,
+				AB00000001000000 /* DailyRecapGenerator.swift in Sources */,
 				6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */,
 				65EB481849E9730352A7CA70 /* ScaleButtonStyle.swift in Sources */,
 				AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */,
@@ -1902,6 +1914,7 @@
 				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1912,7 +1925,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1930,6 +1943,7 @@
 				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1940,7 +1954,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

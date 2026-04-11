@@ -55,7 +55,12 @@ enum AIProviderFactory {
             return OpenAIProvider(apiKey: openAIKey)
         }
 
-        // 4. Nothing configured — surface a clear error.
+        // 4. Previously signed in but session expired — prompt re-auth, not API key setup.
+        if UserDefaults.standard.bool(forKey: AppConstants.hasSignedInWithAppleKey) {
+            throw AIError.sessionExpired
+        }
+
+        // 5. Nothing configured — surface a clear error.
         throw AIError.noAPIKey
     }
 

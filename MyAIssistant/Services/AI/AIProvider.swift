@@ -87,6 +87,7 @@ enum AIError: LocalizedError {
     case apiError(statusCode: Int, message: String)
     case parsingError
     case noAPIKey
+    case sessionExpired
     case rateLimited
     case networkError(Error)
 
@@ -100,6 +101,8 @@ enum AIError: LocalizedError {
             return "Failed to parse AI response"
         case .noAPIKey:
             return "No API key configured"
+        case .sessionExpired:
+            return "Your session has expired — please sign in again"
         case .rateLimited:
             return "Rate limited — please try again shortly"
         case .networkError(let error):

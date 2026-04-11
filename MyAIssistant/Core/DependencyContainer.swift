@@ -221,3 +221,29 @@ extension EnvironmentValues {
         set { self[InsightEngineKey.self] = newValue }
     }
 }
+
+// MARK: - DailyRecapGenerator Environment Key
+
+struct DailyRecapGeneratorKey: EnvironmentKey {
+    static let defaultValue: DailyRecapGenerator? = nil
+}
+
+extension EnvironmentValues {
+    var dailyRecapGenerator: DailyRecapGenerator? {
+        get { self[DailyRecapGeneratorKey.self] }
+        set { self[DailyRecapGeneratorKey.self] = newValue }
+    }
+}
+
+// MARK: - User Name Environment Key
+
+struct UserNameKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+}
+
+extension EnvironmentValues {
+    var userName: String? {
+        get { self[UserNameKey.self] }
+        set { self[UserNameKey.self] = newValue }
+    }
+}

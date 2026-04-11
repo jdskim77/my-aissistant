@@ -43,6 +43,9 @@ final class NotificationManager {
     func checkAuthorizationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         isAuthorized = settings.authorizationStatus == .authorized
+        if isAuthorized {
+            registerCategories()
+        }
     }
 
     // MARK: - Check-in Reminders

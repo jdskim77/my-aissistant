@@ -126,6 +126,7 @@ actor ThrivnBackendService: AIProvider {
             accessToken: envelope.data.access_token,
             refreshToken: envelope.data.refresh_token
         )
+        UserDefaults.standard.set(true, forKey: AppConstants.hasSignedInWithAppleKey)
         return envelope.data.user
     }
 
@@ -220,6 +221,7 @@ actor ThrivnBackendService: AIProvider {
         let refreshToken = keychain.read(key: AppConstants.thrivnRefreshTokenKey)
         keychain.delete(key: AppConstants.thrivnAccessTokenKey)
         keychain.delete(key: AppConstants.thrivnRefreshTokenKey)
+        UserDefaults.standard.removeObject(forKey: AppConstants.hasSignedInWithAppleKey)
 
         if let token = refreshToken, !token.isEmpty {
             struct Body: Encodable { let refresh_token: String }
@@ -242,6 +244,7 @@ actor ThrivnBackendService: AIProvider {
         let token = keychain.read(key: AppConstants.thrivnAccessTokenKey)
         keychain.delete(key: AppConstants.thrivnAccessTokenKey)
         keychain.delete(key: AppConstants.thrivnRefreshTokenKey)
+        UserDefaults.standard.removeObject(forKey: AppConstants.hasSignedInWithAppleKey)
 
         guard let token, !token.isEmpty else { return }
 

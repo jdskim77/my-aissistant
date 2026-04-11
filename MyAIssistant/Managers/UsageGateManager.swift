@@ -46,18 +46,24 @@ final class UsageGateManager {
     // MARK: - Gate Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
+        // Developer mode + beta period bypass everything, including integrity
+        // checks. Otherwise CloudKit cross-device HMAC mismatches could lock
+        // beta testers out of chat with no recovery path.
+        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
         guard t.verifyIntegrity() else { return false }
         return t.canSendChat(tier: tier)
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
         guard t.verifyIntegrity() else { return false }
         return t.canDoCheckIn(tier: tier)
     }
 
     func canSuggestGoalTasks(tier: SubscriptionTier) -> Bool {
+        if AppConstants.isDeveloperMode { return true }
         let t = tracker()
         guard t.verifyIntegrity() else { return false }
         return t.canSuggestGoalTasks(tier: tier)

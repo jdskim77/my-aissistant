@@ -431,6 +431,18 @@ struct SettingsView: View {
                                 subtitle: "Delete everything and re-run onboarding"
                             )
                         }
+
+                        Button {
+                            Haptics.light()
+                            scheduleTestNotification()
+                        } label: {
+                            settingsRow(
+                                icon: "bell.badge.fill",
+                                color: AppColors.accent,
+                                title: "Test Notification (60s)",
+                                subtitle: "Fires a check-in notification in 60 seconds"
+                            )
+                        }
                     } header: {
                         Text("Developer Tools")
                     } footer: {
@@ -744,6 +756,28 @@ struct SettingsView: View {
     /// will see the FTUE flow on next app cold-launch (or by force-quitting
     /// and reopening). Use this for fast iteration on onboarding copy/UX
     /// without losing your test data.
+    private func scheduleTestNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Evening Check-in"
+        content.body = "How's your evening going? Tap to check in."
+        content.sound = .default
+        content.categoryIdentifier = "CHECKIN"
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60, repeats: false)
+        let request = UNNotificationRequest(identifier: "dev-test-notification", content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            Task { @MainActor in
+                if let error {
+                    devResetResultMessage = "Failed: \(error.localizedDescription)"
+                } else {
+                    devResetResultMessage = "Notification scheduled. It will fire in 60 seconds.\n\nTo test:\n1. Lock your phone or go home\n2. Wait for the notification\n3. Force-quit the app (swipe up)\n4. Tap the notification\n5. App should open on Home tab"
+                }
+                showingDevResetResultAlert = true
+            }
+        }
+    }
+
     private func performResetOnboarding() {
         do {
             let descriptor = FetchDescriptor<UserProfile>()

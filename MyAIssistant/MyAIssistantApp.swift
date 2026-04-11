@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import os.log
 
 @main
 struct MyAIssistantApp: App {
@@ -22,12 +23,15 @@ struct MyAIssistantApp: App {
     @State private var themeManager = ThemeManager.shared
     @State private var notificationManager = NotificationManager()
     @State private var networkMonitor = NetworkMonitor()
+    @State private var dailyRecapGenerator: DailyRecapGenerator?
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
         // Initialize crash reporting FIRST so we capture any startup crashes.
         // No-op until SentryConfig.dsn is set.
         SentryConfig.start()
+        DiagnosticsManager.shared.startCollecting()
+        AppLogger.app.notice("App launching — \(Bundle.main.appVersion, privacy: .public)+\(Bundle.main.buildNumber, privacy: .public)")
 
         // One-time migration: force voice mode OFF for existing testers who had it
         // auto-enabled before the default was changed. Prevents unexpected mic
@@ -88,6 +92,14 @@ struct MyAIssistantApp: App {
 
         // Background task manager — pass the behavior engine so daily snapshots
         // can recalculate behavioral stats and use the active window count.
+        // Daily Recap generator — assembles context and calls AI for post-check-in insights
+        let drg = DailyRecapGenerator(modelContext: context, keychainService: keychainService)
+        drg.patternEngine = pe
+        drg.balanceManager = bm
+        drg.taskManager = tm
+        drg.chatManager = cm
+        self._dailyRecapGenerator = State(initialValue: drg)
+
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
@@ -128,6 +140,8 @@ struct MyAIssistantApp: App {
                 .environment(\.notificationManager, notificationManager)
                 .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.networkMonitor, networkMonitor)
+                .environment(\.dailyRecapGenerator, dailyRecapGenerator)
+                .environment(\.userName, UserDefaults.standard.string(forKey: "user_name"))
                 .task {
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
@@ -170,15 +184,27 @@ struct MyAIssistantApp: App {
                           let dateInterval = info["date"] as? TimeInterval else { return }
 
                     let date = Date(timeIntervalSince1970: dateInterval)
+                    let hasTime = info["hasTime"] as? Bool ?? false
                     let priority = TaskPriority(rawValue: priorityRaw) ?? .medium
+
+                    // If no time was specified, use start-of-day so it sorts
+                    // correctly and doesn't show a spurious "12:00 AM" time.
+                    let finalDate = hasTime ? date : Calendar.current.startOfDay(for: date)
                     let task = TaskItem(
                         title: title,
                         category: .personal,
                         priority: priority,
-                        date: date,
+                        date: finalDate,
                         icon: "📝"
                     )
                     taskManager.addTask(task)
+                    taskManager.updateWidgetData()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchDeletedTask)) { notification in
+                    guard let taskID = notification.userInfo?["taskID"] as? String else { return }
+                    if let task = taskManager.findTask(byID: taskID) {
+                        taskManager.deleteTask(task)
+                    }
                 }
         }
         .modelContainer(modelContainer)
@@ -200,15 +226,17 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let category = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
         let action = response.actionIdentifier
@@ -225,12 +253,13 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             if action == "SNOOZE_ALARM", let alarmID = userInfo["alarmID"] as? String {
                 let snoozeTime = Date().addingTimeInterval(5 * 60)
                 guard let content = response.notification.request.content.mutableCopy() as? UNMutableNotificationContent else {
+                    completionHandler()
                     return
                 }
                 let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: snoozeTime)
                 let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
                 let request = UNNotificationRequest(identifier: "alarm-\(alarmID)-snooze", content: content, trigger: trigger)
-                try? await center.add(request)
+                center.add(request) { _ in completionHandler() }
                 return
             }
             destination = "home"
@@ -238,16 +267,18 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             destination = "home"
         }
 
-        await MainActor.run {
-            // Store for cold-launch case (ContentView not yet mounted)
-            Self.shared.pendingDestination = destination
+        // Store for cold-launch case (ContentView not yet mounted)
+        Self.shared.pendingDestination = destination
 
+        DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: .didTapNotification,
                 object: nil,
                 userInfo: ["destination": destination, "category": category, "originalUserInfo": userInfo]
             )
         }
+
+        completionHandler()
     }
 }
 

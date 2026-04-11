@@ -491,6 +491,139 @@ enum AIPromptBuilder {
         return prompt
     }
 
+    // MARK: - Daily Recap Prompt
+
+    /// Generates a personalized post-check-in insight message.
+    /// The message should follow: Observation → Connection → Question.
+    /// Grounded in the user's actual data, never generic.
+    static func dailyRecapPrompt(
+        dayNumber: Int,
+        currentTimeSlot: String = "Evening",
+        userName: String?,
+        userFocusPreference: String?,
+        todaysCheckIns: [(slot: String, mood: Int, energy: Int, notes: String?)],
+        tasksCompletedToday: Int,
+        tasksTotalToday: Int,
+        streak: Int,
+        completionRate: Int,
+        balanceSummary: String,
+        recentMoodTrend: String,
+        previousRecapTopics: [String]
+    ) -> String {
+        let nameGreeting = userName.map { "\($0)'s" } ?? "The user's"
+        let focusNote = userFocusPreference.map {
+            "The user has said they want help primarily with: \($0). Weight your observations toward this."
+        } ?? ""
+
+        let checkInSummary = todaysCheckIns.map { ci in
+            var line = "\(ci.slot): mood \(ci.mood)/5, energy \(ci.energy)/5"
+            if let notes = ci.notes, !notes.isEmpty {
+                line += " — notes: \"\(notes.prefix(200))\""
+            }
+            return line
+        }.joined(separator: "\n")
+
+        let avoidTopics = previousRecapTopics.isEmpty ? "" :
+            "Avoid repeating these recent topics: \(previousRecapTopics.joined(separator: ", "))."
+
+        // Stage-matched instructions based on day number
+        let stageInstructions: String
+        switch dayNumber {
+        case 1:
+            stageInstructions = """
+            This is the user's FIRST DAY. Your job is to welcome them and show you're useful.
+            Introduce what you can do: help organize, spot patterns, think things through.
+            Keep it warm and practical. Don't analyze — you have no data yet.
+            End with something that invites them to talk to you.
+            """
+        case 2:
+            stageInstructions = """
+            Day 2. Focus on being practically helpful. Coach them to put more of their
+            day into the app. Suggest they can tell you tasks by voice or text.
+            Don't reference scores or patterns yet — too early.
+            """
+        case 3:
+            stageInstructions = """
+            Day 3. Ask what kind of help they want most: staying organized, spotting
+            patterns, remembering things, or something else. This is a genuine question —
+            their answer will shape future messages. Frame it as "what should I focus on?"
+            """
+        case 4:
+            stageInstructions = """
+            Day 4. Celebrate their consistency — 4 days is past the drop-off point.
+            Make one small observation if the data supports it. Build anticipation
+            for what you'll be able to show them with more data.
+            """
+        case 5:
+            stageInstructions = """
+            Day 5. Teach them a capability they might not know about — like talking to
+            you to add tasks, or asking you to prioritize their day. Show practical value.
+            """
+        case 6:
+            stageInstructions = """
+            Day 6. Ask if there are things they did this week that aren't in the app.
+            Help them capture the full picture before tomorrow's weekly recap.
+            """
+        case 7:
+            stageInstructions = """
+            Day 7. First weekly recap. Give 2-3 honest observations based on whatever
+            data exists. If data is sparse, say so — honesty builds trust. Connect their
+            stated intention to what they actually tracked. Ask what they want next week
+            to look different. If you don't have enough data for real insight, say that
+            directly rather than manufacturing fake observations.
+            """
+        default:
+            stageInstructions = """
+            Ongoing user (day \(dayNumber)). Provide one specific observation grounded
+            in their data, connected to a pattern or their stated focus. Ask one open-ended
+            question. Use MI techniques: reflect, affirm effort, evoke their own insights.
+            For weekly recaps (every 7th day), give 2-3 observations + one question about
+            next week.
+            """
+        }
+
+        return """
+        You are \(nameGreeting) personal assistant in a daily wellness and productivity app.
+        Today is \(formattedToday()). This is day \(dayNumber) of their journey.
+        They just completed their \(currentTimeSlot) check-in.
+
+        YOUR ROLE: Generate a short, personalized insight message shown after their check-in.
+        This is NOT a conversation — it's a single message they read. They can choose to
+        reply in the chat, or dismiss it.
+
+        \(stageInstructions)
+
+        \(focusNote)
+
+        TODAY'S CHECK-INS:
+        \(checkInSummary.isEmpty ? "No check-ins yet today." : checkInSummary)
+
+        TODAY'S TASKS: \(tasksCompletedToday)/\(tasksTotalToday) completed
+        STREAK: \(streak) days
+        30-DAY COMPLETION RATE: \(completionRate)%
+
+        \(balanceSummary.isEmpty ? "" : "LIFE BALANCE:\n\(balanceSummary)")
+
+        \(recentMoodTrend.isEmpty ? "" : "MOOD TREND (last 7 days):\n\(recentMoodTrend)")
+
+        \(avoidTopics)
+
+        RULES (non-negotiable):
+        - Maximum 2-3 sentences. Under 60 words.
+        - Structure: one observation + one question (or one welcome + one invitation on day 1).
+        - Every observation must reference something SPECIFIC from the data above.
+        - If you don't have enough data for a real insight, say so honestly.
+        - Never use "should," "must," or "need to."
+        - Never say "Great job!" "Amazing!" "Incredible!" — be specific and calm.
+        - Never say "I understand how you feel" — you're an AI.
+        - Never compare to other users.
+        - Ask ONE question, maximum. Make it answerable in 15 seconds.
+        - Use their name once at most. Don't start every message with their name.
+        - No emoji. No markdown. Plain conversational text.
+        - Vary your structure — don't always start with a greeting.
+        """
+    }
+
     // MARK: - Check-in Prompt
 
     static func checkInPrompt(

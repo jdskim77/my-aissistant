@@ -20,6 +20,7 @@ struct CheckInDetailView: View {
     @Environment(\.checkInManager) private var checkInManager
     @Environment(\.usageGateManager) private var usageGateManager
     @Environment(\.notificationManager) private var notificationManager
+    @Environment(\.checkInBehaviorEngine) private var checkInBehaviorEngine
     @State private var currentStep: CheckInStep = .greeting
     @State private var isGated = false
     @State private var selectedMood: Int? = nil
@@ -28,6 +29,12 @@ struct CheckInDetailView: View {
     @State private var aiGreeting = ""
     @State private var isLoadingGreeting = true
     @State private var record: CheckInRecord?
+
+    // Daily Recap
+    @Environment(\.dailyRecapGenerator) private var recapGenerator
+    @Environment(\.userName) private var userName
+    @State private var recapMessage: String?
+    @State private var isLoadingRecap = false
 
     private enum CheckInStep {
         case greeting
@@ -76,6 +83,7 @@ struct CheckInDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
                 }
+                .scrollDismissesKeyboard(.interactively)
 
                 // Navigation buttons
                 if currentStep != .complete {
@@ -344,6 +352,24 @@ struct CheckInDetailView: View {
                     .foregroundColor(AppColors.textSecondary)
             }
 
+            // Daily Recap Card
+            if isLoadingRecap {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .tint(AppColors.accentWarm)
+                    Text("Thinking...")
+                        .font(AppFonts.body(14))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Loading daily insight")
+                .padding()
+            } else if let recap = recapMessage {
+                recapCard(recap)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .animation(.easeOut(duration: 0.3), value: recapMessage)
+            }
+
             Button {
                 dismiss()
             } label: {
@@ -353,11 +379,86 @@ struct CheckInDetailView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(timeSlot.color)
-                    .cornerRadius(12)
+                    .cornerRadius(AppRadius.md)
             }
             .padding(.top, 10)
         }
         .padding(.top, 40)
+        .task {
+            await generateRecap()
+        }
+    }
+
+    // MARK: - Daily Recap Card
+
+    private func recapCard(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.accentWarm)
+                    .accessibilityHidden(true)
+                Text("I noticed something about your day")
+                    .font(AppFonts.bodyMedium(13))
+                    .foregroundColor(AppColors.accentWarm)
+            }
+
+            Text(message)
+                .font(AppFonts.body(15))
+                .foregroundColor(AppColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                // Dismiss check-in and navigate to AI chat with the daily recap context
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    NotificationCenter.default.post(
+                        name: .didTapNotification,
+                        object: nil,
+                        userInfo: ["destination": "assistant", "category": "DAILY_RECAP", "originalUserInfo": [:] as [String: Any]]
+                    )
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.left")
+                        .font(.caption)
+                    Text("Reply")
+                        .font(AppFonts.bodyMedium(13))
+                }
+                .foregroundColor(AppColors.accentWarm)
+                .frame(minHeight: 44)
+                .padding(.horizontal, 12)
+                .background(AppColors.accentWarm.opacity(0.1))
+                .cornerRadius(AppRadius.sm)
+            }
+            .buttonStyle(.scale)
+            .accessibilityLabel("Reply to daily insight")
+            .accessibilityHint("Opens the AI chat to continue this conversation")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.accentWarm.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .stroke(AppColors.accentWarm.opacity(0.15), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Daily insight from your assistant")
+    }
+
+    private func generateRecap() async {
+        guard let generator = recapGenerator else { return }
+        isLoadingRecap = true
+        recapMessage = await generator.generate(
+            currentTimeSlot: timeSlot,
+            userName: userName,
+            subscriptionTier: tier
+        )
+        isLoadingRecap = false
     }
 
     // MARK: - Navigation Buttons
@@ -482,6 +583,10 @@ struct CheckInDetailView: View {
             aiSummary: aiGreeting
         )
         usageGateManager?.recordCheckIn()
+
+        // Feed the adaptive behavior engine so it can learn the user's actual
+        // check-in patterns and adapt notification timing / surface suggestions.
+        checkInBehaviorEngine?.recordCompletion(window: timeSlot)
 
         // Cancel today's streak-at-risk reminder and re-schedule adaptive reminders
         // for tomorrow based on the updated streak value

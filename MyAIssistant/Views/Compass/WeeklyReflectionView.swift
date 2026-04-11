@@ -114,6 +114,7 @@ struct WeeklyReflectionView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Week in Review")
             .navigationBarTitleDisplayMode(.inline)

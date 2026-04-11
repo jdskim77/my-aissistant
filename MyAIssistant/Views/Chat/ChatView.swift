@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import AuthenticationServices
 
 struct ChatView: View {
     var onDismiss: (() -> Void)? = nil
@@ -33,6 +34,9 @@ struct ChatView: View {
     @State private var pendingCalendarActions: [CalendarAction] = []
     @FocusState private var isInputFocused: Bool
     @State private var taskBuilder = TaskBuilderState()
+    @State private var showReSignIn = false
+    @State private var isReSigningIn = false
+    @Environment(\.colorScheme) private var colorScheme
 
     private let quickActions = [
         "Create a Task",
@@ -62,8 +66,43 @@ struct ChatView: View {
             Divider()
                 .background(AppColors.border)
 
+            // Session expired banner — re-sign-in with Apple
+            if showReSignIn {
+                VStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.crop.circle.badge.exclamationmark")
+                            .font(AppFonts.bodyMedium(14))
+                        Text("Your session has expired.")
+                            .font(AppFonts.bodyMedium(13))
+                        Spacer()
+                        Button {
+                            showReSignIn = false
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .accessibilityLabel("Dismiss")
+                    }
+
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        handleReSignIn(result)
+                    }
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                    .frame(height: 44)
+                    .cornerRadius(10)
+                    .disabled(isReSigningIn)
+                    .opacity(isReSigningIn ? 0.5 : 1)
+                }
+                .foregroundColor(AppColors.accent)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AppColors.accent.opacity(0.06))
+            }
+
             // Error banner
-            if let errorMessage {
+            if let errorMessage, !showReSignIn {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 12))
@@ -494,10 +533,94 @@ struct ChatView: View {
 
     // MARK: - Actions
 
+    // MARK: - Re-Sign-In (Session Expired)
+
+    private func handleReSignIn(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let identityTokenData = credential.identityToken,
+                  let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+                errorMessage = "Couldn't read Apple credentials. Please try again."
+                return
+            }
+
+            let fullName: String? = {
+                let parts = [credential.fullName?.givenName, credential.fullName?.familyName]
+                    .compactMap { $0 }
+                    .filter { !$0.isEmpty }
+                return parts.isEmpty ? nil : parts.joined(separator: " ")
+            }()
+
+            isReSigningIn = true
+            Task {
+                do {
+                    let backend = ThrivnBackendService(keychain: keychainService)
+                    _ = try await backend.signInWithApple(
+                        identityToken: identityToken,
+                        fullName: fullName,
+                        email: credential.email
+                    )
+                    await MainActor.run {
+                        isReSigningIn = false
+                        showReSignIn = false
+                        errorMessage = nil
+                        Haptics.success()
+                    }
+                } catch {
+                    await MainActor.run {
+                        isReSigningIn = false
+                        errorMessage = "Sign-in failed. Please try again."
+                    }
+                }
+            }
+
+        case .failure(let error):
+            if (error as NSError).code == ASAuthorizationError.canceled.rawValue {
+                return
+            }
+            errorMessage = "Sign-in failed. Please try again."
+        }
+    }
+
     private func sendMessage(_ text: String) {
         // Intercept: if task builder is waiting for title, capture it instead of sending to AI
         if taskBuilder.step == .title {
             handleTaskBuilderTitleInput(text)
+            return
+        }
+
+        // Intercept: if task builder is on a chip-based step, try parsing free text
+        // before falling through to the AI. Supports typed dates ("friday", "tomorrow")
+        // and times ("11:08pm", "9am") so users aren't forced to tap chips.
+        if taskBuilder.isActive && taskBuilder.step != .idle {
+            insertLocalMessage(role: .user, text: text)
+
+            var handled = false
+            if taskBuilder.step == .date {
+                handled = taskBuilder.setDateFromText(text)
+                // If they typed a time during the date step (e.g. "11:13pm"),
+                // assume today and parse the time in one shot.
+                if !handled {
+                    taskBuilder.selectedDate = Calendar.current.startOfDay(for: Date())
+                    if taskBuilder.setTimeFromText(text) {
+                        handled = true
+                    } else {
+                        taskBuilder.selectedDate = nil
+                    }
+                }
+            } else if taskBuilder.step == .time {
+                handled = taskBuilder.setTimeFromText(text)
+            }
+
+            if handled {
+                insertLocalMessage(role: .assistant, text: taskBuilder.promptMessage)
+            } else {
+                insertLocalMessage(
+                    role: .assistant,
+                    text: "I didn't catch that. Please tap one of the options below, or tap Cancel to exit.\n\n\(taskBuilder.promptMessage)"
+                )
+            }
             return
         }
 
@@ -546,6 +669,8 @@ struct ChatView: View {
                 if result.hasError {
                     if result.errorMessage == "paywall" {
                         showChatPaywall = true
+                    } else if result.errorMessage == "sessionExpired" {
+                        showReSignIn = true
                     } else {
                         errorMessage = result.errorMessage
                     }

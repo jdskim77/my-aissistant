@@ -1,4 +1,4 @@
-import SwiftUI
+    import SwiftUI
 
 /// Renders the Thrivn app icon at full 1024×1024 size using the
 /// ThrivnCompassMark vector. Use this view in Xcode previews to
