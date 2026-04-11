@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import SwiftUI
 import UserNotifications
+import os.log
 
 // MARK: - ChatManager
 
@@ -170,16 +171,10 @@ final class ChatManager {
                 systemPromptVolatile: systemPromptVolatile
             )
 
-            #if DEBUG
-            let cacheCreate = aiResponse.cacheCreationInputTokens ?? 0
             let cacheRead = aiResponse.cacheReadInputTokens ?? 0
-            let cacheStatus: String = {
-                if cacheRead > 0 { return "HIT (\(cacheRead) tokens read)" }
-                if cacheCreate > 0 { return "MISS — wrote \(cacheCreate) tokens" }
-                return "no cache (block too small or disabled)"
-            }()
-            print("[ChatManager] Prompt cache: \(cacheStatus). Input \(aiResponse.inputTokens), output \(aiResponse.outputTokens).")
-            #endif
+            let cacheHit = cacheRead > 0
+            AppLogger.ai.info("AI response: in=\(aiResponse.inputTokens, privacy: .public) out=\(aiResponse.outputTokens, privacy: .public) cache=\(cacheHit ? "hit" : "miss", privacy: .public)")
+            Breadcrumb.add(category: "ai", message: "Chat response: \(aiResponse.outputTokens) tokens")
 
             let parsed = parseResponseTags(from: aiResponse.content)
 
@@ -225,6 +220,9 @@ final class ChatManager {
                 case .noAPIKey:
                     errorMsg = "No API key set. Add one in Settings."
                     assistantContent = "I need an API key to work. Please add your Anthropic API key in Settings to get started!"
+                case .sessionExpired:
+                    errorMsg = "sessionExpired"
+                    assistantContent = "Your session has expired. Please sign in again to continue chatting."
                 case .rateLimited:
                     errorMsg = "Too many requests — please wait a moment."
                     assistantContent = "I'm getting a lot of requests right now. Give me a moment and try again!"
@@ -247,10 +245,10 @@ final class ChatManager {
             } else {
                 errorMsg = "Unexpected error."
                 assistantContent = "Something went wrong: \(error.localizedDescription). Please try again."
-                #if DEBUG
-                print("[ChatManager] Unexpected error: \(error)")
-                #endif
             }
+
+            AppLogger.ai.error("Chat failed: \(errorMsg, privacy: .public)")
+            Breadcrumb.add(category: "ai", message: "Chat error: \(errorMsg)")
 
             let msg = ChatMessage(
                 role: .assistant,

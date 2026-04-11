@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import SwiftUI
 import WidgetKit
+import os.log
 
 @Observable @MainActor
 final class TaskManager {
@@ -16,12 +17,16 @@ final class TaskManager {
     func addTask(_ task: TaskItem) {
         modelContext.insert(task)
         modelContext.safeSave()
+        AppLogger.tasks.info("Task added: \(task.id, privacy: .public) title=\(task.title, privacy: .private)")
+        Breadcrumb.add(category: "tasks", message: "Added task")
         updateWidgetData()
     }
 
     func toggleCompletion(_ task: TaskItem) {
         task.done.toggle()
         task.completedAt = task.done ? Date() : nil
+        AppLogger.tasks.info("Task \(task.done ? "completed" : "uncompleted", privacy: .public): \(task.id, privacy: .public)")
+        Breadcrumb.add(category: "tasks", message: task.done ? "Completed task" : "Uncompleted task")
 
         // Auto-generate next recurring instance when marking done
         if task.done, task.recurrence != .none,
@@ -44,6 +49,8 @@ final class TaskManager {
     }
 
     func deleteTask(_ task: TaskItem) {
+        AppLogger.tasks.info("Task deleted: \(task.id, privacy: .public)")
+        Breadcrumb.add(category: "tasks", message: "Deleted task")
         modelContext.delete(task)
         modelContext.safeSave()
         updateWidgetData()
