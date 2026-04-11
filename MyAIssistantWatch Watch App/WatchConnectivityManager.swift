@@ -93,6 +93,33 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         }
     }
 
+    /// Delete a task from both Watch (optimistic) and iPhone.
+    func deleteTask(_ taskID: String) {
+        // Optimistically remove from local schedule
+        if let data = scheduleData,
+           let taskToDelete = data.tasks.first(where: { $0.id == taskID }) {
+            let updated = WatchScheduleData(
+                tasks: data.tasks.filter { $0.id != taskID },
+                streakDays: data.streakDays,
+                completedToday: taskToDelete.done ? max(0, data.completedToday - 1) : data.completedToday,
+                totalToday: max(0, data.totalToday - 1),
+                quoteText: data.quoteText,
+                quoteAuthor: data.quoteAuthor,
+                nextCheckIn: data.nextCheckIn,
+                updatedAt: Date()
+            )
+            persistAndUpdate(updated)
+        }
+
+        // Send to iPhone
+        let message: [String: Any] = ["deleteTask": taskID]
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        } else {
+            WCSession.default.transferUserInfo(message)
+        }
+    }
+
     /// Send a task completion toggle to the iPhone for processing.
     func toggleTaskCompletion(_ taskID: String) {
         // Optimistically update local state

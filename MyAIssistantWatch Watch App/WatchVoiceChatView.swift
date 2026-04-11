@@ -11,6 +11,7 @@ struct WatchVoiceChatView: View {
     @State private var errorMessage: String?
     @State private var apiTask: Task<Void, Never>?
     @State private var actionPerformed: String?
+    @State private var lastFailedQuery: String?
 
     // Text input (inline — user taps TextField to trigger watchOS dictation picker)
     @State private var textInputValue = ""
@@ -117,15 +118,35 @@ struct WatchVoiceChatView: View {
             .padding(.horizontal, 4)
         }
 
-        // Error
+        // Error with retry
         if let error = errorMessage {
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.caption2)
-                Text(error)
-                    .font(.caption2)
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                    Text(error)
+                        .font(.caption2)
+                }
+                .foregroundColor(.orange)
+
+                if let failedQuery = lastFailedQuery {
+                    Button {
+                        sendTextQuery(failedQuery)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption2)
+                            Text("Retry")
+                                .font(.caption2.weight(.medium))
+                        }
+                        .foregroundColor(.accentColor)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Retry last message")
+                }
             }
-            .foregroundColor(.orange)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity)
@@ -242,12 +263,23 @@ struct WatchVoiceChatView: View {
         actionPerformed = nil
         lastQuery = text
         aiResponse = ""
+        lastFailedQuery = nil
 
+        // Execute local actions IMMEDIATELY — don't wait for the API call.
+        // This fixes the bug where tasks weren't created if the API key was
+        // missing or the network was down.
+        parseAndExecuteActions(from: "", userQuery: text)
+
+        // If an action was performed locally, still send to Claude for a
+        // conversational response, but don't block the action on it.
         let scheduleContext = buildScheduleContext()
 
         guard let apiKey = connectivity.apiKey, !apiKey.isEmpty else {
             isProcessing = false
-            errorMessage = "Watch chat needs an Anthropic API key. Open Thrivn on your iPhone → Settings → API Keys."
+            // If we already performed an action, don't show the API key error
+            if actionPerformed == nil {
+                errorMessage = "Watch chat needs an Anthropic API key. Open Thrivn on your iPhone → Settings → API Keys."
+            }
             return
         }
 
@@ -264,10 +296,7 @@ struct WatchVoiceChatView: View {
                 await MainActor.run {
                     aiResponse = response
                     isProcessing = false
-                    parseAndExecuteActions(from: response, userQuery: text)
                     speakResponse(response)
-                    // Only play success haptic if no action was performed
-                    // (action-performing paths play their own haptic)
                     if actionPerformed == nil {
                         WKInterfaceDevice.current().play(.click)
                     }
@@ -278,6 +307,10 @@ struct WatchVoiceChatView: View {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     isProcessing = false
+                    // If an action was already performed, the core job is done —
+                    // just note that the AI response failed silently.
+                    if actionPerformed != nil { return }
+                    lastFailedQuery = text
                     WKInterfaceDevice.current().play(.failure)
                     if (error as? URLError)?.code == .notConnectedToInternet {
                         errorMessage = "No internet connection."

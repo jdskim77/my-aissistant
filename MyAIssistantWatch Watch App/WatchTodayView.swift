@@ -17,12 +17,10 @@ struct WatchTodayView: View {
             }
         }
         .navigationTitle("Today")
-        .onAppear {
-            connectivity.requestUpdate()
-            // Give sync a moment, then show empty state if no data arrives
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                hasLoaded = true
-            }
+        .onAppear { connectivity.requestUpdate() }
+        .task {
+            try? await Task.sleep(for: .seconds(2))
+            hasLoaded = true
         }
         .onChange(of: connectivity.scheduleData != nil) { _, hasData in
             if hasData { hasLoaded = true }
@@ -44,50 +42,97 @@ struct WatchTodayView: View {
     // MARK: - Schedule Content
 
     private func scheduleContent(_ data: WatchScheduleData) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+        List {
+            // Progress + streak header
+            Section {
                 progressHeader(data)
+                    .listRowBackground(Color.clear)
+            }
 
-                if let upNext = connectivity.upNextTask {
-                    upNextCard(upNext)
-                }
-
-                let remaining = connectivity.activeTasks.filter { $0.id != connectivity.upNextTask?.id }
-                if !remaining.isEmpty {
-                    ForEach(remaining) { task in
-                        taskRow(task)
+            // Up Next
+            if let upNext = connectivity.upNextTask {
+                Section {
+                    NavigationLink(value: upNext) {
+                        upNextCard(upNext)
                     }
-                }
-
-                if data.completedToday > 0 {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                            .font(.footnote)
-                        Text("\(data.completedToday) completed")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
+                    .listRowBackground(Color.accentColor.opacity(0.15))
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        Button {
+                            WKInterfaceDevice.current().play(.success)
+                            connectivity.toggleTaskCompletion(upNext.id)
+                        } label: {
+                            Label("Done", systemImage: "checkmark")
+                        }
+                        .tint(.green)
                     }
-                    .padding(.top, 4)
-                }
-
-                if data.streakDays > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .foregroundColor(.orange)
-                            .font(.footnote)
-                        Text("\(data.streakDays)-day streak")
-                            .font(.footnote.weight(.medium))
-                            .foregroundColor(.orange)
-                    }
-                }
-
-                if let quote = data.quoteText {
-                    wisdomCard(quote: quote, author: data.quoteAuthor)
                 }
             }
-            .padding(.horizontal, 4)
+
+            // Remaining active tasks
+            let remaining = connectivity.activeTasks.filter { $0.id != connectivity.upNextTask?.id }
+            if !remaining.isEmpty {
+                Section {
+                    ForEach(remaining) { task in
+                        NavigationLink(value: task) {
+                            taskRow(task)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                WKInterfaceDevice.current().play(.success)
+                                connectivity.deleteTask(task.id)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            Button {
+                                WKInterfaceDevice.current().play(.success)
+                                connectivity.toggleTaskCompletion(task.id)
+                            } label: {
+                                Label("Done", systemImage: "checkmark")
+                            }
+                            .tint(.green)
+                        }
+                    }
+                }
+            }
+
+            // Completed + streak
+            if data.completedToday > 0 || data.streakDays > 0 {
+                Section {
+                    if data.completedToday > 0 {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.footnote)
+                            Text("\(data.completedToday) completed")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    if data.streakDays > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .foregroundColor(.orange)
+                                .font(.footnote)
+                            Text("\(data.streakDays)-day streak")
+                                .font(.footnote.weight(.medium))
+                                .foregroundColor(.orange)
+                        }
+                    }
+                }
+            }
+
+            // Wisdom
+            if let quote = data.quoteText {
+                Section {
+                    wisdomCard(quote: quote, author: data.quoteAuthor)
+                        .listRowBackground(Color.clear)
+                }
+            }
         }
+        .listStyle(.carousel)
     }
 
     // MARK: - Progress Header
@@ -119,6 +164,8 @@ struct WatchTodayView: View {
 
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(data.completedToday) of \(data.totalToday) tasks done. \(data.totalToday - data.completedToday) remaining.")
     }
 
     // MARK: - Up Next Card
@@ -152,8 +199,11 @@ struct WatchTodayView: View {
                                 .foregroundColor(.white)
                         }
                     }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(task.done ? "Mark incomplete" : "Mark complete")
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(task.title)
@@ -171,10 +221,6 @@ struct WatchTodayView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.accentColor.opacity(0.15))
-        )
     }
 
     // MARK: - Task Row
@@ -198,8 +244,11 @@ struct WatchTodayView: View {
                             .foregroundColor(.white)
                     }
                 }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(task.done ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)

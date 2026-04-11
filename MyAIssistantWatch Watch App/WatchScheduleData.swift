@@ -13,7 +13,7 @@ struct WatchScheduleData: Codable {
     let nextCheckIn: String? // e.g. "Morning" or nil if all done
     let updatedAt: Date
 
-    struct WatchTask: Codable, Identifiable {
+    struct WatchTask: Codable, Identifiable, Hashable {
         let id: String
         let title: String
         let date: Date

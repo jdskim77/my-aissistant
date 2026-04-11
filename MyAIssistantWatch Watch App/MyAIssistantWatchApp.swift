@@ -41,6 +41,9 @@ struct MyAIssistantWatchApp: App {
                     .navigationDestination(isPresented: $showAddTask) {
                         WatchAddTaskView(connectivity: connectivityManager)
                     }
+                    .navigationDestination(for: WatchScheduleData.WatchTask.self) { task in
+                        WatchTaskDetailView(task: task, connectivity: connectivityManager)
+                    }
             }
             .onChange(of: connectivityManager.shouldOpenVoiceChat) { _, shouldOpen in
                 if shouldOpen {

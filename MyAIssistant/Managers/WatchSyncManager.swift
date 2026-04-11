@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import WatchConnectivity
+import os.log
 
 /// Manages iPhone → Watch data sync via WatchConnectivity.
 /// Sends schedule snapshots to the Watch app whenever tasks change.
@@ -145,6 +146,11 @@ extension WatchSyncManager: WCSessionDelegate {
                 NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: message)
             }
         }
+        if let taskID = message["deleteTask"] as? String {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchDeletedTask, object: nil, userInfo: ["taskID": taskID])
+            }
+        }
     }
 
     /// Handle queued messages sent via transferUserInfo (when iPhone wasn't reachable)
@@ -159,6 +165,11 @@ extension WatchSyncManager: WCSessionDelegate {
                 NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: userInfo)
             }
         }
+        if let taskID = userInfo["deleteTask"] as? String {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchDeletedTask, object: nil, userInfo: ["taskID": taskID])
+            }
+        }
     }
 }
 
@@ -166,4 +177,5 @@ extension Notification.Name {
     static let watchRequestedUpdate = Notification.Name("watchRequestedUpdate")
     static let watchToggledTask = Notification.Name("watchToggledTask")
     static let watchAddedTask = Notification.Name("watchAddedTask")
+    static let watchDeletedTask = Notification.Name("watchDeletedTask")
 }
