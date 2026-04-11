@@ -16,6 +16,9 @@ struct CalendarImportView: View {
                     // Apple Calendar section
                     appleCalendarSection
 
+                    // Apple Reminders section
+                    remindersSection
+
                     // Google Calendar section
                     googleCalendarSection
 
@@ -44,6 +47,9 @@ struct CalendarImportView: View {
                 Task {
                     if calendarSyncManager?.appleCalendarAuthorized == true {
                         await calendarSyncManager?.loadAppleCalendars()
+                    }
+                    if calendarSyncManager?.remindersAuthorized == true {
+                        await calendarSyncManager?.loadReminderLists()
                     }
                     // Load Google calendars if already connected
                     if await calendarSyncManager?.googleCalendarConnected() == true {
@@ -100,6 +106,69 @@ struct CalendarImportView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(AppColors.accent)
+                    .cornerRadius(10)
+                }
+            }
+        }
+        .padding(16)
+        .background(AppColors.card)
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Reminders Section
+
+    private var remindersSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "checklist")
+                    .font(AppFonts.heading(20))
+                    .foregroundColor(AppColors.accentWarm)
+                Text("Apple Reminders")
+                    .font(AppFonts.heading(17))
+                    .foregroundColor(AppColors.textPrimary)
+            }
+
+            if calendarSyncManager?.remindersAuthorized == true {
+                let lists = calendarSyncManager?.reminderLists ?? []
+                if lists.isEmpty {
+                    Text("No reminder lists found.")
+                        .font(AppFonts.body(14))
+                        .foregroundColor(AppColors.textMuted)
+                } else {
+                    ForEach(lists, id: \.calendarIdentifier) { list in
+                        calendarRow(
+                            name: list.title,
+                            color: Color(cgColor: list.cgColor),
+                            isLinked: isLinked(calendarID: list.calendarIdentifier, source: .reminders)
+                        ) {
+                            toggleReminderLink(list: list)
+                        }
+                    }
+                }
+            } else {
+                Text("Import your Apple Reminders as tasks. Completions sync both ways.")
+                    .font(AppFonts.body(14))
+                    .foregroundColor(AppColors.textMuted)
+
+                Button {
+                    Task {
+                        _ = await calendarSyncManager?.requestRemindersAccess()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checklist")
+                            .font(AppFonts.bodyMedium(14))
+                        Text("Connect Reminders")
+                            .font(AppFonts.bodyMedium(14))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(AppColors.accentWarm)
                     .cornerRadius(10)
                 }
             }
@@ -358,10 +427,11 @@ struct CalendarImportView: View {
                     .font(AppFonts.bodyMedium(13))
                     .foregroundColor(isLinked ? AppColors.accentWarm : AppColors.accent)
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 10)
                     .background(isLinked ? AppColors.accentWarm.opacity(0.1) : AppColors.accentLight)
                     .cornerRadius(8)
             }
+            .accessibilityLabel(isLinked ? "Unlink \(name)" : "Link \(name)")
         }
         .padding(.vertical, 4)
     }
@@ -385,6 +455,25 @@ struct CalendarImportView: View {
                 source: .apple,
                 calendarID: calendar.calendarIdentifier,
                 name: calendar.title,
+                color: hex
+            )
+        }
+    }
+
+    private func toggleReminderLink(list: EKCalendar) {
+        let links = calendarSyncManager?.linkedCalendars() ?? []
+        if let existing = links.first(where: { $0.calendarID == list.calendarIdentifier && $0.source == CalendarSource.reminders.rawValue }) {
+            calendarSyncManager?.unlinkCalendar(existing)
+        } else {
+            let components = list.cgColor.components ?? [0, 0.3, 0.1, 1]
+            let hex = String(format: "#%02X%02X%02X",
+                             Int((components[safe: 0] ?? 0) * 255),
+                             Int((components[safe: 1] ?? 0) * 255),
+                             Int((components[safe: 2] ?? 0) * 255))
+            calendarSyncManager?.linkCalendar(
+                source: .reminders,
+                calendarID: list.calendarIdentifier,
+                name: list.title,
                 color: hex
             )
         }

@@ -118,6 +118,7 @@ final class BackgroundTaskManager {
         task.expirationHandler = { task.setTaskCompleted(success: false) }
 
         await calendarSyncManager.syncAppleCalendar()
+        await calendarSyncManager.syncReminders()
         scheduleCalendarSync() // Reschedule
         task.setTaskCompleted(success: true)
     }

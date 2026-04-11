@@ -7,6 +7,7 @@ import os.log
 @Observable @MainActor
 final class TaskManager {
     private let modelContext: ModelContext
+    var calendarSyncManager: CalendarSyncManager?
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -28,6 +29,9 @@ final class TaskManager {
         AppLogger.tasks.info("Task \(task.done ? "completed" : "uncompleted", privacy: .public): \(task.id, privacy: .public)")
         Breadcrumb.add(category: "tasks", message: task.done ? "Completed task" : "Uncompleted task")
 
+        // Sync completion state back to Apple Reminders (two-way sync)
+        calendarSyncManager?.syncTaskCompletionToReminder(task)
+
         // Auto-generate next recurring instance when marking done
         if task.done, task.recurrence != .none,
            let nextDate = task.recurrence.nextDate(after: task.date) {
@@ -40,7 +44,7 @@ final class TaskManager {
                 notes: task.notes,
                 recurrence: task.recurrence
             )
-            next.externalCalendarID = task.externalCalendarID
+            // D-06 fix: clone gets NO externalCalendarID — it's a new independent task
             modelContext.insert(next)
         }
 

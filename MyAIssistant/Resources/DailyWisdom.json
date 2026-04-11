@@ -20,16 +20,6 @@
     "dimension": "mental"
   },
   {
-    "text": "In some ways suffering ceases to be suffering at the moment it finds a meaning.",
-    "author": "Viktor Frankl",
-    "dimension": "spiritual"
-  },
-  {
-    "text": "What is to give light must endure burning.",
-    "author": "Viktor Frankl",
-    "dimension": "spiritual"
-  },
-  {
     "text": "Happiness cannot be pursued; it must ensue.",
     "author": "Viktor Frankl",
     "dimension": "emotional"
@@ -40,39 +30,9 @@
     "dimension": "spiritual"
   },
   {
-    "text": "If there is meaning in life at all, then there must be meaning in suffering.",
-    "author": "Viktor Frankl",
-    "dimension": "spiritual"
-  },
-  {
-    "text": "Love is the only way to grasp another human being in the innermost core of his personality.",
-    "author": "Viktor Frankl",
-    "dimension": "emotional"
-  },
-  {
     "text": "It did not really matter what we expected from life, but rather what life expected from us.",
     "author": "Viktor Frankl",
     "dimension": "spiritual"
-  },
-  {
-    "text": "The one thing you can't take away from me is the way I choose to respond to what you do to me.",
-    "author": "Viktor Frankl",
-    "dimension": "mental"
-  },
-  {
-    "text": "So live as if you were living already for the second time and as if you had acted the first time as wrongly as you are about to act now.",
-    "author": "Viktor Frankl",
-    "dimension": "spiritual"
-  },
-  {
-    "text": "An abnormal reaction to an abnormal situation is normal behavior.",
-    "author": "Viktor Frankl",
-    "dimension": "emotional"
-  },
-  {
-    "text": "No man should judge unless he asks himself in absolute honesty whether in a similar situation he might not have done the same.",
-    "author": "Viktor Frankl",
-    "dimension": "emotional"
   },
   {
     "text": "Waste no more time arguing what a good man should be. Be one.",
@@ -90,24 +50,9 @@
     "dimension": "mental"
   },
   {
-    "text": "Choose not to be harmed — and you won't feel harmed. Don't feel harmed — and you haven't been.",
-    "author": "Marcus Aurelius",
-    "dimension": "emotional"
-  },
-  {
     "text": "When you arise in the morning, think of what a precious privilege it is to be alive.",
     "author": "Marcus Aurelius",
     "dimension": "spiritual"
-  },
-  {
-    "text": "The best revenge is not to be like your enemy.",
-    "author": "Marcus Aurelius",
-    "dimension": "emotional"
-  },
-  {
-    "text": "It is not death that a man should fear, but he should fear never beginning to live.",
-    "author": "Marcus Aurelius",
-    "dimension": "general"
   },
   {
     "text": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.",
@@ -116,11 +61,6 @@
   },
   {
     "text": "Very little is needed to make a happy life; it is all within yourself, in your way of thinking.",
-    "author": "Marcus Aurelius",
-    "dimension": "emotional"
-  },
-  {
-    "text": "Be tolerant with others and strict with yourself.",
     "author": "Marcus Aurelius",
     "dimension": "emotional"
   },
@@ -148,11 +88,6 @@
     "text": "If a man knows not which port he sails, no wind is favorable.",
     "author": "Seneca",
     "dimension": "spiritual"
-  },
-  {
-    "text": "He who fears death will never do anything worthy of a man who is alive.",
-    "author": "Seneca",
-    "dimension": "general"
   },
   {
     "text": "The whole future lies in uncertainty: live immediately.",
@@ -275,21 +210,6 @@
     "dimension": "physical"
   },
   {
-    "text": "I don't stop when I'm tired. I stop when I'm done.",
-    "author": "David Goggins",
-    "dimension": "physical"
-  },
-  {
-    "text": "Don't count the days, make the days count.",
-    "author": "Muhammad Ali",
-    "dimension": "physical"
-  },
-  {
-    "text": "Discipline is the bridge between goals and accomplishment.",
-    "author": "Jim Rohn",
-    "dimension": "physical"
-  },
-  {
     "text": "The human body is the best picture of the human soul.",
     "author": "Ludwig Wittgenstein",
     "dimension": "physical"
@@ -297,16 +217,6 @@
   {
     "text": "Movement is a medicine for creating change in a person's physical, emotional, and mental states.",
     "author": "Carol Welch",
-    "dimension": "physical"
-  },
-  {
-    "text": "Your body hears everything your mind says. Stay positive.",
-    "author": "Naomi Judd",
-    "dimension": "physical"
-  },
-  {
-    "text": "A healthy outside starts from the inside.",
-    "author": "Robert Urich",
     "dimension": "physical"
   },
   {
@@ -322,16 +232,6 @@
   {
     "text": "Strength does not come from physical capacity. It comes from an indomitable will.",
     "author": "Mahatma Gandhi",
-    "dimension": "physical"
-  },
-  {
-    "text": "Exercise is king and nutrition is queen. Together you have a kingdom.",
-    "author": "Jack LaLanne",
-    "dimension": "physical"
-  },
-  {
-    "text": "The resistance that you fight physically in the gym and the resistance that you fight in life can only build a strong character.",
-    "author": "Arnold Schwarzenegger",
     "dimension": "physical"
   },
   {
@@ -360,11 +260,6 @@
     "dimension": "physical"
   },
   {
-    "text": "The groundwork for all happiness is good health.",
-    "author": "Leigh Hunt",
-    "dimension": "physical"
-  },
-  {
     "text": "A reader lives a thousand lives before he dies. The man who never reads lives only one.",
     "author": "George R.R. Martin",
     "dimension": "mental"
@@ -380,11 +275,6 @@
     "dimension": "mental"
   },
   {
-    "text": "The more that you read, the more things you will know. The more that you learn, the more places you'll go.",
-    "author": "Dr. Seuss",
-    "dimension": "mental"
-  },
-  {
     "text": "Knowing yourself is the beginning of all wisdom.",
     "author": "Aristotle",
     "dimension": "mental"
@@ -397,16 +287,6 @@
   {
     "text": "The only true wisdom is in knowing you know nothing.",
     "author": "Socrates",
-    "dimension": "mental"
-  },
-  {
-    "text": "Education is the most powerful weapon which you can use to change the world.",
-    "author": "Nelson Mandela",
-    "dimension": "mental"
-  },
-  {
-    "text": "Intellectual growth should commence at birth and cease only at death.",
-    "author": "Albert Einstein",
     "dimension": "mental"
   },
   {
@@ -435,11 +315,6 @@
     "dimension": "mental"
   },
   {
-    "text": "Our bodies are our gardens, to the which our wills are gardeners.",
-    "author": "William Shakespeare",
-    "dimension": "physical"
-  },
-  {
     "text": "The first wealth is health.",
     "author": "Ralph Waldo Emerson",
     "dimension": "physical"
@@ -460,16 +335,6 @@
     "dimension": "physical"
   },
   {
-    "text": "Health is not valued until sickness comes.",
-    "author": "Thomas Fuller",
-    "dimension": "physical"
-  },
-  {
-    "text": "The greatest wealth is health.",
-    "author": "Virgil",
-    "dimension": "physical"
-  },
-  {
     "text": "A fit body, a calm mind, a house full of love. These things cannot be bought — they must be earned.",
     "author": "Naval Ravikant",
     "dimension": "physical"
@@ -477,11 +342,6 @@
   {
     "text": "People do not decide their futures. They decide their habits, and their habits decide their futures.",
     "author": "F.M. Alexander",
-    "dimension": "general"
-  },
-  {
-    "text": "The people who are crazy enough to think they can change the world are the ones who do.",
-    "author": "Steve Jobs",
     "dimension": "general"
   },
   {
@@ -540,11 +400,6 @@
     "dimension": "emotional"
   },
   {
-    "text": "If you don't love yourself, how in the hell you gonna love somebody else?",
-    "author": "Maya Angelou",
-    "dimension": "emotional"
-  },
-  {
     "text": "There is no greater agony than bearing an untold story inside you.",
     "author": "Maya Angelou",
     "dimension": "emotional"
@@ -585,11 +440,6 @@
     "dimension": "emotional"
   },
   {
-    "text": "The greatest gift you can give someone is your time, your attention, your love, your concern.",
-    "author": "Joel Osteen",
-    "dimension": "emotional"
-  },
-  {
     "text": "We don't see things as they are, we see them as we are.",
     "author": "Anais Nin",
     "dimension": "emotional"
@@ -607,11 +457,6 @@
   {
     "text": "The most precious gift we can offer anyone is our attention.",
     "author": "Thich Nhat Hanh",
-    "dimension": "emotional"
-  },
-  {
-    "text": "We must learn to live together as brothers or perish together as fools.",
-    "author": "Martin Luther King Jr.",
     "dimension": "emotional"
   },
   {
@@ -690,11 +535,6 @@
     "dimension": "spiritual"
   },
   {
-    "text": "Nothing binds you except your thoughts; nothing limits you except your fear; nothing controls you except your beliefs.",
-    "author": "Marianne Williamson",
-    "dimension": "spiritual"
-  },
-  {
     "text": "The privilege of a lifetime is being who you are.",
     "author": "Joseph Campbell",
     "dimension": "spiritual"
@@ -722,11 +562,6 @@
   {
     "text": "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.",
     "author": "Ralph Waldo Emerson",
-    "dimension": "general"
-  },
-  {
-    "text": "Energy and persistence conquer all things.",
-    "author": "Benjamin Franklin",
     "dimension": "general"
   },
   {

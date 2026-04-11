@@ -49,6 +49,8 @@ struct CalendarSettingsView: View {
                             .foregroundColor(AppColors.accentWarm)
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Apple Calendar, \(calendarSyncManager?.appleCalendarAuthorized == true ? "connected" : "not connected")")
 
                 HStack(spacing: 14) {
                     Image(systemName: "globe")
@@ -75,6 +77,33 @@ struct CalendarSettingsView: View {
                             .foregroundColor(AppColors.textMuted)
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Google Calendar, \(googleStatusText)")
+
+                HStack(spacing: 14) {
+                    Image(systemName: "checklist")
+                        .font(AppFonts.heading(20))
+                        .foregroundColor(AppColors.accentWarm)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Apple Reminders")
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text(calendarSyncManager?.remindersAuthorized == true ? "Connected" : "Not connected")
+                            .font(AppFonts.caption(13))
+                            .foregroundColor(calendarSyncManager?.remindersAuthorized == true ? AppColors.accentWarm : AppColors.textMuted)
+                    }
+
+                    Spacer()
+
+                    if calendarSyncManager?.remindersAuthorized == true {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.accentWarm)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Apple Reminders, \(calendarSyncManager?.remindersAuthorized == true ? "connected" : "not connected")")
             } header: {
                 Text("Calendar Sources")
             }
@@ -217,12 +246,13 @@ struct CalendarSettingsView: View {
 
                             Spacer()
 
-                            Toggle("", isOn: Binding(
+                            Toggle(link.name, isOn: Binding(
                                 get: { link.enabled },
                                 set: { _ in calendarSyncManager?.toggleCalendarLink(link) }
                             ))
                             .labelsHidden()
                             .tint(AppColors.accent)
+                            .accessibilityLabel("\(link.name) sync")
                         }
                     }
                 }

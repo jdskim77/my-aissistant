@@ -69,6 +69,7 @@ struct MyAIssistantApp: App {
         let ugm = UsageGateManager(modelContext: context)
         let bm = BalanceManager(modelContext: context)
 
+        tm.calendarSyncManager = csm
         self._taskManager = State(initialValue: tm)
         self._patternEngine = State(initialValue: pe)
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
