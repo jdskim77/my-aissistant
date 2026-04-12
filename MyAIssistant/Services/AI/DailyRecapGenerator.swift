@@ -14,6 +14,7 @@ final class DailyRecapGenerator {
     var balanceManager: BalanceManager?
     var taskManager: TaskManager?
     var chatManager: ChatManager?
+    var habitManager: HabitManager?
 
     /// The conversation ID used for daily recap messages in the chat.
     static let conversationID = "daily-recap"
@@ -69,6 +70,9 @@ final class DailyRecapGenerator {
         // User focus preference
         let focusPreference = UserDefaults.standard.string(forKey: "dailyRecap_userFocusPreference")
 
+        // Active habits status
+        let habitSummary = fetchHabitSummary()
+
         let prompt = AIPromptBuilder.dailyRecapPrompt(
             dayNumber: day,
             currentTimeSlot: currentTimeSlot.rawValue,
@@ -81,7 +85,8 @@ final class DailyRecapGenerator {
             completionRate: completionRate,
             balanceSummary: balanceSummary,
             recentMoodTrend: moodTrend,
-            previousRecapTopics: previousTopics
+            previousRecapTopics: previousTopics,
+            habitSummary: habitSummary
         )
 
         do {
@@ -149,6 +154,42 @@ final class DailyRecapGenerator {
         return trend.map { point in
             "\(formatter.string(from: point.date)): mood \(String(format: "%.1f", point.mood))"
         }.joined(separator: ", ")
+    }
+
+    private func fetchHabitSummary() -> String {
+        var descriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil }
+        )
+        descriptor.fetchLimit = 20
+        let habits = (try? modelContext.fetch(descriptor)) ?? []
+        guard !habits.isEmpty else { return "" }
+
+        return habits.map { habit in
+            let completedToday = habit.isCompletedOn(Date())
+            let streak = habit.currentStreak()
+            let rate = Int(habit.completionRate(days: 7) * 100)
+            let daysSince = daysSinceLastCompletion(habit)
+            var line = "\(habit.icon) \(habit.title): "
+            if completedToday {
+                line += "done today"
+            } else if let days = daysSince {
+                line += "\(days) day\(days == 1 ? "" : "s") since last"
+            } else {
+                line += "never completed"
+            }
+            line += ", streak \(streak), 7-day rate \(rate)%"
+            return line
+        }.joined(separator: "\n")
+    }
+
+    private func daysSinceLastCompletion(_ habit: HabitItem) -> Int? {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        for offset in 1...90 {
+            guard let date = cal.date(byAdding: .day, value: -offset, to: today) else { break }
+            if habit.isCompletedOn(date) { return offset }
+        }
+        return nil
     }
 
     private func fetchRecentRecapTopics(last count: Int) -> [String] {

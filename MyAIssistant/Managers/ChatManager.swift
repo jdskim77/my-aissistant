@@ -161,7 +161,8 @@ final class ChatManager {
                 scheduleSummary: taskManager?.scheduleSummary() ?? "",
                 completionRate: patternEngine?.completionRate() ?? 0,
                 streak: patternEngine?.currentStreak() ?? 0,
-                activitySummary: patternEngine?.activitySummaryText() ?? ""
+                activitySummary: patternEngine?.activitySummaryText() ?? "",
+                habitSummary: buildHabitSummary()
             )
 
             let aiResponse = try await provider.sendMessage(
@@ -280,7 +281,7 @@ final class ChatManager {
 
         for action in actions {
             switch action {
-            case .create(let title, let start, let end, let description, let recurrence):
+            case .create(let title, let start, let end, let description, let recurrence, let dimension):
                 // Dedup: check if a task with the same title exists on this day
                 let calendar = Calendar.current
                 let dayStart = calendar.startOfDay(for: start)
@@ -332,6 +333,7 @@ final class ChatManager {
                     recurrence: recurrence
                 )
                 task.externalCalendarID = calendarID
+                task.dimension = dimension
                 modelContext.insert(task)
                 modelContext.safeSave()
 
@@ -479,7 +481,7 @@ final class ChatManager {
     // MARK: - Response Parsing (shared types + logic)
 
     enum CalendarAction {
-        case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence)
+        case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence, dimension: LifeDimension?)
         case delete(eventID: String)
     }
 
@@ -496,6 +498,23 @@ final class ChatManager {
         let alarms: [ParsedAlarm]
     }
 
+    /// Build a summary of active habits for the AI volatile context.
+    private func buildHabitSummary() -> String {
+        var descriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil }
+        )
+        descriptor.fetchLimit = 15
+        let habits = (try? modelContext.fetch(descriptor)) ?? []
+        guard !habits.isEmpty else { return "" }
+
+        let today = Date()
+        return habits.map { h in
+            let done = h.isCompletedOn(today) ? "done" : "not done"
+            let streak = h.currentStreak()
+            return "\(h.icon) \(h.title): \(done) today, streak \(streak)"
+        }.joined(separator: "\n")
+    }
+
     private func parseResponseTags(from text: String) -> ParsedResponse {
         var displayText = text
         var calendarActions: [CalendarAction] = []
@@ -504,8 +523,8 @@ final class ChatManager {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-        // Parse CREATE_EVENT tags
-        let createPattern = /\[\[CREATE_EVENT:(.+?)\|(.+?)\|(.+?)\|(.*?)(?:\|(daily|weekly|biweekly|monthly))?\]\]/
+        // Parse CREATE_EVENT tags — format: [[CREATE_EVENT:Title|start|end|desc|recurrence|dimension]]
+        let createPattern = /\[\[CREATE_EVENT:(.+?)\|(.+?)\|(.+?)\|(.*?)(?:\|(daily|weekly|biweekly|monthly))?(?:\|(physical|mental|emotional|spiritual))?\]\]/
         for match in text.matches(of: createPattern) {
             let title = String(match.1).trimmingCharacters(in: .whitespaces)
             let startStr = String(match.2).trimmingCharacters(in: .whitespaces)
@@ -513,6 +532,8 @@ final class ChatManager {
             let desc = String(match.4).trimmingCharacters(in: .whitespaces)
             let recStr = match.5.map { String($0).lowercased() }
             let recurrence = recStr.flatMap { TaskRecurrence(rawValue: $0.capitalized) } ?? .none
+            let dimStr = match.6.map { String($0).lowercased() }
+            let dimension = dimStr.flatMap { LifeDimension(rawValue: $0) }
 
             if let startDate = dateFormatter.date(from: startStr),
                let endDate = dateFormatter.date(from: endStr) {
@@ -521,7 +542,8 @@ final class ChatManager {
                     start: startDate,
                     end: endDate,
                     description: desc.isEmpty ? nil : desc,
-                    recurrence: recurrence
+                    recurrence: recurrence,
+                    dimension: dimension
                 ))
             }
             displayText = displayText.replacingOccurrences(of: String(match.0), with: "")

@@ -255,6 +255,64 @@ final class NotificationManager {
             .removePendingNotificationRequests(withIdentifiers: [AppConstants.streakReminderIdentifier])
     }
 
+    // MARK: - Habit Reminders
+
+    /// Schedule daily reminders for all active habits that have a reminder time set.
+    func scheduleHabitReminders(_ habits: [HabitItem]) {
+        let center = UNUserNotificationCenter.current()
+
+        // Remove ALL existing habit reminders (including archived/deleted ones)
+        center.getPendingNotificationRequests { requests in
+            let habitIDs = requests
+                .filter { $0.identifier.hasPrefix("habit-") }
+                .map(\.identifier)
+            if !habitIDs.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: habitIDs)
+            }
+        }
+
+        for habit in habits where !habit.isArchived {
+            guard let hour = habit.reminderHour, let minute = habit.reminderMinute else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = "\(habit.icon) \(habit.title)"
+            content.body = habitReminderBody(for: habit)
+            content.sound = .default
+            content.categoryIdentifier = "HABIT"
+            content.userInfo = ["habitID": habit.id]
+
+            var dateComponents = DateComponents()
+            dateComponents.hour = hour
+            dateComponents.minute = minute
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+            let request = UNNotificationRequest(
+                identifier: "habit-\(habit.id)",
+                content: content,
+                trigger: trigger
+            )
+
+            center.add(request)
+        }
+    }
+
+    /// Cancel reminder for a specific habit (e.g., when archived or deleted).
+    func cancelHabitReminder(habitID: String) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["habit-\(habitID)"])
+    }
+
+    private func habitReminderBody(for habit: HabitItem) -> String {
+        let streak = habit.currentStreak()
+        if streak >= 7 {
+            return "\(streak)-day streak going. Keep it alive."
+        } else if streak >= 3 {
+            return "\(streak) days in a row — building momentum."
+        } else {
+            return "Time for your daily \(habit.title.lowercased())."
+        }
+    }
+
     // MARK: - Cancel All
 
     func cancelAllReminders() {
@@ -319,7 +377,18 @@ final class NotificationManager {
             intentIdentifiers: []
         )
 
+        let completeHabitAction = UNNotificationAction(
+            identifier: "COMPLETE_HABIT",
+            title: "Done",
+            options: []
+        )
+        let habitCategory = UNNotificationCategory(
+            identifier: "HABIT",
+            actions: [completeHabitAction, dismissAction],
+            intentIdentifiers: []
+        )
+
         UNUserNotificationCenter.current()
-            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory, streakCategory])
+            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory, streakCategory, habitCategory])
     }
 }

@@ -104,8 +104,14 @@ enum AIPromptBuilder {
         include an action tag in your response. The user will see your conversational text; the \
         app will parse and execute the action tags automatically.
 
-        To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description]]
-        To create a recurring task: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|daily]] (options: daily, weekly, biweekly, monthly)
+        To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|recurrence|dimension]]
+        Parameters: Title, start time, end time, description (optional), recurrence (optional: daily/weekly/biweekly/monthly), dimension (optional: physical/mental/emotional/spiritual)
+        The dimension indicates which life area this task serves. ALWAYS include it when possible:
+        - physical: exercise, sleep, nutrition, movement, healthcare, body care
+        - mental: learning, reading, deep work, problem-solving, focus time, creative work
+        - emotional: relationships, social time, therapy, journaling, fun, self-care, connection
+        - spiritual: service to others, volunteering, contribution, gratitude, helping, giving back
+        If unsure, infer from context. "Walk" → physical. "Read" → mental. "Call Mom" → emotional. "Volunteer" → spiritual.
         To delete a task/event: [[DELETE_EVENT:event_id]]
 
         Always confirm the action in your conversational text. Use these tags whenever the user \
@@ -113,15 +119,16 @@ enum AIPromptBuilder {
         duration is 1 hour if not specified. Use today's date if no date is mentioned.
 
         General CREATE_EVENT examples (the actual date format will be provided per-request):
-        - "Add a 30-minute walk to my morning" → CREATE_EVENT with a 30-min duration starting at \
-          a sensible morning hour (7:00 or 8:00)
-        - "Schedule a call with Mom on Sunday afternoon" → CREATE_EVENT with title "Call Mom", \
-          Sunday's date, ~14:00–15:00
-        - "Block 2 hours for deep work tomorrow" → CREATE_EVENT with title "Deep work", duration \
-          120 min, default to 9:00 or 10:00 unless context suggests otherwise
-        - "Remind me to stretch every evening at 9" → CREATE_EVENT with daily recurrence, 21:00
-        - "Add a dentist appointment next Tuesday at 11am" → CREATE_EVENT with the next Tuesday's \
-          date, 11:00–12:00, title "Dentist"
+        - "Add a 30-minute walk to my morning" → CREATE_EVENT with physical dimension, 30-min \
+          duration starting at a sensible morning hour (7:00 or 8:00)
+        - "Schedule a call with Mom on Sunday afternoon" → CREATE_EVENT with emotional dimension, \
+          title "Call Mom", Sunday's date, ~14:00–15:00
+        - "Block 2 hours for deep work tomorrow" → CREATE_EVENT with mental dimension, title \
+          "Deep work", duration 120 min, default to 9:00 or 10:00
+        - "Remind me to stretch every evening at 9" → CREATE_EVENT with physical dimension, daily recurrence, 21:00
+        - "Add a dentist appointment next Tuesday at 11am" → CREATE_EVENT with physical dimension, \
+          next Tuesday's date, 11:00–12:00, title "Dentist"
+        - "Volunteer at the food bank Saturday" → CREATE_EVENT with spiritual dimension
 
         DEVICE COMMANDS YOU CANNOT EXECUTE: You have NO ability to control the user's microphone, \
         speaker, voice mode, notifications, app settings, system volume, screen brightness, Bluetooth, \
@@ -344,7 +351,8 @@ enum AIPromptBuilder {
         scheduleSummary: String,
         completionRate: Int,
         streak: Int,
-        activitySummary: String = ""
+        activitySummary: String = "",
+        habitSummary: String = ""
     ) -> String {
         var prompt = """
         Today is \(formattedToday()). The user's stats: \(completionRate)% completion, \(streak)-day streak.
@@ -362,13 +370,25 @@ enum AIPromptBuilder {
             """
         }
 
+        if !habitSummary.isEmpty {
+            prompt += """
+
+
+            Active habits (today's status):
+            \(habitSummary)
+            If the user asks what to do or seems free, naturally suggest overdue habits. Don't push — mention once.
+            """
+        }
+
         // Date-bound CREATE_EVENT examples live here so they always reflect today's date.
         prompt += """
 
 
         Date-bound CREATE_EVENT examples for today/tomorrow:
-        - "Add a meeting tomorrow at 2pm" → [[CREATE_EVENT:Meeting|\(Self.exampleDate()) 14:00|\(Self.exampleDate()) 15:00|]]
-        - "Add yoga to my schedule" → [[CREATE_EVENT:Yoga|\(Self.exampleDate()) 07:00|\(Self.exampleDate()) 08:00|]]
+        - "Add a meeting tomorrow at 2pm" → [[CREATE_EVENT:Meeting|\(Self.exampleDate()) 14:00|\(Self.exampleDate()) 15:00||mental]]
+        - "Add yoga to my schedule" → [[CREATE_EVENT:Yoga|\(Self.exampleDate()) 07:00|\(Self.exampleDate()) 08:00||physical]]
+        - "Help a neighbor this weekend" → [[CREATE_EVENT:Help neighbor|\(Self.exampleDate()) 10:00|\(Self.exampleDate()) 11:00||spiritual]]
+        - "Call Sarah to catch up" → [[CREATE_EVENT:Call Sarah|\(Self.exampleDate()) 18:00|\(Self.exampleDate()) 18:30||emotional]]
         """
 
         return prompt
@@ -456,15 +476,16 @@ enum AIPromptBuilder {
         include an action tag in your response. The user will see your conversational text; the app will parse and \
         execute the action tags automatically.
 
-        To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description]]
-        To create a recurring task: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|daily]] (options: daily, weekly, biweekly, monthly)
+        To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|recurrence|dimension]]
+        Dimension is which life area (physical/mental/emotional/spiritual). ALWAYS include it.
         To delete a task/event: [[DELETE_EVENT:event_id]]
 
         Examples:
-        - User: "Add a meeting tomorrow at 2pm" → reply naturally and include [[CREATE_EVENT:Meeting|\(Self.exampleDate()) 14:00|\(Self.exampleDate()) 15:00|]]
-        - User: "Add yoga to my schedule" → [[CREATE_EVENT:Yoga|\(Self.exampleDate()) 07:00|\(Self.exampleDate()) 08:00|]]
-        - User: "Remind me to take vitamins every morning at 8am" → [[CREATE_EVENT:Take vitamins|\(Self.exampleDate()) 08:00|\(Self.exampleDate()) 08:30||daily]]
-        - User: "Add a weekly team standup on Mondays at 10am" → [[CREATE_EVENT:Team Standup|\(Self.exampleDate()) 10:00|\(Self.exampleDate()) 10:30||weekly]]
+        - User: "Add a meeting tomorrow at 2pm" → [[CREATE_EVENT:Meeting|\(Self.exampleDate()) 14:00|\(Self.exampleDate()) 15:00|||mental]]
+        - User: "Add yoga to my schedule" → [[CREATE_EVENT:Yoga|\(Self.exampleDate()) 07:00|\(Self.exampleDate()) 08:00|||physical]]
+        - User: "Remind me to take vitamins every morning at 8am" → [[CREATE_EVENT:Take vitamins|\(Self.exampleDate()) 08:00|\(Self.exampleDate()) 08:30||daily|physical]]
+        - User: "Add a weekly team standup on Mondays at 10am" → [[CREATE_EVENT:Team Standup|\(Self.exampleDate()) 10:00|\(Self.exampleDate()) 10:30||weekly|mental]]
+        - User: "Volunteer at shelter Saturday" → [[CREATE_EVENT:Volunteer at shelter|\(Self.exampleDate()) 09:00|\(Self.exampleDate()) 12:00|||spiritual]]
 
         Always confirm the action in your conversational text. Use these tags whenever the user asks to add, schedule, \
         create, or set up any task, event, reminder, or activity. Default duration is 1 hour if not specified. \
@@ -508,7 +529,8 @@ enum AIPromptBuilder {
         completionRate: Int,
         balanceSummary: String,
         recentMoodTrend: String,
-        previousRecapTopics: [String]
+        previousRecapTopics: [String],
+        habitSummary: String = ""
     ) -> String {
         let nameGreeting = userName.map { "\($0)'s" } ?? "The user's"
         let focusNote = userFocusPreference.map {
@@ -605,6 +627,8 @@ enum AIPromptBuilder {
         \(balanceSummary.isEmpty ? "" : "LIFE BALANCE:\n\(balanceSummary)")
 
         \(recentMoodTrend.isEmpty ? "" : "MOOD TREND (last 7 days):\n\(recentMoodTrend)")
+
+        \(habitSummary.isEmpty ? "" : "ACTIVE HABITS:\n\(habitSummary)\nIf any habit is overdue (2+ days since last) and today is a target day, consider mentioning it briefly. Don't nag — one gentle mention is enough.")
 
         \(avoidTopics)
 

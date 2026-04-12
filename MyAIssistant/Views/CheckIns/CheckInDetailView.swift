@@ -36,6 +36,9 @@ struct CheckInDetailView: View {
     @State private var recapMessage: String?
     @State private var isLoadingRecap = false
 
+    // Habits due today
+    @Query(filter: #Predicate<HabitItem> { $0.archivedAt == nil }) private var allHabits: [HabitItem]
+
     private enum CheckInStep {
         case greeting
         case mood
@@ -370,6 +373,11 @@ struct CheckInDetailView: View {
                     .animation(.easeOut(duration: 0.3), value: recapMessage)
             }
 
+            // Habits due today (not yet completed)
+            if !habitsDueToday.isEmpty {
+                habitsDueCard
+            }
+
             Button {
                 dismiss()
             } label: {
@@ -390,6 +398,71 @@ struct CheckInDetailView: View {
     }
 
     // MARK: - Daily Recap Card
+
+    // MARK: - Habits Due Today
+
+    private var habitsDueToday: [HabitItem] {
+        let today = Date()
+        return allHabits.filter { $0.targetDays.appliesTo(date: today) && !$0.isCompletedOn(today) }
+    }
+
+    @Environment(\.habitManager) private var habitManager
+
+    private var habitsDueCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "repeat.circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.accent)
+                    .accessibilityHidden(true)
+                Text("Habits due today")
+                    .font(AppFonts.bodyMedium(13))
+                    .foregroundColor(AppColors.accent)
+            }
+
+            ForEach(habitsDueToday, id: \.id) { habit in
+                HStack(spacing: 10) {
+                    Text(habit.icon)
+                        .font(.system(size: 20))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(habit.title)
+                            .font(AppFonts.bodyMedium(14))
+                            .foregroundColor(AppColors.textPrimary)
+                        let streak = habit.currentStreak()
+                        if streak > 0 {
+                            Text("\(streak)-day streak")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                        }
+                    }
+
+                    Spacer()
+
+                    Button {
+                        Haptics.success()
+                        habitManager?.toggleCompletion(habit, for: Date())
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 24))
+                            .foregroundColor(AppColors.accent)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Complete \(habit.title)")
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.accent.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(AppColors.accent.opacity(0.12), lineWidth: 1)
+        )
+    }
 
     private func recapCard(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {

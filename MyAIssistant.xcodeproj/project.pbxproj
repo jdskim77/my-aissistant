@@ -18,6 +18,7 @@
 		2263E169947C166FDE04815D /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97ACE583981903B7525F883 /* CelebrationView.swift */; };
 		2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */; };
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
+		E4A1B2C3D4E5F6A8 /* HabitReminderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */; };
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
@@ -299,6 +300,7 @@
 		976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreferencesView.swift; sourceTree = "<group>"; };
 		9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentModelContainer.swift; sourceTree = "<group>"; };
 		9FEE61F904669C1F28F816A9 /* HabitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitManager.swift; sourceTree = "<group>"; };
+		E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitReminderCoordinator.swift; sourceTree = "<group>"; };
 		A45180E1CF55D484DE91629E /* AppLogger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		AA00000002000000 /* Breadcrumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breadcrumb.swift; sourceTree = "<group>"; };
 		AA00000004000000 /* DiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsManager.swift; sourceTree = "<group>"; };
@@ -777,6 +779,7 @@
 				51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */,
 				E972B6EABF4699BFF00E4683 /* BalanceManager.swift */,
 				9FEE61F904669C1F28F816A9 /* HabitManager.swift */,
+				E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */,
 				D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */,
 				72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */,
 			);
@@ -1331,6 +1334,7 @@
 				479FF8D6BD0058E321B2A75C /* ChatManager.swift in Sources */,
 				9A6851143418D4E3501DFAF5 /* BalanceManager.swift in Sources */,
 				3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */,
+				E4A1B2C3D4E5F6A8 /* HabitReminderCoordinator.swift in Sources */,
 				82D8451AA02798FED6E546A3 /* CompassTabView.swift in Sources */,
 				590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */,
 				8625C363339EFF477EF5C7FF /* DimensionSuggester.swift in Sources */,
