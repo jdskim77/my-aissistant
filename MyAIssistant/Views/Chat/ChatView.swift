@@ -168,12 +168,18 @@ struct ChatView: View {
 
             // Quick actions or Task Builder chips
             if taskBuilder.isActive && !taskBuilder.chips.isEmpty {
-                TaskBuilderChipsBar(chips: taskBuilder.chips, onSelect: { chip in
-                    handleTaskBuilderChip(chip)
-                }, onCancel: {
-                    insertLocalMessage(role: .assistant, text: "Task creation cancelled.")
-                    taskBuilder.reset()
-                })
+                TaskBuilderChipsBar(
+                    chips: taskBuilder.chips,
+                    step: taskBuilder.step,
+                    selectedDimensions: taskBuilder.selectedDimensions,
+                    onSelect: { chip in
+                        handleTaskBuilderChip(chip)
+                    },
+                    onCancel: {
+                        insertLocalMessage(role: .assistant, text: "Task creation cancelled.")
+                        taskBuilder.reset()
+                    }
+                )
             } else if !taskBuilder.isActive {
                 QuickActionsBar(actions: quickActions) { action in
                     if action == "Create a Task" {
@@ -718,8 +724,8 @@ struct ChatView: View {
 
     private static func convert(_ a: ChatManager.CalendarAction) -> CalendarAction {
         switch a {
-        case .create(let title, let start, let end, let description, let recurrence):
-            return .create(title: title, start: start, end: end, description: description, recurrence: recurrence)
+        case .create(let title, let start, let end, let description, let recurrence, let dimension):
+            return .create(title: title, start: start, end: end, description: description, recurrence: recurrence, dimension: dimension)
         case .delete(let eventID):
             return .delete(eventID: eventID)
         }
@@ -727,6 +733,31 @@ struct ChatView: View {
 
     private static func convert(_ a: ChatManager.ParsedAlarm) -> ParsedAlarm {
         ParsedAlarm(timeString: a.timeString, label: a.label, repeatsDaily: a.repeatsDaily)
+    }
+
+    /// Infer dimension from task title keywords when the AI doesn't provide one.
+    private static func inferDimension(from title: String) -> LifeDimension? {
+        let lower = title.lowercased()
+
+        let physical = ["walk", "run", "gym", "exercise", "workout", "yoga", "stretch",
+                        "sleep", "meal", "cook", "doctor", "dentist", "vitamin", "water",
+                        "swim", "hike", "bike", "lift", "pushup", "plank", "jog"]
+        let mental = ["read", "study", "learn", "write", "journal", "book", "course",
+                      "puzzle", "deep work", "focus", "brainstorm", "plan", "research",
+                      "meeting", "standup", "review", "organize"]
+        let emotional = ["call", "text", "coffee", "dinner", "lunch", "friend", "family",
+                         "date", "therapy", "therapist", "gratitude", "birthday", "catch up",
+                         "hang out", "visit", "mom", "dad", "partner"]
+        let spiritual = ["volunteer", "donate", "help", "serve", "mentor", "teach",
+                         "community", "charity", "give", "church", "temple", "mosque",
+                         "meditat", "pray", "kind", "compliment", "listen"]
+
+        if spiritual.contains(where: { lower.contains($0) }) { return .spiritual }
+        if emotional.contains(where: { lower.contains($0) }) { return .emotional }
+        if physical.contains(where: { lower.contains($0) }) { return .physical }
+        if mental.contains(where: { lower.contains($0) }) { return .mental }
+
+        return nil
     }
 
     // MARK: - Task Builder Helpers
@@ -890,7 +921,7 @@ struct ChatView: View {
             ForEach(Array(pendingCalendarActions.enumerated()), id: \.offset) { _, action in
                 HStack(spacing: 6) {
                     switch action {
-                    case .create(let title, let start, _, _, _):
+                    case .create(let title, let start, _, _, _, _):
                         Image(systemName: "plus.circle.fill")
                             .foregroundColor(AppColors.completionGreen)
                             .font(.system(size: 12))
@@ -952,7 +983,7 @@ struct ChatView: View {
     // MARK: - Calendar Action Parsing
 
     private enum CalendarAction {
-        case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence)
+        case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence, dimension: LifeDimension?)
         case delete(eventID: String)
     }
 
@@ -971,7 +1002,7 @@ struct ChatView: View {
 
         for action in actions {
             switch action {
-            case .create(let title, let start, let end, let description, let recurrence):
+            case .create(let title, let start, let end, let description, let recurrence, let dimension):
                 // Dedup FIRST: check if a task with the same title exists on this day
                 let isDuplicate = await MainActor.run {
                     let calendar = Calendar.current
@@ -1028,6 +1059,7 @@ struct ChatView: View {
                         recurrence: recurrence
                     )
                     task.externalCalendarID = calendarID
+                    task.dimension = dimension ?? Self.inferDimension(from: title)
                     modelContext.insert(task)
                     modelContext.safeSave()
                 }

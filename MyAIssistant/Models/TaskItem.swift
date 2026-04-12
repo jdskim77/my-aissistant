@@ -91,10 +91,26 @@ final class TaskItem {
         set { recurrenceRaw = newValue == .none ? nil : newValue.rawValue }
     }
 
+    /// All life dimensions tagged on this task (stored as comma-separated raw values).
+    /// A task can serve multiple dimensions (e.g., "family walk" = Physical + Emotional).
+    @Transient
+    var dimensions: [LifeDimension] {
+        get {
+            guard let raw = dimensionRaw, !raw.isEmpty else { return [] }
+            return raw.split(separator: ",")
+                .compactMap { LifeDimension(rawValue: String($0)) }
+        }
+        set {
+            dimensionRaw = newValue.isEmpty ? nil :
+                newValue.sorted(by: { $0.rawValue < $1.rawValue }).map(\.rawValue).joined(separator: ",")
+        }
+    }
+
+    /// Convenience: primary (first) dimension. Backward-compatible with single-dimension code.
     @Transient
     var dimension: LifeDimension? {
-        get { dimensionRaw.flatMap { LifeDimension(rawValue: $0) } }
-        set { dimensionRaw = newValue?.rawValue }
+        get { dimensions.first }
+        set { dimensions = newValue.map { [$0] } ?? [] }
     }
 
     @Transient

@@ -87,7 +87,8 @@ struct MyAIssistantApp: App {
         cm.usageGateManager = ugm
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
-        self._habitManager = State(initialValue: HabitManager(modelContext: context))
+        let hm = HabitManager(modelContext: context)
+        self._habitManager = State(initialValue: hm)
         let cibe = CheckInBehaviorEngine(modelContext: context)
         self._checkInBehaviorEngine = State(initialValue: cibe)
 
@@ -99,6 +100,7 @@ struct MyAIssistantApp: App {
         drg.balanceManager = bm
         drg.taskManager = tm
         drg.chatManager = cm
+        drg.habitManager = hm
         self._dailyRecapGenerator = State(initialValue: drg)
 
         self.backgroundTaskManager = BackgroundTaskManager(
@@ -156,6 +158,17 @@ struct MyAIssistantApp: App {
                     let streak = patternEngine.currentStreak()
                     notificationManager.scheduleAdaptiveCheckInReminders(currentStreak: streak)
 
+                    // Wire notification manager into habit manager for auto-rescheduling
+                    habitManager.notificationManager = notificationManager
+                    habitManager.rescheduleHabitReminders()
+
+                    // Intelligent habit reminder coordination
+                    let coordinator = HabitReminderCoordinator(modelContext: modelContainer.mainContext)
+                    coordinator.patternEngine = patternEngine
+                    coordinator.taskManager = taskManager
+                    coordinator.notificationManager = notificationManager
+                    coordinator.coordinateToday()
+
                     // Schedule background tasks
                     backgroundTaskManager?.scheduleDailySnapshot()
                     backgroundTaskManager?.scheduleWeeklyReview()
@@ -198,6 +211,11 @@ struct MyAIssistantApp: App {
                         date: finalDate,
                         icon: "📝"
                     )
+                    // Apply dimensions from Watch (comma-separated raw values)
+                    if let dimString = info["dimensions"] as? String {
+                        task.dimensions = dimString.split(separator: ",")
+                            .compactMap { LifeDimension(rawValue: String($0)) }
+                    }
                     taskManager.addTask(task)
                     taskManager.updateWidgetData()
                 }
@@ -205,6 +223,32 @@ struct MyAIssistantApp: App {
                     guard let taskID = notification.userInfo?["taskID"] as? String else { return }
                     if let task = taskManager.findTask(byID: taskID) {
                         taskManager.deleteTask(task)
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchQuickCheckIn)) { notification in
+                    guard let info = notification.userInfo,
+                          let mood = info["mood"] as? Int,
+                          let energy = info["energy"] as? Int,
+                          let slotRaw = info["timeSlot"] as? String,
+                          let slot = CheckInTime(rawValue: slotRaw) else { return }
+
+                    // Deduplicate: check if this slot already has a completed check-in today
+                    let existingToday = checkInManager.todayCheckIns().first {
+                        $0.timeSlotRaw == slotRaw && $0.completed
+                    }
+                    guard existingToday == nil else { return }
+
+                    let record = checkInManager.startCheckIn(timeSlot: slot)
+                    checkInManager.completeCheckIn(record, mood: mood, energyLevel: energy, notes: nil, aiSummary: nil)
+                    taskManager.updateWidgetData()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .habitCompletedFromNotification)) { notification in
+                    guard let habitID = notification.userInfo?["habitID"] as? String else { return }
+                    let descriptor = FetchDescriptor<HabitItem>(
+                        predicate: #Predicate { $0.id == habitID }
+                    )
+                    if let habit = try? modelContainer.mainContext.fetch(descriptor).first {
+                        habitManager.toggleCompletion(habit, for: Date())
                     }
                 }
         }
@@ -216,6 +260,7 @@ struct MyAIssistantApp: App {
 
 extension Notification.Name {
     static let didTapNotification = Notification.Name("didTapNotification")
+    static let habitCompletedFromNotification = Notification.Name("habitCompletedFromNotification")
 }
 
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
@@ -249,6 +294,18 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             destination = "home"
         case "TASK":
             destination = "schedule"
+        case "HABIT":
+            // "Done" action: toggle habit completion via notification
+            if action == "COMPLETE_HABIT", let habitID = userInfo["habitID"] as? String {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: .habitCompletedFromNotification,
+                        object: nil,
+                        userInfo: ["habitID": habitID]
+                    )
+                }
+            }
+            destination = "home"
         case "ALARM":
             // Snooze: reschedule 5 minutes from now, don't open app
             if action == "SNOOZE_ALARM", let alarmID = userInfo["alarmID"] as? String {

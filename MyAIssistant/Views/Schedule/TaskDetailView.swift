@@ -12,6 +12,7 @@ struct TaskDetailView: View {
     @State private var priority: TaskPriority
     @State private var notes: String
     @State private var icon: String
+    @State private var dimensions: Set<LifeDimension>
     @State private var showingDeleteAlert = false
 
     private let iconOptions = ["📌", "✈️", "🏨", "🚐", "🧳", "🛫", "🛬", "🏜️", "💱", "📋", "📘", "🛒", "💳", "🔧", "🧘", "📞", "💊", "🎁", "📦", "🏃"]
@@ -24,6 +25,7 @@ struct TaskDetailView: View {
         self._priority = State(initialValue: task.priority)
         self._notes = State(initialValue: task.notes)
         self._icon = State(initialValue: task.icon)
+        self._dimensions = State(initialValue: Set(task.dimensions))
     }
 
     var body: some View {
@@ -72,7 +74,7 @@ struct TaskDetailView: View {
                                     } label: {
                                         Text(opt)
                                             .font(AppFonts.icon(22))
-                                            .padding(6)
+                                            .frame(minWidth: 44, minHeight: 44)
                                             .background(icon == opt ? AppColors.accentLight : Color.clear)
                                             .cornerRadius(8)
                                     }
@@ -125,7 +127,7 @@ struct TaskDetailView: View {
                                         .font(AppFonts.bodyMedium(13))
                                         .foregroundColor(category == cat ? .white : AppColors.textSecondary)
                                         .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .frame(minHeight: 44)
                                         .background(category == cat ? AppColors.accent : AppColors.surface)
                                         .cornerRadius(8)
                                         .overlay(
@@ -153,7 +155,7 @@ struct TaskDetailView: View {
                                         .font(AppFonts.bodyMedium(13))
                                         .foregroundColor(priority == pri ? .white : AppColors.priorityColor(pri))
                                         .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .frame(minHeight: 44)
                                         .background(priority == pri ? AppColors.priorityColor(pri) : AppColors.priorityColor(pri).opacity(0.1))
                                         .cornerRadius(8)
                                 }
@@ -161,6 +163,13 @@ struct TaskDetailView: View {
                             }
                         }
                     }
+
+                    // Life Dimensions (Compass) — multi-select
+                    DimensionPickerView(
+                        selection: $dimensions,
+                        suggestions: [],
+                        showPractical: false
+                    )
 
                     // Notes
                     VStack(alignment: .leading, spacing: 8) {
@@ -245,5 +254,6 @@ struct TaskDetailView: View {
         task.priority = priority
         task.notes = notes
         task.icon = icon
+        task.dimensions = Array(dimensions)
     }
 }

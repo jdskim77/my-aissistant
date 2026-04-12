@@ -53,14 +53,59 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     }
 
     /// Send a new task to iPhone for creation.
-    func addTask(title: String, priority: String, date: Date, hasTime: Bool) {
-        let message: [String: Any] = [
+    /// Send a quick check-in (mood + energy) to iPhone for processing.
+    func sendCheckIn(_ message: [String: Any]) {
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        } else {
+            WCSession.default.transferUserInfo(message)
+        }
+
+        // Optimistically update completed check-ins
+        if let slot = message["timeSlot"] as? String, var data = scheduleData {
+            var completed = data.completedCheckIns ?? []
+            if !completed.contains(slot) { completed.append(slot) }
+            let updated = WatchScheduleData(
+                tasks: data.tasks,
+                streakDays: data.streakDays,
+                completedToday: data.completedToday,
+                totalToday: data.totalToday,
+                quoteText: data.quoteText,
+                quoteAuthor: data.quoteAuthor,
+                nextCheckIn: nextCheckInAfter(slot),
+                updatedAt: Date(),
+                bodyScore: data.bodyScore,
+                mindScore: data.mindScore,
+                heartScore: data.heartScore,
+                spiritScore: data.spiritScore,
+                userName: data.userName,
+                aiInsight: data.aiInsight,
+                completedCheckIns: completed
+            )
+            persistAndUpdate(updated)
+        }
+    }
+
+    private func nextCheckInAfter(_ slot: String) -> String? {
+        let order = ["Morning", "Midday", "Afternoon", "Night"]
+        guard let idx = order.firstIndex(of: slot) else { return nil }
+        let completed = scheduleData?.completedCheckIns ?? []
+        for i in (idx + 1)..<order.count {
+            if !completed.contains(order[i]) { return order[i] }
+        }
+        return nil // All done
+    }
+
+    /// Send a new task to iPhone for creation.
+    func addTask(title: String, priority: String, date: Date, hasTime: Bool, dimensions: String? = nil) {
+        var message: [String: Any] = [
             "addTask": true,
             "title": title,
             "priority": priority,
             "date": date.timeIntervalSince1970,
             "hasTime": hasTime
         ]
+        if let dimensions { message["dimensions"] = dimensions }
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(message, replyHandler: nil)
         } else {
@@ -87,7 +132,11 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                 quoteText: data.quoteText,
                 quoteAuthor: data.quoteAuthor,
                 nextCheckIn: data.nextCheckIn,
-                updatedAt: Date()
+                updatedAt: Date(),
+                bodyScore: data.bodyScore, mindScore: data.mindScore,
+                heartScore: data.heartScore, spiritScore: data.spiritScore,
+                userName: data.userName, aiInsight: data.aiInsight,
+                completedCheckIns: data.completedCheckIns
             )
             persistAndUpdate(updated)
         }
@@ -106,7 +155,11 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                 quoteText: data.quoteText,
                 quoteAuthor: data.quoteAuthor,
                 nextCheckIn: data.nextCheckIn,
-                updatedAt: Date()
+                updatedAt: Date(),
+                bodyScore: data.bodyScore, mindScore: data.mindScore,
+                heartScore: data.heartScore, spiritScore: data.spiritScore,
+                userName: data.userName, aiInsight: data.aiInsight,
+                completedCheckIns: data.completedCheckIns
             )
             persistAndUpdate(updated)
         }
@@ -147,7 +200,11 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                 quoteText: data.quoteText,
                 quoteAuthor: data.quoteAuthor,
                 nextCheckIn: data.nextCheckIn,
-                updatedAt: Date()
+                updatedAt: Date(),
+                bodyScore: data.bodyScore, mindScore: data.mindScore,
+                heartScore: data.heartScore, spiritScore: data.spiritScore,
+                userName: data.userName, aiInsight: data.aiInsight,
+                completedCheckIns: data.completedCheckIns
             )
             persistAndUpdate(updated)
         }

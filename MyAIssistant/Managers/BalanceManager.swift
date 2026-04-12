@@ -90,13 +90,32 @@ final class BalanceManager {
         let hasAnyData = hasActivityData || hasSatisfactionData || hasConsistencyData
 
         var result: [LifeDimension: DimensionBreakdown] = [:]
+
+        // On a fresh install with only onboarding ratings (no tasks completed yet),
+        // activity and consistency are zero — which drags the compass down to ~3/10
+        // regardless of what the user rated. Weight satisfaction at 100% until the
+        // user has at least one completed task, then smoothly blend in the other signals.
+        let hasTaskData = hasActivityData || hasConsistencyData
+
         for dim in LifeDimension.scored {
             if hasAnyData {
-                result[dim] = DimensionBreakdown(
-                    activity: activityScores[dim] ?? 0,
-                    satisfaction: satisfactionScores[dim] ?? 5,
-                    consistency: consistencyScores[dim] ?? 0
-                )
+                if hasTaskData {
+                    // Normal weighted composite once user has real task data
+                    result[dim] = DimensionBreakdown(
+                        activity: activityScores[dim] ?? 0,
+                        satisfaction: satisfactionScores[dim] ?? 5,
+                        consistency: consistencyScores[dim] ?? 0
+                    )
+                } else {
+                    // Only satisfaction data (fresh from onboarding) — show it directly
+                    // so the compass reflects what they rated, not a deflated average
+                    let sat = satisfactionScores[dim] ?? 5
+                    result[dim] = DimensionBreakdown(
+                        activity: sat,
+                        satisfaction: sat,
+                        consistency: sat
+                    )
+                }
             } else {
                 // No data yet — start at neutral 5/10 so compass looks balanced, not empty
                 result[dim] = DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
@@ -141,47 +160,59 @@ final class BalanceManager {
         )
         let tasks = (try? modelContext.fetch(descriptor)) ?? []
 
-        var effortPoints: [LifeDimension: Int] = [:]
+        var effortPoints: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored { effortPoints[dim] = 0 }
 
         for task in tasks {
-            guard let dim = task.dimension, dim.isScored else { continue }
-            effortPoints[dim, default: 0] += task.effort.points
+            let scored = task.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            let splitPoints = Double(task.effort.points) / Double(scored.count)
+            for dim in scored {
+                effortPoints[dim, default: 0] += splitPoints
+            }
         }
 
         let target = personalTarget()
         var scores: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored {
-            let points = effortPoints[dim] ?? 0
-            scores[dim] = min(10, Double(points) / Double(target) * 10)
+            scores[dim] = min(10, (effortPoints[dim] ?? 0) / Double(target) * 10)
         }
         return scores
     }
 
     /// Activity signal from pre-fetched tasks (avoids duplicate query).
+    /// Multi-dimension tasks split their effort points evenly across tagged dimensions.
     private func activitySignalFromTasks(_ tasks: [TaskItem]) -> [LifeDimension: Double] {
-        var effortPoints: [LifeDimension: Int] = [:]
+        var effortPoints: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored { effortPoints[dim] = 0 }
         for task in tasks {
-            guard let dim = task.dimension, dim.isScored else { continue }
-            effortPoints[dim, default: 0] += task.effort.points
+            let scored = task.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            let splitPoints = Double(task.effort.points) / Double(scored.count)
+            for dim in scored {
+                effortPoints[dim, default: 0] += splitPoints
+            }
         }
-        let target = personalTarget()
         var scores: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored {
-            scores[dim] = min(10, Double(effortPoints[dim] ?? 0) / Double(target) * 10)
+            let target = personalTarget(for: dim)
+            scores[dim] = min(10, (effortPoints[dim] ?? 0) / Double(target) * 10)
         }
         return scores
     }
 
     /// Consistency signal from pre-fetched tasks (avoids duplicate query).
+    /// Multi-dimension tasks count as an active day for each tagged dimension.
     private func consistencySignalFromTasks(_ tasks: [TaskItem]) -> [LifeDimension: Double] {
         let calendar = Calendar.current
         var activeDays: [LifeDimension: Set<Int>] = [:]
         for dim in LifeDimension.scored { activeDays[dim] = [] }
         for task in tasks {
-            guard let dim = task.dimension, dim.isScored else { continue }
-            activeDays[dim, default: []].insert(calendar.component(.weekday, from: task.date))
+            let scored = task.dimensions.filter(\.isScored)
+            let dayOfWeek = calendar.component(.weekday, from: task.date)
+            for dim in scored {
+                activeDays[dim, default: []].insert(dayOfWeek)
+            }
         }
         var scores: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored {
@@ -193,32 +224,47 @@ final class BalanceManager {
     // MARK: - Signal 2: Satisfaction (Self-Reported)
 
     /// Satisfaction Score (0-10) per dimension.
-    /// mean(check-in ratings) * 2. Ratings are 1-5, so max mean is 5 → score 10.
+    /// Handles two rating scales:
+    ///   - Daily check-ins: 1-5 → normalized to 0-10 via `rating / 5.0 * 10`
+    ///   - Onboarding quick-rate: 1-9 → normalized to 0-10 via `rating / 9.0 * 10`
+    /// The normalizer auto-detects: if max rating in the set is > 5, use 9-scale.
     private func satisfactionSignal(from start: Date, to end: Date) -> [LifeDimension: Double] {
         let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
             predicate: #Predicate { $0.date >= start && $0.date < end }
         )
         let checkIns = (try? modelContext.fetch(descriptor)) ?? []
 
-        var ratings: [LifeDimension: [Int]] = [:]
-        for dim in LifeDimension.scored { ratings[dim] = [] }
+        // Collect normalized ratings (0-10) per dimension.
+        // Determine scale per check-in record by looking at ALL dimension ratings
+        // in that record — if ANY dimension > 5, the entire record is 1-9 scale
+        // (onboarding). This prevents a dimension rated 5 on a 1-9 scale from
+        // being misinterpreted as 5/5 = 10.0.
+        var normalizedRatings: [LifeDimension: [Double]] = [:]
+        for dim in LifeDimension.scored { normalizedRatings[dim] = [] }
 
         for checkIn in checkIns {
+            // Determine scale for this entire check-in record
+            var allRatingsInRecord: [Int] = []
+            for dim in LifeDimension.scored {
+                if let r = checkIn.satisfaction(for: dim) { allRatingsInRecord.append(r) }
+            }
+            let maxInRecord = allRatingsInRecord.max() ?? 5
+            let scale = Double(maxInRecord > 5 ? 9 : 5)
+
             for dim in LifeDimension.scored {
                 if let rating = checkIn.satisfaction(for: dim) {
-                    ratings[dim, default: []].append(rating)
+                    normalizedRatings[dim, default: []].append(min(10, Double(rating) / scale * 10))
                 }
             }
         }
 
         var scores: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored {
-            let dimRatings = ratings[dim] ?? []
+            let dimRatings = normalizedRatings[dim] ?? []
             if dimRatings.isEmpty {
                 scores[dim] = 5 // neutral default — no data shouldn't penalize
             } else {
-                let mean = Double(dimRatings.reduce(0, +)) / Double(dimRatings.count)
-                scores[dim] = mean * 2 // 1-5 → 2-10
+                scores[dim] = dimRatings.reduce(0, +) / Double(dimRatings.count)
             }
         }
         return scores
@@ -239,9 +285,11 @@ final class BalanceManager {
         for dim in LifeDimension.scored { activeDays[dim] = [] }
 
         for task in tasks {
-            guard let dim = task.dimension, dim.isScored else { continue }
+            let scored = task.dimensions.filter(\.isScored)
             let dayOfWeek = calendar.component(.weekday, from: task.date)
-            activeDays[dim, default: []].insert(dayOfWeek)
+            for dim in scored {
+                activeDays[dim, default: []].insert(dayOfWeek)
+            }
         }
 
         var scores: [LifeDimension: Double] = [:]
@@ -405,7 +453,7 @@ final class BalanceManager {
 
     // MARK: - Task Counts (for display)
 
-    /// Returns effort-weighted points per dimension this week.
+    /// Returns effort-weighted points per dimension this week (split across multi-tagged tasks).
     func thisWeekEffortPoints() -> [LifeDimension: Int] {
         let calendar = Calendar.current
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -414,16 +462,21 @@ final class BalanceManager {
             predicate: #Predicate { $0.date >= start && $0.date < end && $0.done == true }
         )
         let tasks = (try? modelContext.fetch(descriptor)) ?? []
-        var points: [LifeDimension: Int] = [:]
+        var points: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored { points[dim] = 0 }
         for task in tasks {
-            guard let dim = task.dimension, dim.isScored else { continue }
-            points[dim, default: 0] += task.effort.points
+            let scored = task.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            let split = Double(task.effort.points) / Double(scored.count)
+            for dim in scored {
+                points[dim, default: 0] += split
+            }
         }
-        return points
+        return points.mapValues { Int($0.rounded()) }
     }
 
     /// Returns completed task count per dimension this week.
+    /// Multi-tagged tasks count toward each tagged dimension.
     func thisWeekTaskCounts() -> [LifeDimension: Int] {
         let calendar = Calendar.current
         let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -435,7 +488,7 @@ final class BalanceManager {
         var counts: [LifeDimension: Int] = [:]
         for dim in LifeDimension.scored { counts[dim] = 0 }
         for task in tasks {
-            if let dim = task.dimension, dim.isScored {
+            for dim in task.dimensions where dim.isScored {
                 counts[dim, default: 0] += 1
             }
         }
@@ -666,7 +719,7 @@ final class BalanceManager {
         // Group by normalized title
         var activityOccurrences: [String: [(task: TaskItem, weekday: Int)]] = [:]
         for task in tasks {
-            guard task.dimension != nil else { continue }
+            guard !task.dimensions.isEmpty else { continue }
             let key = task.title.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
             guard !key.isEmpty else { continue }
             let weekday = calendar.component(.weekday, from: task.date)
@@ -684,7 +737,7 @@ final class BalanceManager {
             let uniqueWeekdays = Array(Set(weekdays)).sorted()
             let frequency = min(7, occurrences.count / 4 + 1) // approximate weekly frequency
 
-            let dim = occurrences.last?.task.dimension ?? .physical
+            let dim = occurrences.last?.task.dimensions.first ?? .physical
 
             if let pattern = existing {
                 // Update existing pattern

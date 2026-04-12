@@ -86,18 +86,30 @@ final class HabitItem {
     }
 
     /// Current streak counting back from today.
+    /// Skips non-target days for specific-day habits (e.g., Mon/Wed/Fri).
     func currentStreak() -> Int {
         let cal = Calendar.current
         var streak = 0
         var checkDate = cal.startOfDay(for: Date())
 
-        // If today isn't completed yet, start from yesterday
-        if !isCompletedOn(checkDate) {
+        // If today isn't completed yet (and it's a target day), start from yesterday
+        if targetDays.appliesTo(date: checkDate) && !isCompletedOn(checkDate) {
+            checkDate = cal.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
+        } else if !targetDays.appliesTo(date: checkDate) {
+            // Today isn't a target day — start checking from yesterday
             checkDate = cal.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
         }
 
-        while isCompletedOn(checkDate) {
-            streak += 1
+        // Walk back up to 90 days, skipping non-target days
+        for _ in 0..<90 {
+            if targetDays.appliesTo(date: checkDate) {
+                if isCompletedOn(checkDate) {
+                    streak += 1
+                } else {
+                    break // Missed a target day — streak ends
+                }
+            }
+            // Skip non-target days (don't count, don't break)
             checkDate = cal.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
         }
         return streak

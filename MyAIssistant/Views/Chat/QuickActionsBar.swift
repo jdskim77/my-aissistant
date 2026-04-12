@@ -32,6 +32,8 @@ struct QuickActionsBar: View {
 
 struct TaskBuilderChipsBar: View {
     let chips: [TaskBuilderChip]
+    let step: TaskBuilderStep
+    let selectedDimensions: Set<LifeDimension>
     let onSelect: (TaskBuilderChip) -> Void
     let onCancel: () -> Void
 
@@ -55,11 +57,21 @@ struct TaskBuilderChipsBar: View {
                 .accessibilityLabel("Cancel task creation")
 
                 ForEach(chips) { chip in
+                    let isDimensionStep = step == .dimension
+                    let isDimensionChip = isDimensionStep && chip.value != "done"
+                    let isSelected = isDimensionChip && LifeDimension(rawValue: chip.value).map { selectedDimensions.contains($0) } ?? false
+                    let isDoneChip = isDimensionStep && chip.value == "done"
+                    let atMax = isDimensionStep && selectedDimensions.count >= 3
+
                     Button {
                         Haptics.light()
                         onSelect(chip)
                     } label: {
                         HStack(spacing: 4) {
+                            if isSelected {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                            }
                             if let icon = chip.icon {
                                 Text(icon)
                                     .font(AppFonts.body(13))
@@ -67,16 +79,22 @@ struct TaskBuilderChipsBar: View {
                             Text(chip.label)
                                 .font(AppFonts.bodyMedium(13))
                         }
-                        .foregroundColor(AppColors.accent)
+                        .foregroundColor(isDoneChip ? .white : isSelected ? .white : AppColors.accent)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(AppColors.accentLight)
+                        .background(
+                            isDoneChip ? AppColors.accent :
+                            isSelected ? (LifeDimension(rawValue: chip.value)?.color ?? AppColors.accent) :
+                            AppColors.accentLight
+                        )
                         .cornerRadius(20)
                     }
                     .buttonStyle(.plain)
+                    .opacity(atMax && isDimensionChip && !isSelected ? 0.4 : 1.0)
                     .accessibilityLabel(
                         [chip.icon, chip.label].compactMap { $0 }.joined(separator: " ")
                     )
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
             .padding(.horizontal, 20)

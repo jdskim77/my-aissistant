@@ -17,36 +17,50 @@ enum DimensionSuggester {
         case category   // Category fallback → suggest (sparkle chip)
     }
 
-    /// Returns a suggested dimension with confidence, or nil if no signal.
+    /// Returns suggested dimensions (1-3) with confidence, ordered by signal strength.
+    /// Multi-word titles can match multiple dimensions (e.g., "family walk" → Physical + Emotional).
+    static func suggestMultiple(
+        title: String,
+        category: TaskCategory? = nil,
+        context: ModelContext? = nil
+    ) -> [Suggestion] {
+        let lower = title.lowercased()
+        var results: [Suggestion] = []
+        var seen: Set<LifeDimension> = []
+
+        // 1. Check learned user preferences (highest priority)
+        if let context {
+            if let learned = learnedPreference(for: lower, in: context), !seen.contains(learned) {
+                results.append(Suggestion(dimension: learned, confidence: .learned))
+                seen.insert(learned)
+            }
+        }
+
+        // 2. Check keyword lists — collect ALL matching dimensions
+        for (dimension, keywords) in keywordMap where !seen.contains(dimension) {
+            if keywords.contains(where: { lower.contains($0) }) {
+                results.append(Suggestion(dimension: dimension, confidence: .keyword))
+                seen.insert(dimension)
+            }
+        }
+
+        // 3. Fall back to category heuristic (only if no keyword matches)
+        if results.isEmpty, let category, let dim = categoryMapping[category], !seen.contains(dim) {
+            results.append(Suggestion(dimension: dim, confidence: .category))
+        }
+
+        // Cap at 3 suggestions max
+        return Array(results.prefix(3))
+    }
+
+    /// Returns a single suggested dimension with confidence, or nil if no signal.
+    /// Backward compatible — returns the strongest single suggestion.
     static func suggest(
         title: String,
         category: TaskCategory? = nil,
         context: ModelContext? = nil
     ) -> Suggestion? {
-        let lower = title.lowercased()
-
-        // 1. Check learned user preferences (highest priority)
-        if let context {
-            if let learned = learnedPreference(for: lower, in: context) {
-                return Suggestion(dimension: learned, confidence: .learned)
-            }
-        }
-
-        // 2. Check keyword lists
-        for (dimension, keywords) in keywordMap {
-            if keywords.contains(where: { lower.contains($0) }) {
-                return Suggestion(dimension: dimension, confidence: .keyword)
-            }
-        }
-
-        // 3. Fall back to category heuristic
-        if let category {
-            if let dim = categoryMapping[category] {
-                return Suggestion(dimension: dim, confidence: .category)
-            }
-        }
-
-        return nil
+        suggestMultiple(title: title, category: category, context: context).first
     }
 
     /// Convenience: returns just the dimension (backward compatible).
@@ -54,9 +68,12 @@ enum DimensionSuggester {
         suggest(title: title, category: category, context: nil)?.dimension
     }
 
-    /// Record that the user tagged a task with a specific dimension.
-    /// Call this when a task is saved with a dimension tag.
-    static func recordPreference(title: String, dimension: LifeDimension, context: ModelContext) {
+    /// Record that the user tagged a task with specific dimensions.
+    /// Call this when a task is saved with dimension tags.
+    /// Uses the PRIMARY (first) dimension for preference learning to avoid
+    /// inflating totalCount — one observation per keyword per save.
+    static func recordPreference(title: String, dimensions: [LifeDimension], context: ModelContext) {
+        guard let primary = dimensions.first else { return }
         let keywords = extractKeywords(from: title)
         for keyword in keywords {
             let descriptor = FetchDescriptor<UserDimensionPreference>(
@@ -64,21 +81,25 @@ enum DimensionSuggester {
             )
             if let existing = try? context.fetch(descriptor).first {
                 existing.totalCount += 1
-                if existing.dimension == dimension {
+                if existing.dimension == primary {
                     existing.confirmCount += 1
                 } else if existing.confirmCount < existing.totalCount / 2 {
-                    // User has shifted preference — update the dimension
-                    existing.dimension = dimension
+                    existing.dimension = primary
                     existing.confirmCount = 1
                     existing.totalCount = 2
                 }
                 existing.lastUpdated = Date()
             } else {
-                let pref = UserDimensionPreference(keyword: keyword, dimension: dimension)
+                let pref = UserDimensionPreference(keyword: keyword, dimension: primary)
                 context.insert(pref)
             }
         }
         context.safeSave()
+    }
+
+    /// Backward-compatible single-dimension version.
+    static func recordPreference(title: String, dimension: LifeDimension, context: ModelContext) {
+        recordPreference(title: title, dimensions: [dimension], context: context)
     }
 
     // MARK: - Private Helpers

@@ -1,36 +1,51 @@
 import SwiftUI
 
-/// Reusable single-row dimension chip picker. Used in task creation/editing flows.
-/// Supports three modes:
+/// Reusable dimension chip picker supporting multi-select (max 3).
+/// Used in task creation/editing flows.
+///
+/// Modes:
 ///   - No suggestion: all chips neutral
-///   - Keyword/category suggestion: sparkle chip above row, nothing pre-selected
-///   - Learned preference: chip pre-selected (filled), sparkle inside chip
+///   - Keyword/category suggestions: sparkle chip(s) above row, nothing pre-selected
+///   - Learned preference: chip(s) pre-selected (filled)
 struct DimensionPickerView: View {
-    @Binding var selection: LifeDimension?
-    var suggestion: DimensionSuggester.Suggestion?
+    @Binding var selection: Set<LifeDimension>
+    var suggestions: [DimensionSuggester.Suggestion]
     var showPractical: Bool = true
+    var maxSelections: Int = 3
 
     private var dimensions: [LifeDimension] {
         showPractical ? LifeDimension.allCases : LifeDimension.scored
     }
 
-    /// True if the suggestion is high-confidence (learned from user behavior)
-    private var isLearnedSuggestion: Bool {
-        suggestion?.confidence == .learned
+    /// True if the top suggestion is high-confidence (learned from user behavior)
+    private var hasLearnedSuggestion: Bool {
+        suggestions.first?.confidence == .learned
+    }
+
+    /// Suggestions that are keyword/category (not learned), not yet selected, and room left
+    private var pendingSuggestions: [DimensionSuggester.Suggestion] {
+        guard selection.count < maxSelections else { return [] }
+        return suggestions.filter { $0.confidence != .learned && !selection.contains($0.dimension) }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 4) {
-                Text("Life Dimension")
+                Text("Life Dimensions")
                     .font(AppFonts.heading(14))
                     .foregroundColor(AppColors.textSecondary)
 
-                // Show sparkle chip only for low-confidence suggestions (keyword/category)
-                if let suggestion, !isLearnedSuggestion, selection == nil {
+                if selection.count > 0 {
+                    Text("\(selection.count)/\(maxSelections)")
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                }
+
+                // Show sparkle chips for keyword/category suggestions not yet selected
+                ForEach(pendingSuggestions, id: \.dimension) { suggestion in
                     Button {
                         Haptics.light()
-                        selection = suggestion.dimension
+                        addDimension(suggestion.dimension)
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "sparkles")
@@ -46,7 +61,7 @@ struct DimensionPickerView: View {
                         .frame(minHeight: 44)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Suggested dimension: \(suggestion.dimension.label)")
+                    .accessibilityLabel("Suggested: \(suggestion.dimension.label)")
                 }
             }
 
@@ -60,26 +75,43 @@ struct DimensionPickerView: View {
         }
         .onAppear {
             // Auto-select learned preferences (high confidence)
-            if isLearnedSuggestion, selection == nil, let dim = suggestion?.dimension {
-                selection = dim
+            if selection.isEmpty {
+                for suggestion in suggestions where suggestion.confidence == .learned {
+                    addDimension(suggestion.dimension)
+                }
             }
         }
     }
 
+    private func addDimension(_ dim: LifeDimension) {
+        guard selection.count < maxSelections else { return }
+        withAnimation(.snappy(duration: 0.2)) {
+            selection.insert(dim)
+        }
+    }
+
     private func dimensionChip(_ dim: LifeDimension) -> some View {
-        let isSelected = selection == dim
-        let isLearned = isLearnedSuggestion && dim == suggestion?.dimension && isSelected
+        let isSelected = selection.contains(dim)
+        let isLearned = hasLearnedSuggestion && suggestions.contains(where: { $0.dimension == dim && $0.confidence == .learned }) && isSelected
 
         return Button {
             Haptics.selection()
             withAnimation(.snappy(duration: 0.2)) {
-                selection = isSelected ? nil : dim
+                if isSelected {
+                    selection.remove(dim)
+                } else if selection.count < maxSelections {
+                    selection.insert(dim)
+                }
             }
         } label: {
             HStack(spacing: 5) {
                 if isLearned {
                     Image(systemName: "sparkles")
                         .font(AppFonts.caption(11))
+                }
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
                 }
                 Image(systemName: dim.icon)
                     .font(AppFonts.label(12))
@@ -98,6 +130,8 @@ struct DimensionPickerView: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(dim.label)\(isLearned ? ", learned preference" : "")")
+        .accessibilityLabel("\(dim.label)\(isSelected ? ", selected" : "")\(isLearned ? ", learned preference" : "")")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .opacity(selection.count >= maxSelections && !isSelected ? 0.4 : 1.0)
     }
 }

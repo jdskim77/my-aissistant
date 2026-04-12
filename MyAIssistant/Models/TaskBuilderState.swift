@@ -7,6 +7,7 @@ enum TaskBuilderStep: String {
     case date        // show date chips
     case time        // show time chips
     case category    // show category chips
+    case dimension   // show life dimension chips
     case confirm     // show summary + create/edit
 }
 
@@ -25,6 +26,7 @@ class TaskBuilderState {
     var selectedDate: Date?
     var timeOfDay: String?   // "morning", "afternoon", "evening", nil
     var category: TaskCategory = .personal
+    var selectedDimensions: Set<LifeDimension> = []
     var isActive: Bool { step != .idle }
 
     // MARK: - Chips for current step
@@ -61,6 +63,14 @@ class TaskBuilderState {
                 TaskBuilderChip(label: "Personal", icon: "🏠", value: "Personal"),
                 TaskBuilderChip(label: "Errand", icon: "🛒", value: "Errand"),
             ]
+        case .dimension:
+            return [
+                TaskBuilderChip(label: "Physical", icon: "🏃‍♂️", value: "Physical"),
+                TaskBuilderChip(label: "Mental", icon: "🧠", value: "Mental"),
+                TaskBuilderChip(label: "Emotional", icon: "❤️", value: "Emotional"),
+                TaskBuilderChip(label: "Spiritual", icon: "✨", value: "Spiritual"),
+                TaskBuilderChip(label: "Done", icon: nil, value: "done"),
+            ]
         case .confirm:
             return [
                 TaskBuilderChip(label: "Create Task", icon: "✅", value: "create"),
@@ -80,6 +90,12 @@ class TaskBuilderState {
         case .date: return "When should this be done?"
         case .time: return "What time of day?"
         case .category: return "What category?"
+        case .dimension:
+            if !selectedDimensions.isEmpty {
+                let labels = selectedDimensions.map(\.label).joined(separator: " + ")
+                return "\(labels) selected. Tap more or tap Done."
+            }
+            return "Which parts of your life does this serve? (pick up to 3)"
         case .confirm: return confirmationSummary
         }
     }
@@ -104,7 +120,8 @@ class TaskBuilderState {
         } else {
             timeStr = ""
         }
-        return "Here's your task:\n\n📋 \(title ?? "Untitled")\n📅 \(dateStr)\(timeStr)\n⚡ \(priority.rawValue) priority\n🏷 \(category.rawValue)\n\nLook good?"
+        let dimStr = selectedDimensions.isEmpty ? "🧭 No dimension" : "🧭 " + selectedDimensions.map(\.label).joined(separator: " + ")
+        return "Here's your task:\n\n📋 \(title ?? "Untitled")\n📅 \(dateStr)\(timeStr)\n⚡ \(priority.rawValue) priority\n🏷 \(category.rawValue)\n\(dimStr)\n\nLook good?"
     }
 
     // MARK: - Process chip selection
@@ -139,7 +156,27 @@ class TaskBuilderState {
             step = .category
         case .category:
             category = TaskCategory(rawValue: chip.value) ?? .personal
-            step = .confirm
+            // Auto-suggest dimension from category (user can override on next step)
+            selectedDimensions.removeAll()
+            switch category {
+            case .health: selectedDimensions.insert(.physical)
+            case .work: selectedDimensions.insert(.mental)
+            default: break
+            }
+            step = .dimension
+        case .dimension:
+            if chip.value == "done" {
+                // Finish dimension selection — move to confirm
+                step = .confirm
+            } else if let dim = LifeDimension(rawValue: chip.value) {
+                // Toggle dimension on/off (max 3)
+                if selectedDimensions.contains(dim) {
+                    selectedDimensions.remove(dim)
+                } else if selectedDimensions.count < 3 {
+                    selectedDimensions.insert(dim)
+                }
+                // Don't advance step — let user pick more or tap Done
+            }
         case .confirm:
             if chip.value == "edit" {
                 step = .title  // restart
@@ -244,6 +281,7 @@ class TaskBuilderState {
         selectedDate = nil
         timeOfDay = nil
         category = .personal
+        selectedDimensions = []
     }
 
     func reset() {
@@ -253,11 +291,12 @@ class TaskBuilderState {
         selectedDate = nil
         timeOfDay = nil
         category = .personal
+        selectedDimensions = []
     }
 
     /// Build the final TaskItem
     func buildTask() -> TaskItem {
-        TaskItem(
+        let task = TaskItem(
             title: title ?? "Untitled Task",
             category: category,
             priority: priority,
@@ -265,5 +304,7 @@ class TaskBuilderState {
             icon: category.icon,
             notes: ""
         )
+        task.dimensions = Array(selectedDimensions)
+        return task
     }
 }
