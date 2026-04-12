@@ -665,7 +665,7 @@ struct ScheduleView: View {
 
                 Divider()
 
-                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: .date)
+                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: [.date, .hourAndMinute])
                     .datePickerStyle(.graphical)
                     .tint(AppColors.accent)
 

@@ -72,11 +72,12 @@ struct CompassView: View {
 
             // Radar chart with axis labels
             radarChart
-                .frame(height: 200)
+                .frame(height: 220)
+                .padding(.vertical, 4)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(radarAccessibilityLabel)
 
-            // Tappable dimension cards (simplified — no A/S/C bars)
+            // Tappable dimension cards
             dimensionCards
 
             // Balance streak (only with real data)
@@ -143,10 +144,14 @@ struct CompassView: View {
 
             ZStack {
                 // Background grid rings
-                ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { level in
+                ForEach([0.25, 0.5, 0.75], id: \.self) { level in
                     radarPolygon(sides: dims.count, radius: radius * level, center: center)
-                        .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+                        .stroke(AppColors.border.opacity(0.3), lineWidth: 0.5)
                 }
+
+                // Outer ring (max value) — dashed, visible in both light and dark mode
+                radarPolygon(sides: dims.count, radius: radius, center: center)
+                    .stroke(AppColors.textMuted.opacity(0.5), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
 
                 // Axis lines
                 ForEach(Array(dims.enumerated()), id: \.element.id) { index, _ in
@@ -217,7 +222,7 @@ struct CompassView: View {
     // MARK: - Dimension Cards (simplified + tappable)
 
     private var dimensionCards: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             ForEach(LifeDimension.scored) { dim in
                 let bd = breakdowns[dim] ?? BalanceManager.DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)
                 let score = bd.composite
@@ -226,35 +231,36 @@ struct CompassView: View {
                     Haptics.light()
                     activeSheet = .dimension(dim)
                 } label: {
-                    VStack(spacing: 6) {
-                        Text(String(format: "%.1f", min(10, score)))
-                            .font(AppFonts.heading(18))
-                            .foregroundColor(dim.color)
-                            .monospacedDigit()
+                    VStack(spacing: 4) {
+                        // Score ring (larger, centered)
+                        ZStack {
+                            Circle()
+                                .stroke(dim.color.opacity(0.15), lineWidth: 4)
+                                .frame(width: 36, height: 36)
+                            Circle()
+                                .trim(from: 0, to: min(1, score / 10))
+                                .stroke(dim.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                .frame(width: 36, height: 36)
+                                .rotationEffect(.degrees(-90))
+
+                            Text(String(format: "%.0f", min(10, score)))
+                                .font(AppFonts.bodyMedium(11))
+                                .foregroundColor(dim.color)
+                                .monospacedDigit()
+                        }
 
                         Text(dim.label)
                             .font(AppFonts.caption(11))
-                            .foregroundColor(AppColors.textMuted)
-
-                        // Simple score ring instead of A/S/C bars
-                        ZStack {
-                            Circle()
-                                .stroke(dim.color.opacity(0.15), lineWidth: 3)
-                                .frame(width: 24, height: 24)
-                            Circle()
-                                .trim(from: 0, to: min(1, score / 10))
-                                .stroke(dim.color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                                .frame(width: 24, height: 24)
-                                .rotationEffect(.degrees(-90))
-                        }
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 12)
                     .background(dim.color.opacity(0.06))
-                    .cornerRadius(10)
+                    .cornerRadius(12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(dim.color.opacity(0.12), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(dim.color.opacity(0.15), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)

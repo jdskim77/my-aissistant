@@ -10,9 +10,11 @@ final class GreetingManager {
     private static let cooldownInterval: TimeInterval = 3600 // 1 hour
     private static let usedOpenersKey = "usedOpenersToday"
     private static let usedOpenersDateKey = "usedOpenersDate"
+    private static let dismissedUntilKey = "greetingDismissedUntil"
 
     /// Generate a contextual greeting if the cooldown has elapsed.
     /// Returns `true` if a fresh greeting was generated, `false` if the cached one was restored.
+    /// Respects user dismissal — won't re-show until the cooldown expires after dismissal.
     @discardableResult
     func generateGreetingIfNeeded(
         todayTaskCount: Int,
@@ -22,6 +24,16 @@ final class GreetingManager {
         streak: Int
     ) -> Bool {
         let now = Date()
+
+        // Respect user dismissal — don't re-show until the dismissed-until time
+        let dismissedUntil = UserDefaults.standard.double(forKey: Self.dismissedUntilKey)
+        if dismissedUntil > 0 && now.timeIntervalSince1970 < dismissedUntil {
+            // User dismissed this greeting — restore text but keep hidden
+            let cached = UserDefaults.standard.string(forKey: AppConstants.lastGreetingTextKey) ?? ""
+            if !cached.isEmpty { currentGreeting = cached }
+            return false
+        }
+
         let lastGreeted = UserDefaults.standard.double(forKey: AppConstants.lastGreetedTimestampKey)
         let lastDate = Date(timeIntervalSince1970: lastGreeted)
 
@@ -50,6 +62,9 @@ final class GreetingManager {
         currentGreeting = result.text
         isShowingGreeting = true
 
+        // Clear any previous dismissal since this is a fresh greeting
+        UserDefaults.standard.removeObject(forKey: Self.dismissedUntilKey)
+
         // Track the opener so it won't repeat today
         recordUsedOpener(result.opener)
 
@@ -60,10 +75,14 @@ final class GreetingManager {
         return true
     }
 
+    /// Dismiss the greeting. It won't reappear until the cooldown expires (1 hour).
     func dismissGreeting() {
         withAnimation(.easeOut(duration: 0.3)) {
             isShowingGreeting = false
         }
+        // Prevent re-showing for the full cooldown period from now
+        let dismissUntil = Date().timeIntervalSince1970 + Self.cooldownInterval
+        UserDefaults.standard.set(dismissUntil, forKey: Self.dismissedUntilKey)
     }
 
     // MARK: - Used Opener Tracking

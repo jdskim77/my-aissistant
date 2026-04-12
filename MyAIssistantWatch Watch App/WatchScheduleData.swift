@@ -13,6 +13,54 @@ struct WatchScheduleData: Codable {
     let nextCheckIn: String? // e.g. "Morning" or nil if all done
     let updatedAt: Date
 
+    // Compass dimension scores (0-10). Nil = not enough data yet.
+    let bodyScore: Double?
+    let mindScore: Double?
+    let heartScore: Double?
+    let spiritScore: Double?
+
+    // User info
+    let userName: String?
+    let aiInsight: String? // Latest daily recap line
+
+    // Check-in status for today (which slots are completed)
+    let completedCheckIns: [String]? // e.g. ["Morning", "Midday"]
+
+    // Backward-compatible initializer
+    init(
+        tasks: [WatchTask],
+        streakDays: Int,
+        completedToday: Int,
+        totalToday: Int,
+        quoteText: String?,
+        quoteAuthor: String?,
+        nextCheckIn: String?,
+        updatedAt: Date,
+        bodyScore: Double? = nil,
+        mindScore: Double? = nil,
+        heartScore: Double? = nil,
+        spiritScore: Double? = nil,
+        userName: String? = nil,
+        aiInsight: String? = nil,
+        completedCheckIns: [String]? = nil
+    ) {
+        self.tasks = tasks
+        self.streakDays = streakDays
+        self.completedToday = completedToday
+        self.totalToday = totalToday
+        self.quoteText = quoteText
+        self.quoteAuthor = quoteAuthor
+        self.nextCheckIn = nextCheckIn
+        self.updatedAt = updatedAt
+        self.bodyScore = bodyScore
+        self.mindScore = mindScore
+        self.heartScore = heartScore
+        self.spiritScore = spiritScore
+        self.userName = userName
+        self.aiInsight = aiInsight
+        self.completedCheckIns = completedCheckIns
+    }
+
     struct WatchTask: Codable, Identifiable, Hashable {
         let id: String
         let title: String

@@ -6,58 +6,81 @@ import AppIntents
 @main
 struct MyAIssistantWatchApp: App {
     private var connectivityManager = WatchConnectivityManager.shared
+    @State private var selectedTab: WatchTab = .compass
     @State private var showVoiceChat = false
     @State private var showAddTask = false
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                WatchTodayView(connectivity: connectivityManager)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                showAddTask = true
-                            } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(.green)
+            TabView(selection: $selectedTab) {
+                // Tab 1: Compass Dashboard
+                NavigationStack {
+                    WatchCompassView(connectivity: connectivityManager)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button {
+                                    showVoiceChat = true
+                                } label: {
+                                    Image(systemName: "mic.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.accentColor)
+                                }
+                                .accessibilityLabel("AI Assistant")
                             }
-                            .accessibilityLabel("Add Task")
                         }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                showVoiceChat = true
-                            } label: {
-                                Image(systemName: "mic.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(.accentColor)
+                        .navigationDestination(isPresented: $showVoiceChat) {
+                            WatchVoiceChatView(connectivity: connectivityManager)
+                        }
+                }
+                .tag(WatchTab.compass)
+
+                // Tab 2: Today's Tasks
+                NavigationStack {
+                    WatchTodayView(connectivity: connectivityManager)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button {
+                                    showAddTask = true
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.green)
+                                }
+                                .accessibilityLabel("Add Task")
                             }
-                            .accessibilityLabel("AI Assistant")
                         }
-                    }
-                    .navigationDestination(isPresented: $showVoiceChat) {
-                        WatchVoiceChatView(connectivity: connectivityManager)
-                    }
-                    .navigationDestination(isPresented: $showAddTask) {
-                        WatchAddTaskView(connectivity: connectivityManager)
-                    }
-                    .navigationDestination(for: WatchScheduleData.WatchTask.self) { task in
-                        WatchTaskDetailView(task: task, connectivity: connectivityManager)
-                    }
+                        .navigationDestination(isPresented: $showAddTask) {
+                            WatchAddTaskView(connectivity: connectivityManager)
+                        }
+                        .navigationDestination(for: WatchScheduleData.WatchTask.self) { task in
+                            WatchTaskDetailView(task: task, connectivity: connectivityManager)
+                        }
+                }
+                .tag(WatchTab.tasks)
+
+                // Tab 3: Quick Check-In
+                WatchQuickCheckInView(connectivity: connectivityManager)
+                    .tag(WatchTab.checkIn)
             }
+            .tabViewStyle(.page)
             .onChange(of: connectivityManager.shouldOpenVoiceChat) { _, shouldOpen in
                 if shouldOpen {
+                    selectedTab = .compass
                     showVoiceChat = true
                     connectivityManager.shouldOpenVoiceChat = false
                 }
             }
             .onOpenURL { url in
-                // Handle deep link from Action Button intent
                 if url.scheme == "myaissistant" && url.host == "voice" {
+                    selectedTab = .compass
                     showVoiceChat = true
                 }
             }
         }
+    }
+
+    enum WatchTab {
+        case compass, tasks, checkIn
     }
 }
 

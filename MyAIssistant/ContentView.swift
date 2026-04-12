@@ -93,6 +93,8 @@ struct ContentView: View {
 
     private func navigateToDestination(_ destination: String) {
         switch destination {
+        case "assistant", "chat":
+            showingChat = true
         case "schedule":
             selectedTab = .schedule
         case "compass", "patterns":

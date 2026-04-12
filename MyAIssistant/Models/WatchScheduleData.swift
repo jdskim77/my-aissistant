@@ -11,6 +11,13 @@ struct WatchScheduleData: Codable {
     let quoteAuthor: String?
     let nextCheckIn: String? // e.g. "Morning" or nil if all done
     let updatedAt: Date
+    let bodyScore: Double?
+    let mindScore: Double?
+    let heartScore: Double?
+    let spiritScore: Double?
+    let userName: String?
+    let aiInsight: String?
+    let completedCheckIns: [String]?
 
     struct WatchTask: Codable, Identifiable {
         let id: String

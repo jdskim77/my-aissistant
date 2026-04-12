@@ -212,9 +212,10 @@ struct OnboardingContainerView: View {
         // 1. Save dimension ratings as a DailyBalanceCheckIn
         let checkIn = DailyBalanceCheckIn(date: Date())
         for (dim, score) in ratings {
-            // Map 1/3/5/7/9 to satisfaction 1-5 for the existing model
-            let satisfaction = max(1, min(5, (score + 1) / 2))
-            checkIn.setSatisfaction(satisfaction, for: dim)
+            // Store the raw 1-9 rating directly. BalanceManager normalizes
+            // to 0-10 by handling both 1-5 (daily check-ins) and 1-9
+            // (onboarding) scales via: min(rating, 9) / 9.0 * 10.
+            checkIn.setSatisfaction(score, for: dim)
         }
         modelContext.insert(checkIn)
 

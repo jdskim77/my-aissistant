@@ -468,6 +468,15 @@ struct HomeView: View {
                     )
                 }
             }
+
+            // Bottom spacer so the last section can scroll above the tab bar
+            Section {
+                Color.clear
+                    .frame(height: 40)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets())
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
