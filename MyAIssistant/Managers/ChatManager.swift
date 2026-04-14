@@ -523,17 +523,39 @@ final class ChatManager {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-        // Parse CREATE_EVENT tags — format: [[CREATE_EVENT:Title|start|end|desc|recurrence|dimension]]
-        let createPattern = /\[\[CREATE_EVENT:(.+?)\|(.+?)\|(.+?)\|(.*?)(?:\|(daily|weekly|biweekly|monthly))?(?:\|(physical|mental|emotional|spiritual))?\]\]/
+        // Parse CREATE_EVENT tags. Structure: [[CREATE_EVENT:Title|start|end|desc?|recurrence?|dimension?]]
+        // Match the outer bracket, then classify each pipe-separated field by content
+        // so dropped/reordered optional fields can't silently mis-parse (e.g. "daily"
+        // landing in the description slot when the AI omits the description pipe).
+        let recurrenceKeywords: Set<String> = ["daily", "weekly", "biweekly", "monthly"]
+        let dimensionKeywords: Set<String> = ["physical", "mental", "emotional", "spiritual"]
+        let createPattern = /\[\[CREATE_EVENT:([^\]]+?)\]\]/
         for match in text.matches(of: createPattern) {
-            let title = String(match.1).trimmingCharacters(in: .whitespaces)
-            let startStr = String(match.2).trimmingCharacters(in: .whitespaces)
-            let endStr = String(match.3).trimmingCharacters(in: .whitespaces)
-            let desc = String(match.4).trimmingCharacters(in: .whitespaces)
-            let recStr = match.5.map { String($0).lowercased() }
-            let recurrence = recStr.flatMap { TaskRecurrence(rawValue: $0.capitalized) } ?? .none
-            let dimStr = match.6.map { String($0).lowercased() }
-            let dimension = dimStr.flatMap { LifeDimension(rawValue: $0.capitalized) }
+            let parts = String(match.1).split(separator: "|", omittingEmptySubsequences: false).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }
+            guard parts.count >= 3 else {
+                displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
+                continue
+            }
+            let title = parts[0]
+            let startStr = parts[1]
+            let endStr = parts[2]
+
+            var desc: String? = nil
+            var recurrence: TaskRecurrence = .none
+            var dimension: LifeDimension? = nil
+
+            for part in parts.dropFirst(3) where !part.isEmpty {
+                let lower = part.lowercased()
+                if recurrenceKeywords.contains(lower), recurrence == .none {
+                    recurrence = TaskRecurrence(rawValue: lower.capitalized) ?? .none
+                } else if dimensionKeywords.contains(lower), dimension == nil {
+                    dimension = LifeDimension(rawValue: lower.capitalized)
+                } else if desc == nil {
+                    desc = part
+                }
+            }
 
             if let startDate = dateFormatter.date(from: startStr),
                let endDate = dateFormatter.date(from: endStr) {
@@ -541,7 +563,7 @@ final class ChatManager {
                     title: title,
                     start: startDate,
                     end: endDate,
-                    description: desc.isEmpty ? nil : desc,
+                    description: desc,
                     recurrence: recurrence,
                     dimension: dimension
                 ))
