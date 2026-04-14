@@ -69,7 +69,6 @@ class TaskBuilderState {
                 TaskBuilderChip(label: "Mental", icon: "🧠", value: "Mental"),
                 TaskBuilderChip(label: "Emotional", icon: "❤️", value: "Emotional"),
                 TaskBuilderChip(label: "Spiritual", icon: "✨", value: "Spiritual"),
-                TaskBuilderChip(label: "Done", icon: nil, value: "done"),
             ]
         case .confirm:
             return [
