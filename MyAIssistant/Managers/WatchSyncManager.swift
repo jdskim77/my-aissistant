@@ -87,15 +87,10 @@ final class WatchSyncManager: NSObject {
             )
         }
 
-        // Determine next check-in
+        // Which slot is the user currently in? Single source of truth is
+        // CheckInTime.slot(forHour:) — Watch and iOS must agree on the label.
         let hour = calendar.component(.hour, from: Date())
-        let nextCheckIn: String? = {
-            if hour < 8 { return "Morning" }
-            if hour < 13 { return "Midday" }
-            if hour < 18 { return "Afternoon" }
-            if hour < 22 { return "Night" }
-            return nil
-        }()
+        let nextCheckIn: String? = CheckInTime.slot(forHour: hour).rawValue
 
         let data = WatchScheduleData(
             tasks: watchTasks,

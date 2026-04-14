@@ -316,13 +316,9 @@ struct CompassTabView: View {
         )
     }
 
-    /// Current time-appropriate check-in slot
+    /// Current time-appropriate check-in slot — delegate to the single source of truth.
     private var currentCheckInSlot: CheckInTime {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 12 { return .morning }
-        if hour < 17 { return .midday }
-        if hour < 21 { return .afternoon }
-        return .night
+        CheckInTime.current()
     }
 
     private func actionsSection(bm: BalanceManager) -> some View {

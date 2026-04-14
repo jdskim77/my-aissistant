@@ -91,11 +91,7 @@ struct EveningCheckInView: View {
     }
 
     private var currentSlotName: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 12 { return "Morning" }
-        if hour < 17 { return "Midday" }
-        if hour < 21 { return "Afternoon" }
-        return "Night"
+        CheckInTime.current().rawValue
     }
 
     private var headerTitle: String {

@@ -80,21 +80,28 @@ enum CheckInTime: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The slot the user is currently in. Boundaries align with each slot's `.hour`:
+    /// night carries from 22:00 through 08:00, morning runs 08:00–13:00,
+    /// midday 13:00–18:00, afternoon 18:00–22:00. Single source of truth for
+    /// slot labels across iOS, Watch, and widgets — keep it that way.
     static func current() -> CheckInTime {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 11 { return .morning }
-        if hour < 16 { return .midday }
-        if hour < 20 { return .afternoon }
-        return .night
+        return slot(forHour: Calendar.current.component(.hour, from: Date()))
     }
 
+    /// Pure function form of `current()` — testable and reusable.
+    static func slot(forHour hour: Int) -> CheckInTime {
+        if hour < 8 { return .night }       // late/overnight — still in last night's slot
+        if hour < 13 { return .morning }    // 08:00–12:59
+        if hour < 18 { return .midday }     // 13:00–17:59
+        if hour < 22 { return .afternoon }  // 18:00–21:59
+        return .night                        // 22:00–23:59
+    }
+
+    /// The next slot to prompt for. Same boundaries as `current()` — historical
+    /// callers (home-screen sheet, notification scheduling) just want "which
+    /// check-in should I open right now?", which is the current slot.
     static func next() -> CheckInTime {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 8 { return .morning }
-        if hour < 13 { return .midday }
-        if hour < 18 { return .afternoon }
-        if hour < 22 { return .night }
-        return .morning // next day
+        return current()
     }
 
 }
