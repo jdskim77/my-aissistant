@@ -50,8 +50,10 @@ struct CheckInDetailView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Progress bar
-                progressBar
+                // Context header + progress bar
+                if !isGated && currentStep != .complete {
+                    progressHeader
+                }
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -117,26 +119,64 @@ struct CheckInDetailView: View {
         }
     }
 
-    // MARK: - Progress Bar
+    // MARK: - Progress Header
 
-    private var progressBar: some View {
+    private var progressHeader: some View {
         let steps: [CheckInStep] = [.greeting, .mood, .energy, .notes]
         let currentIndex = steps.firstIndex(of: currentStep) ?? 0
-        let progress = currentStep == .complete ? 1.0 : Double(currentIndex) / Double(steps.count)
+        let stepNumber = currentIndex + 1
+        // Reserve 20% for the implicit save action so the notes step doesn't
+        // mislead users into thinking they're already done.
+        let progress = Double(stepNumber) / Double(steps.count + 1)
+        let progressPercent = Int(progress * 100)
+        let labelColor = isYesterday ? AppColors.warning : AppColors.textSecondary
 
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(AppColors.border)
-                    .frame(height: 4)
+        return VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: timeSlot.sfSymbol)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(labelColor)
+                    .accessibilityHidden(true)
 
-                Rectangle()
-                    .fill(timeSlot.color)
-                    .frame(width: geo.size.width * progress, height: 4)
-                    .animation(.easeInOut(duration: 0.3), value: currentStep)
+                Text("\(timeSlot.rawValue) Check-in")
+                    .font(AppFonts.bodyMedium(13))
+                    .foregroundColor(labelColor)
+
+                Text("·")
+                    .font(AppFonts.body(13))
+                    .foregroundColor(AppColors.textMuted)
+
+                Text(isYesterday ? "Yesterday" : "Today")
+                    .font(AppFonts.body(13))
+                    .foregroundColor(labelColor)
+
+                Spacer()
+
+                Text("Step \(stepNumber) of \(steps.count)")
+                    .font(AppFonts.caption(12))
+                    .foregroundColor(AppColors.textMuted)
+                    .monospacedDigit()
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(AppColors.border)
+                        .frame(height: 4)
+
+                    Rectangle()
+                        .fill(timeSlot.color)
+                        .frame(width: geo.size.width * progress, height: 4)
+                        .animation(.easeInOut(duration: 0.3), value: currentStep)
+                }
+            }
+            .frame(height: 4)
         }
-        .frame(height: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(timeSlot.rawValue) check-in for \(isYesterday ? "yesterday" : "today"), step \(stepNumber) of \(steps.count)")
+        .accessibilityValue("\(progressPercent) percent complete")
     }
 
     // MARK: - Greeting Step
@@ -205,44 +245,46 @@ struct CheckInDetailView: View {
                 Haptics.selection()
                 withAnimation(.easeInOut(duration: 0.2)) { isYesterday.toggle() }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: isYesterday ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 13))
-                    Text("Backfill yesterday")
-                        .font(AppFonts.caption(12))
+                HStack(spacing: 8) {
+                    Image(systemName: isYesterday ? "checkmark.circle.fill" : "arrow.uturn.backward.circle")
+                        .font(.system(size: 15))
+                    Text(isYesterday ? "Logging for yesterday" : "Log for yesterday instead")
+                        .font(AppFonts.bodyMedium(13))
                 }
-                .foregroundColor(isYesterday ? AppColors.accent : AppColors.textMuted)
+                .foregroundColor(isYesterday ? AppColors.accent : AppColors.textSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(isYesterday ? AppColors.accentLight : AppColors.card)
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(isYesterday ? AppColors.accent.opacity(0.3) : AppColors.border, lineWidth: 1)
+                )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scale)
             .padding(.top, 4)
         }
     }
 
     private var greetingStep: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             slotPicker
-
-            Image(systemName: timeSlot.sfSymbol)
-                .font(.system(size: 56, weight: .semibold))
-                .foregroundColor(timeSlot.color)
-
-            Text(timeSlot.title)
-                .font(AppFonts.display(28))
-                .foregroundColor(AppColors.textPrimary)
 
             if isLoadingGreeting {
                 ProgressView()
                     .tint(timeSlot.color)
+                    .padding(.top, 24)
             } else {
                 Text(aiGreeting)
                     .font(AppFonts.body(16))
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 16)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 40)
+        .padding(.top, 24)
     }
 
     // MARK: - Mood Step
