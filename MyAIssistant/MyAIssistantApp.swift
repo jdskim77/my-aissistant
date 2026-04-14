@@ -70,6 +70,7 @@ struct MyAIssistantApp: App {
         let bm = BalanceManager(modelContext: context)
 
         tm.calendarSyncManager = csm
+        tm.balanceManager = bm
         self._taskManager = State(initialValue: tm)
         self._patternEngine = State(initialValue: pe)
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))

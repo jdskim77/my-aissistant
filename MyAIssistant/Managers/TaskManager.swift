@@ -8,6 +8,7 @@ import os.log
 final class TaskManager {
     private let modelContext: ModelContext
     var calendarSyncManager: CalendarSyncManager?
+    var balanceManager: BalanceManager?
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -282,12 +283,26 @@ final class TaskManager {
         data.save()
         WidgetCenter.shared.reloadAllTimelines()
 
+        // Query compass dimension scores so Watch rings render real data.
+        // LifeDimension → Watch ring mapping: physical=body, mental=mind,
+        // emotional=heart, spiritual=spirit. Nil bm = first-launch fallback.
+        let compassScores: (body: Double, mind: Double, heart: Double, spirit: Double)? = {
+            guard let scores = balanceManager?.weeklyScores() else { return nil }
+            return (
+                body:   scores[.physical]  ?? 5,
+                mind:   scores[.mental]    ?? 5,
+                heart:  scores[.emotional] ?? 5,
+                spirit: scores[.spiritual] ?? 5
+            )
+        }()
+
         // Sync to Apple Watch
         WatchSyncManager.shared.syncSchedule(
             tasks: allTasks(),
             streak: streak,
             quoteText: quote?.text,
-            quoteAuthor: quote?.author
+            quoteAuthor: quote?.author,
+            compassScores: compassScores
         )
     }
 
