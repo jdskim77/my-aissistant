@@ -26,6 +26,7 @@ struct CheckInDetailView: View {
     @State private var selectedMood: Int? = nil
     @State private var selectedEnergy: Int? = nil
     @State private var notes = ""
+    @FocusState private var notesFocused: Bool
     @State private var aiGreeting = ""
     @State private var isLoadingGreeting = true
     @State private var record: CheckInRecord?
@@ -101,6 +102,12 @@ struct CheckInDetailView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { notesFocused = false }
+                        .font(AppFonts.bodyMedium(15))
+                        .foregroundColor(timeSlot.color)
                 }
             }
             .onAppear {
@@ -368,6 +375,7 @@ struct CheckInDetailView: View {
             TextField("Today I...", text: $notes, axis: .vertical)
                 .font(AppFonts.body(15))
                 .lineLimit(3...6)
+                .focused($notesFocused)
                 .padding(14)
                 .background(AppColors.surface)
                 .cornerRadius(12)
