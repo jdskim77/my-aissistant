@@ -84,38 +84,36 @@ final class BalanceManager {
         let consistencyScores = consistencySignalFromTasks(tasks)
 
         // Detect if user has ANY data this week (tasks or check-ins)
-        let hasActivityData = activityScores.values.contains(where: { $0 > 0 })
         let hasSatisfactionData = satisfactionScores.values.contains(where: { $0 != 5 })
-        let hasConsistencyData = consistencyScores.values.contains(where: { $0 > 0 })
-        let hasAnyData = hasActivityData || hasSatisfactionData || hasConsistencyData
+
+        // Count total completed tasks this week to determine data maturity.
+        // With few tasks, activity/consistency signals are unreliable and drag
+        // the compass far below what the user self-reported. Ramp gradually:
+        //   0 tasks  → 100% satisfaction (show what user rated)
+        //   1-6 tasks → blend: satisfaction dominates, activity/consistency fade in
+        //   7+ tasks  → full weighted formula (enough data for all 3 signals)
+        let totalCompletedTasks = tasks.count
+        let taskDataWeight = min(1.0, Double(totalCompletedTasks) / 7.0)
 
         var result: [LifeDimension: DimensionBreakdown] = [:]
 
-        // On a fresh install with only onboarding ratings (no tasks completed yet),
-        // activity and consistency are zero — which drags the compass down to ~3/10
-        // regardless of what the user rated. Weight satisfaction at 100% until the
-        // user has at least one completed task, then smoothly blend in the other signals.
-        let hasTaskData = hasActivityData || hasConsistencyData
-
         for dim in LifeDimension.scored {
-            if hasAnyData {
-                if hasTaskData {
-                    // Normal weighted composite once user has real task data
-                    result[dim] = DimensionBreakdown(
-                        activity: activityScores[dim] ?? 0,
-                        satisfaction: satisfactionScores[dim] ?? 5,
-                        consistency: consistencyScores[dim] ?? 0
-                    )
-                } else {
-                    // Only satisfaction data (fresh from onboarding) — show it directly
-                    // so the compass reflects what they rated, not a deflated average
-                    let sat = satisfactionScores[dim] ?? 5
-                    result[dim] = DimensionBreakdown(
-                        activity: sat,
-                        satisfaction: sat,
-                        consistency: sat
-                    )
-                }
+            if hasSatisfactionData || totalCompletedTasks > 0 {
+                let sat = satisfactionScores[dim] ?? 5
+                let act = activityScores[dim] ?? 0
+                let con = consistencyScores[dim] ?? 0
+
+                // Blend: at 0 tasks, activity and consistency use satisfaction as floor.
+                // At 7+ tasks, real values are used. This prevents the compass from
+                // showing 3/10 when the user rated themselves 7/9 during onboarding.
+                let blendedActivity = sat * (1 - taskDataWeight) + act * taskDataWeight
+                let blendedConsistency = sat * (1 - taskDataWeight) + con * taskDataWeight
+
+                result[dim] = DimensionBreakdown(
+                    activity: blendedActivity,
+                    satisfaction: sat,
+                    consistency: blendedConsistency
+                )
             } else {
                 // No data yet — start at neutral 5/10 so compass looks balanced, not empty
                 result[dim] = DimensionBreakdown(activity: 5, satisfaction: 5, consistency: 5)

@@ -316,6 +316,15 @@ struct CompassTabView: View {
         )
     }
 
+    /// Current time-appropriate check-in slot
+    private var currentCheckInSlot: CheckInTime {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return .morning }
+        if hour < 17 { return .midday }
+        if hour < 21 { return .afternoon }
+        return .night
+    }
+
     private func actionsSection(bm: BalanceManager) -> some View {
         VStack(spacing: 10) {
             if !bm.hasCheckedInToday() {
@@ -324,9 +333,9 @@ struct CompassTabView: View {
                     activeSheet = .eveningCheckIn
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "sun.horizon.fill")
-                            .foregroundColor(AppColors.gold)
-                        Text("Evening Check-In")
+                        Image(systemName: currentCheckInSlot.sfSymbol)
+                            .foregroundColor(currentCheckInSlot.color)
+                        Text("\(currentCheckInSlot.rawValue) Check-In")
                             .font(AppFonts.bodyMedium(15))
                             .foregroundColor(AppColors.textPrimary)
                         Spacer()
@@ -343,7 +352,7 @@ struct CompassTabView: View {
                     )
                 }
                 .buttonStyle(.scale)
-                .accessibilityLabel("Evening Check-In")
+                .accessibilityLabel("\(currentCheckInSlot.rawValue) Check-In")
             }
 
             NavigationLink {

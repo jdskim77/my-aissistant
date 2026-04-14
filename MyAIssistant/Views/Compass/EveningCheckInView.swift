@@ -90,9 +90,17 @@ struct EveningCheckInView: View {
         }
     }
 
+    private var currentSlotName: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return "Morning" }
+        if hour < 17 { return "Midday" }
+        if hour < 21 { return "Afternoon" }
+        return "Night"
+    }
+
     private var headerTitle: String {
         switch step {
-        case .satisfaction: return "Evening Check-in"
+        case .satisfaction: return "\(currentSlotName) Check-in"
         case .energy: return "Energy Check"
         case .recall: return "Anything Else?"
         case .confirmation: return "All Set"
