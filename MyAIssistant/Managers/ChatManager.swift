@@ -533,7 +533,7 @@ final class ChatManager {
             let recStr = match.5.map { String($0).lowercased() }
             let recurrence = recStr.flatMap { TaskRecurrence(rawValue: $0.capitalized) } ?? .none
             let dimStr = match.6.map { String($0).lowercased() }
-            let dimension = dimStr.flatMap { LifeDimension(rawValue: $0) }
+            let dimension = dimStr.flatMap { LifeDimension(rawValue: $0.capitalized) }
 
             if let startDate = dateFormatter.date(from: startStr),
                let endDate = dateFormatter.date(from: endStr) {
