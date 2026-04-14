@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TaskDetailView: View {
     @Environment(\.taskManager) private var taskManager
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     let task: TaskItem
@@ -255,5 +256,6 @@ struct TaskDetailView: View {
         task.notes = notes
         task.icon = icon
         task.dimensions = Array(dimensions)
+        _ = modelContext.safeSave()
     }
 }
