@@ -3,6 +3,33 @@ import Observation
 import WatchConnectivity
 import os.log
 
+// MARK: - Engine / Reusable (with Thrivn-specific surface flagged below)
+//
+// iPhone-side WatchConnectivity coordinator. Handles activation, pending-sync
+// queuing until the session is ready, message vs applicationContext routing,
+// and delegate plumbing for incoming Watch actions (task toggles, quick
+// check-ins, etc.).
+//
+// REUSABLE (keep in fork):
+//   - Session activation + activation-pending queue
+//   - syncAPIKey pattern (Keychain → Watch)
+//   - updateApplicationContext usage with latest-value-wins semantics
+//   - Delegate forwarding via NotificationCenter.Name extensions
+//
+// ⚠️ THRIVN-SPECIFIC — REPLACE IN FORK:
+//   - `syncSchedule(...)` signature takes `compassScores` as a named tuple
+//     (body/mind/heart/spirit). A fork should replace with a generic
+//     dictionary, e.g. `dimensionScores: [String: Double]?`, or take a
+//     fully-formed `WatchScheduleData` from the caller.
+//   - `completedCheckIns: [String]?` parameter ties to the Thrivn 4-slot
+//     daily check-in model (see `CheckInTime`).
+//   - `anthropicAPIKey()` in `syncAPIKey()` assumes Thrivn's provider layout.
+//
+// Dependencies: WatchConnectivity, KeychainService, TextSizeManager, and
+// the Thrivn `TaskItem` model (reusable as a CodableTask shape).
+// Watch-compatible: no (iOS-side). The Watch counterpart is
+// `WatchConnectivityManager` in the Watch target.
+
 /// Manages iPhone → Watch data sync via WatchConnectivity.
 /// Sends schedule snapshots to the Watch app whenever tasks change.
 @Observable @MainActor

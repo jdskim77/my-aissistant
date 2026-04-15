@@ -1,5 +1,14 @@
 import Foundation
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// OpenAI Chat Completions client implementing AIProvider. Same role as
+// AnthropicProvider — interchangeable failover target. Domain-neutral.
+//
+// Reusable: yes, in any app calling OpenAI.
+// Dependencies: APIClient, AIProvider protocol.
+// Watch-compatible: yes.
+
 actor OpenAIProvider: AIProvider {
     private let apiKey: String
     private let model: String

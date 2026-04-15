@@ -18,7 +18,6 @@
 		2263E169947C166FDE04815D /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97ACE583981903B7525F883 /* CelebrationView.swift */; };
 		2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */; };
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
-		E4A1B2C3D4E5F6A8 /* HabitReminderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */; };
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
@@ -175,6 +174,7 @@
 		AW00000005000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
 		AW00000006000000 /* MyAIssistantWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EW00000001000000 /* MyAIssistantWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */; };
+		B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDAF56B7FFCD2ABB9219B7F /* WatchScheduleDataTests.swift */; };
 		B6DAFEE3962D481100F25951 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */; };
 		B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */; };
 		BDBEBBDC00DF8A70EAE56633 /* WeeklyReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B081FE087983FAC2B82C47 /* WeeklyReflectionView.swift */; };
@@ -185,6 +185,7 @@
 		D846CA8A63B950844CDF4B59 /* AppIconPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D8A11BA0FB83C9835D4275 /* AppIconPreview.swift */; };
 		DC00B58B6CC46AEB7EDA0313 /* CheckInSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */; };
 		E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */; };
+		E4A1B2C3D4E5F6A8 /* HabitReminderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
 		F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */; };
 		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
@@ -300,7 +301,6 @@
 		976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreferencesView.swift; sourceTree = "<group>"; };
 		9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentModelContainer.swift; sourceTree = "<group>"; };
 		9FEE61F904669C1F28F816A9 /* HabitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitManager.swift; sourceTree = "<group>"; };
-		E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitReminderCoordinator.swift; sourceTree = "<group>"; };
 		A45180E1CF55D484DE91629E /* AppLogger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		AA00000002000000 /* Breadcrumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breadcrumb.swift; sourceTree = "<group>"; };
 		AA00000004000000 /* DiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsManager.swift; sourceTree = "<group>"; };
@@ -430,9 +430,11 @@
 		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
 		D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
 		DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetCheckInWindow.swift; sourceTree = "<group>"; };
+		DDDAF56B7FFCD2ABB9219B7F /* WatchScheduleDataTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchScheduleDataTests.swift; sourceTree = "<group>"; };
 		E100000001000000 /* MyAIssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyAIssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassInfoSheet.swift; sourceTree = "<group>"; };
 		E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusTimerView.swift; sourceTree = "<group>"; };
+		E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitReminderCoordinator.swift; sourceTree = "<group>"; };
 		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E972B6EABF4699BFF00E4683 /* BalanceManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
 		EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreference.swift; sourceTree = "<group>"; };
@@ -446,9 +448,39 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch App";
+			sourceTree = "<group>";
+		};
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppTests";
+			sourceTree = "<group>";
+		};
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "MyAIssistantWatch Watch AppUITests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -497,6 +529,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2D30C0743EE3AD4371769947 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				DDDAF56B7FFCD2ABB9219B7F /* WatchScheduleDataTests.swift */,
+			);
+			name = Models;
+			path = Models;
+			sourceTree = "<group>";
+		};
 		3B4A6C51FA5F00EF5D88E395 /* Habits */ = {
 			isa = PBXGroup;
 			children = (
@@ -892,6 +933,7 @@
 				D900000003000000 /* Services */,
 				D900000004000000 /* Mocks */,
 				D900000005000000 /* Utilities */,
+				2D30C0743EE3AD4371769947 /* Models */,
 			);
 			path = MyAIssistantTests;
 			sourceTree = "<group>";
@@ -1395,6 +1437,7 @@
 				A900000006000000 /* UsageGateManagerTests.swift in Sources */,
 				A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
 				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
+				B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,5 +1,19 @@
 import SwiftUI
 
+// MARK: - Engine / Reusable
+//
+// Runtime theme selection + persistence (via UserDefaults). The mechanism is
+// generic (swap a `ColorTheme` struct at runtime, force re-render via `.id()`);
+// the individual theme definitions below are Thrivn-branded (indigo default,
+// specific hex values, specific names).
+//
+// Reusable: mechanism yes, contents no. Fork by keeping the class shape and
+// replacing the `ColorTheme` definitions (indigo/natural/ocean/etc.) with your
+// app's palette.
+// Dependencies: SwiftUI, AppConstants (for the UserDefaults key name).
+// Watch-compatible: partially — the theme system exists on Watch but uses
+// different surfaces (see `WatchCompassView.timeOfDayGradient`).
+
 @Observable
 final class ThemeManager {
     static let shared = ThemeManager()
@@ -48,8 +62,8 @@ final class ThemeManager {
     // MARK: - 0. Indigo (Brand Default — Thoughtful AI Identity)
     // Deep indigo signals "intelligent + introspective" — the same color
     // family used by Anthropic Claude, Linear, Vercel, and Perplexity.
-    // Distinct from the green/blue wellness category, this is Thrivn's
-    // signature visual identity. Pairs with the ThrivnCompassMark and
+    // Distinct from the green/blue wellness category, this is the app's
+    // signature visual identity. Pairs with the brand compass mark and
     // matches the indigo-blue tones in the Mind/Body/Heart Venn logo.
 
     private static let indigo = ColorTheme(

@@ -1,5 +1,17 @@
 import Foundation
 
+// MARK: - Engine / Reusable (with domain-specific fields flagged below)
+//
+// iPhone → Watch sync payload (iOS-side copy). The Watch target has its own
+// copy at `MyAIssistantWatch Watch App/WatchScheduleData.swift` — they MUST
+// stay in sync structurally (Codable contract). Transport pattern is generic,
+// type shape contains Thrivn-specific fields. See the Watch-side header for
+// the full reusability breakdown.
+//
+// REUSABLE: tasks/streak/quote/userName fields, Codable scaffold, WatchTask.
+// ⚠️ THRIVN-SPECIFIC: bodyScore/mindScore/heartScore/spiritScore named
+//   fields, completedCheckIns/nextCheckIn (4-slot model), aiInsight wording.
+
 /// Shared data synced from iPhone → Watch via WatchConnectivity.
 /// Both targets include this file.
 struct WatchScheduleData: Codable {

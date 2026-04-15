@@ -1,6 +1,20 @@
 import Speech
 import AVFoundation
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// On-device speech recognition wrapper. Domain-neutral — transcribes audio
+// to a `transcript` string. Caller decides what to do with it.
+//
+// Reusable: yes, in any app needing voice input.
+// Dependencies: Speech, AVFoundation.
+// Watch-compatible: limited — Watch has its own speech APIs and constraints
+//   (see WatchVoiceChatView for the Watch-side voice flow).
+//
+// Fork notes:
+// - Microphone + speech permission strings must be in Info.plist
+//   (`NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`).
+
 @Observable
 @MainActor
 final class SpeechRecognizer {

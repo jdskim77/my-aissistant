@@ -1,6 +1,22 @@
 import StoreKit
 import SwiftUI
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// StoreKit 2 subscription orchestration: product loading, purchase flow,
+// restoration, transaction listener, entitlement state. Domain-neutral
+// (the SKUs are configured in App Store Connect, not hardcoded here).
+//
+// Reusable: yes, in any iOS subscription app.
+// Dependencies: StoreKit 2, SwiftUI (for @Observable).
+// Watch-compatible: subscription state syncs to Watch via WatchSyncManager;
+//   purchases must happen on iPhone.
+//
+// Fork notes:
+// - Product IDs (`SubscriptionTier.allProductIDs`) are app-specific and live
+//   in `SubscriptionTier.swift`. Replace with your fork's IDs.
+// - Free-tier quotas + paywall trigger logic live in `UsageGateManager`.
+
 /// Manages StoreKit 2 subscriptions: loading products, purchasing, restoring, and listening for transactions.
 @Observable @MainActor
 final class SubscriptionManager {

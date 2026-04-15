@@ -2,6 +2,20 @@ import Foundation
 import MetricKit
 import OSLog
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// MetricKit subscriber: receives daily metric payloads (launch time, hangs,
+// disk writes, CPU, etc.) and immediate diagnostic payloads (crashes).
+// Domain-neutral.
+//
+// Reusable: yes, drop-in for any iOS app.
+// Dependencies: MetricKit, OSLog.
+// Watch-compatible: no (iOS-only API).
+//
+// Fork notes:
+// - Optional integration with Sentry/TelemetryDeck for upload — see the
+//   commented attachments path inside the class.
+
 /// Subscribes to MetricKit diagnostic payloads (hangs, crashes, disk writes)
 /// delivered by iOS. Logs key metrics and stores payloads for upload.
 @Observable @MainActor

@@ -58,24 +58,8 @@ final class UsageGateManagerTests: XCTestCase {
     }
 
     // MARK: - Check-in Gating
-
-    func testFreeTierCanDoCheckInInitially() {
-        XCTAssertTrue(sut.canDoCheckIn(tier: .free))
-    }
-
-    func testFreeTierBlockedAfterCheckInLimit() {
-        for _ in 0..<AppConstants.freeCheckInsPerWeek {
-            sut.recordCheckIn()
-        }
-        XCTAssertFalse(sut.canDoCheckIn(tier: .free))
-    }
-
-    func testProTierAlwaysCanCheckIn() {
-        for _ in 0..<20 {
-            sut.recordCheckIn()
-        }
-        XCTAssertTrue(sut.canDoCheckIn(tier: .pro))
-    }
+    // NOTE: Per-week check-in gating was removed — free tier now only meters chat
+    // messages per month. These tests are intentionally omitted.
 
     // MARK: - Usage Tracking
 
@@ -85,22 +69,10 @@ final class UsageGateManagerTests: XCTestCase {
         XCTAssertEqual(sut.chatUsedThisMonth, 1)
     }
 
-    func testRecordCheckInIncrementsCount() {
-        XCTAssertEqual(sut.checkInsUsedThisWeek, 0)
-        sut.recordCheckIn()
-        XCTAssertEqual(sut.checkInsUsedThisWeek, 1)
-    }
-
     func testRemainingChatMessages() {
         XCTAssertEqual(sut.remainingChatMessages, AppConstants.freeChatMessagesPerMonth)
         sut.recordChatMessage(inputTokens: 100, outputTokens: 50)
         XCTAssertEqual(sut.remainingChatMessages, AppConstants.freeChatMessagesPerMonth - 1)
-    }
-
-    func testRemainingCheckIns() {
-        XCTAssertEqual(sut.remainingCheckIns, AppConstants.freeCheckInsPerWeek)
-        sut.recordCheckIn()
-        XCTAssertEqual(sut.remainingCheckIns, AppConstants.freeCheckInsPerWeek - 1)
     }
 
     func testRemainingNeverNegative() {

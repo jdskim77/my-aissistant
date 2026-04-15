@@ -1,5 +1,24 @@
 import Foundation
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// Provider-agnostic AI protocol + types for sending messages and streaming
+// responses. Domain-neutral — knows nothing about dimensions, coaching, or
+// Thrivn content. Callers supply their own system prompt, messages, and
+// (optional) tag handlers.
+//
+// Reusable: yes, in any app that calls LLM APIs.
+// Dependencies: Foundation only.
+// Watch-compatible: yes (use from Watch target with its own Keychain read).
+//
+// Fork notes:
+// - Keep `AIResponse`, `AIProvider` protocol, streaming event types.
+// - `AnthropicProvider` / `OpenAIProvider` implement this protocol and are
+//   also reusable (no domain knowledge inside them).
+// - The *prompt content* that drives these providers lives elsewhere
+//   (`AIPromptBuilder.swift`) and is Thrivn-specific — strip that file in a
+//   fork and write a new prompt builder.
+
 // MARK: - AI Response
 
 struct AIResponse {

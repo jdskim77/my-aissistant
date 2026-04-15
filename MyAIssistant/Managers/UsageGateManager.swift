@@ -2,6 +2,23 @@ import Foundation
 import Observation
 import SwiftData
 
+// MARK: - Engine / Reusable
+//
+// Tier-aware usage metering layer. Wraps a per-device `UsageTracker` with
+// subscription-tier-aware checks (free tier has monthly quotas; paid tiers
+// are unlimited). Domain-neutral — the thing being metered is opaque at this
+// layer (the tracker counts arbitrary events).
+//
+// Reusable: yes, in any app with a free-tier quota + StoreKit subscriptions.
+// Dependencies: SwiftData (UsageTracker model), SubscriptionManager.
+// Watch-compatible: no (iOS-only, uses shared CloudKit store).
+//
+// Fork notes:
+// - `UsageTracker` is persisted via SwiftData and must be in the schema.
+// - Per-device scoping (deviceID) prevents one device's tracker from locking
+//   out another on the same iCloud account. Preserve this in any fork.
+// - Real per-account enforcement happens server-side (the on-device tracker
+//   is advisory). If the fork has no backend, document that upfront.
 /// Enforces tier-based usage limits. Wraps UsageTracker with tier-aware checks.
 @Observable @MainActor
 final class UsageGateManager {
@@ -18,7 +35,7 @@ final class UsageGateManager {
     /// their own row scoped by `deviceID`. Without this scoping, `.first` could
     /// return another device's row (with a mismatched HMAC integrity key) and
     /// permanently lock the user out of chat. Real per-account limits are still
-    /// enforced server-side by the Thrivn backend.
+    /// enforced server-side by the backend.
     private func tracker() -> UsageTracker {
         let myDeviceID = UsageTracker.currentDeviceID()
         let descriptor = FetchDescriptor<UsageTracker>(

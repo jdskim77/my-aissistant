@@ -20,10 +20,10 @@ struct MyAIssistantWatchApp: App {
                 NavigationStack {
                     WatchCompassView(connectivity: connectivityManager)
                         .toolbar {
-                            // + for quick task add — reuses the same showAddTask
-                            // state as the Today tab. NavigationDestination is
-                            // declared here so it fires when the Compass tab is
-                            // the visible NavigationStack.
+                            // + for quick task add. Uses its own state
+                            // (showAddTaskFromCompass) — NOT the Today tab's
+                            // showAddTask — so only the visible NavigationStack
+                            // responds. Don't merge these.
                             ToolbarItem(placement: .topBarLeading) {
                                 Button {
                                     showAddTaskFromCompass = true

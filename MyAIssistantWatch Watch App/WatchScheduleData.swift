@@ -1,6 +1,29 @@
 #if os(watchOS)
 import Foundation
 
+// MARK: - Engine / Reusable (with domain-specific fields flagged below)
+//
+// iPhone → Watch sync payload. Transport pattern is generic — JSON-encoded,
+// passed via `applicationContext` (latest-value-wins). The TYPE SHAPE,
+// however, contains Thrivn-specific fields.
+//
+// REUSABLE (keep in fork):
+//   - tasks, streakDays, completedToday, totalToday
+//   - quoteText / quoteAuthor
+//   - updatedAt, userName
+//   - Codable/dictionary encoding scaffold (`toDictionary()` / `from(context:)`)
+//   - WatchTask sub-struct
+//
+// ⚠️ THRIVN-SPECIFIC — REPLACE IN FORK:
+//   - `bodyScore` / `mindScore` / `heartScore` / `spiritScore`
+//     → swap for your app's dimensions, OR switch to a generic
+//       `dimensionScores: [String: Double]?` dictionary
+//   - `aiInsight` (phrased for daily recap wording) — rename or repurpose
+//   - `nextCheckIn` / `completedCheckIns` — Thrivn's 4-slot daily check-in
+//     framework; replace with whatever cadence the fork uses
+//
+// The transport scaffold (encode/decode, applicationContext dictionary wrapper)
+// is the real reusable asset here. The field names are only a pattern.
 /// Shared data synced from iPhone → Watch via WatchConnectivity.
 /// Both targets include this file.
 struct WatchScheduleData: Codable {

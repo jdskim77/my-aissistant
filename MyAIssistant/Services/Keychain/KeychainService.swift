@@ -1,6 +1,23 @@
 import Foundation
 import Security
 
+// MARK: - Engine / Reusable
+//
+// Generic Keychain wrapper with shared access group support (so Watch, Widgets,
+// and iOS app can read the same keys). Domain-neutral — stores arbitrary
+// string values under arbitrary account keys.
+//
+// Reusable: yes, in any iOS app with a shared Watch or extension target.
+// Dependencies: Security framework only.
+// Watch-compatible: yes.
+//
+// Fork notes:
+// - `accessGroup` below is a Thrivn-specific App Group identifier. A fork MUST
+//   replace this with its own `group.com.<yourapp>.shared` identifier and
+//   update entitlements on every target (iOS, Watch, Widgets, Intents).
+// - The fallback path (read without access group, re-save with it) handles
+//   migration from older Thrivn versions; a fresh fork can delete it.
+
 class KeychainService: @unchecked Sendable {
     private let accessGroup = "group.com.myaissistant.shared"
 
@@ -51,7 +68,7 @@ class KeychainService: @unchecked Sendable {
     ///   - value: Value to store
     ///   - protection: Keychain access class. Default is `.afterFirstUnlock` so the
     ///     Watch extension can read shared keys in the background. For sensitive
-    ///     bearer tokens (Thrivn JWT/refresh token, OAuth refresh tokens), pass
+    ///     bearer tokens (auth JWTs, OAuth refresh tokens), pass
     ///     `.whenUnlockedThisDeviceOnly` so they don't migrate to other devices via
     ///     iCloud Keychain backup.
     @discardableResult

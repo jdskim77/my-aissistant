@@ -9,7 +9,7 @@ final class MockKeychainService: KeychainService, @unchecked Sendable {
     }
 
     @discardableResult
-    override func save(key: String, value: String) -> Bool {
+    override func save(key: String, value: String, protection: KeychainProtection = .afterFirstUnlock) -> Bool {
         store[key] = value
         return true
     }

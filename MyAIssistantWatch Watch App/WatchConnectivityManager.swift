@@ -5,6 +5,29 @@ import SwiftUI
 import WidgetKit
 import Security
 
+// MARK: - Engine / Reusable (with Thrivn-shaped payload type)
+//
+// Watch-side counterpart to iOS WatchSyncManager. Receives application
+// context updates from iPhone, decodes into `WatchScheduleData`, exposes
+// it to views + complications, and forwards Watch-originated actions back
+// to iPhone (task toggles, quick check-ins, voice chat triggers).
+//
+// REUSABLE (keep in fork):
+//   - Singleton + WCSessionDelegate boilerplate
+//   - applicationContext receive + decode flow
+//   - sendMessage paths for Watch → iPhone actions
+//   - WidgetKit reload after data updates
+//   - shouldOpenVoiceChat flag for Action Button intent
+//
+// ⚠️ THRIVN-SPECIFIC — REVISIT IN FORK:
+//   - The payload type `WatchScheduleData` (see its own header — its
+//     bodyScore/mindScore/heartScore/spiritScore fields are Thrivn).
+//   - The "quickCheckIn" message format ties to Thrivn's check-in model.
+//
+// Dependencies: WatchConnectivity, WidgetKit, WatchScheduleData (shared
+// payload struct), Security (for forwarded API key).
+// Watch-compatible: yes (this IS the Watch target).
+
 /// Receives schedule data from iPhone and makes it available to Watch views + complications.
 @Observable
 class WatchConnectivityManager: NSObject, WCSessionDelegate {

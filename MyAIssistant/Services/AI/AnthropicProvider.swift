@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// Anthropic Claude API client implementing AIProvider. Handles request
+// construction, prompt-cache headers, streaming SSE parsing, retry, and
+// error mapping. Domain-neutral.
+//
+// Reusable: yes, in any app calling Anthropic.
+// Dependencies: APIClient, AIProvider protocol, AppConstants for model IDs.
+// Watch-compatible: yes (Watch target uses its own copy / shared file).
+
 actor AnthropicProvider: AIProvider {
     private let apiKey: String
     private let model: String

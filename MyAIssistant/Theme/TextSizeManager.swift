@@ -1,5 +1,17 @@
 import SwiftUI
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// Runtime text-size scaling layered on top of Apple's Dynamic Type. Persists
+// the user's selection (UserDefaults) and exposes a multiplier that the app's
+// font tokens consume. Domain-neutral.
+//
+// Reusable: yes, in any app needing user-controlled type scaling beyond
+// system Dynamic Type.
+// Dependencies: SwiftUI.
+// Watch-compatible: yes (Watch consumes the same selection via
+// applicationContext sync).
+
 /// Text size options aligned with Apple's Dynamic Type accessibility guidelines.
 /// Each tier applies a multiplier to all font sizes via AppFonts.
 ///

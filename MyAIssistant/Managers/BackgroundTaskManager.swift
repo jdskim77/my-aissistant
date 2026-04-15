@@ -1,6 +1,21 @@
 import BackgroundTasks
 import SwiftData
 
+// MARK: - Engine / Reusable (with Thrivn-specific task IDs)
+//
+// BGTaskScheduler registration + handler scaffolding for daily/weekly
+// background work. The PATTERN is generic; the specific task IDs and what
+// they do (snapshot, AI review, calendar sync) are app-specific.
+//
+// Reusable: pattern yes, IDs and handlers no.
+// Dependencies: BackgroundTasks, SwiftData (for snapshot persistence).
+// Watch-compatible: no (iOS-only — Watch uses WKApplicationRefreshBackgroundTask).
+//
+// Fork notes:
+// - Replace task IDs (`com.myaissistant.*`) with your app's bundle prefix.
+// - Register the same IDs in `Info.plist` under `BGTaskSchedulerPermittedIdentifiers`.
+// - Handlers are app-specific business logic — write fresh in the fork.
+
 /// Registers and handles background tasks for daily snapshots, weekly AI reviews, and calendar sync.
 @MainActor
 final class BackgroundTaskManager {

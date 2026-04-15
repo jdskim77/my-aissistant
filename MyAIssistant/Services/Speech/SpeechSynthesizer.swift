@@ -1,5 +1,14 @@
 import AVFoundation
 
+// MARK: - Engine / Reusable (CLEAN)
+//
+// Text-to-speech wrapper around AVSpeechSynthesizer. Domain-neutral.
+// Tracks speaking state, supports voice selection, exposes a finished callback.
+//
+// Reusable: yes, in any app needing voice output.
+// Dependencies: AVFoundation.
+// Watch-compatible: limited — Watch has its own TTS path.
+
 @Observable
 @MainActor
 final class SpeechSynthesizer {

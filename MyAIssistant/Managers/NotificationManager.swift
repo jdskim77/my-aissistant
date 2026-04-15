@@ -2,6 +2,30 @@ import Foundation
 import Observation
 import UserNotifications
 
+// MARK: - Engine / Reusable (with Thrivn-specific scheduling logic flagged)
+//
+// Local notification scheduling, permission handling, and adaptive frequency
+// based on user engagement (streaks). The TIMING ENGINE is generic; the
+// SLOTS being scheduled (Morning/Midday/Afternoon/Night check-ins) are
+// Thrivn-specific.
+//
+// REUSABLE (keep in fork):
+//   - Permission request flow
+//   - Notification category + action registration
+//   - Daily-recurring-time scheduling primitive
+//   - Frequency tier mechanism (full/moderate/minimal based on streak)
+//   - Badge management
+//
+// ⚠️ THRIVN-SPECIFIC — REPLACE IN FORK:
+//   - The 4-slot CheckInTime model (morning/midday/afternoon/night) and
+//     the per-slot scheduling methods. A surf or other app will have its
+//     own cadence (sunrise/sunset for surf? meal times for nutrition?).
+//   - The motivational copy in notification bodies.
+//   - The streak thresholds for frequency tiers.
+//
+// Dependencies: UserNotifications, Foundation. Optional: BehaviorEngine
+// (smart timing).
+
 // MARK: - Notification Frequency
 
 enum NotificationFrequency: String {
