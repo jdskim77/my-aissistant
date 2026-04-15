@@ -56,23 +56,26 @@ struct TaskBuilderChipsBar: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Cancel task creation")
 
-                // Show "Done" right after Cancel when dimensions are selected — most tasks need just 1
-                if step == .dimension && !selectedDimensions.isEmpty {
+                // On the dimension step, always offer an escape: "Skip" when
+                // nothing is selected (not every task maps to a life dimension),
+                // "Done" once the user has picked at least one.
+                if step == .dimension {
+                    let hasSelection = !selectedDimensions.isEmpty
                     let doneChip = TaskBuilderChip(label: "Done", icon: nil, value: "done")
                     Button {
                         Haptics.light()
                         onSelect(doneChip)
                     } label: {
-                        Text("Done")
+                        Text(hasSelection ? "Done" : "Skip")
                             .font(AppFonts.bodyMedium(13))
                             .foregroundColor(.white)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(AppColors.accent)
+                            .background(hasSelection ? AppColors.accent : AppColors.textMuted)
                             .cornerRadius(20)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Done selecting dimensions")
+                    .accessibilityLabel(hasSelection ? "Done selecting dimensions" : "Skip dimension selection")
                 }
 
                 ForEach(chips) { chip in

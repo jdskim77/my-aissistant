@@ -12,13 +12,11 @@ struct WatchQuickCheckInView: View {
 
     /// Boundaries MUST match iOS `CheckInTime.slot(forHour:)` (CheckIn.swift) so
     /// the same moment produces the same slot label on Watch and iPhone.
-    /// Slot hours: Morning=8, Midday=13, Afternoon=18, Night=22.
     private var currentSlot: String {
         let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 8 { return "Night" }       // overnight → last night's slot
-        if hour < 13 { return "Morning" }
-        if hour < 18 { return "Midday" }
-        if hour < 22 { return "Afternoon" }
+        if hour < 12 { return "Morning" }
+        if hour < 17 { return "Midday" }
+        if hour < 21 { return "Afternoon" }
         return "Night"
     }
 

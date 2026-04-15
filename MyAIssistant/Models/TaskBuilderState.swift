@@ -94,7 +94,7 @@ class TaskBuilderState {
                 let labels = selectedDimensions.map(\.label).joined(separator: " + ")
                 return "\(labels) selected. Tap more or tap Done."
             }
-            return "Which parts of your life does this serve? (pick up to 3)"
+            return "Which parts of your life does this serve? (pick up to 3, or tap Skip)"
         case .confirm: return confirmationSummary
         }
     }

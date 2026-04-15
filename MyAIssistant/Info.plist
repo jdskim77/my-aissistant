@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Encryption Compliance — only uses standard HTTPS/TLS via URLSession.
+	     Qualifies for the Apple exemption, so we set this to NO to avoid
+	     the "Missing Compliance" warning on every TestFlight/App Store upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<!-- Calendar Access -->
 	<key>NSCalendarsUsageDescription</key>
 	<string>My AIssistant uses your calendar to sync events with your schedule and help you stay organized.</string>
