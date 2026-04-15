@@ -8,7 +8,10 @@ struct MyAIssistantWatchApp: App {
     private var connectivityManager = WatchConnectivityManager.shared
     @State private var selectedTab: WatchTab = .compass
     @State private var showVoiceChat = false
-    @State private var showAddTask = false
+    @State private var showAddTask = false            // Today tab's quick-add
+    @State private var showAddTaskFromCompass = false // Compass tab's quick-add
+                                                      // (separate state so only the
+                                                      // visible NavigationStack responds)
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +20,20 @@ struct MyAIssistantWatchApp: App {
                 NavigationStack {
                     WatchCompassView(connectivity: connectivityManager)
                         .toolbar {
+                            // + for quick task add — reuses the same showAddTask
+                            // state as the Today tab. NavigationDestination is
+                            // declared here so it fires when the Compass tab is
+                            // the visible NavigationStack.
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button {
+                                    showAddTaskFromCompass = true
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.green)
+                                }
+                                .accessibilityLabel("Add Task")
+                            }
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button {
                                     showVoiceChat = true
@@ -30,6 +47,9 @@ struct MyAIssistantWatchApp: App {
                         }
                         .navigationDestination(isPresented: $showVoiceChat) {
                             WatchVoiceChatView(connectivity: connectivityManager)
+                        }
+                        .navigationDestination(isPresented: $showAddTaskFromCompass) {
+                            WatchAddTaskView(connectivity: connectivityManager)
                         }
                 }
                 .tag(WatchTab.compass)
