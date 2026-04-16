@@ -211,10 +211,25 @@ final class TaskManager {
 
     // MARK: - AI Context
 
+    /// Serializes near-term tasks for the AI system prompt.
+    ///
+    /// CRITICAL: the backend proxy caps `system` at 20,000 chars. With calendar
+    /// sync on, a heavy user can easily produce 15k+ chars of schedule lines
+    /// alone, pushing the full prompt past the limit and triggering a 422
+    /// VALIDATION_ERROR. We enforce three caps:
+    ///   1. Narrow window (yesterday → +7 days) — was -7 / +14
+    ///   2. Hard task count cap (60) — priority order: today pending → today
+    ///      done → near-future → past
+    ///   3. External calendar IDs only on near-term tasks (next 48h). Far-out
+    ///      events don't need IDs because the AI can't realistically act on
+    ///      them in-thread.
     func scheduleSummary() -> String {
         let calendar = Calendar.current
-        let windowStart = calendar.safeDate(byAdding: .day, value: -7, to: calendar.startOfDay(for: Date()))
-        let windowEnd = calendar.safeDate(byAdding: .day, value: 14, to: calendar.startOfDay(for: Date()))
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
+        let nearWindowEnd = calendar.safeDate(byAdding: .day, value: 2, to: today)
+        let windowStart = calendar.safeDate(byAdding: .day, value: -1, to: today)
+        let windowEnd = calendar.safeDate(byAdding: .day, value: 7, to: today)
 
         let descriptor = FetchDescriptor<TaskItem>(
             predicate: #Predicate { $0.date >= windowStart && $0.date < windowEnd },
@@ -222,17 +237,34 @@ final class TaskManager {
         )
         let tasks = (try? modelContext.fetch(descriptor)) ?? []
 
+        // Prioritize: today pending > today done > future > yesterday.
+        // Within each bucket, preserve date-ascending order.
+        let todayPending = tasks.filter { !$0.done && $0.date >= today && $0.date < tomorrow }
+        let todayDone = tasks.filter { $0.done && $0.date >= today && $0.date < tomorrow }
+        let future = tasks.filter { $0.date >= tomorrow }
+        let past = tasks.filter { $0.date < today }
+
+        let maxTasks = 60
+        let prioritized = Array((todayPending + todayDone + future + past).prefix(maxTasks))
+
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
-        return tasks.map { task in
+        let lines = prioritized.map { task -> String in
             let status = task.done ? "✓" : "○"
             let dateStr = formatter.string(from: task.date)
             var line = "\(status) \(dateStr): \(task.title) [\(task.priority.rawValue)] (\(task.category.rawValue))"
-            if let extID = task.externalCalendarID {
+            // IDs only for tasks within 48h — that's all the AI can meaningfully act on.
+            if let extID = task.externalCalendarID, task.date < nearWindowEnd {
                 line += " {id:\(extID)}"
             }
             return line
-        }.joined(separator: "\n")
+        }
+
+        // Hint the AI when we've truncated so it doesn't pretend it saw everything.
+        let truncatedTail = tasks.count > maxTasks
+            ? "\n…and \(tasks.count - maxTasks) more tasks in the window (truncated for length)"
+            : ""
+        return lines.joined(separator: "\n") + truncatedTail
     }
 
     // MARK: - Completion Rate

@@ -345,6 +345,14 @@ enum AIPromptBuilder {
         return prompt
     }
 
+    /// Hard char cap for the volatile block. Backend proxy caps `system` at
+    /// 20,000 chars total. Stable block runs ~8,500 chars; leave headroom for
+    /// the "\n\n" separator and any future stable-block growth. Clamping the
+    /// volatile block here is defense-in-depth — individual builders
+    /// (e.g. TaskManager.scheduleSummary) are also bounded, but an unbounded
+    /// new field elsewhere could still balloon this.
+    static let volatileBlockMaxChars = 10_000
+
     /// Volatile per-request context: today's date, schedule, stats, recent activity.
     /// NOT cached. Should be small relative to the stable block.
     static func chatSystemPromptVolatile(
@@ -390,6 +398,16 @@ enum AIPromptBuilder {
         - "Help a neighbor this weekend" → [[CREATE_EVENT:Help neighbor|\(Self.exampleDate()) 10:00|\(Self.exampleDate()) 11:00||spiritual]]
         - "Call Sarah to catch up" → [[CREATE_EVENT:Call Sarah|\(Self.exampleDate()) 18:00|\(Self.exampleDate()) 18:30||emotional]]
         """
+
+        // Last-resort clamp. If some upstream builder grows unbounded (a new
+        // field, a user with extreme data shape), this prevents the backend
+        // proxy from returning 422 VALIDATION_ERROR on system > 20k chars.
+        // Truncation is crude on purpose — the real fix belongs in the
+        // offending builder, and this leaves a breadcrumb the AI can see.
+        if prompt.count > volatileBlockMaxChars {
+            let cutIndex = prompt.index(prompt.startIndex, offsetBy: volatileBlockMaxChars)
+            prompt = String(prompt[..<cutIndex]) + "\n\n…(volatile context truncated at \(volatileBlockMaxChars) chars)"
+        }
 
         return prompt
     }
