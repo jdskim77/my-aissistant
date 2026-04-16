@@ -39,7 +39,7 @@ actor GoogleCalendarService {
     /// Build the OAuth2 authorization URL for use with ASWebAuthenticationSession.
     func authorizationURL() -> URL? {
         guard !clientID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("[GoogleCalendarService] ERROR: client_id is empty")
+            AppLogger.calendar.error("Google OAuth: client_id is empty")
             return nil
         }
         var components = URLComponents(string: authURL)
@@ -52,8 +52,8 @@ actor GoogleCalendarService {
             URLQueryItem(name: "prompt", value: "consent"),
         ]
         let url = components?.url
-        print("[GoogleCalendarService] Auth URL: \(url?.absoluteString ?? "nil")")
-        print("[GoogleCalendarService] client_id: \(clientID.prefix(20))...")
+        let prefix = String(clientID.prefix(8))
+        AppLogger.calendar.info("Google OAuth URL built, client_id: \(prefix, privacy: .public)…")
         return url
     }
 

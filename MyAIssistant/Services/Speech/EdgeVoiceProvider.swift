@@ -53,7 +53,7 @@ final class EdgeVoiceProvider: VoiceProvider {
                 try await playAudio(audioData)
             } catch {
                 if !Task.isCancelled {
-                    print("EdgeTTS error: \(error.localizedDescription)")
+                    AppLogger.ai.error("EdgeTTS error: \(error.localizedDescription, privacy: .public)")
                 }
             }
             if !Task.isCancelled {
