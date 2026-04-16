@@ -32,6 +32,13 @@ struct ChatView: View {
     @State private var showClockAppPrompt = false
     @State private var showChatPaywall = false
     @State private var pendingCalendarActions: [CalendarAction] = []
+    // Calendar routing transparency: which calendar the last successful AI-created
+    // event actually landed in, and whether to nudge the user to link Google the
+    // first time we fall back to Apple. See CalendarResultChip.swift for why.
+    @State private var lastCalendarTarget: CalendarTarget?
+    @State private var showGoogleConnectBanner = false
+    @State private var showingCalendarSettings = false
+    @AppStorage("hasSeenGoogleConnectNudge") private var hasSeenGoogleConnectNudge = false
     @FocusState private var isInputFocused: Bool
     @State private var taskBuilder = TaskBuilderState()
     @State private var showReSignIn = false
@@ -161,6 +168,32 @@ struct ChatView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
+            // Calendar routing chip — names the destination of the last successful
+            // AI-created event so the user knows Apple vs Google.
+            if let target = lastCalendarTarget, target != .none {
+                CalendarResultChip(target: target)
+            }
+
+            // One-time Google connect nudge — only fires after an Apple fallback
+            // when no Google link exists. hasSeenGoogleConnectNudge ensures once.
+            if showGoogleConnectBanner {
+                GoogleConnectBanner(
+                    onConnect: {
+                        hasSeenGoogleConnectNudge = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGoogleConnectBanner = false
+                        }
+                        showingCalendarSettings = true
+                    },
+                    onDismiss: {
+                        hasSeenGoogleConnectNudge = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGoogleConnectBanner = false
+                        }
+                    }
+                )
+            }
+
             // Pending calendar action confirmation
             if !pendingCalendarActions.isEmpty {
                 calendarConfirmationBanner
@@ -257,6 +290,29 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showingConversations) {
             ConversationListView(selectedConversationID: $conversationID)
+        }
+        .sheet(isPresented: $showingCalendarSettings) {
+            NavigationStack {
+                CalendarSettingsView()
+                    .navigationTitle("Calendar")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showingCalendarSettings = false }
+                        }
+                    }
+            }
+        }
+        // Auto-dismiss the calendar routing chip after a few seconds. Using
+        // .task(id:) auto-cancels when target changes (next event fires before
+        // the current chip is done).
+        .task(id: lastCalendarTarget) {
+            guard lastCalendarTarget != nil else { return }
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                lastCalendarTarget = nil
+            }
         }
         .sheet(isPresented: $showChatPaywall) {
             NavigationStack {
@@ -999,6 +1055,14 @@ struct ChatView: View {
         let googleCalendarID = enabledLinks.first(where: { $0.calendarSource == .google })?.calendarID
         let appleCalendarID = enabledLinks.first(where: { $0.calendarSource == .apple })?.calendarID
         let useGoogle = googleCalendarID != nil
+        let hasGoogleLink = googleCalendarID != nil
+
+        // Track which calendar path actually succeeded for at least one event,
+        // so we can surface the right chip after the batch completes. Only
+        // successful creates count — catch blocks don't flip these, so a sync
+        // failure leaves the chip silent (errorMessage path handles it).
+        var createdInGoogle = false
+        var createdInApple = false
 
         for action in actions {
             switch action {
@@ -1031,6 +1095,7 @@ struct ChatView: View {
                                 description: description
                             )
                             calendarID = "google:\(eventID)"
+                            createdInGoogle = true
                         } else if appleCalendarID != nil || syncManager.appleCalendarAuthorized {
                             let eventID = try await syncManager.eventKitService.createEvent(
                                 title: title,
@@ -1040,6 +1105,7 @@ struct ChatView: View {
                                 calendarID: appleCalendarID
                             )
                             calendarID = eventID
+                            createdInApple = true
                         }
                     } catch {
                         await MainActor.run {
@@ -1097,6 +1163,38 @@ struct ChatView: View {
                         }
                         modelContext.safeSave()
                     }
+                }
+            }
+        }
+
+        // After the batch, surface which calendar the events landed in and
+        // (first time only, Apple-only users) nudge toward Google.
+        // Google wins over Apple if — for some reason — both fired in one
+        // batch; realistically only one path runs per run given the
+        // if/else-if structure above.
+        let target: CalendarTarget
+        if createdInGoogle {
+            target = .google
+        } else if createdInApple {
+            target = .apple
+        } else {
+            target = .none
+        }
+
+        let shouldNudgeGoogle =
+            target == .apple &&
+            !hasSeenGoogleConnectNudge &&
+            !hasGoogleLink
+
+        await MainActor.run {
+            if target != .none {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    lastCalendarTarget = target
+                }
+            }
+            if shouldNudgeGoogle {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    showGoogleConnectBanner = true
                 }
             }
         }

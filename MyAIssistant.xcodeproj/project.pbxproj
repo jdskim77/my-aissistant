@@ -32,6 +32,7 @@
 		590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */; };
 		5C772A75756E87215ECC7801 /* CheckInSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */; };
 		5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */; };
+		65A21EC0A134BD5439AE2F8A /* CalendarResultChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46941849953C0E645EA61C04 /* CalendarResultChip.swift */; };
 		65EB481849E9730352A7CA70 /* ScaleButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */; };
 		6AA3906C71A7E8173ACFF83A /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B55648FDB5CA4DA422F9FB9 /* LegalView.swift */; };
 		6BA75D17B68D641674ADDAC5 /* ErrorBoundary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B926BB655C77BB678211F85 /* ErrorBoundary.swift */; };
@@ -285,6 +286,7 @@
 		4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchScheduleData.swift; sourceTree = "<group>"; };
 		4583C2E82F7A1EFB00603B08 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		45D328A62F7AE94900293A7A /* TextSizeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeManager.swift; sourceTree = "<group>"; };
+		46941849953C0E645EA61C04 /* CalendarResultChip.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarResultChip.swift; sourceTree = "<group>"; };
 		4D874F054AA8C19805C3E250 /* SentryConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SentryConfig.swift; sourceTree = "<group>"; };
 		4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StarterTaskPool.swift; sourceTree = "<group>"; };
 		51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
@@ -789,6 +791,7 @@
 				B800000005000000 /* ChatBubble.swift */,
 				B800000006000000 /* QuickActionsBar.swift */,
 				B800000007000000 /* ConversationListView.swift */,
+				46941849953C0E645EA61C04 /* CalendarResultChip.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -1422,6 +1425,7 @@
 				047BEAD36E4745BCD01B53FF /* ThrivnBackendService.swift in Sources */,
 				44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */,
 				20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */,
+				65A21EC0A134BD5439AE2F8A /* CalendarResultChip.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
