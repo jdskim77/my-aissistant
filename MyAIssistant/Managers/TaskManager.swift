@@ -61,15 +61,71 @@ final class TaskManager {
         updateWidgetData()
     }
 
+    /// Sets task.date to `newDate` verbatim and pushes the new time to any
+    /// linked external calendar event (Apple, Google, or Reminders).
+    ///
+    /// Callers own the time semantic:
+    ///   - Quick-reschedule buttons (Tomorrow, In 3 days, etc.) use
+    ///     `composeDate(targetDay:preservingTimeFrom:)` to keep the task's
+    ///     prior hour/minute on the target day.
+    ///   - The DatePicker flow passes the user's chosen date+time directly.
+    ///
+    /// Guards against rescheduling a completed task — the reschedule swipe is
+    /// gated in most UI paths but not all (ScheduleView trailing swipe shows
+    /// it unconditionally). Silently ignoring here is safer than mutating a
+    /// historical record and polluting pattern/widget state.
     func rescheduleTask(_ task: TaskItem, to newDate: Date) {
-        let calendar = Calendar.current
-        let oldComponents = calendar.dateComponents([.hour, .minute], from: task.date)
-        var newComponents = calendar.dateComponents([.year, .month, .day], from: newDate)
-        newComponents.hour = oldComponents.hour
-        newComponents.minute = oldComponents.minute
-        task.date = calendar.date(from: newComponents) ?? newDate
+        guard !task.done else {
+            AppLogger.tasks.info("Reschedule ignored on completed task: \(task.id, privacy: .public)")
+            return
+        }
+
+        task.date = newDate
         modelContext.safeSave()
         updateWidgetData()
+
+        // Push the new time to the external calendar so the user's phone/laptop
+        // calendar doesn't silently stay on the old time. Both helpers gate on
+        // the eventID prefix, so calling both is safe — exactly one path runs
+        // per task. Reminders (`reminder:` prefix) are skipped by both and
+        // stay in sync via the completion-only two-way path.
+        if task.externalCalendarID != nil {
+            Task {
+                await calendarSyncManager?.updateCalendarEvent(for: task)
+                await calendarSyncManager?.updateGoogleCalendarEvent(for: task)
+            }
+        }
+    }
+
+    /// Compose a Date at the target day while preserving a reference date's
+    /// hour/minute. DST-safe: when the reference time falls on a spring-forward
+    /// invalid hour (e.g. 2:30 AM on spring-forward day), Calendar's
+    /// `date(bySettingHour:)` returns nil. Falls back to
+    /// `startOfDay + seconds offset` so the user gets a valid date at the
+    /// intended clock time rather than the unrelated current-wall-clock
+    /// fallback (the previous `?? target` behavior).
+    static func composeDate(targetDay: Date, preservingTimeFrom reference: Date) -> Date {
+        let cal = Calendar.current
+        let time = cal.dateComponents([.hour, .minute], from: reference)
+        let hour = time.hour ?? 9
+        let minute = time.minute ?? 0
+        return cal.date(bySettingHour: hour, minute: minute, second: 0, of: targetDay)
+            ?? cal.startOfDay(for: targetDay)
+                .addingTimeInterval(TimeInterval(hour * 3600 + minute * 60))
+    }
+
+    /// Seed value for a reschedule picker. For a future-dated task, return
+    /// the task's current date+time. For a stale task (scheduled before today),
+    /// anchor the calendar to today but keep the task's original hour/minute
+    /// so the graphical picker doesn't open on an ancient month and force the
+    /// user to scroll forward.
+    static func rescheduleSeedDate(for task: TaskItem) -> Date {
+        let cal = Calendar.current
+        let now = Date()
+        if task.date >= cal.startOfDay(for: now) {
+            return task.date
+        }
+        return composeDate(targetDay: now, preservingTimeFrom: task.date)
     }
 
     // MARK: - Conversation Management

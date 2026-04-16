@@ -270,7 +270,7 @@ struct HomeView: View {
                                 Button {
                                     Haptics.light()
                                     taskToReschedule = task
-                                    rescheduleDate = Date()
+                                    rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                                 } label: {
                                     Label("Reschedule", systemImage: "calendar.badge.clock")
                                 }
@@ -362,7 +362,7 @@ struct HomeView: View {
                             Button {
                                 Haptics.light()
                                 taskToReschedule = task
-                                rescheduleDate = Date()
+                                rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                             } label: {
                                 Label("Reschedule", systemImage: "calendar.badge.clock")
                             }
@@ -469,7 +469,7 @@ struct HomeView: View {
                                 }
                                 Button {
                                     taskToReschedule = task
-                                    rescheduleDate = Date()
+                                    rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                                 } label: {
                                     Label("Reschedule", systemImage: "calendar.badge.clock")
                                 }
@@ -1074,8 +1074,10 @@ struct HomeView: View {
 
                 Divider()
 
-                // Date picker
-                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: .date)
+                // Date + time picker — matches Schedule tab's reschedule UX.
+                // Users kept asking for a time control here because a rescheduled
+                // task needs its time re-specified as often as its date.
+                DatePicker("Pick a date and time", selection: $rescheduleDate, displayedComponents: [.date, .hourAndMinute])
                     .datePickerStyle(.graphical)
                     .tint(AppColors.accent)
 
@@ -1109,15 +1111,18 @@ struct HomeView: View {
 
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
         Button {
+            // TaskManager.composeDate handles the DST spring-forward case
+            // where the original hour doesn't exist on the target day.
             let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
-            taskManager?.rescheduleTask(task, to: target)
+            let composed = TaskManager.composeDate(targetDay: target, preservingTimeFrom: task.date)
+            taskManager?.rescheduleTask(task, to: composed)
             taskToReschedule = nil
         } label: {
             Text(label)
                 .font(AppFonts.label(13))
                 .foregroundColor(AppColors.accent)
                 .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .frame(minHeight: 44)
                 .background(AppColors.accentLight)
                 .cornerRadius(10)
         }

@@ -461,7 +461,7 @@ struct ScheduleView: View {
             Button {
                 Haptics.light()
                 taskToReschedule = task
-                rescheduleDate = Date()
+                rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
             } label: {
                 Label("Reschedule", systemImage: "calendar.badge.clock")
             }
@@ -827,8 +827,11 @@ struct ScheduleView: View {
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
         Button {
             Haptics.light()
+            // TaskManager.composeDate handles the DST spring-forward case
+            // where the original hour doesn't exist on the target day.
             let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
-            taskManager?.rescheduleTask(task, to: target)
+            let composed = TaskManager.composeDate(targetDay: target, preservingTimeFrom: task.date)
+            taskManager?.rescheduleTask(task, to: composed)
             taskToReschedule = nil
         } label: {
             Text(label)
