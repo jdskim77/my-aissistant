@@ -450,39 +450,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch App";
-			sourceTree = "<group>";
-		};
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppTests";
-			sourceTree = "<group>";
-		};
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppUITests";
-			sourceTree = "<group>";
-		};
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -536,7 +506,6 @@
 			children = (
 				DDDAF56B7FFCD2ABB9219B7F /* WatchScheduleDataTests.swift */,
 			);
-			name = Models;
 			path = Models;
 			sourceTree = "<group>";
 		};
