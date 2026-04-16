@@ -22,6 +22,11 @@ enum Haptics {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
+    /// Warning notification — rejected action (e.g. at-cap, invalid input)
+    static func warning() {
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+    }
+
     /// Selection changed — tab switch, filter pill, picker
     static func selection() {
         UISelectionFeedbackGenerator().selectionChanged()

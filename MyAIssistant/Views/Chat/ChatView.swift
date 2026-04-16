@@ -43,6 +43,14 @@ struct ChatView: View {
     @State private var taskBuilder = TaskBuilderState()
     @State private var showReSignIn = false
     @State private var isReSigningIn = false
+    // Re-entrancy guard for task builder chip taps. Double-tapping the
+    // Done/Skip chip fast enough could fire the onSelect closure twice
+    // (stale capture of selectedDimensions/step from the previous render),
+    // producing duplicate "Done" user bubbles and duplicated confirm
+    // prompts in the transcript. 150ms is long enough to absorb a human
+    // double-tap, short enough that deliberate consecutive dimension
+    // picks still pass through (BUG-01 from the Skip/Done QA pass).
+    @State private var lastChipTapAt: Date = .distantPast
     @Environment(\.colorScheme) private var colorScheme
 
     private let quickActions = [
@@ -653,8 +661,9 @@ struct ChatView: View {
         }
 
         // Intercept: if task builder is on a chip-based step, try parsing free text
-        // before falling through to the AI. Supports typed dates ("friday", "tomorrow")
-        // and times ("11:08pm", "9am") so users aren't forced to tap chips.
+        // before falling through to the AI. Supports typed dates ("friday", "tomorrow"),
+        // times ("11:08pm", "9am"), and dimensions ("physical", "mental and emotional",
+        // "skip") so users aren't forced to tap chips.
         if taskBuilder.isActive && taskBuilder.step != .idle {
             insertLocalMessage(role: .user, text: text)
 
@@ -673,6 +682,11 @@ struct ChatView: View {
                 }
             } else if taskBuilder.step == .time {
                 handled = taskBuilder.setTimeFromText(text)
+            } else if taskBuilder.step == .dimension {
+                // BUG-05 fix: typing "physical", "mental and emotional", "skip",
+                // etc. on the dimension step used to echo as a user bubble then
+                // dead-end with "I didn't catch that". Parse it into state instead.
+                handled = taskBuilder.setDimensionsFromText(text)
             }
 
             if handled {
@@ -830,6 +844,12 @@ struct ChatView: View {
     }
 
     private func handleTaskBuilderChip(_ chip: TaskBuilderChip) {
+        // Re-entrancy guard — drop taps landing within 150ms of the prior
+        // tap. See `lastChipTapAt` declaration for why.
+        let now = Date()
+        guard now.timeIntervalSince(lastChipTapAt) >= 0.15 else { return }
+        lastChipTapAt = now
+
         // Echo user selection as a message
         let displayText = [chip.icon, chip.label].compactMap { $0 }.joined(separator: " ")
         insertLocalMessage(role: .user, text: displayText)

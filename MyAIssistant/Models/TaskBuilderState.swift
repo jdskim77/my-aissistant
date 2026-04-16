@@ -155,13 +155,12 @@ class TaskBuilderState {
             step = .category
         case .category:
             category = TaskCategory(rawValue: chip.value) ?? .personal
-            // Auto-suggest dimension from category (user can override on next step)
+            // Intentionally no longer auto-seeds a dimension from category.
+            // Prior behavior (Health→physical, Work→mental) silently pre-filled
+            // selectedDimensions, which made the button flip straight to "Done"
+            // and hid the Skip affordance for users who didn't want any
+            // dimension tagging. BUG-04 from the Skip/Done QA pass.
             selectedDimensions.removeAll()
-            switch category {
-            case .health: selectedDimensions.insert(.physical)
-            case .work: selectedDimensions.insert(.mental)
-            default: break
-            }
             step = .dimension
         case .dimension:
             if chip.value == "done" {
@@ -219,20 +218,39 @@ class TaskBuilderState {
                 parsed = cal.date(byAdding: .day, value: daysAhead, to: today)
             }
 
-            // Try natural date parsing as fallback
+            // Try natural date parsing as fallback.
+            // Normalize: collapse whitespace, ensure space after comma ("May 9,2026" → "May 9, 2026").
             if parsed == nil {
+                let normalized = text
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: ",", with: ", ")
+                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+
                 let formatter = DateFormatter()
                 formatter.locale = Locale.current
-                for format in ["MMM d", "MMMM d", "MM/dd", "M/d"] {
+
+                // Year-qualified formats first — they're unambiguous and honor the user's stated year.
+                let yearFormats = ["MMM d, yyyy", "MMMM d, yyyy", "MM/dd/yyyy", "M/d/yyyy", "yyyy-MM-dd"]
+                for format in yearFormats {
                     formatter.dateFormat = format
-                    if let d = formatter.date(from: text.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                        // Set to current year
-                        var components = cal.dateComponents([.month, .day], from: d)
-                        components.year = cal.component(.year, from: today)
-                        if let result = cal.date(from: components) {
-                            parsed = result < today ? cal.date(byAdding: .year, value: 1, to: result) : result
-                        }
+                    if let d = formatter.date(from: normalized) {
+                        parsed = d
                         break
+                    }
+                }
+
+                // Fall back to year-less formats; roll forward to next occurrence if the date is past.
+                if parsed == nil {
+                    for format in ["MMM d", "MMMM d", "MM/dd", "M/d"] {
+                        formatter.dateFormat = format
+                        if let d = formatter.date(from: normalized) {
+                            var components = cal.dateComponents([.month, .day], from: d)
+                            components.year = cal.component(.year, from: today)
+                            if let result = cal.date(from: components) {
+                                parsed = result < today ? cal.date(byAdding: .year, value: 1, to: result) : result
+                            }
+                            break
+                        }
                     }
                 }
             }
@@ -242,6 +260,48 @@ class TaskBuilderState {
         selectedDate = date
         step = .time
         return true
+    }
+
+    /// Attempt to parse free-text dimension input like "physical", "mental and emotional",
+    /// "skip", "none". Returns true if the input was recognized and state updated.
+    ///
+    /// Behavior:
+    /// - If any dimension name appears in the text, add each (up to the 3-cap).
+    ///   Does NOT advance step — user may want to pick more or tap Done.
+    /// - If text reads like a skip request ("skip", "none", "no", "done"), advance
+    ///   to .confirm with whatever is currently selected.
+    /// - Otherwise return false so the caller can show a "didn't catch that" hint.
+    func setDimensionsFromText(_ text: String) -> Bool {
+        let lower = text.lowercased()
+
+        let names: [(String, LifeDimension)] = [
+            ("physical", .physical),
+            ("mental", .mental),
+            ("emotional", .emotional),
+            ("spiritual", .spiritual),
+        ]
+
+        var added = false
+        for (name, dim) in names {
+            if lower.contains(name),
+               !selectedDimensions.contains(dim),
+               selectedDimensions.count < 3 {
+                selectedDimensions.insert(dim)
+                added = true
+            }
+        }
+        if added {
+            // Stay on .dimension — user can keep adding or tap Done
+            return true
+        }
+
+        // Recognize skip/done phrases so users can type their way out
+        let skipMarkers = ["skip", "none", "no dimension", "done", "finish", "no "]
+        if skipMarkers.contains(where: { lower.contains($0) }) {
+            step = .confirm
+            return true
+        }
+        return false
     }
 
     /// Attempt to parse free-text time input like "11:08pm", "9am", "2:30 PM", "14:00".
