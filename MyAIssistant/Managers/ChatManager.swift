@@ -219,8 +219,8 @@ final class ChatManager {
             if let aiError = error as? AIError {
                 switch aiError {
                 case .noAPIKey:
-                    errorMsg = "No API key set. Add one in Settings."
-                    assistantContent = "I need an API key to work. Please add your Anthropic API key in Settings to get started!"
+                    errorMsg = "Not connected. Sign in or add an API key in Settings."
+                    assistantContent = "I'm not connected yet. Sign in with Apple in Settings to get started, or add your own Anthropic API key."
                 case .sessionExpired:
                     errorMsg = "sessionExpired"
                     assistantContent = "Your session has expired. Please sign in again to continue chatting."
@@ -233,6 +233,9 @@ final class ChatManager {
                         assistantContent = "Your API key appears to be invalid or expired. Please check it in Settings."
                     } else if code == 400 {
                         assistantContent = "Something went wrong with the request. Please try again with a shorter message."
+                    } else if (500...599).contains(code) {
+                        // Upstream/backend outage — users don't need to see HTTP codes.
+                        assistantContent = "I'm having trouble reaching the server. Please try again in a moment."
                     } else {
                         assistantContent = "The AI service returned an error (code \(code)). Please try again. Details: \(message.prefix(200))"
                     }
