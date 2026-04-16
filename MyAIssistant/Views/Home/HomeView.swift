@@ -22,6 +22,7 @@ struct HomeView: View {
     @State private var taskToReschedule: TaskItem?
     @State private var taskToDelete: TaskItem?
     @State private var showingHabits = false
+    @State private var showingAddHabit = false
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
@@ -196,27 +197,55 @@ struct HomeView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 } header: {
-                    Button {
-                        showingHabits = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "leaf.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppColors.accent)
-                            Text("Habits")
-                                .font(AppFonts.heading(15))
-                                .foregroundColor(AppColors.textPrimary)
-                                .textCase(nil)
-                            Spacer()
-                            Text("See all")
-                                .font(AppFonts.caption(12))
-                                .foregroundColor(AppColors.accent)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(AppColors.accent)
+                    // Split into three tap targets: title taps "See all", a
+                    // dedicated "+" button opens the create-habit sheet, and the
+                    // trailing "See all" text doubles as a visible affordance.
+                    // Without the split, creating a habit was 3 taps (Home → See
+                    // all → +); now it's 1.
+                    HStack {
+                        Button {
+                            showingHabits = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "leaf.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(AppColors.accent)
+                                Text("Habits")
+                                    .font(AppFonts.heading(15))
+                                    .foregroundColor(AppColors.textPrimary)
+                                    .textCase(nil)
+                            }
                         }
+                        .buttonStyle(.scale)
+
+                        Spacer()
+
+                        Button {
+                            Haptics.light()
+                            showingAddHabit = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(AppColors.accent)
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add new habit")
+
+                        Button {
+                            showingHabits = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("See all")
+                                    .font(AppFonts.caption(12))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .medium))
+                            }
+                            .foregroundColor(AppColors.accent)
+                        }
+                        .buttonStyle(.scale)
                     }
-                    .buttonStyle(.scale)
                 }
             }
 
@@ -534,6 +563,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingHabits) {
             HabitsView()
+        }
+        .sheet(isPresented: $showingAddHabit) {
+            HabitFormView(mode: .create)
         }
         .sheet(item: $taskToReschedule) { task in
             rescheduleSheet(for: task)
