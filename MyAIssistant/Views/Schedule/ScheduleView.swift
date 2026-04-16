@@ -4,9 +4,11 @@ import SwiftData
 struct ScheduleView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.calendarSyncManager) private var calendarSyncManager
+    @Environment(\.habitManager) private var habitManager
     @Environment(\.subscriptionTier) private var tier
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
+    @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
     @State private var selectedDate = Calendar.current.startOfDay(for: Date())
     @State private var showingCalendarImport = false
     @State private var showingEventScanner = false
@@ -58,7 +60,17 @@ struct ScheduleView: View {
         return isToday ? CheckInTime.allCases : []
     }
 
-    /// Interleaved timeline: check-in prompts + tasks, sorted by time
+    /// Habits applicable to the selected day. Only shown on today — habits are
+    /// daily commitments, not historical artifacts; past days would clutter,
+    /// future days would be speculative.
+    private var selectedDayHabits: [HabitItem] {
+        guard calendar.isDateInToday(selectedDate) else { return [] }
+        return allHabits.filter { habit in
+            !habit.isArchived && habit.targetDays.appliesTo(date: selectedDate)
+        }
+    }
+
+    /// Interleaved timeline: check-in prompts + tasks + today's habits, sorted by time
     private var timelineItems: [TimelineItem] {
         var items: [TimelineItem] = []
 
@@ -72,6 +84,14 @@ struct ScheduleView: View {
         // Add check-in slots (today only)
         for slot in checkInSlots {
             items.append(.checkIn(slot, sortMinutes: slot.hour * 60))
+        }
+
+        // Add today's habits. Sort by reminder time when set; fall back to 7am
+        // (before the morning check-in at 8) so habits without explicit times
+        // read as start-of-day commitments rather than floating unanchored.
+        for habit in selectedDayHabits {
+            let minutes = (habit.reminderHour ?? 7) * 60 + (habit.reminderMinute ?? 0)
+            items.append(.habit(habit, sortMinutes: minutes))
         }
 
         return items.sorted { $0.sortMinutes < $1.sortMinutes }
@@ -135,7 +155,7 @@ struct ScheduleView: View {
                 .padding(.horizontal, 16)
 
             // Day content
-            if selectedDayTasks.isEmpty && checkInSlots.isEmpty {
+            if selectedDayTasks.isEmpty && checkInSlots.isEmpty && selectedDayHabits.isEmpty {
                 Spacer()
                 emptyDayState
                 Spacer()
@@ -306,6 +326,8 @@ struct ScheduleView: View {
                 taskTimelineRow(task)
             case .checkIn(let slot, _):
                 checkInTimelineRow(slot)
+            case .habit(let habit, _):
+                habitTimelineRow(habit)
             }
         }
     }
@@ -465,6 +487,111 @@ struct ScheduleView: View {
             }
             .tint(AppColors.completionGreen)
         }
+    }
+
+    // MARK: - Habit Row
+    //
+    // Structurally identical to `taskTimelineRow` so habits feel like
+    // first-class commitments alongside tasks. Differences:
+    //   - Time column uses the habit's reminderHour/Minute (or hidden if none)
+    //   - Color bar uses the habit's own color (not priority-derived)
+    //   - Checkbox toggles today's completion via habitManager
+    //   - Trailing accessory is the habit's emoji icon (signals "this is a
+    //     habit, not a one-off task") — matches the user's "indistinguishable
+    //     layout with habit-specific icon" requirement.
+
+    private func habitTimelineRow(_ habit: HabitItem) -> some View {
+        let today = calendar.startOfDay(for: Date())
+        let isDone = habit.isCompletedOn(today)
+        let color = Color(hex: habit.colorHex)
+        let hasTime = habit.reminderHour != nil
+
+        return HStack(alignment: .top, spacing: 12) {
+            // Time column
+            VStack {
+                if hasTime, let h = habit.reminderHour {
+                    let displayHour = h == 0 ? 12 : (h > 12 ? h - 12 : h)
+                    let minute = habit.reminderMinute ?? 0
+                    Text(String(format: "%d:%02d", displayHour, minute))
+                        .font(AppFonts.mono(13))
+                        .foregroundColor(AppColors.textMuted)
+                    Text(h >= 12 ? "PM" : "AM")
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                }
+            }
+            .frame(width: 48, alignment: .trailing)
+
+            // Color bar (habit's own color)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 4)
+                .frame(minHeight: 44)
+
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    // Checkbox
+                    Button {
+                        Haptics.success()
+                        withAnimation(.spring(response: 0.3)) {
+                            habitManager?.toggleCompletion(habit, for: today)
+                        }
+                    } label: {
+                        ZStack {
+                            let checkColor = isDone ? AppColors.completionGreen : color
+                            Circle()
+                                .stroke(checkColor, lineWidth: 2)
+                                .frame(width: 22, height: 22)
+                            if isDone {
+                                Circle()
+                                    .fill(checkColor)
+                                    .frame(width: 22, height: 22)
+                                Image(systemName: "checkmark")
+                                    .font(AppFonts.label(11))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isDone ? "Mark \(habit.title) incomplete" : "Complete \(habit.title)")
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(habit.title)
+                            .font(AppFonts.bodyMedium(15))
+                            .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                            .strikethrough(isDone)
+                            .lineLimit(2)
+
+                        // Streak hint — present only when there's something to
+                        // show (≥2 days). Single days aren't a streak worth bragging about.
+                        let streak = habit.currentStreak()
+                        if streak >= 2 {
+                            Text("\(streak)-day streak")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    Spacer()
+
+                    // Habit emoji as the trailing accessory — matches the
+                    // "indistinguishable layout + habit-specific icon"
+                    // requirement. Replaces the task row's priority badge.
+                    Text(habit.icon)
+                        .font(.system(size: 18))
+                        .frame(width: 22, height: 22)
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .opacity(isDone ? 0.6 : 1.0)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Check-in Row
@@ -738,11 +865,13 @@ struct ScheduleView: View {
 private enum TimelineItem {
     case task(TaskItem, sortMinutes: Int)
     case checkIn(CheckInTime, sortMinutes: Int)
+    case habit(HabitItem, sortMinutes: Int)
 
     var sortMinutes: Int {
         switch self {
         case .task(_, let m): return m
         case .checkIn(_, let m): return m
+        case .habit(_, let m): return m
         }
     }
 }
