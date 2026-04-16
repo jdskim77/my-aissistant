@@ -21,7 +21,8 @@ final class GreetingManager {
         completedTodayCount: Int,
         highPriorityTitles: [String],
         completionRate: Int,
-        streak: Int
+        streak: Int,
+        slippingHabitTitles: [String] = []
     ) -> Bool {
         let now = Date()
 
@@ -56,6 +57,7 @@ final class GreetingManager {
             highPriorityTitles: highPriorityTitles,
             completionRate: completionRate,
             streak: streak,
+            slippingHabitTitles: slippingHabitTitles,
             excludeOpeners: usedOpeners
         )
 

@@ -535,12 +535,23 @@ struct HomeView: View {
             // Generate contextual AI greeting
             let todayTasks = taskManager?.todayTasks() ?? []
             let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
+            // Habits 2+ target-days overdue — the greeting calls out the first
+            // by name ("Your run habit has been quiet…"). Sorted by most-overdue
+            // first so the nudge names the habit most in need of attention.
+            let slippingHabits = activeHabits
+                .compactMap { habit -> (title: String, days: Int)? in
+                    guard let days = habit.daysSinceLastCompletion(), days >= 2 else { return nil }
+                    return (habit.title, days)
+                }
+                .sorted { $0.days > $1.days }
+                .map(\.title)
             let isNew = greetingManager.generateGreetingIfNeeded(
                 todayTaskCount: todayTasks.count,
                 completedTodayCount: todayTasks.filter(\.done).count,
                 highPriorityTitles: highPriority.map(\.title),
                 completionRate: patternEngine?.completionRate() ?? 0,
-                streak: patternEngine?.currentStreak() ?? 0
+                streak: patternEngine?.currentStreak() ?? 0,
+                slippingHabitTitles: slippingHabits
             )
 
             // Pulse the orb briefly on fresh greetings

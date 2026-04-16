@@ -115,6 +115,29 @@ final class HabitItem {
         return streak
     }
 
+    /// Number of TARGET days since this habit was last completed, counting back
+    /// from `asOf` (default today). Non-target days (e.g., Saturdays for a
+    /// weekday-only habit) don't count toward the overdue tally — a Mon/Wed/Fri
+    /// habit completed on Friday is 0 days overdue on Monday morning, because
+    /// the weekend wasn't a target.
+    ///
+    /// Returns nil if the habit has never been completed.
+    /// Returns 0 if the habit was completed today or today isn't a target day yet.
+    func daysSinceLastCompletion(asOf date: Date = Date()) -> Int? {
+        guard !completionDates.isEmpty else { return nil }
+        let cal = Calendar.current
+        var checkDate = cal.startOfDay(for: date)
+        var missedTargetDays = 0
+
+        // Look back up to 90 days for the most recent completion
+        for _ in 0..<90 {
+            if isCompletedOn(checkDate) { return missedTargetDays }
+            if targetDays.appliesTo(date: checkDate) { missedTargetDays += 1 }
+            checkDate = cal.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
+        }
+        return missedTargetDays
+    }
+
     /// Completion rate over the last N days.
     func completionRate(days: Int = 30) -> Double {
         let cal = Calendar.current

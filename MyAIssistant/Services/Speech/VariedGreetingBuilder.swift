@@ -15,6 +15,7 @@ enum VariedGreetingBuilder {
         highPriorityTitles: [String],
         completionRate: Int,
         streak: Int,
+        slippingHabitTitles: [String] = [],
         excludeOpeners: Set<String> = []
     ) -> GreetingResult {
         let opener = timeOfDayGreeting(excluding: excludeOpeners)
@@ -25,7 +26,8 @@ enum VariedGreetingBuilder {
                 completedTodayCount: completedTodayCount,
                 highPriorityTitles: highPriorityTitles
             ),
-            motivationalSnippet(streak: streak, completionRate: completionRate)
+            motivationalSnippet(streak: streak, completionRate: completionRate),
+            habitNudgeSnippet(slippingHabitTitles: slippingHabitTitles)
         ].filter { !$0.isEmpty }
 
         return GreetingResult(opener: opener, text: parts.joined(separator: " "))
@@ -38,6 +40,7 @@ enum VariedGreetingBuilder {
         highPriorityTitles: [String],
         completionRate: Int,
         streak: Int,
+        slippingHabitTitles: [String] = [],
         excludeOpeners: Set<String> = []
     ) -> String {
         greetingWithOpener(
@@ -46,6 +49,7 @@ enum VariedGreetingBuilder {
             highPriorityTitles: highPriorityTitles,
             completionRate: completionRate,
             streak: streak,
+            slippingHabitTitles: slippingHabitTitles,
             excludeOpeners: excludeOpeners
         ).text
     }
@@ -214,6 +218,38 @@ enum VariedGreetingBuilder {
         }
 
         return snippet
+    }
+
+    // MARK: - Motivational Snippet (Varied)
+
+    // MARK: - Habit Nudge Snippet
+    //
+    // Discipline-mode nudge for habits the user has let slip. Only fires when at
+    // least one habit is 2+ target-days overdue (see HabitItem.daysSinceLastCompletion).
+    // Names the specific habit — vague nudges ("stay on track with your habits")
+    // get ignored; "Your run habit has been quiet for 3 days" lands.
+    //
+    // If multiple habits are slipping, mention the one the user picked first
+    // (stable order per caller); pluralize if 2+. Keeps greeting short — no
+    // laundry list.
+
+    private static func habitNudgeSnippet(slippingHabitTitles: [String]) -> String {
+        guard let first = slippingHabitTitles.first else { return "" }
+
+        if slippingHabitTitles.count == 1 {
+            return [
+                "Your \(first) habit has been quiet for a few days — today could be the day.",
+                "\(first) is waiting on you.",
+                "Small move on \(first) today?",
+                "\(first) habit's gone cold. Warm it up?"
+            ].randomElement() ?? ""
+        }
+
+        let others = slippingHabitTitles.count - 1
+        return [
+            "\(first) and \(others) other habit\(others == 1 ? "" : "s") could use attention today.",
+            "A few habits have slipped — \(first) is the one to pick back up first."
+        ].randomElement() ?? ""
     }
 
     // MARK: - Motivational Snippet (Varied)
