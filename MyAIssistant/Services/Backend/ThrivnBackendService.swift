@@ -55,13 +55,15 @@ actor ThrivnBackendService: AIProvider {
         chatConfig.waitsForConnectivity = true
         self.session = URLSession(configuration: chatConfig)
 
-        // Auth session: short timeouts. waitsForConnectivity is OFF so a sign-in
+        // Auth session: moderate timeouts. waitsForConnectivity is OFF so a sign-in
         // request fails fast if the user is offline, instead of pretending to
         // work for 60 seconds. The UI calls NetworkMonitor as a pre-flight gate
         // before reaching this code, so most offline cases never get here.
+        // 20s request timeout gives the backend enough headroom for cold-start
+        // + Apple JWKS fetch on the first sign-in of the day.
         let authConfig = URLSessionConfiguration.default
-        authConfig.timeoutIntervalForRequest = 15
-        authConfig.timeoutIntervalForResource = 30
+        authConfig.timeoutIntervalForRequest = 20
+        authConfig.timeoutIntervalForResource = 40
         authConfig.waitsForConnectivity = false
         self.authSession = URLSession(configuration: authConfig)
     }

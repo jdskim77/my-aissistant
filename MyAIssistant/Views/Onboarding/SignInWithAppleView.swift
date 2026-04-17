@@ -206,7 +206,10 @@ struct SignInWithAppleView: View {
     private func friendlySignInErrorMessage(_ error: Error) -> String {
         if let aiError = error as? AIError {
             switch aiError {
-            case .networkError:
+            case .networkError(let underlying):
+                if let urlError = underlying as? URLError {
+                    return friendlyURLErrorMessage(urlError)
+                }
                 return "Couldn't reach the Thrivn server. Check your connection and try again."
             case .apiError(let code, _):
                 if code == 401 || code == 403 {
@@ -220,13 +223,21 @@ struct SignInWithAppleView: View {
             }
         }
         if let urlError = error as? URLError {
-            switch urlError.code {
-            case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost:
-                return "Couldn't reach the Thrivn server. Check your connection and try again."
-            default:
-                return "Sign-in failed. Please try again."
-            }
+            return friendlyURLErrorMessage(urlError)
         }
         return "Sign-in failed. Please try again."
+    }
+
+    private func friendlyURLErrorMessage(_ urlError: URLError) -> String {
+        switch urlError.code {
+        case .notConnectedToInternet, .networkConnectionLost:
+            return "You're offline. Connect to Wi-Fi or cellular and try again."
+        case .timedOut:
+            return "The server took too long to respond. Try again — if this keeps happening, try a different network."
+        case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            return "Couldn't connect to the Thrivn server. Your network may be blocking the connection — try cellular data instead."
+        default:
+            return "Couldn't reach the Thrivn server. Check your connection and try again."
+        }
     }
 }
