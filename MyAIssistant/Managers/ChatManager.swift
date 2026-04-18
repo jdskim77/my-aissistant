@@ -231,13 +231,17 @@ final class ChatManager {
                     errorMsg = "API error (\(code))"
                     if code == 401 {
                         assistantContent = "Your API key appears to be invalid or expired. Please check it in Settings."
-                    } else if code == 400 {
+                    } else if code == 400 || code == 422 {
+                        // 400 = bad request, 422 = validation error (e.g. system prompt too long).
+                        // Either way the user can't fix it — keep the message simple.
                         assistantContent = "Something went wrong with the request. Please try again with a shorter message."
-                    } else if (500...599).contains(code) {
+                        AppLogger.ai.error("Request rejected (\(code, privacy: .public)): \(message.prefix(300), privacy: .public)")
+                    } else if (500...599).contains(code) || code == 502 || code == 503 || code == 529 {
                         // Upstream/backend outage — users don't need to see HTTP codes.
                         assistantContent = "I'm having trouble reaching the server. Please try again in a moment."
                     } else {
-                        assistantContent = "The AI service returned an error (code \(code)). Please try again. Details: \(message.prefix(200))"
+                        assistantContent = "Something went wrong. Please try again in a moment."
+                        AppLogger.ai.error("Unhandled API error (\(code, privacy: .public)): \(message.prefix(300), privacy: .public)")
                     }
                 case .invalidResponse, .parsingError:
                     errorMsg = "Unexpected response from AI."

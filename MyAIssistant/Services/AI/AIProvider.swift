@@ -77,19 +77,28 @@ protocol AIProvider: Sendable {
 extension AIProvider {
     /// Default implementation: concatenate stable + volatile and route through the
     /// single-string sendMessage. Providers with native caching support should override.
+    ///
+    /// The combined prompt is clamped to 19,500 chars (the backend proxy caps
+    /// the `system` field at 20,000). Truncation sacrifices the volatile tail —
+    /// the stable block carries identity and rules, so it survives intact.
     func sendMessage(
         userMessage: String,
         conversationHistory: [ChatMessage],
         systemPromptStable: String,
         systemPromptVolatile: String
     ) async throws -> AIResponse {
-        let combined: String
+        var combined: String
         if systemPromptVolatile.isEmpty {
             combined = systemPromptStable
         } else if systemPromptStable.isEmpty {
             combined = systemPromptVolatile
         } else {
             combined = systemPromptStable + "\n\n" + systemPromptVolatile
+        }
+        let maxSystemChars = 19_500
+        if combined.count > maxSystemChars {
+            let cutIndex = combined.index(combined.startIndex, offsetBy: maxSystemChars)
+            combined = String(combined[..<cutIndex])
         }
         return try await sendMessage(
             userMessage: userMessage,
