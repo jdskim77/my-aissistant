@@ -776,43 +776,55 @@ struct ScheduleView: View {
 
     private func rescheduleSheet(for task: TaskItem) -> some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("Reschedule \"\(task.title)\"")
-                    .font(AppFonts.heading(17))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("Reschedule \"\(task.title)\"")
+                        .font(AppFonts.heading(17))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.8)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
 
-                HStack(spacing: 12) {
-                    quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
-                    quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
-                    quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 12) {
+                            quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                            quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                            quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                        }
+                        VStack(spacing: 8) {
+                            quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                            quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                            quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                        }
+                    }
+
+                    Divider()
+
+                    DatePicker("Pick a date and time", selection: $rescheduleDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.graphical)
+                        .tint(AppColors.accent)
+
+                    Button {
+                        guard taskToReschedule != nil else { return }
+                        Haptics.success()
+                        taskManager?.rescheduleTask(task, to: rescheduleDate)
+                        taskToReschedule = nil
+                    } label: {
+                        Text("Reschedule")
+                            .font(AppFonts.bodyMedium(16))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(AppColors.accent)
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.scale)
                 }
-
-                Divider()
-
-                DatePicker("Pick a date", selection: $rescheduleDate, displayedComponents: [.date, .hourAndMinute])
-                    .datePickerStyle(.graphical)
-                    .tint(AppColors.accent)
-
-                Button {
-                    Haptics.success()
-                    taskManager?.rescheduleTask(task, to: rescheduleDate)
-                    taskToReschedule = nil
-                } label: {
-                    Text("Reschedule")
-                        .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(AppColors.accent)
-                        .cornerRadius(16)
-                }
-
-                Spacer()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 20)
+            .scrollBounceBehavior(.basedOnSize)
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -821,7 +833,7 @@ struct ScheduleView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
     }
 
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {

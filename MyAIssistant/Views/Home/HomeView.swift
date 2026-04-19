@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @Binding var selectedTab: Tab
     @Environment(\.taskManager) private var taskManager
     @Environment(\.insightEngine) private var insightEngine
     @Environment(\.patternEngine) private var patternEngine
@@ -177,6 +178,20 @@ struct HomeView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+            }
+
+            // Balance Pulse — Pillar 3 (Whole-Life Balance) on the Home screen
+            if let bm = balanceManager {
+                Section {
+                    BalancePulseCard(
+                        scores: bm.weeklyScores(),
+                        harmonyScore: bm.harmonyScore(),
+                        onTapCompass: { selectedTab = .compass }
+                    )
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
             }
 
             // Micro-insight
@@ -1057,47 +1072,56 @@ struct HomeView: View {
 
     private func rescheduleSheet(for task: TaskItem) -> some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("Reschedule \"\(task.title)\"")
-                    .font(AppFonts.heading(17))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("Reschedule \"\(task.title)\"")
+                        .font(AppFonts.heading(17))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.8)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
 
-                // Quick buttons
-                HStack(spacing: 12) {
-                    quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
-                    quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
-                    quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                    // Quick buttons — wrap for large Dynamic Type
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 12) {
+                            quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                            quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                            quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                        }
+                        VStack(spacing: 8) {
+                            quickRescheduleButton("Tomorrow", daysFromNow: 1, task: task)
+                            quickRescheduleButton("In 3 days", daysFromNow: 3, task: task)
+                            quickRescheduleButton("Next week", daysFromNow: 7, task: task)
+                        }
+                    }
+
+                    Divider()
+
+                    DatePicker("Pick a date and time", selection: $rescheduleDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.graphical)
+                        .tint(AppColors.accent)
+
+                    Button {
+                        guard taskToReschedule != nil else { return }
+                        Haptics.success()
+                        taskManager?.rescheduleTask(task, to: rescheduleDate)
+                        taskToReschedule = nil
+                    } label: {
+                        Text("Reschedule")
+                            .font(AppFonts.bodyMedium(16))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(AppColors.accent)
+                            .cornerRadius(12)
+                    }
+                    .buttonStyle(.scale)
                 }
-
-                Divider()
-
-                // Date + time picker — matches Schedule tab's reschedule UX.
-                // Users kept asking for a time control here because a rescheduled
-                // task needs its time re-specified as often as its date.
-                DatePicker("Pick a date and time", selection: $rescheduleDate, displayedComponents: [.date, .hourAndMinute])
-                    .datePickerStyle(.graphical)
-                    .tint(AppColors.accent)
-
-                Button {
-                    taskManager?.rescheduleTask(task, to: rescheduleDate)
-                    taskToReschedule = nil
-                } label: {
-                    Text("Reschedule")
-                        .font(AppFonts.bodyMedium(16))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(AppColors.accent)
-                        .cornerRadius(12)
-                }
-                .buttonStyle(.scale)
-
-                Spacer()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 20)
+            .scrollBounceBehavior(.basedOnSize)
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1106,11 +1130,12 @@ struct HomeView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
     }
 
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
         Button {
+            Haptics.light()
             // TaskManager.composeDate handles the DST spring-forward case
             // where the original hour doesn't exist on the target day.
             let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
@@ -1124,7 +1149,7 @@ struct HomeView: View {
                 .padding(.horizontal, 14)
                 .frame(minHeight: 44)
                 .background(AppColors.accentLight)
-                .cornerRadius(10)
+                .cornerRadius(12)
         }
         .buttonStyle(.scale)
     }
