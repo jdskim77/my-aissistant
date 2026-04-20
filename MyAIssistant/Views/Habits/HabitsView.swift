@@ -7,6 +7,9 @@ struct HabitsView: View {
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
     @State private var showingAddHabit = false
     @State private var habitToEdit: HabitItem?
+    @State private var missedSectionExpanded = false
+    @State private var lastMissed: LastMissed?
+    @State private var undoDismissTask: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let calendar = Calendar.current
@@ -19,6 +22,16 @@ struct HabitsView: View {
         calendar.startOfDay(for: Date())
     }
 
+    /// Habits visible in the main Today list — everything except explicitly
+    /// missed habits, which live in a separate collapsed group below.
+    private var todayVisibleHabits: [HabitItem] {
+        activeHabits.filter { !$0.isMissedOn(today) }
+    }
+
+    private var missedTodayHabits: [HabitItem] {
+        activeHabits.filter { $0.isMissedOn(today) }
+    }
+
     /// Last 7 days for the grid header
     private var weekDates: [Date] {
         (0..<7).reversed().compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
@@ -26,24 +39,33 @@ struct HabitsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    if activeHabits.isEmpty {
-                        emptyState
-                    } else {
-                        // Today's habits
-                        todaySection
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        if activeHabits.isEmpty {
+                            emptyState
+                        } else {
+                            todaySection
 
-                        // Weekly overview grid
-                        weeklyGrid
+                            if !missedTodayHabits.isEmpty {
+                                missedSection
+                            }
 
-                        // Stats
-                        statsSection
+                            weeklyGrid
+                            statsSection
+                        }
                     }
+                    .padding(.bottom, 100)
                 }
-                .padding(.bottom, 100)
+                .background(AppColors.background.ignoresSafeArea())
+
+                if let last = lastMissed {
+                    undoToast(for: last)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 20)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
-            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Habits")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -116,8 +138,16 @@ struct HabitsView: View {
             }
             .padding(.horizontal, 20)
 
-            ForEach(activeHabits) { habit in
-                habitRow(habit)
+            ForEach(todayVisibleHabits) { habit in
+                let isDone = habit.isCompletedOn(today)
+                let appliesToday = habit.targetDays.appliesTo(date: today)
+                SwipeToMissRow(
+                    enabled: !isDone && appliesToday,
+                    reduceMotion: reduceMotion,
+                    onCommit: { commitMiss(habit) }
+                ) {
+                    habitRow(habit)
+                }
             }
         }
         .padding(.top, 8)
@@ -137,7 +167,7 @@ struct HabitsView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .stroke(isDone ? AppColors.completionGreen : Color(hex: habit.colorHex), lineWidth: 2.5)
+                        .stroke(isDone ? AppColors.completionGreen : habit.effectiveColor, lineWidth: 2.5)
                         .frame(width: 28, height: 28)
                     if isDone {
                         Circle()
@@ -174,21 +204,211 @@ struct HabitsView: View {
 
             Spacer()
 
-            // Edit button
+            habitActionsMenu(habit, isDone: isDone)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 4)
+        .background(AppColors.background)
+    }
+
+    private func habitActionsMenu(_ habit: HabitItem, isDone: Bool) -> some View {
+        let appliesToday = habit.targetDays.appliesTo(date: today)
+        return Menu {
+            if !isDone && appliesToday {
+                Button {
+                    Haptics.warning()
+                    commitMiss(habit)
+                } label: {
+                    Label("Mark as missed today", systemImage: "xmark.circle")
+                }
+            }
             Button {
                 Haptics.light()
                 habitToEdit = habit
+            } label: {
+                Label("Edit habit", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                Haptics.medium()
+                habitManager?.archive(habit)
+            } label: {
+                Label("Archive", systemImage: "archivebox")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(AppFonts.body(14).weight(.medium))
+                .foregroundColor(AppColors.textMuted)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("More options for \(habit.title)")
+    }
+
+    // MARK: - Missed Section
+
+    private var missedSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                Haptics.selection()
+                withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.22)) {
+                    missedSectionExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.right")
+                        .font(AppFonts.label(11))
+                        .foregroundColor(AppColors.textMuted)
+                        .rotationEffect(.degrees(missedSectionExpanded ? 90 : 0))
+                    Text("Missed today")
+                        .font(AppFonts.bodyMedium(13))
+                        .foregroundColor(AppColors.textMuted)
+                    Text("\(missedTodayHabits.count)")
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(AppColors.border.opacity(0.6)))
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Missed today, \(missedTodayHabits.count) \(missedTodayHabits.count == 1 ? "habit" : "habits")")
+            .accessibilityHint(missedSectionExpanded ? "Double tap to collapse" : "Double tap to expand")
+
+            if missedSectionExpanded {
+                ForEach(missedTodayHabits) { habit in
+                    missedHabitRow(habit)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+    }
+
+    private func missedHabitRow(_ habit: HabitItem) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(AppColors.textMuted.opacity(0.4), lineWidth: 2)
+                    .frame(width: 24, height: 24)
+                Rectangle()
+                    .fill(AppColors.textMuted.opacity(0.7))
+                    .frame(width: 8, height: 2)
+            }
+            .frame(width: 44, height: 40)
+            .accessibilityHidden(true)
+
+            Text(habit.icon)
+                .font(AppFonts.body(16))
+                .opacity(0.55)
+
+            Text(habit.title)
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textMuted)
+                .strikethrough(color: AppColors.textMuted.opacity(0.6))
+
+            Spacer()
+
+            Text("Missed")
+                .font(AppFonts.caption(10))
+                .foregroundColor(AppColors.textMuted)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Capsule().stroke(AppColors.border, lineWidth: 1))
+
+            Menu {
+                Button {
+                    Haptics.light()
+                    withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.22)) {
+                        habitManager?.unmarkMissed(habit, for: today)
+                    }
+                } label: {
+                    Label("Unmark missed", systemImage: "arrow.uturn.backward")
+                }
+                Button {
+                    Haptics.light()
+                    habitToEdit = habit
+                } label: {
+                    Label("Edit habit", systemImage: "pencil")
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(AppFonts.body(14).weight(.medium))
                     .foregroundColor(AppColors.textMuted)
                     .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Edit \(habit.title)")
+            .accessibilityLabel("More options for \(habit.title)")
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(habit.title), missed today")
+    }
+
+    // MARK: - Miss / Undo flow
+
+    private struct LastMissed: Equatable {
+        let habitID: String
+        let title: String
+    }
+
+    private func commitMiss(_ habit: HabitItem) {
+        withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.25)) {
+            habitManager?.markMissed(habit, for: today)
+            lastMissed = LastMissed(habitID: habit.id, title: habit.title)
+        }
+        undoDismissTask?.cancel()
+        undoDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.25)) {
+                lastMissed = nil
+            }
+        }
+    }
+
+    private func undoLastMiss() {
+        guard let last = lastMissed,
+              let habit = habitManager?.findHabit(byID: last.habitID) else { return }
+        undoDismissTask?.cancel()
+        withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.25)) {
+            habitManager?.unmarkMissed(habit, for: today)
+            lastMissed = nil
+        }
+    }
+
+    private func undoToast(for last: LastMissed) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "xmark.circle.fill")
+                .font(AppFonts.body(18))
+                .foregroundColor(AppColors.coral)
+            Text("Marked \u{201C}\(last.title)\u{201D} as missed")
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Button {
+                Haptics.light()
+                undoLastMiss()
+            } label: {
+                Text("Undo")
+                    .font(AppFonts.bodyMedium(14))
+                    .foregroundColor(AppColors.accent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Undo marking \(last.title) as missed")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(AppColors.surface)
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(AppColors.border, lineWidth: 1))
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
     }
 
     // MARK: - Weekly Grid
@@ -234,17 +454,28 @@ struct HabitsView: View {
 
                         ForEach(weekDates, id: \.self) { date in
                             let done = habit.isCompletedOn(date)
+                            let missed = habit.isMissedOn(date)
                             let applies = habit.targetDays.appliesTo(date: date)
                             let dayName = date.formatted(as: "EEEE")
+                            let stateLabel: String = {
+                                guard applies else { return "not scheduled" }
+                                if done { return "completed" }
+                                if missed { return "missed" }
+                                return "not completed"
+                            }()
                             ZStack {
                                 if applies {
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(done ? Color(hex: habit.colorHex) : AppColors.border.opacity(0.5))
+                                        .fill(done ? habit.effectiveColor : (missed ? AppColors.overdueBg : AppColors.border.opacity(0.5)))
                                         .frame(width: 24, height: 24)
                                     if done {
                                         Image(systemName: "checkmark")
                                             .font(AppFonts.label(11))
                                             .foregroundColor(.white)
+                                    } else if missed {
+                                        Image(systemName: "xmark")
+                                            .font(AppFonts.label(10))
+                                            .foregroundColor(AppColors.overdueRed)
                                     }
                                 } else {
                                     RoundedRectangle(cornerRadius: 6)
@@ -253,7 +484,7 @@ struct HabitsView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .accessibilityLabel("\(dayName), \(applies ? (done ? "completed" : "missed") : "not scheduled")")
+                            .accessibilityLabel("\(dayName), \(stateLabel)")
                         }
                     }
                     .padding(.vertical, 6)
@@ -292,7 +523,7 @@ struct HabitsView: View {
                         let rate = habit.completionRate(days: 30)
                         HStack(spacing: 0) {
                             RoundedRectangle(cornerRadius: 3)
-                                .fill(Color(hex: habit.colorHex))
+                                .fill(habit.effectiveColor)
                                 .frame(width: max(4, CGFloat(rate) * 100), height: 6)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(AppColors.border)
@@ -303,7 +534,7 @@ struct HabitsView: View {
                         HStack {
                             Text("\(Int(rate * 100))%")
                                 .font(AppFonts.label(12))
-                                .foregroundColor(Color(hex: habit.colorHex))
+                                .foregroundColor(habit.effectiveColor)
                             Spacer()
                             Text("\(habit.currentStreak())d streak")
                                 .font(AppFonts.caption(11))
@@ -318,5 +549,91 @@ struct HabitsView: View {
             }
             .padding(.horizontal, 16)
         }
+    }
+}
+
+// MARK: - Swipe-to-miss row
+
+/// Wraps a habit row with a left-swipe gesture that reveals a coral "Miss"
+/// affordance and commits on threshold cross. Vertical drags are ignored so
+/// the parent `ScrollView` still handles scroll naturally.
+private struct SwipeToMissRow<Content: View>: View {
+    let enabled: Bool
+    let reduceMotion: Bool
+    let onCommit: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    @State private var offset: CGFloat = 0
+    @State private var didTriggerCommitHaptic = false
+
+    private let commitThreshold: CGFloat = 90
+    private let maxReveal: CGFloat = 120
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            if offset < 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(AppFonts.body(18))
+                    Text("Miss")
+                        .font(AppFonts.bodyMedium(13))
+                }
+                .foregroundColor(.white)
+                .frame(width: maxReveal)
+                .frame(maxHeight: .infinity)
+                .background(AppColors.coral)
+                .opacity(Double(min(1, -offset / commitThreshold)))
+                .accessibilityHidden(true)
+            }
+
+            content()
+                .contentShape(Rectangle())
+                .offset(x: offset)
+                .gesture(swipeGesture)
+        }
+        .clipped()
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 14, coordinateSpace: .local)
+            .onChanged { value in
+                guard enabled else { return }
+                let dx = value.translation.width
+                let dy = value.translation.height
+                // Only hijack when horizontal intent clearly dominates, so
+                // vertical scrolling stays with the parent ScrollView.
+                guard abs(dx) > abs(dy), dx < 0 else {
+                    if offset != 0 {
+                        withAnimation(reduceMotion ? .none : .spring(response: 0.25, dampingFraction: 0.85)) {
+                            offset = 0
+                        }
+                    }
+                    return
+                }
+                offset = max(-maxReveal, dx)
+                if offset <= -commitThreshold, !didTriggerCommitHaptic {
+                    Haptics.selection()
+                    didTriggerCommitHaptic = true
+                } else if offset > -commitThreshold {
+                    didTriggerCommitHaptic = false
+                }
+            }
+            .onEnded { value in
+                defer {
+                    didTriggerCommitHaptic = false
+                }
+                guard enabled else {
+                    withAnimation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.85)) {
+                        offset = 0
+                    }
+                    return
+                }
+                if value.translation.width < -commitThreshold {
+                    onCommit()
+                }
+                withAnimation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.85)) {
+                    offset = 0
+                }
+            }
     }
 }

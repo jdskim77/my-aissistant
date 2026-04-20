@@ -247,3 +247,30 @@ extension EnvironmentValues {
         set { self[UserNameKey.self] = newValue }
     }
 }
+
+// MARK: - WeatherManager Environment Key
+
+struct WeatherManagerKey: EnvironmentKey {
+    static let defaultValue: WeatherManager? = nil
+}
+
+extension EnvironmentValues {
+    var weatherManager: WeatherManager? {
+        get { self[WeatherManagerKey.self] }
+        set { self[WeatherManagerKey.self] = newValue }
+    }
+}
+
+// MARK: - BalancePulseBus Environment Key
+
+struct BalancePulseBusKey: EnvironmentKey {
+    static let defaultValue: BalancePulseBus? = nil
+}
+
+extension EnvironmentValues {
+    var balancePulseBus: BalancePulseBus? {
+        get { self[BalancePulseBusKey.self] }
+        set { self[BalancePulseBusKey.self] = newValue }
+    }
+}
+

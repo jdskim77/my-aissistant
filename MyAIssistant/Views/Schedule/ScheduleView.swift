@@ -162,8 +162,8 @@ struct ScheduleView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(Array(timelineItems.enumerated()), id: \.offset) { index, item in
-                            timelineRow(item: item, isFirst: index == 0)
+                        ForEach(timelineItems) { item in
+                            timelineRow(item: item, isFirst: item.id == timelineItems.first?.id)
                         }
                     }
                     .padding(.bottom, 100) // space for quick-add bar
@@ -503,7 +503,7 @@ struct ScheduleView: View {
     private func habitTimelineRow(_ habit: HabitItem) -> some View {
         let today = calendar.startOfDay(for: Date())
         let isDone = habit.isCompletedOn(today)
-        let color = Color(hex: habit.colorHex)
+        let color = habit.effectiveColor
         let hasTime = habit.reminderHour != nil
 
         return HStack(alignment: .top, spacing: 12) {
@@ -559,11 +559,23 @@ struct ScheduleView: View {
                     .accessibilityLabel(isDone ? "Mark \(habit.title) incomplete" : "Complete \(habit.title)")
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(habit.title)
-                            .font(AppFonts.bodyMedium(15))
-                            .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
-                            .strikethrough(isDone)
-                            .lineLimit(2)
+                        // Dimension dot + title. Mirrors TaskCard so tagged
+                        // habits advertise which Compass bar they'll feed
+                        // before the user taps complete.
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            if let dim = habit.dimensions.primaryScored {
+                                Circle()
+                                    .fill(dim.color)
+                                    .frame(width: 7, height: 7)
+                                    .alignmentGuide(.firstTextBaseline) { d in d.height - 1 }
+                                    .accessibilityHidden(true)
+                            }
+                            Text(habit.title)
+                                .font(AppFonts.bodyMedium(15))
+                                .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                                .strikethrough(isDone)
+                                .lineLimit(2)
+                        }
 
                         // Streak hint — present only when there's something to
                         // show (≥2 days). Single days aren't a streak worth bragging about.
@@ -644,6 +656,8 @@ struct ScheduleView: View {
                 )
             }
             .buttonStyle(.scale)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(slot.rawValue) Check-in at \(slot.hour > 12 ? slot.hour - 12 : slot.hour) \(slot.hour >= 12 ? "PM" : "AM"). Tap to start.")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
@@ -877,10 +891,18 @@ struct ScheduleView: View {
 
 // MARK: - Timeline Item
 
-private enum TimelineItem {
+private enum TimelineItem: Identifiable {
     case task(TaskItem, sortMinutes: Int)
     case checkIn(CheckInTime, sortMinutes: Int)
     case habit(HabitItem, sortMinutes: Int)
+
+    var id: String {
+        switch self {
+        case .task(let t, _): return "task-\(t.id)"
+        case .checkIn(let s, _): return "checkin-\(s.rawValue)"
+        case .habit(let h, _): return "habit-\(h.id)"
+        }
+    }
 
     var sortMinutes: Int {
         switch self {

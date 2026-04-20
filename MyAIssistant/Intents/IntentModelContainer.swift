@@ -15,9 +15,7 @@ enum IntentModelContainer {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            #if DEBUG
-            print("[IntentModelContainer] Failed: \(error.localizedDescription). Using local fallback.")
-            #endif
+            AppLogger.persistence.error("IntentModelContainer init failed: \(error.localizedDescription, privacy: .public). Using local fallback.")
             // Fallback to local-only (no CloudKit)
             let localConfig = ModelConfiguration(
                 "MyAIssistant",

@@ -25,11 +25,19 @@ struct HabitFormView: View {
     @State private var colorHex: String
     @State private var frequency: HabitFrequency
     @State private var selectedDays: Set<Int>
+    @State private var dimension: LifeDimension?
     @State private var showDeleteConfirm = false
 
     private let colorOptions = ["#2D5016", "#1A5276", "#B8860B", "#C94B2B", "#5856D6", "#34C759", "#FF9500", "#007AFF"]
     private let iconOptions = ["💪", "📚", "🏃", "💧", "🧘", "✍️", "🎯", "💤", "🥗", "🎸", "📝", "🧹"]
     private let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    /// Effective color for the habit's accents. When a dimension is chosen
+    /// we show the dimension color so the habit visually identifies with its
+    /// Compass quadrant; otherwise fall back to the user's manual pick.
+    private var effectiveColorHex: String {
+        dimension.map { "#" + $0.colorHex } ?? colorHex
+    }
 
     private var isEditing: Bool {
         if case .edit = mode { return true }
@@ -50,6 +58,7 @@ struct HabitFormView: View {
             _colorHex = State(initialValue: "#2D5016")
             _frequency = State(initialValue: .daily)
             _selectedDays = State(initialValue: Set(1...7))
+            _dimension = State(initialValue: nil)
         case .edit(let habit):
             _title = State(initialValue: habit.title)
             _icon = State(initialValue: habit.icon)
@@ -60,6 +69,7 @@ struct HabitFormView: View {
             } else {
                 _selectedDays = State(initialValue: Set(1...7))
             }
+            _dimension = State(initialValue: habit.dimension)
         }
     }
 
@@ -81,7 +91,7 @@ struct HabitFormView: View {
                                     Text(emoji)
                                         .font(.system(size: 28))
                                         .frame(width: 48, height: 48)
-                                        .background(icon == emoji ? Color(hex: colorHex).opacity(0.15) : Color.clear)
+                                        .background(icon == emoji ? Color(hex: effectiveColorHex).opacity(0.15) : Color.clear)
                                         .cornerRadius(12)
                                 }
                                 .buttonStyle(.plain)
@@ -103,27 +113,57 @@ struct HabitFormView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.border, lineWidth: 1))
                     }
 
-                    // Color
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Color")
+                    // Life dimension — ties the habit to a Compass quadrant.
+                    // When set, the habit contributes to its dimension's score
+                    // and uses the dimension color throughout. "None" keeps the
+                    // habit untagged and exposes the manual color picker.
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Life Dimension")
                             .font(AppFonts.label(12))
                             .foregroundColor(AppColors.textMuted)
-                        HStack(spacing: 10) {
-                            ForEach(colorOptions, id: \.self) { hex in
-                                Button {
-                                    Haptics.selection()
-                                    colorHex = hex
-                                } label: {
-                                    Circle()
-                                        .fill(Color(hex: hex))
-                                        .frame(width: 32, height: 32)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: colorHex == hex ? 3 : 0)
-                                                .shadow(color: .black.opacity(0.2), radius: 2)
-                                        )
+
+                        // 4 scored dimensions + None. Two rows to avoid
+                        // squeezing labels at smaller Dynamic Type sizes.
+                        LazyVGrid(columns: Array(repeating: .init(.flexible()), count: 3), spacing: 8) {
+                            ForEach(LifeDimension.scored) { dim in
+                                dimensionPill(dim)
+                            }
+                            nonePill
+                        }
+
+                        if let dim = dimension {
+                            Text(dim.summary)
+                                .font(AppFonts.caption(11))
+                                .foregroundColor(AppColors.textMuted)
+                                .padding(.top, 2)
+                        }
+                    }
+
+                    // Manual color — only shown when the habit is untagged.
+                    // Tagged habits use the dimension color so they identify
+                    // visually with their Compass quadrant.
+                    if dimension == nil {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Color")
+                                .font(AppFonts.label(12))
+                                .foregroundColor(AppColors.textMuted)
+                            HStack(spacing: 10) {
+                                ForEach(colorOptions, id: \.self) { hex in
+                                    Button {
+                                        Haptics.selection()
+                                        colorHex = hex
+                                    } label: {
+                                        Circle()
+                                            .fill(Color(hex: hex))
+                                            .frame(width: 32, height: 32)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.white, lineWidth: colorHex == hex ? 3 : 0)
+                                                    .shadow(color: .black.opacity(0.2), radius: 2)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -163,7 +203,7 @@ struct HabitFormView: View {
                                             .foregroundColor(selectedDays.contains(weekday) ? .white : AppColors.textSecondary)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
-                                            .background(selectedDays.contains(weekday) ? Color(hex: colorHex) : AppColors.surface)
+                                            .background(selectedDays.contains(weekday) ? Color(hex: effectiveColorHex) : AppColors.surface)
                                             .cornerRadius(10)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 10)
@@ -227,6 +267,55 @@ struct HabitFormView: View {
         }
     }
 
+    private func dimensionPill(_ dim: LifeDimension) -> some View {
+        let isSelected = dimension == dim
+        return Button {
+            Haptics.selection()
+            dimension = (isSelected ? nil : dim)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: dim.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(dim.label)
+                    .font(AppFonts.bodyMedium(13))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundColor(isSelected ? .white : dim.color)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.horizontal, 8)
+            .background(isSelected ? dim.color : dim.color.opacity(0.10))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.clear : dim.color.opacity(0.25), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(dim.label) dimension\(isSelected ? ", selected" : "")")
+    }
+
+    private var nonePill: some View {
+        let isSelected = dimension == nil
+        return Button {
+            Haptics.selection()
+            dimension = nil
+        } label: {
+            Text("None")
+                .font(AppFonts.bodyMedium(13))
+                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(isSelected ? AppColors.textSecondary : AppColors.surface)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("No dimension\(isSelected ? ", selected" : "")")
+    }
+
     private func frequencyPill(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button {
             Haptics.selection()
@@ -236,8 +325,8 @@ struct HabitFormView: View {
                 .font(AppFonts.bodyMedium(14))
                 .foregroundColor(selected ? .white : AppColors.textSecondary)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(selected ? Color(hex: colorHex) : AppColors.surface)
+                .frame(minHeight: 44)
+                .background(selected ? Color(hex: effectiveColorHex) : AppColors.surface)
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -251,18 +340,30 @@ struct HabitFormView: View {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
+        // Persist the user's MANUAL color pick unconditionally. The dimension
+        // color is derived at read-time via `HabitItem.effectiveColor`, so
+        // overwriting `colorHex` with the dimension's hex would destroy the
+        // user's pick and show stale color if they later clear the dimension.
         if let habit = existingHabit {
             habit.title = trimmed
             habit.icon = icon
             habit.colorHex = colorHex
             habit.targetDays = frequency
+            // Guard: only overwrite dimensions if the user's selection
+            // actually differs from the habit's current primary dimension.
+            // A Save with no changes should not destroy any secondary
+            // dimensions a multi-tagged habit may have.
+            if habit.dimension != dimension {
+                habit.dimension = dimension
+            }
             habitManager?.save(habit)
         } else {
             let habit = HabitItem(
                 title: trimmed,
                 icon: icon,
                 colorHex: colorHex,
-                targetDays: frequency
+                targetDays: frequency,
+                dimension: dimension
             )
             habitManager?.save(habit)
         }

@@ -24,9 +24,7 @@ enum SentryConfig {
 
     static func start() {
         guard !dsn.isEmpty else {
-            #if DEBUG
-            print("[Sentry] DSN not configured — skipping initialization")
-            #endif
+            AppLogger.app.notice("Sentry DSN not configured — skipping initialization")
             return
         }
 

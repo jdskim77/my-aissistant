@@ -38,7 +38,7 @@ struct ContentView: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    HomeView()
+                    HomeView(selectedTab: $selectedTab)
                 case .schedule:
                     ScheduleView()
                 case .compass:

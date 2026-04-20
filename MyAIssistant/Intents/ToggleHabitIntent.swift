@@ -31,6 +31,20 @@ struct ToggleHabitIntent: AppIntent {
         habit.toggleCompletion(for: today)
         context.safeSave()
 
+        // When the app is running in-process with the Intent (common case for
+        // openAppWhenRun=false), notify HabitManager so it can invalidate the
+        // BalanceManager cache and fire a BalancePulse — giving the user the
+        // same Compass feedback they'd see from an in-app completion. If the
+        // app is in a separate process, the observer is no-op and the pulse
+        // is skipped; the data mutation above still persists either way.
+        if !wasCompleted {
+            NotificationCenter.default.post(
+                name: .habitToggledExternally,
+                object: nil,
+                userInfo: ["habitID": habit.id]
+            )
+        }
+
         if wasCompleted {
             return .result(dialog: "Unmarked \"\(habit.title)\" for today.")
         } else {

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 import SwiftData
 
 @Observable @MainActor
@@ -30,9 +31,7 @@ final class WisdomManager {
         guard let url = Bundle.main.url(forResource: "DailyWisdom", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let quotes = try? JSONDecoder().decode([Quote].self, from: data) else {
-            #if DEBUG
-            print("[WisdomManager] Failed to load DailyWisdom.json")
-            #endif
+            AppLogger.general.error("Failed to load DailyWisdom.json")
             return []
         }
         cachedQuotes = quotes

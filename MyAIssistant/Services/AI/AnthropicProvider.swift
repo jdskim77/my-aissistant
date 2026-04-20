@@ -194,10 +194,8 @@ actor AnthropicProvider: AIProvider {
         // overhead. Fall back to the legacy single-block path so cache_control still
         // sits on the combined text — no worse than today, and avoids confusing logs.
         if systemPromptStable.count < minStableCacheChars {
-            #if DEBUG
             let estTokens = systemPromptStable.count / 6
-            print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — below \(minStableCacheChars) for model \(model), falling back to single-block")
-            #endif
+            AppLogger.ai.debug("Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — below \(self.minStableCacheChars) for model \(self.model), falling back to single-block")
             let combined: String
             if systemPromptVolatile.isEmpty {
                 combined = systemPromptStable
@@ -209,10 +207,8 @@ actor AnthropicProvider: AIProvider {
             return buildRequestBody(systemPrompt: combined, messages: messages)
         }
 
-        #if DEBUG
         let estTokens = systemPromptStable.count / 6
-        print("[AnthropicProvider] Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — caching enabled for model \(model)")
-        #endif
+        AppLogger.ai.debug("Stable block \(systemPromptStable.count) chars (~\(estTokens) real tokens) — caching enabled for model \(self.model)")
 
         var systemBlocks: [[String: Any]] = []
 
@@ -257,9 +253,7 @@ actor AnthropicProvider: AIProvider {
         let cacheCreation = usage?["cache_creation_input_tokens"] as? Int
         let cacheRead = usage?["cache_read_input_tokens"] as? Int
 
-        #if DEBUG
-        print("[AnthropicProvider] Raw usage: \(usage ?? [:])")
-        #endif
+        AppLogger.ai.debug("Raw usage: \(usage ?? [:])")
 
         return AIResponse(
             content: text,

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 final class HabitItem {
@@ -13,14 +14,57 @@ final class HabitItem {
     var reminderHour: Int?
     var reminderMinute: Int?
 
+    /// Comma-separated `LifeDimension` raw values. Nil = untagged (existing
+    /// habits before this field was introduced). Tagged habits feed their
+    /// Compass quadrant when completed; untagged habits don't pulse.
+    var dimensionRaw: String?
+
     /// Tracks which dates this habit was completed on.
     /// Stored as comma-separated "yyyy-MM-dd" strings for SwiftData compatibility.
     var completionDatesRaw: String = ""
+
+    /// Dates the user explicitly marked as missed (distinct from "not yet
+    /// completed"). Mutually exclusive with `completionDates` — marking a date
+    /// missed clears any completion for that day, and completing a date clears
+    /// any missed flag. Stored as comma-separated "yyyy-MM-dd" strings.
+    var missedDatesRaw: String = ""
 
     // MARK: - Computed
 
     @Transient
     var isArchived: Bool { archivedAt != nil }
+
+    /// All life dimensions tagged on this habit. A habit can tag multiple
+    /// dimensions (e.g., "family walk" = Physical + Emotional), matching
+    /// `TaskItem.dimensions` semantics.
+    @Transient
+    var dimensions: [LifeDimension] {
+        get {
+            guard let raw = dimensionRaw, !raw.isEmpty else { return [] }
+            return raw.split(separator: ",")
+                .compactMap { LifeDimension(rawValue: String($0)) }
+        }
+        set {
+            dimensionRaw = newValue.isEmpty ? nil :
+                newValue.sorted(by: { $0.rawValue < $1.rawValue }).map(\.rawValue).joined(separator: ",")
+        }
+    }
+
+    /// Convenience: primary (first) dimension for single-dimension code paths.
+    @Transient
+    var dimension: LifeDimension? {
+        get { dimensions.first }
+        set { dimensions = newValue.map { [$0] } ?? [] }
+    }
+
+    /// The color this habit should paint itself with in list rows, checkboxes,
+    /// and other accents. Prefers the dimension color when tagged so the
+    /// habit visually identifies with its Compass quadrant; otherwise falls
+    /// back to the user's manual `colorHex` pick.
+    @Transient
+    var effectiveColor: Color {
+        dimensions.primaryScored?.color ?? Color(hex: colorHex)
+    }
 
     @Transient
     var targetDays: HabitFrequency {
@@ -39,12 +83,24 @@ final class HabitItem {
         }
     }
 
+    @Transient
+    var missedDates: Set<String> {
+        get {
+            guard !missedDatesRaw.isEmpty else { return [] }
+            return Set(missedDatesRaw.split(separator: ",").map(String.init))
+        }
+        set {
+            missedDatesRaw = newValue.sorted().joined(separator: ",")
+        }
+    }
+
     init(
         id: String = UUID().uuidString,
         title: String,
         icon: String = "✅",
         colorHex: String = "#2D5016",
-        targetDays: HabitFrequency = .daily
+        targetDays: HabitFrequency = .daily,
+        dimension: LifeDimension? = nil
     ) {
         self.id = id
         self.title = title
@@ -56,6 +112,7 @@ final class HabitItem {
         self.reminderHour = nil
         self.reminderMinute = nil
         self.completionDatesRaw = ""
+        self.dimensionRaw = dimension?.rawValue
     }
 
     // MARK: - Helpers
@@ -81,8 +138,37 @@ final class HabitItem {
             dates.remove(key)
         } else {
             dates.insert(key)
+            // Invariant: a date is never in both sets. Completing a day
+            // clears any prior "missed" flag so the state stays consistent.
+            var missed = missedDates
+            if missed.remove(key) != nil {
+                missedDates = missed
+            }
         }
         completionDates = dates
+    }
+
+    func isMissedOn(_ date: Date) -> Bool {
+        missedDates.contains(dateKey(for: date))
+    }
+
+    func markMissed(for date: Date) {
+        let key = dateKey(for: date)
+        var completed = completionDates
+        if completed.remove(key) != nil {
+            completionDates = completed
+        }
+        var missed = missedDates
+        missed.insert(key)
+        missedDates = missed
+    }
+
+    func unmarkMissed(for date: Date) {
+        let key = dateKey(for: date)
+        var missed = missedDates
+        if missed.remove(key) != nil {
+            missedDates = missed
+        }
     }
 
     /// Current streak counting back from today.

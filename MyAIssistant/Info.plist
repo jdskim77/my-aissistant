@@ -34,6 +34,10 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>My AIssistant needs microphone access to transcribe your voice into text for the AI assistant.</string>
 
+	<!-- Location (Weather) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>My AIssistant uses your location to show local weather and tailor daily context to where you are.</string>
+
 	<!-- Queried URL Schemes (for canOpenURL checks) -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>

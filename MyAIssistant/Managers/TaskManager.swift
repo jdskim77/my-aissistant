@@ -9,6 +9,10 @@ final class TaskManager {
     private let modelContext: ModelContext
     var calendarSyncManager: CalendarSyncManager?
     var balanceManager: BalanceManager?
+    /// Broadcasts a `BalancePulse` whenever a dimension-tagged task is
+    /// completed, so Home's Balance Pulse card animates regardless of which
+    /// screen the completion actually came from (Focus, Schedule, Watch).
+    var balancePulseBus: BalancePulseBus?
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -51,6 +55,43 @@ final class TaskManager {
 
         modelContext.safeSave()
         updateWidgetData()
+
+        // Completion → Compass feedback loop. Only on forward motion; dropping
+        // a task back to undone deliberately doesn't celebrate.
+        if task.done {
+            // The BalanceManager cache lives for 30s and keys off weekly score
+            // results. Without invalidation, Home's bar heights would bloom but
+            // settle to the pre-completion values for up to 30s — defeating
+            // the whole "visible causal chain" that the pulse animation sells.
+            balanceManager?.invalidateCache()
+
+            // Fire a pulse with the per-dimension split share so the label
+            // ("+N <dim>") matches the actual contribution BalanceManager
+            // will attribute to that dimension. For a single-dim task this is
+            // the full effort; for multi-dim it's the split.
+            //
+            // Uses `primaryScored` (sort-order-based) so the pulsed bar is
+            // the same one the task row's dim dot advertises — the enum's
+            // sortOrder is Physical < Mental < Emotional < Spiritual, which
+            // matches the Compass's visual ordering. The raw `.first` on
+            // dimensions would pick alphabetically (SwiftData's storage
+            // format), which disagrees with the UI.
+            let scoredCount = task.dimensions.filter(\.isScored).count
+            if let dim = task.dimensions.primaryScored {
+                let share = splitPoints(total: task.effort.points, across: scoredCount)
+                balancePulseBus?.publish(BalancePulse(dimension: dim, points: share))
+            }
+        }
+    }
+
+    /// Mirrors BalanceManager's `Double(effort.points) / Double(scored.count)`
+    /// rounded to the nearest int, with a minimum of 1 so that any completion
+    /// always surfaces at least a +1 change rather than rounding to zero for
+    /// a Light task split across 3 dimensions.
+    private func splitPoints(total: Int, across count: Int) -> Int {
+        guard count > 0 else { return total }
+        let share = Double(total) / Double(count)
+        return max(1, Int(share.rounded()))
     }
 
     func deleteTask(_ task: TaskItem) {

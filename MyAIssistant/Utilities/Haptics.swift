@@ -1,3 +1,4 @@
+#if canImport(UIKit) && !os(watchOS)
 import UIKit
 
 /// Centralized haptic feedback for consistent tactile responses across the app.
@@ -32,3 +33,4 @@ enum Haptics {
         UISelectionFeedbackGenerator().selectionChanged()
     }
 }
+#endif

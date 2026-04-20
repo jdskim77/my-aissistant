@@ -79,20 +79,48 @@ final class BalanceManager {
         )
         let tasks = (try? modelContext.fetch(taskDescriptor)) ?? []
 
-        let activityScores = activitySignalFromTasks(tasks)
+        // Habits are dimension-tagged completions too. Decode each habit's
+        // completion-date strings and keep only those inside [start, end).
+        // Cheap: `completionDatesRaw` is a comma-separated string per habit.
+        let habitDescriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil }
+        )
+        let habits = (try? modelContext.fetch(habitDescriptor)) ?? []
+        let habitCompletions = habitCompletions(in: habits, from: start, to: end)
+
+        // Activity + consistency blend task and habit contributions. Tasks use
+        // effort-split points; habits use a fixed 2 points per completion
+        // (split across multi-tagged habits).
+        var activityScores = activitySignalFromTasks(tasks)
+        let habitActivity = activitySignalFromHabits(habitCompletions)
+        for dim in LifeDimension.scored {
+            activityScores[dim] = min(10, (activityScores[dim] ?? 0) + (habitActivity[dim] ?? 0))
+        }
+
         let satisfactionScores = satisfactionSignal(from: start, to: end)
-        let consistencyScores = consistencySignalFromTasks(tasks)
+
+        var consistencyScores = consistencySignalFromTasks(tasks)
+        let habitActiveDays = habitActiveDays(habitCompletions)
+        for dim in LifeDimension.scored {
+            // Blend by max(task-days, habit-days) converted to score space.
+            // Combining raw day sets would overstate consistency (counting the
+            // same Monday twice); taking the stronger signal keeps the score
+            // reflective of "was this dimension active that day."
+            let habitScore = Double(habitActiveDays[dim]?.count ?? 0) / 7.0 * 10
+            consistencyScores[dim] = max(consistencyScores[dim] ?? 0, habitScore)
+        }
 
         // Detect if user has ANY data this week (tasks or check-ins)
         let hasSatisfactionData = satisfactionScores.values.contains(where: { $0 != 5 })
 
-        // Count total completed tasks this week to determine data maturity.
-        // With few tasks, activity/consistency signals are unreliable and drag
-        // the compass far below what the user self-reported. Ramp gradually:
-        //   0 tasks  → 100% satisfaction (show what user rated)
-        //   1-6 tasks → blend: satisfaction dominates, activity/consistency fade in
-        //   7+ tasks  → full weighted formula (enough data for all 3 signals)
-        let totalCompletedTasks = tasks.count
+        // Count total completed activities this week (tasks + habits) to
+        // determine data maturity. With few completions, activity/consistency
+        // signals are unreliable and drag the compass far below what the user
+        // self-reported. Ramp gradually:
+        //   0 activities  → 100% satisfaction (show what user rated)
+        //   1-6          → blend: satisfaction dominates, activity/consistency fade in
+        //   7+           → full weighted formula
+        let totalCompletedTasks = tasks.count + habitCompletions.count
         let taskDataWeight = min(1.0, Double(totalCompletedTasks) / 7.0)
 
         var result: [LifeDimension: DimensionBreakdown] = [:]
@@ -197,6 +225,74 @@ final class BalanceManager {
             scores[dim] = min(10, (effortPoints[dim] ?? 0) / Double(target) * 10)
         }
         return scores
+    }
+
+    // MARK: - Habit Contributions
+
+    /// A single habit completion within the scoring window. Carries the
+    /// habit's dimensions + the date it was completed on, so downstream
+    /// helpers don't re-parse the completionDatesRaw string.
+    private struct HabitCompletion {
+        let dimensions: [LifeDimension]
+        let date: Date
+    }
+
+    private static let habitDateKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    /// Decode each habit's completion-date strings and keep only the ones
+    /// inside [start, end). Habits without scored dimensions are dropped
+    /// upstream (same rule as tasks).
+    private func habitCompletions(in habits: [HabitItem], from start: Date, to end: Date) -> [HabitCompletion] {
+        let df = Self.habitDateKeyFormatter
+        var result: [HabitCompletion] = []
+        for habit in habits {
+            let scored = habit.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            for key in habit.completionDates {
+                guard let date = df.date(from: key), date >= start, date < end else { continue }
+                result.append(HabitCompletion(dimensions: scored, date: date))
+            }
+        }
+        return result
+    }
+
+    /// Activity score contribution from habit completions. Each completion
+    /// adds `HabitManager.habitEffortPoints` (2) to the tagged dimensions,
+    /// split evenly across multi-tagged habits (mirrors task behavior).
+    private func activitySignalFromHabits(_ completions: [HabitCompletion]) -> [LifeDimension: Double] {
+        var effortPoints: [LifeDimension: Double] = [:]
+        for dim in LifeDimension.scored { effortPoints[dim] = 0 }
+        for completion in completions {
+            let split = Double(HabitManager.habitEffortPoints) / Double(completion.dimensions.count)
+            for dim in completion.dimensions {
+                effortPoints[dim, default: 0] += split
+            }
+        }
+        var scores: [LifeDimension: Double] = [:]
+        for dim in LifeDimension.scored {
+            let target = personalTarget(for: dim)
+            scores[dim] = (effortPoints[dim] ?? 0) / Double(target) * 10
+        }
+        return scores
+    }
+
+    /// Set of weekday indices (1=Sun … 7=Sat) that each dimension was active
+    /// on via habit completions. Used as an alternate consistency signal.
+    private func habitActiveDays(_ completions: [HabitCompletion]) -> [LifeDimension: Set<Int>] {
+        let cal = Calendar.current
+        var days: [LifeDimension: Set<Int>] = [:]
+        for dim in LifeDimension.scored { days[dim] = [] }
+        for completion in completions {
+            let weekday = cal.component(.weekday, from: completion.date)
+            for dim in completion.dimensions {
+                days[dim, default: []].insert(weekday)
+            }
+        }
+        return days
     }
 
     /// Consistency signal from pre-fetched tasks (avoids duplicate query).
@@ -316,7 +412,9 @@ final class BalanceManager {
 
     // MARK: - Balance Streak
 
-    /// Whether there is any real user data (tasks or check-ins) in the given week.
+    /// Whether there is any real user data (tasks, habits, or check-ins) in
+    /// the given week. Habits count as real data when at least one completion
+    /// lands in the window.
     func hasRealData(for weekStart: Date? = nil) -> Bool {
         let calendar = Calendar.current
         let start = weekStart ?? calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -327,6 +425,12 @@ final class BalanceManager {
         )
         let taskCount = (try? modelContext.fetchCount(taskDesc)) ?? 0
         if taskCount > 0 { return true }
+
+        let habitDesc = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil }
+        )
+        let habits = (try? modelContext.fetch(habitDesc)) ?? []
+        if !habitCompletions(in: habits, from: start, to: end).isEmpty { return true }
 
         let checkInDesc = FetchDescriptor<DailyBalanceCheckIn>(
             predicate: #Predicate { $0.date >= start && $0.date < end }

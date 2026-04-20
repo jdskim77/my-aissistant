@@ -70,6 +70,17 @@ struct SettingsView: View {
                             subtitle: TextSizeManager.shared.selectedSize.rawValue
                         )
                     }
+
+                    NavigationLink {
+                        HomeLayoutSettingsView()
+                    } label: {
+                        settingsRow(
+                            icon: "rectangle.3.group.fill",
+                            color: AppColors.accent,
+                            title: "Home Sections",
+                            subtitle: "Show or hide cards on Home"
+                        )
+                    }
                 } header: {
                     Text("Appearance")
                 }
@@ -894,5 +905,49 @@ struct SettingsView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Home Layout Settings
+
+/// User-toggleable visibility for non-essential Home sections. Today's hero
+/// (day-completion ring + check-ins) and active task list are load-bearing
+/// and stay visible always — only the cards a power user might opt out of
+/// (Life Balance, Habits, Tomorrow preview, Daily Wisdom tagline) get a
+/// switch here. Backed by the same @AppStorage keys HomeView reads, so
+/// changes take effect immediately.
+struct HomeLayoutSettingsView: View {
+    @AppStorage("home.show.lifeBalance") private var showLifeBalance = true
+    @AppStorage("home.show.habits") private var showHabits = true
+    @AppStorage("home.show.tomorrow") private var showTomorrow = true
+    @AppStorage("home.show.wisdom") private var showWisdom = true
+
+    var body: some View {
+        List {
+            Section {
+                Toggle("Life Balance", isOn: $showLifeBalance)
+                Toggle("Habits", isOn: $showHabits)
+                Toggle("Tomorrow preview", isOn: $showTomorrow)
+                // Daily Wisdom renders inside the Life Balance card as a
+                // tagline, so hiding Life Balance hides Wisdom by default.
+                // Disable the toggle in that case so the switch isn't a
+                // visible lie.
+                Toggle("Daily Wisdom", isOn: $showWisdom)
+                    .disabled(!showLifeBalance)
+            } header: {
+                Text("Show on Home")
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Today's tasks and check-ins are always visible. Hide cards you don't use daily — you can turn them back on here anytime.")
+                    if !showLifeBalance {
+                        Text("Daily Wisdom lives inside the Life Balance card. Enable Life Balance to see it.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .tint(AppColors.accent)
+        .navigationTitle("Home Sections")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

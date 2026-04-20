@@ -54,8 +54,9 @@ struct AIActivityOrb: View {
                     )
             }
 
-            // Layer 1: Core orb
-            Circle()
+            // Layer 1: Core — quatrefoil (4-petal flower from overlapping circles,
+            // mirroring the Thrivn venn mark's silhouette)
+            QuatrefoilShape()
                 .fill(
                     LinearGradient(
                         colors: [AppColors.accent, AppColors.accentWarm],
@@ -96,5 +97,32 @@ struct AIActivityOrb: View {
             }
         }
         .accessibilityLabel(isActive ? "AI activity indicator, active" : "AI activity indicator, idle")
+    }
+}
+
+// MARK: - Quatrefoil Shape
+
+/// Four-petal flower silhouette formed by the union of 4 overlapping circles,
+/// mirroring the geometry of `ThrivnVennMark`. Nonzero winding fills the
+/// whole 4-lobed clover shape (not just the intersection).
+///
+/// Geometry matches `ThrivnVennMark`: each petal circle has radius 32% of
+/// the bounding box and is offset 18% of the box from center.
+struct QuatrefoilShape: Shape {
+    var offsetRatio: CGFloat = 0.18
+    var circleRadiusRatio: CGFloat = 0.32
+
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height)
+        let r = s * circleRadiusRatio
+        let o = s * offsetRatio
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+
+        var p = Path()
+        p.addEllipse(in: CGRect(x: c.x - r, y: c.y - o - r, width: 2 * r, height: 2 * r)) // top
+        p.addEllipse(in: CGRect(x: c.x + o - r, y: c.y - r, width: 2 * r, height: 2 * r)) // right
+        p.addEllipse(in: CGRect(x: c.x - r, y: c.y + o - r, width: 2 * r, height: 2 * r)) // bottom
+        p.addEllipse(in: CGRect(x: c.x - o - r, y: c.y - r, width: 2 * r, height: 2 * r)) // left
+        return p
     }
 }

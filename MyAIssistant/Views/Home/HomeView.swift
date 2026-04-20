@@ -4,11 +4,15 @@ import SwiftData
 struct HomeView: View {
     @Binding var selectedTab: Tab
     @Environment(\.taskManager) private var taskManager
+    @Environment(\.habitManager) private var habitManager
     @Environment(\.insightEngine) private var insightEngine
     @Environment(\.patternEngine) private var patternEngine
     @Environment(\.calendarSyncManager) private var calendarSyncManager
     @Environment(\.wisdomManager) private var wisdomManager
     @Environment(\.balanceManager) private var balanceManager
+    @Environment(\.weatherManager) private var weatherManager
+    @Environment(\.balancePulseBus) private var balancePulseBus
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TaskItem.date) private var allTasks: [TaskItem]
     @Query(sort: \HabitItem.createdAt) private var allHabits: [HabitItem]
@@ -17,17 +21,51 @@ struct HomeView: View {
 
     @State private var appeared = false
     @State private var showingCheckIn = false
-    @State private var overdueExpanded = true
-    @State private var completedExpanded = false
-    @State private var tomorrowExpanded = false
+    // Collapse state is persisted so the user's disclosure choices survive
+    // relaunches — matches Overdue/Completed/Tomorrow/Life Balance/Habits
+    // behaviour (all collapsible, all remembered).
+    @AppStorage("home.overdue.expanded") private var overdueExpanded = true
+    @AppStorage("home.completed.expanded") private var completedExpanded = false
+    @AppStorage("home.tomorrow.expanded") private var tomorrowExpanded = false
+    @AppStorage("home.habits.expanded") private var habitsExpanded = true
+    // Section visibility — user can hide non-essential cards in Settings →
+    // Home Sections. Today's hero + active tasks are never hidden.
+    @AppStorage("home.show.lifeBalance") private var showLifeBalance = true
+    @AppStorage("home.show.habits") private var showHabits = true
+    @AppStorage("home.show.tomorrow") private var showTomorrow = true
+    @AppStorage("home.show.wisdom") private var showWisdom = true
     @State private var taskToReschedule: TaskItem?
     @State private var taskToDelete: TaskItem?
     @State private var showingHabits = false
     @State private var showingAddHabit = false
+    @State private var showingDoneHabits = false
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
     @State private var greetingOrbActive = false
+    @State private var orbTask: Task<Void, Never>?
+    @State private var dismissTask: Task<Void, Never>?
     @State private var celebrationMilestone: Int?
+    @State private var showingTodaysContext = false
+    /// Owns in-flight "task → Life Balance" particles and the landing
+    /// pulseRequest the BalancePulseCard watches. Lives on Home (not in an
+    /// env/manager) because source and target are both Home-local — no other
+    /// screen has a BalancePulseCard to fly to.
+    @State private var particleAnimator = ParticleAnimator()
+    /// Latest known center of each dimension bar in the particle coord space.
+    /// Populated by `BalancePulseCard`'s dimensionBar geometry; read at the
+    /// moment of fire so the particle aims at where the bar is right now.
+    @State private var dimensionBarCenters: [LifeDimension: CGPoint] = [:]
+    /// Last bus-pulse token the HomeView bus-bridge actually forwarded to
+    /// the animator. Prevents a stale pulse from replaying as an in-place
+    /// pulse when the user returns to Home within the 3s staleness window.
+    @State private var lastHandledBusToken: UUID?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Tracks insight-banner dismissal within this view session so a user who
+    /// dismisses the banner doesn't see it flash back during the same visit.
+    /// Re-evaluated on `.active` scene phase transitions so the per-day key
+    /// rollover at midnight takes effect without requiring a relaunch.
+    @State private var insightBannerDismissed = PatternInsightBanner.isDismissedToday()
 
     // MARK: - Computed
 
@@ -36,6 +74,23 @@ struct HomeView: View {
         if hour < 12 { return "Good morning" }
         if hour < 17 { return "Good afternoon" }
         return "Good evening"
+    }
+
+    // MARK: - Home Stage (FTUE gating)
+    //
+    // The screen is built for a returning user with data. A literal day-0 user
+    // (no check-ins ever, no completed tasks) sees a 0% ring, empty balance
+    // bars, and repeated "empty" empty-states — the screen says "you are
+    // nothing" five times. `.day0` collapses the screen down to a single
+    // "Start Here" card until the user generates real data, then the rest of
+    // Home unlocks naturally.
+
+    private enum HomeStage { case day0, normal }
+
+    private var homeStage: HomeStage {
+        let hasCheckIn = !allCheckIns.isEmpty
+        let hasCompletedTask = allTasks.contains { $0.done }
+        return (hasCheckIn || hasCompletedTask) ? .normal : .day0
     }
 
     // MARK: - Check-in State
@@ -128,6 +183,21 @@ struct HomeView: View {
         allHabits.filter { !$0.isArchived }
     }
 
+    /// Habits not yet completed today — the "needs attention" set. Sorted by
+    /// active streak so a 12-day streak at risk sits above a brand-new habit.
+    private var habitsToDoToday: [HabitItem] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return activeHabits.filter { !$0.isCompletedOn(today) }
+            .sorted { $0.currentStreak() > $1.currentStreak() }
+    }
+
+    /// Habits already done today. Surfaced as a collapsed "✓ N done" chip so
+    /// the main list stays short and focused on what's left.
+    private var habitsDoneToday: [HabitItem] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return activeHabits.filter { $0.isCompletedOn(today) }
+    }
+
     private var tomorrowTasks: [TaskItem] {
         allTasks.filter { $0.date >= startOfTomorrow && $0.date < endOfTomorrow && !$0.done }
             .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
@@ -154,112 +224,124 @@ struct HomeView: View {
             // Compact header
             Section {
                 headerView
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-            }
-
-            // Daily wisdom (70/20/10 intelligent selection)
-            if let quote = wisdomManager?.todayQuote(
-                compassScores: balanceManager?.weeklyScores().reduce(into: [:]) { $0[$1.key.rawValue] = $1.value },
-                currentMood: nil,
-                streak: streak
-            ) ?? WisdomManager.todayQuote() {
-                Section {
-                    wisdomCard(quote: quote)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
-            }
-
-            // Today hero card (tasks + check-ins + streak + contextual action)
-            Section {
-                todayHeroCard
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 16, trailing: 0))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
             }
 
-            // Balance Pulse — Pillar 3 (Whole-Life Balance) on the Home screen
-            if let bm = balanceManager {
-                Section {
-                    BalancePulseCard(
-                        scores: bm.weeklyScores(),
-                        harmonyScore: bm.harmonyScore(),
-                        onTapCompass: { selectedTab = .compass }
-                    )
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-            }
+            // Memoize weekly scores + derived stats once per body evaluation.
+            // Computing all three pieces in one let avoids a second trip
+            // through `weeklyScores → balanceScore → weeklyScores` that the
+            // older form did via separate `harmonyScore()` + `weeklyScores()`
+            // calls. Skip the work entirely on day-0 since nothing in the
+            // .day0 branch reads them.
+            let snapshot = (homeStage == .day0)
+                ? HomeBalanceSnapshot.empty
+                : HomeBalanceSnapshot(
+                    scores: balanceManager?.weeklyScores() ?? [:],
+                    harmony: balanceManager?.harmonyScore() ?? 50,
+                    hasData: balanceManager?.hasRealData() ?? false
+                )
 
-            // Micro-insight
-            if let insight = insightEngine?.todayInsight() {
+            if homeStage == .day0 {
+                // MARK: - Day 0: Start-Here card only
+                //
+                // The most hostile state for a new user is the default Home
+                // rendering at 0%, with empty bars and "no data" empty states
+                // repeated five times. `.day0` swaps Hero + Balance + Insight
+                // for a single on-ramp card. The first completed check-in or
+                // task flips the stage to `.normal` and the rest of the screen
+                // unlocks — a deliberate Peak-End reveal.
                 Section {
-                    insightCard(insight)
+                    startHereCard
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-            }
+            } else {
+                // MARK: - Normal stage: Hero + Balance + content
 
-            // Habits section
-            if !activeHabits.isEmpty {
-                Section {
-                    habitsCard
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                // Pattern Insight surfacing banner — only appears when
+                // InsightEngine has enough data to compute a real insight,
+                // and only when the user hasn't dismissed it today.
+                if let insight = insightEngine?.todayInsight(), !insightBannerDismissed {
+                    Section {
+                        PatternInsightBanner(insight: insight) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                insightBannerDismissed = true
+                            }
+                            PatternInsightBanner.markDismissedToday()
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                } header: {
-                    // Split into three tap targets: title taps "See all", a
-                    // dedicated "+" button opens the create-habit sheet, and the
-                    // trailing "See all" text doubles as a visible affordance.
-                    // Without the split, creating a habit was 3 taps (Home → See
-                    // all → +); now it's 1.
-                    HStack {
-                        Button {
-                            showingHabits = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "leaf.fill")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(AppColors.accent)
-                                Text("Habits")
-                                    .font(AppFonts.heading(15))
-                                    .foregroundColor(AppColors.textPrimary)
-                                    .textCase(nil)
-                            }
-                        }
-                        .buttonStyle(.scale)
+                    }
+                }
 
-                        Spacer()
+                // Today hero card (dual-ring + contextual check-in action)
+                Section {
+                    todayHeroCard
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
 
-                        Button {
-                            Haptics.light()
-                            showingAddHabit = true
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 18))
-                                .foregroundColor(AppColors.accent)
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add new habit")
+                // Balance Pulse — Pillar 3 (Whole-Life Balance). Now also hosts
+                // the Daily Wisdom as a small italic tagline so we don't need
+                // a separate Wisdom card competing for attention above. The
+                // card is collapsible (chevron in its header) and the tagline
+                // is conditionally passed based on the Wisdom visibility
+                // toggle in Settings → Home Sections.
+                if showLifeBalance {
+                    Section {
+                        BalancePulseCard(
+                            scores: snapshot.scores,
+                            harmonyScore: snapshot.harmony,
+                            hasData: snapshot.hasData,
+                            // Pulse signal now sourced from the particle
+                            // coordinator — fires on landing for tap-source
+                            // completions, or via `pulseInPlace` for off-tap
+                            // (Watch sync, Focus, Reduce Motion).
+                            flightPulse: particleAnimator.pulseRequest,
+                            tagline: showWisdom ? wisdomTagline(balanceScores: snapshot.scores) : nil,
+                            onTapCompass: { selectedTab = .compass }
+                        )
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    }
+                }
+            }
 
-                        Button {
-                            showingHabits = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("See all")
-                                    .font(AppFonts.caption(12))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 10, weight: .medium))
-                            }
-                            .foregroundColor(AppColors.accent)
+            // Habits section — collapsible, auto-curated.
+            //
+            // The section only renders habits that still need attention today;
+            // completed ones collapse into a "✓ N done today" disclosure so a
+            // user with 6 habits doesn't see a 6-row wall once they've
+            // finished them. The whole section can also be collapsed from its
+            // header (chevron) for users who prefer a quieter Home.
+            if showHabits {
+                if activeHabits.isEmpty {
+                    // Empty state — user has never added a habit. Previously
+                    // the whole section was suppressed, which meant the only
+                    // way to add a habit from Home was... nowhere. Surface a
+                    // minimal CTA so Pillar 1 (daily ritual) has an on-ramp.
+                    Section {
+                        emptyHabitsCard
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+                } else {
+                    Section {
+                        if habitsExpanded {
+                            habitsCard
+                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                         }
-                        .buttonStyle(.scale)
+                    } header: {
+                        habitsHeader
                     }
                 }
             }
@@ -269,11 +351,12 @@ struct HomeView: View {
                 Section {
                     if overdueExpanded {
                         ForEach(overdueTasks, id: \.id) { task in
-                            TaskCard(task: task, isOverdue: true) {
-                                Haptics.success()
-                                withAnimation(.spring(response: 0.3)) {
-                                    taskManager?.toggleCompletion(task)
-                                }
+                            TaskCard(
+                                task: task,
+                                isOverdue: true,
+                                onFlightLaunch: flightLaunchHandler
+                            ) {
+                                handleToggle(task)
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
@@ -293,10 +376,7 @@ struct HomeView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
-                                    Haptics.success()
-                                    withAnimation(.spring(response: 0.3)) {
-                                        taskManager?.toggleCompletion(task)
-                                    }
+                                    handleToggle(task)
                                 } label: {
                                     Label("Complete", systemImage: "checkmark.circle.fill")
                                 }
@@ -320,10 +400,7 @@ struct HomeView: View {
                 // Calendar events inline
                 ForEach(todayCalendarEvents, id: \.id) { event in
                     CalendarEventRow(task: event) {
-                        Haptics.success()
-                        withAnimation(.spring(response: 0.3)) {
-                            taskManager?.toggleCompletion(event)
-                        }
+                        handleToggle(event)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
@@ -337,10 +414,7 @@ struct HomeView: View {
                     }
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button {
-                            Haptics.success()
-                            withAnimation(.spring(response: 0.3)) {
-                                taskManager?.toggleCompletion(event)
-                            }
+                            handleToggle(event)
                         } label: {
                             Label("Complete", systemImage: "checkmark.circle.fill")
                         }
@@ -351,16 +425,18 @@ struct HomeView: View {
 
                 // Active tasks
                 if todayActiveTasks.isEmpty && todayCalendarEvents.isEmpty && overdueTasks.isEmpty {
-                    emptyActiveState
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
+                    // In day-0 we skip the "No tasks today" message because
+                    // the Start-Here card is already the primary CTA and the
+                    // extra empty state just piles on.
+                    if homeStage != .day0 {
+                        emptyActiveState
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
+                    }
                 } else {
                     ForEach(todayActiveTasks, id: \.id) { task in
-                        TaskCard(task: task) {
-                            Haptics.success()
-                            withAnimation(.spring(response: 0.3)) {
-                                taskManager?.toggleCompletion(task)
-                            }
+                        TaskCard(task: task, onFlightLaunch: flightLaunchHandler) {
+                            handleToggle(task)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
@@ -385,10 +461,7 @@ struct HomeView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
-                                Haptics.success()
-                                withAnimation(.spring(response: 0.3)) {
-                                    taskManager?.toggleCompletion(task)
-                                }
+                                handleToggle(task)
                             } label: {
                                 Label("Complete", systemImage: "checkmark.circle.fill")
                             }
@@ -398,10 +471,14 @@ struct HomeView: View {
                     }
                 }
             } header: {
-                Text("Today")
-                    .font(AppFonts.heading(15))
-                    .foregroundColor(AppColors.textPrimary)
-                    .textCase(nil)
+                // Hide the "Today" header on day 0 so the Start-Here card is
+                // the unambiguous focal point.
+                if homeStage == .normal || !todayActiveTasks.isEmpty || !todayCalendarEvents.isEmpty {
+                    Text("Today")
+                        .font(AppFonts.heading(15))
+                        .foregroundColor(AppColors.textPrimary)
+                        .textCase(nil)
+                }
             }
 
             // All done celebration
@@ -421,6 +498,8 @@ struct HomeView: View {
                     if completedExpanded {
                         ForEach(todayCompletedTasks, id: \.id) { task in
                             TaskCard(task: task) {
+                                // Undo/uncomplete — no pulse (we only celebrate
+                                // forward motion).
                                 withAnimation(.spring(response: 0.3)) {
                                     taskManager?.toggleCompletion(task)
                                 }
@@ -461,15 +540,14 @@ struct HomeView: View {
                 }
             }
 
-            // Tomorrow section
-            if !tomorrowTasks.isEmpty {
+            // Tomorrow section — hidden entirely when the user disables it in
+            // Settings → Home Sections.
+            if showTomorrow && !tomorrowTasks.isEmpty {
                 Section {
                     if tomorrowExpanded {
                         ForEach(tomorrowTasks, id: \.id) { task in
-                            TaskCard(task: task) {
-                                withAnimation(.spring(response: 0.3)) {
-                                    taskManager?.toggleCompletion(task)
-                                }
+                            TaskCard(task: task, onFlightLaunch: flightLaunchHandler) {
+                                handleToggle(task)
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
@@ -492,9 +570,7 @@ struct HomeView: View {
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
-                                    withAnimation(.spring(response: 0.3)) {
-                                        taskManager?.toggleCompletion(task)
-                                    }
+                                    handleToggle(task)
                                 } label: {
                                     Label("Complete", systemImage: "checkmark.circle.fill")
                                 }
@@ -513,6 +589,19 @@ struct HomeView: View {
                 }
             }
 
+            // "Hidden sections" footer — only appears when the user has
+            // switched off at least one optional Home card. Points back to
+            // Settings so a returning user doesn't think the app regressed
+            // when their Home looks sparser than they remember.
+            if hiddenHomeSectionCount > 0 {
+                Section {
+                    hiddenSectionsFooter
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
             // Bottom spacer so the last section can scroll above the tab bar
             Section {
                 Color.clear
@@ -525,6 +614,91 @@ struct HomeView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(AppColors.background.ignoresSafeArea())
+        .animation(.easeInOut(duration: 0.35), value: homeStage)
+        // Shared coord space for TaskCard checkbox (source) and
+        // BalancePulseCard dimension bars (targets). Both ends resolve
+        // positions in this space so the overlay can draw a single path
+        // across the List/Card boundary.
+        .coordinateSpace(name: particleCoordinateSpace)
+        .onPreferenceChange(DimensionBarPositionKey.self) { positions in
+            // Scrolling the List moves the bars within the named coord
+            // space every frame. Only commit updates when a dimension's
+            // center has moved ≥2pt — sub-pixel drift from scroll doesn't
+            // change where the particle should aim.
+            var significant = false
+            for (dim, newPt) in positions {
+                guard let prev = dimensionBarCenters[dim] else { significant = true; break }
+                if abs(prev.x - newPt.x) > 2 || abs(prev.y - newPt.y) > 2 {
+                    significant = true
+                    break
+                }
+            }
+            if significant || positions.count != dimensionBarCenters.count {
+                dimensionBarCenters = positions
+            }
+        }
+        .overlay {
+            // ignoresSafeArea so the arc's apex (pulled up 20% of distance)
+            // can render above the List's top inset without getting clipped
+            // on tall devices.
+            ParticleLayer(animator: particleAnimator)
+                .ignoresSafeArea()
+        }
+        // Bridge bus pulses (Watch sync, Focus auto-complete, recurring
+        // generation) into in-place pulses on the bar. Token memory
+        // prevents a re-pulse when the user returns to Home within the
+        // 3s staleness window — the `.onChange` on `.latest?.token` WILL
+        // fire on re-subscription with the same token it previously saw.
+        .onChange(of: balancePulseBus?.latest?.token) { _, newToken in
+            guard let newToken, newToken != lastHandledBusToken else { return }
+            guard let pulse = balancePulseBus?.latest, !pulse.isStale() else {
+                lastHandledBusToken = newToken
+                return
+            }
+            guard particleAnimator.shouldHandleBusPulse(pulse.dimension) else {
+                lastHandledBusToken = newToken
+                return
+            }
+            lastHandledBusToken = newToken
+            particleAnimator.pulseInPlace(dimension: pulse.dimension)
+        }
+        .onAppear {
+            // Pre-warm the haptic generator so the first landing vibrates
+            // in sync with the visual instead of lagging 100–200ms.
+            particleAnimator.prepareHaptics()
+            // Seed the bus token so the initial onChange fire on re-appear
+            // doesn't replay the last pulse as an in-place pulse.
+            lastHandledBusToken = balancePulseBus?.latest?.token
+        }
+        .onDisappear {
+            // Cancel any in-flight particle landings so their haptic +
+            // pulseRequest don't fire while the user is on another tab.
+            particleAnimator.cancelAll()
+        }
+        // Reset the "done habits" inline disclosure when it no longer has
+        // content or when the user collapses the whole Habits section.
+        // Without this, the disclosure state leaks across day rollovers and
+        // section collapse cycles — users re-expanding Habits the next day
+        // would see the chip pre-expanded from yesterday.
+        .onChange(of: habitsDoneToday.count) { _, newCount in
+            if newCount == 0 { showingDoneHabits = false }
+        }
+        .onChange(of: habitsExpanded) { _, nowExpanded in
+            if !nowExpanded { showingDoneHabits = false }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // When the app returns to foreground, re-check the per-day
+            // dismissal key. Without this the insight banner would stay
+            // hidden across the midnight rollover if the user left Home
+            // visible overnight.
+            if phase == .active {
+                insightBannerDismissed = PatternInsightBanner.isDismissedToday()
+                // Weather cache is 30 min; after a long background gap the
+                // Home chip would otherwise keep showing stale conditions
+                // until the user manually tapped it.
+                Task { await weatherManager?.refreshIfAuthorizedAndStale() }
+            }
+        }
         .overlay {
             if let milestone = celebrationMilestone {
                 CelebrationView(milestone: milestone) {
@@ -547,12 +721,13 @@ struct HomeView: View {
                 appeared = true
             }
 
+            // Re-check insight dismissal — the UserDefaults key rolls daily.
+            insightBannerDismissed = PatternInsightBanner.isDismissedToday()
+
             // Generate contextual AI greeting
             let todayTasks = taskManager?.todayTasks() ?? []
             let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
-            // Habits 2+ target-days overdue — the greeting calls out the first
-            // by name ("Your run habit has been quiet…"). Sorted by most-overdue
-            // first so the nudge names the habit most in need of attention.
+            // Habits 2+ target-days overdue
             let slippingHabits = activeHabits
                 .compactMap { habit -> (title: String, days: Int)? in
                     guard let days = habit.daysSinceLastCompletion(), days >= 2 else { return nil }
@@ -572,17 +747,35 @@ struct HomeView: View {
             // Pulse the orb briefly on fresh greetings
             if isNew {
                 greetingOrbActive = true
-                Task {
+                orbTask?.cancel()
+                orbTask = Task {
                     try? await Task.sleep(for: .seconds(3))
-                    await MainActor.run { greetingOrbActive = false }
+                    guard !Task.isCancelled else { return }
+                    greetingOrbActive = false
                 }
             }
 
             // Auto-dismiss greeting after 30 seconds
-            Task {
+            dismissTask?.cancel()
+            dismissTask = Task {
                 try? await Task.sleep(for: .seconds(30))
-                await MainActor.run { greetingManager.dismissGreeting() }
+                guard !Task.isCancelled else { return }
+                greetingManager.dismissGreeting()
             }
+        }
+        // Refresh weather silently — auto-cancels if the user leaves Home
+        // mid-fetch. Never prompts on launch (lazy permission).
+        .task {
+            await weatherManager?.refreshIfAuthorizedAndStale()
+        }
+        .sheet(isPresented: $showingTodaysContext) {
+            TodaysContextSheet(
+                snapshot: weatherManager?.latest,
+                isLoading: weatherManager?.isLoading ?? false,
+                isAuthorized: weatherManager?.isAuthorized ?? false,
+                currentSlot: CheckInTime.current(),
+                onRefresh: { Task { await weatherManager?.refresh() } }
+            )
         }
         .sheet(isPresented: $showingCheckIn) {
             CheckInDetailView(timeSlot: CheckInTime.next())
@@ -617,58 +810,160 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Daily Wisdom Card
+    // MARK: - Task completion
 
-    /// Editorial blockquote with a soft warm tint. The original "no chrome"
-    /// design was too restrained against the surrounding cards — it read as
-    /// whitespace, not content. The tint gives it a "different content type"
-    /// container without competing for attention with the functional cards
-    /// (Today Hero, Pattern Insight) above and below it.
-    /// Theme-safe: uses semantic AppColors that adapt across all color schemes.
-    private func wisdomCard(quote: WisdomManager.Quote) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Vertical accent bar — bumped from 3pt to 4pt so it registers as
-            // a structural element instead of a divider line.
-            RoundedRectangle(cornerRadius: 2)
-                .fill(AppColors.accentWarm)
-                .frame(width: 4)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("\u{201C}\(quote.text)\u{201D}")
-                    .font(AppFonts.display(17))
-                    .foregroundColor(AppColors.textPrimary)
-                    .italic()
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(2)
-
-                Text("\u{2014} \(quote.author)")
-                    .font(AppFonts.bodyMedium(12))
-                    .foregroundColor(AppColors.textSecondary)
-                    .tracking(0.3)
-            }
+    /// Home's single toggle entry point. The balance pulse itself is fired
+    /// inside `TaskManager.toggleCompletion` so that *every* completion path
+    /// (Home list, Focus timer, Schedule swipe, TaskDetail, Watch sync)
+    /// produces the same visible Compass movement — without Home needing to
+    /// know about those call sites.
+    private func handleToggle(_ task: TaskItem) {
+        Haptics.success()
+        withAnimation(.spring(response: 0.3)) {
+            taskManager?.toggleCompletion(task)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AppColors.accentWarm.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(AppColors.accentWarm.opacity(0.18), lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Daily wisdom: \(quote.text), by \(quote.author)")
     }
 
-    // MARK: - Today Hero Card
-    //
-    // Single source of truth for "today's progress + today's action".
-    // Replaces the old separate stats card and prominent check-in card.
-    // Adaptive bottom slot will absorb future actions (goal task, season plan, etc.).
+    /// Passed into TaskCard so forward completions launch a particle flight
+    /// toward the Life Balance card. The closure is always supplied — Reduce
+    /// Motion is handled inside by routing to `pulseInPlace` (accessible
+    /// equivalent: the bar pulses in place, no particle). Also falls back to
+    /// `pulseInPlace` when the target bar hasn't been laid out yet (e.g. the
+    /// user collapsed the Life Balance card, so its dimensionBars aren't
+    /// contributing frames), which avoids firing a particle into (0,0).
+    private var flightLaunchHandler: ((CGPoint, LifeDimension) -> Void)? {
+        { source, dimension in
+            if self.reduceMotion {
+                self.particleAnimator.pulseInPlace(dimension: dimension)
+                return
+            }
+            guard let target = self.dimensionBarCenters[dimension], target != .zero else {
+                self.particleAnimator.pulseInPlace(dimension: dimension)
+                return
+            }
+            self.particleAnimator.fire(dimension: dimension, from: source, to: target)
+        }
+    }
 
-    /// Blended day completion: tasks + check-ins as a single 0..1 fraction.
-    /// Apple Fitness pattern — one number that captures "how much of today did I do".
+    // MARK: - Wisdom tagline (inlined into Balance Pulse)
+
+    /// Produces a compact (text, author) tuple for the wisdom tagline shown
+    /// inside the Balance Pulse card. Early-returns nil on day-0 since the
+    /// card isn't rendered — avoids building the score dict and calling the
+    /// quote selector on the hot path every body evaluation.
+    private func wisdomTagline(balanceScores: [LifeDimension: Double]) -> (text: String, author: String)? {
+        guard homeStage == .normal else { return nil }
+        let quote = wisdomManager?.todayQuote(
+            compassScores: balanceScores.reduce(into: [:]) { $0[$1.key.rawValue] = $1.value },
+            currentMood: nil,
+            streak: streak
+        ) ?? WisdomManager.todayQuote()
+        guard let q = quote else { return nil }
+        return (q.text, q.author)
+    }
+
+    // MARK: - Day-0 Start-Here card
+
+    /// The single card shown on a literal first-use Home screen. It replaces
+    /// the Hero + Balance + Insight stack until the user has any real data.
+    /// Tapping "Start check-in" routes through the same sheet used in the
+    /// Hero action row on subsequent visits — flipping homeStage to .normal
+    /// on save (which updates `allCheckIns` via @Query).
+    private var startHereCard: some View {
+        let slot = CheckInTime.current()
+        return VStack(spacing: 14) {
+            HStack {
+                Text("START HERE")
+                    .font(AppFonts.label(11))
+                    .tracking(0.8)
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+            }
+
+            VStack(spacing: 6) {
+                Image(systemName: slot.sfSymbol)
+                    .font(.system(size: 40, weight: .light))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundColor(slot.color)
+
+                Text("Let's start your day")
+                    .font(AppFonts.display(20))
+                    .foregroundColor(AppColors.textPrimary)
+
+                Text("A 30-second check-in, four times a day, turns how you feel into trends you can see. Your Compass fills in as you go.")
+                    .font(AppFonts.body(14))
+                    .foregroundColor(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
+            }
+            .padding(.top, 4)
+
+            Button {
+                Haptics.light()
+                showingCheckIn = true
+            } label: {
+                HStack(spacing: 8) {
+                    Text("Start \(slot.rawValue) check-in")
+                        .font(AppFonts.bodyMedium(15))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(AppColors.accent)
+                .cornerRadius(12)
+            }
+            .buttonStyle(.scale)
+            .accessibilityLabel("Start your first \(slot.rawValue) check-in")
+
+            Text("It only takes 30 seconds")
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textMuted)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(AppColors.card)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(
+                            RadialGradient(
+                                colors: [slot.color.opacity(0.08), Color.clear],
+                                center: .top,
+                                startRadius: 10,
+                                endRadius: 260
+                            )
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 2)
+        )
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
+    }
+
+    // MARK: - Today Hero Card (dual-ring)
+    //
+    // Apple Fitness pattern: outer ring = tasks (green), inner ring = check-ins
+    // (accent). One composed graphic replaces the old ring + breakdown row
+    // (which was showing two representations of the same data).
+
+    /// Fraction of today's tasks that are complete. Zero when no tasks exist.
+    private var tasksFraction: Double {
+        guard totalTodayCount > 0 else { return 0 }
+        return min(1, Double(completedTodayCount) / Double(totalTodayCount))
+    }
+
+    /// Fraction of today's 4 check-in slots that have been logged.
+    private var checkInFraction: Double {
+        min(1, Double(todayCheckInCount) / 4.0)
+    }
+
+    /// Blended day-percentage shown in the ring center. Counts tasks and
+    /// check-ins together toward a single "how much of today did I do"
+    /// fraction.
     private var dayCompletionFraction: Double {
         let totalUnits = totalTodayCount + 4
         guard totalUnits > 0 else { return 0 }
@@ -677,76 +972,60 @@ struct HomeView: View {
     }
 
     private var todayHeroCard: some View {
-        VStack(spacing: 12) {
-            // Top: header strip (TODAY + streak only — date already in greeting above)
-            HStack {
-                Text("TODAY")
-                    .font(AppFonts.label(11))
-                    .tracking(0.8)
-                    .foregroundColor(AppColors.textMuted)
-                Spacer()
-                if streak > 0 {
-                    HStack(spacing: 3) {
-                        Text("\(streak)")
-                            .font(AppFonts.bodyMedium(13))
-                            .foregroundColor(AppColors.accentWarm)
-                        Text("🔥").font(.system(size: 13))
+        VStack(alignment: .leading, spacing: 14) {
+            // TODAY label only — streak moved out (lived in the corner as
+            // cosmetic chrome; not load-bearing for today's screen).
+            Text("TODAY")
+                .font(AppFonts.label(11))
+                .tracking(0.8)
+                .foregroundColor(AppColors.textMuted)
+
+            // Hero row: compact ring on the left + stats stacked to the right.
+            // Saves ~60pt of vertical versus the centered-ring layout and
+            // reads as a single horizontal "status line" rather than a
+            // dedicated ring section.
+            //
+            // Vertical alignment is `.center` so at XXL Dynamic Type the
+            // ring stays vertically centered against the growing % text
+            // stack (otherwise the ring hangs above the baseline).
+            //
+            // The whole row is a single VoiceOver element reading
+            // `heroAccessibilityLabel`. Without `.ignore` + top-level label,
+            // VO reads the ring label and the adjacent "% of day done" text
+            // as two separate announcements — the exact BUG-01 regression.
+            // `heroAccessibilityLabel` already phrases both counts, so the
+            // legend row's detail stays reachable via that label.
+            HStack(alignment: .center, spacing: 14) {
+                compactDualRing
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(Int(dayCompletionFraction * 100))%")
+                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .monospacedDigit()
+                        Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    HStack(spacing: 12) {
+                        legendItem(color: AppColors.completionGreen, label: "Tasks \(completedTodayCount)/\(totalTodayCount)")
+                        legendItem(color: AppColors.accent, label: "Check-ins \(todayCheckInCount)/4")
                     }
                 }
+                Spacer(minLength: 0)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(heroAccessibilityLabel)
 
-            // Hero ring — single iconic focal point (smaller, confident)
-            ZStack {
-                Circle()
-                    .stroke(AppColors.border, lineWidth: 7)
-                    .frame(width: 108, height: 108)
-                Circle()
-                    .trim(from: 0, to: max(0, min(1, dayCompletionFraction)))
-                    .stroke(AppColors.accent, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                    .frame(width: 108, height: 108)
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 0) {
-                    Text("\(Int(dayCompletionFraction * 100))%")
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .monospacedDigit()
-                    Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
-                        .font(AppFonts.caption(11))
-                        .foregroundColor(AppColors.textMuted)
-                }
-            }
-            .padding(.top, 2)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Today: \(Int(dayCompletionFraction * 100)) percent done. \(completedTodayCount) of \(totalTodayCount) tasks, \(todayCheckInCount) of 4 check-ins.")
-
-            // Breakdown row — symmetric two halves with center divider
-            HStack(spacing: 0) {
-                heroBreakdownStat(
-                    label: "Tasks",
-                    value: "\(completedTodayCount)/\(totalTodayCount)",
-                    color: AppColors.completionGreen
-                )
-                .frame(maxWidth: .infinity)
-
-                Rectangle()
-                    .fill(AppColors.border)
-                    .frame(width: 1, height: 28)
-
-                heroBreakdownStat(
-                    label: "Check-ins",
-                    value: "\(todayCheckInCount)/4",
-                    color: AppColors.accent
-                )
-                .frame(maxWidth: .infinity)
-            }
-
-            // Slot icons row — centered below both halves so neither side feels heavier
+            // Slot icons strip — light/filled by completion state.
             HStack(spacing: 8) {
                 ForEach(CheckInTime.allCases) { slot in
                     Image(systemName: slot.sfSymbol)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
                 }
+                Spacer(minLength: 0)
             }
 
             if !overdueTasks.isEmpty {
@@ -759,12 +1038,9 @@ struct HomeView: View {
                         .foregroundColor(AppColors.overdueRed)
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 4)
-                .padding(.top, 2)
             }
 
             // Action slot — only renders in .prominent / .complete states.
-            // In .progress (between slots) the card stops here for a cleaner look.
             if case .progress = checkInCardState {
                 EmptyView()
             } else {
@@ -777,7 +1053,6 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 18)
                 .fill(AppColors.card)
                 .overlay(
-                    // Subtle radial gradient for premium feel
                     RoundedRectangle(cornerRadius: 18)
                         .fill(
                             RadialGradient(
@@ -794,28 +1069,84 @@ struct HomeView: View {
         .opacity(appeared ? 1 : 0)
     }
 
-    /// One half of the breakdown row under the hero ring: small color dot + label + count.
-    private func heroBreakdownStat(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 6) {
+    /// Compact dual-ring: outer = tasks, inner = check-ins. Sized to fit as
+    /// a left-anchored glyph inside the hero row, with the percentage label
+    /// moved out to the right (see `todayHeroCard`). No center text here —
+    /// the big % text lives in the adjacent VStack so font scaling doesn't
+    /// overrun the ring.
+    ///
+    /// When both rings are empty (normal stage, 0 tasks and 0 check-ins
+    /// today) the inner empty track is suppressed so the card reads as a
+    /// single "starting fresh" ring rather than a concentric target/bullseye
+    /// icon. The inner track re-appears as soon as either fraction > 0.
+    private var compactDualRing: some View {
+        let outerSize: CGFloat = 60
+        let innerSize: CGFloat = 40
+        let lineWidth: CGFloat = 5
+        let hasAnyProgress = tasksFraction > 0 || checkInFraction > 0
+        return ZStack {
+            // Outer ring — Tasks. Guarded on >0 so an empty track doesn't
+            // render a rounded-cap dot from a forced 0.001 trim.
+            Circle()
+                .stroke(AppColors.border, lineWidth: lineWidth)
+                .frame(width: outerSize, height: outerSize)
+            if tasksFraction > 0 {
                 Circle()
-                    .fill(color)
-                    .frame(width: 6, height: 6)
-                Text(label.uppercased())
-                    .font(AppFonts.label(10))
-                    .tracking(0.6)
-                    .foregroundColor(AppColors.textMuted)
+                    .trim(from: 0, to: tasksFraction)
+                    .stroke(AppColors.completionGreen, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .frame(width: outerSize, height: outerSize)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.45, dampingFraction: 0.75), value: tasksFraction)
             }
-            Text(value)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.textPrimary)
+
+            // Inner ring — Check-ins. Only render when either dimension has
+            // progress; a paired empty inner track next to an empty outer
+            // track reads as a target icon instead of "nothing yet today."
+            if hasAnyProgress {
+                Circle()
+                    .stroke(AppColors.border, lineWidth: lineWidth)
+                    .frame(width: innerSize, height: innerSize)
+                if checkInFraction > 0 {
+                    Circle()
+                        .trim(from: 0, to: checkInFraction)
+                        .stroke(AppColors.accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                        .frame(width: innerSize, height: innerSize)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.spring(response: 0.45, dampingFraction: 0.75), value: checkInFraction)
+                }
+            }
+        }
+        .frame(width: outerSize, height: outerSize)
+    }
+
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textSecondary)
                 .monospacedDigit()
         }
     }
 
+    /// Constructs a humane description of the ring for VoiceOver. Avoids
+    /// the confusing "0 of 0 tasks" reading when the user has no tasks
+    /// scheduled — we phrase it differently in that case.
+    private var heroAccessibilityLabel: String {
+        let percent = Int(dayCompletionFraction * 100)
+        let taskPhrase: String
+        if totalTodayCount == 0 {
+            taskPhrase = "no tasks scheduled"
+        } else {
+            taskPhrase = "\(completedTodayCount) of \(totalTodayCount) tasks complete"
+        }
+        let checkPhrase = "\(todayCheckInCount) of 4 check-ins"
+        return "Today: \(percent) percent done. \(taskPhrase), \(checkPhrase)."
+    }
+
     /// Adaptive bottom slot: shows whichever action is most relevant.
-    /// Today this is "current check-in needed" or "day complete".
-    /// Future Phases will plug in goal tasks and season plan progress here.
     @ViewBuilder
     private var heroActionRow: some View {
         switch checkInCardState {
@@ -858,9 +1189,9 @@ struct HomeView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
         case .progress:
             // Between active windows — no urgent action.
-            // Tap target so users can still log a backfill check-in.
             Button { showingCheckIn = true } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle")
@@ -872,54 +1203,20 @@ struct HomeView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Insight Card
-
-    private func insightCard(_ insight: InsightEngine.Insight) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: insight.icon)
-                .font(AppFonts.heading(20))
-                .foregroundColor(AppColors.accent)
-                .frame(width: 36, height: 36)
-                .background(AppColors.accent.opacity(0.12))
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Pattern Insight")
-                    .font(AppFonts.label(11))
-                    .foregroundColor(AppColors.accent)
-                Text(insight.text)
-                    .font(AppFonts.body(14))
-                    .foregroundColor(AppColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(AppColors.card)
-                .shadow(color: Color.black.opacity(0.04), radius: 4, y: 2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(AppColors.accent.opacity(0.15), lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Pattern insight: \(insight.text)")
-    }
-
     // MARK: - Header
 
     private var headerView: some View {
-        HStack {
+        HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(greeting)
-                    .font(AppFonts.display(28))
+                    .font(AppFonts.display(24))
                     .foregroundColor(AppColors.textPrimary)
                 Text(formattedDate)
                     .font(AppFonts.bodyMedium(14))
@@ -928,8 +1225,13 @@ struct HomeView: View {
 
             Spacer()
 
-            // Header chip removed — Today hero card surfaces all check-in info now.
-            EmptyView()
+            // Weather chip — aligns with the date line via bottom alignment.
+            WeatherChip(
+                snapshot: weatherManager?.latest,
+                isLoading: weatherManager?.isLoading ?? false,
+                isAuthorized: weatherManager?.isAuthorized ?? false,
+                onTap: { showingTodaysContext = true }
+            )
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -961,6 +1263,14 @@ struct HomeView: View {
             }
         }
         .buttonStyle(.scale)
+        // Announce as a section header with its expand state, so VoiceOver
+        // reads "Overdue, 4. Collapsed, header" instead of four disjoint
+        // elements (icon, label, chevron, button role).
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(count)")
+        .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
+        .accessibilityHint("Double tap to \(isExpanded.wrappedValue ? "collapse" : "expand")")
+        .accessibilityAddTraits(.isHeader)
     }
 
     // MARK: - Empty States
@@ -997,68 +1307,272 @@ struct HomeView: View {
         .padding(.vertical, 24)
     }
 
-    // MARK: - Habits Card
+    // MARK: - Hidden Sections Footer
+
+    /// How many of the four optional Home cards are currently hidden via
+    /// Settings → Home Sections. Drives the footer visibility below.
+    private var hiddenHomeSectionCount: Int {
+        var count = 0
+        if !showLifeBalance { count += 1 }
+        if !showHabits { count += 1 }
+        if !showTomorrow { count += 1 }
+        if !showWisdom { count += 1 }
+        return count
+    }
+
+    /// Tiny muted footer shown when the user has hidden one or more cards.
+    /// Tapping jumps to the Settings tab so they can toggle cards back on
+    /// without having to remember where the toggles live.
+    private var hiddenSectionsFooter: some View {
+        Button {
+            Haptics.light()
+            selectedTab = .settings
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 11, weight: .medium))
+                Text("\(hiddenHomeSectionCount) section\(hiddenHomeSectionCount == 1 ? "" : "s") hidden · Manage in Settings")
+                    .font(AppFonts.caption(12))
+                Spacer(minLength: 0)
+            }
+            .foregroundColor(AppColors.textMuted)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(hiddenHomeSectionCount) Home sections hidden. Open Settings to manage.")
+    }
+
+    // MARK: - Habits Empty State
+
+    /// Shown on Home when the user has zero active habits. Replaces the
+    /// previous behaviour of hiding the whole section (which left Home with
+    /// no discoverable path to create a habit — the HabitsView sheet was
+    /// reachable only via deep-linked intents or Settings).
+    private var emptyHabitsCard: some View {
+        Button {
+            Haptics.light()
+            showingAddHabit = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 40, height: 40)
+                    .background(AppColors.accent.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Build a habit")
+                        .font(AppFonts.bodyMedium(15))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Small daily actions that feed your balance")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(AppColors.accent)
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(AppColors.card)
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.scale)
+        .accessibilityLabel("Build a habit. Add your first habit.")
+    }
+
+    // MARK: - Habits Header (collapsible)
+
+    /// Section header for Habits. Tapping the title area toggles collapse
+    /// (chevron rotates); the + button stays as a separate tap target so the
+    /// user can add a habit without first expanding the section.
+    private var habitsHeader: some View {
+        HStack(spacing: 8) {
+            Button {
+                Haptics.light()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    habitsExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.accent)
+                    Text(habitsHeaderTitle)
+                        .font(AppFonts.heading(15))
+                        .foregroundColor(AppColors.textPrimary)
+                        .textCase(nil)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(AppColors.textMuted)
+                        .rotationEffect(.degrees(habitsExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // Consolidate label + chevron into one VO element and announce
+            // it as a section header. The label reads e.g. "Habits, 3 to do"
+            // instead of four separate elements (leaf icon, title text,
+            // chevron, button).
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(habitsHeaderAccessibilityLabel)
+            .accessibilityValue(habitsExpanded ? "Expanded" : "Collapsed")
+            .accessibilityHint("Double tap to \(habitsExpanded ? "collapse" : "expand")")
+            .accessibilityAddTraits(.isHeader)
+
+            Spacer()
+
+            Button {
+                Haptics.light()
+                showingAddHabit = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add new habit")
+            // Raise the + button above the disclosure button so any edge
+            // taps near the seam resolve to "add" rather than "collapse" —
+            // the disclosure is recoverable, an accidental sheet open is not.
+            .zIndex(1)
+        }
+    }
+
+    /// VoiceOver-friendly label for the habits header — strips the middle-dot
+    /// separator so VO reads "Habits, 3 to do" cleanly instead of stumbling
+    /// on the "·" glyph.
+    private var habitsHeaderAccessibilityLabel: String {
+        let todo = habitsToDoToday.count
+        let done = habitsDoneToday.count
+        if todo == 0 && done > 0 { return "Habits, all done today" }
+        if todo == 0 { return "Habits" }
+        return "Habits, \(todo) to do"
+    }
+
+    /// Title string for the habits header. Surfaces "N to do" so users can
+    /// see progress at a glance without expanding the card, and says "all
+    /// done" when everything is checked off for a bit of end-of-day dopamine.
+    private var habitsHeaderTitle: String {
+        let todo = habitsToDoToday.count
+        let done = habitsDoneToday.count
+        if todo == 0 && done > 0 { return "Habits · all done" }
+        if todo == 0 { return "Habits" }
+        return "Habits · \(todo) to do"
+    }
+
+    // MARK: - Habits Card (auto-curated)
 
     private var habitsCard: some View {
         let today = Calendar.current.startOfDay(for: Date())
-        let doneCount = activeHabits.filter { $0.isCompletedOn(today) }.count
+        let todo = habitsToDoToday
+        let done = habitsDoneToday
 
         return VStack(spacing: 10) {
-            ForEach(activeHabits.prefix(4)) { habit in
-                let isDone = habit.isCompletedOn(today)
-                HStack(spacing: 10) {
-                    Button {
-                        Haptics.success()
-                        withAnimation(.spring(response: 0.3)) {
-                            habit.toggleCompletion(for: today)
-                            try? modelContext.save()
-                        }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .stroke(isDone ? AppColors.completionGreen : Color(hex: habit.colorHex), lineWidth: 2)
-                                .frame(width: 22, height: 22)
-                            if isDone {
-                                Circle()
-                                    .fill(AppColors.completionGreen)
-                                    .frame(width: 22, height: 22)
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(habit.icon)
-                        .font(.system(size: 16))
-                    Text(habit.title)
-                        .font(AppFonts.body(14))
-                        .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
-                        .strikethrough(isDone)
-                    Spacer()
-
-                    let streak = habit.currentStreak()
-                    if streak > 0 {
-                        Text("\(streak)🔥")
-                            .font(AppFonts.caption(11))
-                            .foregroundColor(AppColors.accentWarm)
-                    }
-                }
+            // "Needs attention" — incomplete habits, capped at 3. Cap keeps
+            // Home's visual weight stable regardless of how many habits the
+            // user has defined; overflow spills into the HabitsView sheet.
+            ForEach(Array(todo.prefix(3)), id: \.id) { habit in
+                HabitRow(habit: habit, isDone: false, today: today)
             }
 
-            if activeHabits.count > 4 {
+            if todo.count > 3 {
                 Button {
+                    Haptics.light()
                     showingHabits = true
                 } label: {
-                    Text("+\(activeHabits.count - 4) more")
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.accent)
+                    HStack {
+                        Text("+\(todo.count - 3) more to do")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.accent)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
+
+            // "Done today" — collapsed by default into a single chip, expands
+            // inline on tap so the completed list stays available without
+            // padding out the main view.
+            if !done.isEmpty {
+                Button {
+                    Haptics.light()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showingDoneHabits.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.completionGreen)
+                        Text("\(done.count) done today")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(AppColors.textMuted)
+                            .rotationEffect(.degrees(showingDoneHabits ? 90 : 0))
+                    }
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if showingDoneHabits {
+                    ForEach(Array(done.prefix(5)), id: \.id) { habit in
+                        HabitRow(habit: habit, isDone: true, today: today)
+                    }
+                    if done.count > 5 {
+                        Button {
+                            Haptics.light()
+                            showingHabits = true
+                        } label: {
+                            HStack {
+                                // Spelling out the overflow count here so the
+                                // 5 rows visible here don't contradict the "N
+                                // done today" chip above (e.g. 7 done → only
+                                // 5 visible → "+2 more completed").
+                                Text("+\(done.count - 5) more completed")
+                                    .font(AppFonts.caption(11))
+                                    .foregroundColor(AppColors.accent)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            // Footer: single entry into the full HabitsView sheet. Replaces
+            // the old header-mounted "See all" link so the header stays
+            // focused on the toggle/add actions.
+            Button {
+                Haptics.light()
+                showingHabits = true
+            } label: {
+                HStack(spacing: 4) {
+                    Spacer()
+                    Text("See all habits")
+                        .font(AppFonts.caption(12))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundColor(AppColors.accent)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
         }
         .padding(14)
         .background(
@@ -1067,6 +1581,7 @@ struct HomeView: View {
                 .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         )
     }
+
 
     // MARK: - Reschedule Sheet
 
@@ -1133,6 +1648,21 @@ struct HomeView: View {
         .presentationDetents([.large])
     }
 
+    // MARK: - Balance snapshot helper
+
+    /// Bundles the three pieces of balance data Home's body uses so they can
+    /// be computed once per evaluation instead of three times (old form
+    /// called `weeklyScores()` twice through `harmonyScore()` and again
+    /// directly). The `empty` singleton is used on day-0 since the Balance
+    /// Pulse card isn't rendered there — skipping the work is free.
+    private struct HomeBalanceSnapshot {
+        let scores: [LifeDimension: Double]
+        let harmony: Int
+        let hasData: Bool
+
+        static let empty = HomeBalanceSnapshot(scores: [:], harmony: 50, hasData: false)
+    }
+
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {
         Button {
             Haptics.light()
@@ -1152,5 +1682,152 @@ struct HomeView: View {
                 .cornerRadius(12)
         }
         .buttonStyle(.scale)
+    }
+}
+
+// MARK: - HabitRow
+//
+// Extracted from HomeView so each row can hold its own pulse state. Mirrors
+// TaskCard's completion-pulse pattern: dimension-coloured tint blooms behind
+// the row on forward completion, fades after ~1s. Same rationale — the 22pt
+// checkbox alone is easy to miss, and the Balance bar pulse is offscreen
+// unless Life Balance is expanded.
+private struct HabitRow: View {
+    let habit: HabitItem
+    let isDone: Bool
+    let today: Date
+
+    @Environment(\.habitManager) private var habitManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var pulseOpacity: Double = 0
+    @State private var pulseTask: Task<Void, Never>?
+
+    private var pulseColor: Color {
+        habit.dimensions.primaryScored?.color ?? AppColors.completionGreen
+    }
+
+    /// VO label for the completion button. Mirrors TaskCard's
+    /// `completionAccessibilityLabel` so habits and tasks announce in the
+    /// same shape — dimension first (since the visual dot conveying it is
+    /// hidden from VO), then the action, then the streak so users know what
+    /// they're protecting before they tap.
+    private var completionAccessibilityLabel: String {
+        let action = isDone ? "Mark \(habit.title) incomplete" : "Complete \(habit.title)"
+        let dimPart = habit.dimensions.primaryScored.map { "\($0.shortLabel) habit. " } ?? ""
+        let streak = habit.currentStreak()
+        let streakPart = streak > 0 ? " Streak \(streak)." : ""
+        return "\(dimPart)\(action).\(streakPart)"
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button {
+                // BUG-02: bail before haptic + pulse if no manager — otherwise
+                // the user gets celebratory feedback for a no-op save.
+                guard let habitManager else { return }
+                // BUG-03: read the model's truth, not the parent-passed Bool
+                // (which can be stale across rebuilds and disagrees with the
+                // throttle in `HabitManager.toggleCompletion`). Compare pre
+                // and post to confirm a real forward transition before the
+                // celebratory pulse fires.
+                let wasCompleted = habit.isCompletedOn(today)
+                Haptics.success()
+                withAnimation(.spring(response: 0.3)) {
+                    // Routed through HabitManager so the BalancePulse bus
+                    // fires and the Compass bar animates — the direct
+                    // `habit.toggleCompletion + safeSave` path skipped both.
+                    habitManager.toggleCompletion(habit, for: today)
+                }
+                let didComplete = !wasCompleted && habit.isCompletedOn(today)
+                if didComplete { firePulse() }
+            } label: {
+                ZStack {
+                    Circle()
+                        .stroke(isDone ? AppColors.completionGreen : habit.effectiveColor, lineWidth: 2)
+                        .frame(width: 22, height: 22)
+                    if isDone {
+                        Circle()
+                            .fill(AppColors.completionGreen)
+                            .frame(width: 22, height: 22)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(completionAccessibilityLabel)
+
+            Text(habit.icon)
+                .font(.system(size: 16))
+                .accessibilityHidden(true)
+
+            // Dimension dot + title. Mirrors TaskCard so habits and tasks
+            // read identically at a glance — the dot is the pre-completion
+            // hint of which Compass bar this habit will feed.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if let dim = habit.dimensions.primaryScored {
+                    Circle()
+                        .fill(dim.color)
+                        .frame(width: 7, height: 7)
+                        .alignmentGuide(.firstTextBaseline) { d in d.height - 1 }
+                        .accessibilityHidden(true)
+                }
+                Text(habit.title)
+                    .font(AppFonts.body(14))
+                    .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                    .strikethrough(isDone)
+            }
+            // Title is announced via the checkbox button's label; suppress
+            // the duplicate VO read here.
+            .accessibilityHidden(true)
+            Spacer()
+
+            let streak = habit.currentStreak()
+            if streak > 0 {
+                Text("\(streak)🔥")
+                    .font(AppFonts.caption(11))
+                    .foregroundColor(AppColors.accentWarm)
+                    // Streak count is already in the button label; the bare
+                    // emoji ("3 flame") would otherwise announce twice.
+                    .accessibilityHidden(true)
+            }
+        }
+        // BUG-10: keep vertical padding tight so the pulse rectangles don't
+        // visually kiss at AX3 — VStack(spacing: 10) outside gives 6pt gap
+        // with 2pt padding here, vs 2pt gap with the prior 4pt padding.
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(pulseColor.opacity(0.16 * pulseOpacity))
+        )
+        // BUG-05: cancel any in-flight envelope when the row leaves the
+        // hierarchy (collapse, sheet dismiss, scroll-recycle in a hosted
+        // LazyVStack). Without this, a recycled view can mount with leftover
+        // pulseOpacity > 0.
+        .onDisappear {
+            pulseTask?.cancel()
+            pulseOpacity = 0
+        }
+    }
+
+    /// Same pulse envelope as TaskCard.firePulse so habit + task completions
+    /// feel identical. See TaskCard for the rationale on Reduce Motion timing.
+    private func firePulse() {
+        pulseTask?.cancel()
+        pulseTask = Task { @MainActor in
+            let bloom: Double = reduceMotion ? 0.25 : 0.15
+            let fade: Double = reduceMotion ? 0.7 : 0.6
+            let holdMs: Int = 250
+
+            withAnimation(.easeOut(duration: bloom)) { pulseOpacity = 1.0 }
+            try? await Task.sleep(for: .milliseconds(Int(bloom * 1000) + holdMs))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: fade)) { pulseOpacity = 0 }
+        }
     }
 }

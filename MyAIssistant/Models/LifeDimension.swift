@@ -33,13 +33,18 @@ enum LifeDimension: String, CaseIterable, Codable, Identifiable {
 
     var label: String { rawValue }
 
-    var color: Color {
+    var color: Color { Color(hex: colorHex) }
+
+    /// Canonical hex string for this dimension. Used to sync `HabitItem.colorHex`
+    /// so legacy UI paths that read colorHex stay consistent with the dimension
+    /// color shown elsewhere (Compass bars, task dots).
+    var colorHex: String {
         switch self {
-        case .physical:  return Color(hex: "4CAF50") // green
-        case .mental:    return Color(hex: "2196F3") // blue
-        case .emotional: return Color(hex: "E91E63") // pink
-        case .spiritual: return Color(hex: "9C27B0") // purple
-        case .practical: return Color(hex: "78909C") // blue-grey
+        case .physical:  return "4CAF50" // green
+        case .mental:    return "2196F3" // blue
+        case .emotional: return "E91E63" // pink
+        case .spiritual: return "9C27B0" // purple
+        case .practical: return "78909C" // blue-grey
         }
     }
 
@@ -52,5 +57,40 @@ enum LifeDimension: String, CaseIterable, Codable, Identifiable {
         case .spiritual: return "Meditation, gratitude, service, helping others"
         case .practical: return "Errands, admin, chores, life maintenance"
         }
+    }
+
+    /// Short display label for compact contexts (BalancePulseCard, pulse labels).
+    var shortLabel: String {
+        switch self {
+        case .physical:  return "Body"
+        case .mental:    return "Mind"
+        case .emotional: return "Heart"
+        case .spiritual: return "Spirit"
+        case .practical: return "Life"
+        }
+    }
+
+    /// Stable sort order for Compass layout consistency (Physical < Mental <
+    /// Emotional < Spiritual < Practical). Used by `primaryScored` so the
+    /// UI and the pulse animation always agree on which bar represents a
+    /// multi-tagged task/habit.
+    var sortOrder: Int {
+        switch self {
+        case .physical: return 0
+        case .mental: return 1
+        case .emotional: return 2
+        case .spiritual: return 3
+        case .practical: return 4
+        }
+    }
+}
+
+extension Array where Element == LifeDimension {
+    /// First scored dimension by `sortOrder` — the canonical "primary"
+    /// dimension for a multi-tagged item. Used by the task/habit row dot,
+    /// TaskManager/HabitManager pulse publish, and the Compass animation so
+    /// the visual + the pulse always pick the same bar.
+    var primaryScored: LifeDimension? {
+        self.filter(\.isScored).min(by: { $0.sortOrder < $1.sortOrder })
     }
 }

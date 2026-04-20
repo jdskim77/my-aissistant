@@ -64,7 +64,7 @@
 		7DB0A3C8ECDE067C28787CDA /* SchemaVersioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000002000000 /* SchemaVersioning.swift */; };
 		7E35BA29B7709B85C13C38C9 /* ShareExtensionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35386A4E412A93D895CC97B4 /* ShareExtensionViewModel.swift */; };
 		80F1B9807AFEFCF47C3D4278 /* ThrivnCompassMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */; };
-		8126FD79A44D8287AE146068 /* ThrivnShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B1990D484B761DE6DC2129C5 /* ThrivnShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8126FD79A44D8287AE146068 /* ThrivnShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1990D484B761DE6DC2129C5 /* ThrivnShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		820FBCB74567DB582FDE3D4D /* AppleVoiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53609B82E64979B128B3B453 /* AppleVoiceProvider.swift */; };
 		826568DF5F9981992E1543A6 /* CheckInPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */; };
 		82D8451AA02798FED6E546A3 /* CompassTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36715A70A41F1E323B785B09 /* CompassTabView.swift */; };
@@ -74,6 +74,15 @@
 		8936B1CB50C7293C02CA2D09 /* TaskCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004000000 /* TaskCategory.swift */; };
 		8A03BC14443F5CBA9C85CD8E /* OnboardingIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0361C01081332E88C1EF61 /* OnboardingIntroView.swift */; };
 		8B604022A25616D6540245D1 /* WisdomManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12CC4D3DBACA141D3B64244D /* WisdomManager.swift */; };
+		8B670A017CAC4D92CDB098DF /* BalancePulseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF2CEF1F649F39701EC /* BalancePulseCard.swift */; };
+		8B670A027CAC4D92CDB098E1 /* BalancePulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF3CEF1F649F39701ED /* BalancePulse.swift */; };
+		8B670A037CAC4D92CDB098E2 /* PatternInsightBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF4CEF1F649F39701EE /* PatternInsightBanner.swift */; };
+		8B670A047CAC4D92CDB098F1 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF5CEF1F649F39701F1 /* LocationProvider.swift */; };
+		8B670A057CAC4D92CDB098F2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */; };
+		8B670A067CAC4D92CDB098F3 /* TodaysContextSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */; };
+		8B670A077CAC4D92CDB098F4 /* WeatherChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */; };
+		8B670A087CAC4D92CDB098F5 /* BalancePulseBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */; };
+		8B670A097CAC4D92CDB098F6 /* ParticleAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */; };
 		8BAC2619A39D0CCD5CA274D2 /* EveningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */; };
 		8DC046F081E4A86F6A829EBA /* DailyWisdom.json in Resources */ = {isa = PBXBuildFile; fileRef = C85E40C1975819FFCA2410F6 /* DailyWisdom.json */; };
 		91056BBB763C1BCFF4C684AB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117A3C6F085AEE92A63E92CA /* ShareViewController.swift */; };
@@ -276,15 +285,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		1703DDE6187E3DA889BF1242 /* Embed App Extensions */ = {
+		1703DDE6187E3DA889BF1242 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				8126FD79A44D8287AE146068 /* ThrivnShareExtension.appex in Embed App Extensions */,
+				8126FD79A44D8287AE146068 /* ThrivnShareExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4583C2CD2F79D1BE00603B08 /* Embed Watch Content */ = {
@@ -318,6 +327,15 @@
 		117A3C6F085AEE92A63E92CA /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		12CC4D3DBACA141D3B64244D /* WisdomManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WisdomManager.swift; path = MyAIssistant/Managers/WisdomManager.swift; sourceTree = SOURCE_ROOT; };
 		14D8A11BA0FB83C9835D4275 /* AppIconPreview.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppIconPreview.swift; sourceTree = "<group>"; };
+		16CC9AF2CEF1F649F39701EC /* BalancePulseCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalancePulseCard.swift; sourceTree = "<group>"; };
+		16CC9AF3CEF1F649F39701ED /* BalancePulse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalancePulse.swift; sourceTree = "<group>"; };
+		16CC9AF4CEF1F649F39701EE /* PatternInsightBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PatternInsightBanner.swift; sourceTree = "<group>"; };
+		16CC9AF5CEF1F649F39701F1 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LocationProvider.swift; path = MyAIssistant/Services/LocationProvider.swift; sourceTree = SOURCE_ROOT; };
+		16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeatherManager.swift; path = MyAIssistant/Managers/WeatherManager.swift; sourceTree = SOURCE_ROOT; };
+		16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodaysContextSheet.swift; sourceTree = "<group>"; };
+		16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherChip.swift; sourceTree = "<group>"; };
+		16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BalancePulseBus.swift; path = MyAIssistant/Managers/BalancePulseBus.swift; sourceTree = SOURCE_ROOT; };
+		16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParticleAnimator.swift; path = MyAIssistant/Managers/ParticleAnimator.swift; sourceTree = SOURCE_ROOT; };
 		194F8EF6AA6FA943F69D1BD1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThrivnCompassMark.swift; sourceTree = "<group>"; };
 		1C2BCFA2335E79D4B68D6C75 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
@@ -511,39 +529,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch App";
-			sourceTree = "<group>";
-		};
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppTests";
-			sourceTree = "<group>";
-		};
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppUITests";
-			sourceTree = "<group>";
-		};
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -610,7 +598,6 @@
 				DB41FCD08DE3A0859D7F8685 /* Info.plist */,
 				50CFADE955D50AC872E06751 /* ShareExtensionStubs.swift */,
 			);
-			name = ThrivnShareExtension;
 			path = ThrivnShareExtension;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -767,6 +754,7 @@
 				C0B7DEE7BF30D5A20D15289E /* DataExportService.swift */,
 				AF197A2BC6ECA6A2717B9314 /* Backend */,
 				4CC6B61FF9098C6683B23662 /* Monitoring */,
+				16CC9AF5CEF1F649F39701F1 /* LocationProvider.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -814,6 +802,11 @@
 				B100000014000000 /* HomeView.swift */,
 				BC00000007000000 /* CalendarEventRow.swift */,
 				BD00000004000000 /* AIGreetingCard.swift */,
+				16CC9AF2CEF1F649F39701EC /* BalancePulseCard.swift */,
+				16CC9AF3CEF1F649F39701ED /* BalancePulse.swift */,
+				16CC9AF4CEF1F649F39701EE /* PatternInsightBanner.swift */,
+				16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */,
+				16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -911,6 +904,9 @@
 				E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */,
 				D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */,
 				72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */,
+				16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */,
+				16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */,
+				16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1209,7 +1205,7 @@
 				CA00000001000000 /* Resources */,
 				CW00000004000000 /* Embed Foundation Extensions */,
 				4583C2CD2F79D1BE00603B08 /* Embed Watch Content */,
-				1703DDE6187E3DA889BF1242 /* Embed App Extensions */,
+				1703DDE6187E3DA889BF1242 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -1265,7 +1261,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					4583C2AB2F79D1BB00603B08 = {
 						CreatedOnToolsVersion = 26.2;
@@ -1586,6 +1582,15 @@
 				44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */,
 				20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */,
 				65A21EC0A134BD5439AE2F8A /* CalendarResultChip.swift in Sources */,
+				8B670A017CAC4D92CDB098DF /* BalancePulseCard.swift in Sources */,
+				8B670A027CAC4D92CDB098E1 /* BalancePulse.swift in Sources */,
+				8B670A037CAC4D92CDB098E2 /* PatternInsightBanner.swift in Sources */,
+				8B670A047CAC4D92CDB098F1 /* LocationProvider.swift in Sources */,
+				8B670A057CAC4D92CDB098F2 /* WeatherManager.swift in Sources */,
+				8B670A067CAC4D92CDB098F3 /* TodaysContextSheet.swift in Sources */,
+				8B670A077CAC4D92CDB098F4 /* WeatherChip.swift in Sources */,
+				8B670A087CAC4D92CDB098F5 /* BalancePulseBus.swift in Sources */,
+				8B670A097CAC4D92CDB098F6 /* ParticleAnimator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1660,7 +1665,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ThrivnShareExtension/ThrivnShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThrivnShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -1689,7 +1694,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ThrivnShareExtension/ThrivnShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThrivnShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -1743,7 +1748,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1817,7 +1822,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1884,7 +1889,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1942,7 +1947,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1996,7 +2001,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -2053,7 +2058,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -2184,8 +2189,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -2202,6 +2209,7 @@
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -2213,8 +2221,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -2231,6 +2241,7 @@
 				MARKETING_VERSION = 1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myaissistant.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -2242,7 +2253,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.3.1;
@@ -2260,7 +2271,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.3.1;
@@ -2280,7 +2291,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -2309,7 +2320,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;

@@ -24,6 +24,8 @@ struct MyAIssistantApp: App {
     @State private var notificationManager = NotificationManager()
     @State private var networkMonitor = NetworkMonitor()
     @State private var dailyRecapGenerator: DailyRecapGenerator?
+    @State private var weatherManager: WeatherManager
+    @State private var balancePulseBus: BalancePulseBus
     private var backgroundTaskManager: BackgroundTaskManager?
 
     init() {
@@ -69,8 +71,12 @@ struct MyAIssistantApp: App {
         let ugm = UsageGateManager(modelContext: context)
         let bm = BalanceManager(modelContext: context)
 
+        let pulseBus = BalancePulseBus()
+        self._balancePulseBus = State(initialValue: pulseBus)
+
         tm.calendarSyncManager = csm
         tm.balanceManager = bm
+        tm.balancePulseBus = pulseBus
         self._taskManager = State(initialValue: tm)
         self._patternEngine = State(initialValue: pe)
         self._checkInManager = State(initialValue: CheckInManager(modelContext: context))
@@ -89,6 +95,8 @@ struct MyAIssistantApp: App {
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
         let hm = HabitManager(modelContext: context)
+        hm.balanceManager = bm
+        hm.balancePulseBus = pulseBus
         self._habitManager = State(initialValue: hm)
         let cibe = CheckInBehaviorEngine(modelContext: context)
         self._checkInBehaviorEngine = State(initialValue: cibe)
@@ -104,6 +112,10 @@ struct MyAIssistantApp: App {
         drg.habitManager = hm
         self._dailyRecapGenerator = State(initialValue: drg)
 
+        // Local — WeatherManager retains this; no need to store on self.
+        let locationProvider = LocationProvider()
+        self._weatherManager = State(initialValue: WeatherManager(locationProvider: locationProvider))
+
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
@@ -116,6 +128,10 @@ struct MyAIssistantApp: App {
 
         // Seed sample data on first launch
         DataSeeder.seedIfEmpty(context: context)
+
+        // Prune stale per-day UserDefaults dismissal keys so the plist
+        // doesn't accumulate one entry per day indefinitely.
+        PatternInsightBanner.pruneStaleDismissals()
 
         // Set up notification delegate
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
@@ -145,6 +161,8 @@ struct MyAIssistantApp: App {
                 .environment(\.subscriptionManager, subscriptionManager)
                 .environment(\.networkMonitor, networkMonitor)
                 .environment(\.dailyRecapGenerator, dailyRecapGenerator)
+                .environment(\.weatherManager, weatherManager)
+                .environment(\.balancePulseBus, balancePulseBus)
                 .environment(\.userName, UserDefaults.standard.string(forKey: "user_name"))
                 .task {
                     await subscriptionManager.updateTier()
@@ -188,6 +206,13 @@ struct MyAIssistantApp: App {
                     if let task = taskManager.findTask(byID: taskID) {
                         taskManager.toggleCompletion(task)
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .habitToggledExternally)) { notification in
+                    // Siri/widget/notification-action already mutated the
+                    // habit; just re-drive the Compass side-effects so the
+                    // user sees the pulse when they return to the app.
+                    guard let habitID = notification.userInfo?["habitID"] as? String else { return }
+                    habitManager.announceCompletion(habitID: habitID)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .watchRequestedUpdate)) { _ in
                     taskManager.updateWidgetData()
