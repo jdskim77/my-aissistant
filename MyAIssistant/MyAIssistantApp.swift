@@ -22,7 +22,7 @@ struct MyAIssistantApp: App {
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
     @State private var notificationManager = NotificationManager()
-    @State private var networkMonitor = NetworkMonitor()
+    @State private var networkMonitor: NetworkMonitor
     @State private var dailyRecapGenerator: DailyRecapGenerator?
     @State private var weatherManager: WeatherManager
     @State private var balancePulseBus: BalancePulseBus
@@ -44,10 +44,12 @@ struct MyAIssistantApp: App {
             UserDefaults.standard.set(true, forKey: voiceMigrationKey)
         }
 
-        // Use the latest versioned schema. Adding a new @Model property
-        // requires bumping this to SchemaV(n) + a MigrationStage in
-        // AppMigrationPlan; see SchemaVersioning.swift.
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        // Use the latest versioned schema. Currently V1 is the single
+        // baseline; adding a new @Model breaking change requires creating
+        // a V2 and updating this reference (see SchemaVersioning.swift
+        // header for the correct V2 procedure — DO NOT simply alias
+        // V2.models to V1.models).
+        let schema = Schema(versionedSchema: SchemaV1.self)
         let container: ModelContainer
 
         // Attempt 1: CloudKit-synced store
@@ -74,6 +76,9 @@ struct MyAIssistantApp: App {
         let pulseBus = BalancePulseBus()
         self._balancePulseBus = State(initialValue: pulseBus)
 
+        let nm = NetworkMonitor()
+        self._networkMonitor = State(initialValue: nm)
+
         tm.calendarSyncManager = csm
         tm.balanceManager = bm
         tm.balancePulseBus = pulseBus
@@ -92,6 +97,7 @@ struct MyAIssistantApp: App {
         cm.keychainService = keychainService
         cm.calendarSyncManager = csm
         cm.usageGateManager = ugm
+        cm.networkMonitor = nm
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
         let hm = HabitManager(modelContext: context)

@@ -11,7 +11,14 @@ struct StartFocusIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        // The app will handle opening the FocusTimerView via a notification
+        // Write the pending request to UserDefaults so a cold-launched app can
+        // replay it from ContentView.onAppear. Posting the Notification alone
+        // is a no-op when no observer is registered yet (cold launch).
+        let defaults = UserDefaults.standard
+        defaults.set(durationMinutes, forKey: "pendingFocusDurationMinutes")
+        defaults.set(Date().timeIntervalSince1970, forKey: "pendingFocusRequestedAt")
+
+        // Also fire the notification for the warm-launch path (app already running).
         NotificationCenter.default.post(
             name: .startFocusSession,
             object: nil,

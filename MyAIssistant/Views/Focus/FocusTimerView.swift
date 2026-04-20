@@ -15,6 +15,15 @@ struct FocusTimerView: View {
     @State private var currentInterval = 1
     @State private var timer: Timer?
     @State private var showCompletionSummary = false
+    /// Wall-clock anchor for the current run. Captured when the timer
+    /// starts (or resumes after a pause / background). tick() computes
+    /// remaining from Date().timeIntervalSince(this) rather than
+    /// decrementing by 1 per fire — so locking the phone or backgrounding
+    /// the app doesn't corrupt focus totals. `scenePhase = .active`
+    /// triggers an immediate reconciliation tick.
+    @State private var phaseStartWallClock: Date?
+    @State private var secondsRemainingAtRunStart: Int = 0
+    @Environment(\.scenePhase) private var scenePhase
 
     // Settings
     @State private var workMinutes: Int
@@ -193,6 +202,14 @@ struct FocusTimerView: View {
             Spacer()
         }
         .padding(.horizontal, 20)
+        .onChange(of: scenePhase) { _, newPhase in
+            // Coming back to foreground — reconcile the wall clock
+            // immediately so the UI jumps to the correct remaining time
+            // (the 1-second Timer only fires while the app is active).
+            if newPhase == .active && isRunning {
+                tick()
+            }
+        }
     }
 
     private var settingsRow: some View {
@@ -273,7 +290,14 @@ struct FocusTimerView: View {
             if let task, !task.done {
                 Button {
                     Haptics.success()
-                    taskManager?.toggleCompletion(task)
+                    // Defensive: re-check `done` right before toggling.
+                    // Prevents an un-complete if the view rendered once
+                    // with done=false but some other flow (share ext,
+                    // watch sync) marked it done while the completion
+                    // screen was still visible.
+                    if task.done == false {
+                        taskManager?.toggleCompletion(task)
+                    }
                     dismiss()
                 } label: {
                     HStack(spacing: 8) {
@@ -337,6 +361,10 @@ struct FocusTimerView: View {
 
     private func startTimer() {
         isRunning = true
+        // Anchor the wall clock at the resume moment so tick() can compute
+        // true elapsed even if the app is backgrounded for minutes.
+        phaseStartWallClock = Date()
+        secondsRemainingAtRunStart = secondsRemaining
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             Task { @MainActor in
                 tick()
@@ -348,15 +376,29 @@ struct FocusTimerView: View {
         isRunning = false
         timer?.invalidate()
         timer = nil
+        // Clear the wall-clock anchor — a subsequent start will establish
+        // a fresh one from whatever secondsRemaining is now.
+        phaseStartWallClock = nil
     }
 
+    /// Wall-clock-based tick. `secondsRemaining` is recomputed from
+    /// Date().timeIntervalSince(phaseStartWallClock) rather than decrementing
+    /// by 1, so the timer survives background/lock without drift. Delta
+    /// against the previous `secondsRemaining` is applied to
+    /// `totalFocusSeconds` for accurate session accounting.
     private func tick() {
+        guard let anchor = phaseStartWallClock else { return }
         guard secondsRemaining > 0 else { return }
-        secondsRemaining -= 1
+
+        let elapsed = Int(Date().timeIntervalSince(anchor))
+        let newRemaining = max(0, secondsRemainingAtRunStart - elapsed)
+        let delta = secondsRemaining - newRemaining
+        guard delta >= 0 else { return }
 
         if !isBreak {
-            session.totalFocusSeconds += 1
+            session.totalFocusSeconds += delta
         }
+        secondsRemaining = newRemaining
 
         if secondsRemaining == 0 {
             Haptics.success()
@@ -389,11 +431,20 @@ struct FocusTimerView: View {
 
     private func skipPhase() {
         if !isBreak {
-            // Skipping a work phase still counts partial time (already tracked via tick)
-            session.intervalsCompleted += 1
-            if session.intervalsCompleted >= totalIntervals {
-                finishSession()
-                return
+            // Only count as a COMPLETED interval if at least 80% of the
+            // work duration was actually worked. Skipping at minute 2 of
+            // a 25-minute pomodoro shouldn't inflate the interval count —
+            // partial focus time is still credited via tick(), but the
+            // "intervals completed" stat remains truthful.
+            let workDuration = Double(session.workDuration)
+            let elapsed = workDuration - Double(secondsRemaining)
+            let completedEnough = workDuration > 0 && (elapsed / workDuration) >= 0.8
+            if completedEnough {
+                session.intervalsCompleted += 1
+                if session.intervalsCompleted >= totalIntervals {
+                    finishSession()
+                    return
+                }
             }
             isBreak = true
             secondsRemaining = session.breakDuration
@@ -421,10 +472,15 @@ struct FocusTimerView: View {
 
     private func endSession() {
         pauseTimer()
-        if session.intervalsCompleted > 0 || session.totalFocusSeconds > 30 {
-            session.endedAt = Date()
-            saveSession()
-        }
+        // Preserve ALL sessions, even very short ones, so a user who
+        // starts a focus and taps End after 29 seconds still sees the
+        // attempt in their history. Previously sessions < 30 s were
+        // silently dropped, which meant the Compass Activity signal
+        // (Pillar 3) lost legitimate effort. saveSession is idempotent
+        // and the history UI already filters very-short sessions out of
+        // summary stats if it wants to.
+        session.endedAt = Date()
+        saveSession()
     }
 
     private func saveSession() {

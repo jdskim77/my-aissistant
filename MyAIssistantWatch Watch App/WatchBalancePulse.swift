@@ -247,17 +247,33 @@ struct WatchBalancePulse: View {
         let fraction = clamped / 10.0
         let isPulsing = activePulse == dim
         let scoreOpt = scoreOptional(for: dim)
+        // Distinguish "no data" (nil score) from "score=0". A true zero
+        // still renders the 3pt min-height fill; a nil score renders
+        // nothing, so the empty track communicates "no reading yet"
+        // instead of "scored zero."
+        let hasData = scoreOpt != nil
 
         return VStack(spacing: 6) {
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.white.opacity(0.08))
                     .frame(width: barWidth, height: barHeight)
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(dim.color)
-                    .saturation(isPulsing ? 1.15 : 1.0)
-                    .frame(width: barWidth, height: max(3, barHeight * fraction))
-                    .animation(.spring(response: 0.55, dampingFraction: 0.75), value: fraction)
+                // Dashed top edge when the dim has no data — cues
+                // "nothing to compare yet" without showing a solid stub.
+                if !hasData {
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(
+                            dim.color.opacity(0.35),
+                            style: StrokeStyle(lineWidth: 1, dash: [2, 2])
+                        )
+                        .frame(width: barWidth, height: barHeight)
+                } else {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(dim.color)
+                        .saturation(isPulsing ? 1.15 : 1.0)
+                        .frame(width: barWidth, height: max(3, barHeight * fraction))
+                        .animation(.spring(response: 0.55, dampingFraction: 0.75), value: fraction)
+                }
             }
             .scaleEffect(isPulsing ? pulseScale : 1.0)
             // Anchor the bar's center for the particle target. Y-offset

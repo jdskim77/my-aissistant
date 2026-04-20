@@ -268,10 +268,18 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     private static let apiKeyAccount = "com.myaissistant.watch-api-key"
 
     private func extractAPIKey(from dict: [String: Any]) {
-        if let key = dict["apiKey"] as? String, !key.isEmpty {
-            self.apiKey = key
-            saveAPIKeyToKeychain(key)
-        }
+        guard let key = dict["apiKey"] as? String, !key.isEmpty else { return }
+        // Shape-validate before committing to Keychain. Anthropic keys
+        // start with "sk-ant-" and are long base64-ish. Rejecting
+        // obvious non-keys prevents a garbled/injected payload from
+        // silently overwriting the real key and breaking AI on Watch.
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("sk-ant-"), trimmed.count >= 32 else { return }
+        // No-op if the key hasn't changed — avoids excess Keychain churn
+        // every applicationContext delivery.
+        guard trimmed != apiKey else { return }
+        self.apiKey = trimmed
+        saveAPIKeyToKeychain(trimmed)
     }
 
     private func loadAPIKeyFromCache() {
@@ -325,6 +333,21 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Apply an iPhone-originated payload with a staleness guard: if the
+    /// incoming `updatedAt` is older than what we already have locally,
+    /// drop the update. Prevents an iPhone reply that's in-flight during
+    /// the user's optimistic edits from overwriting newer local state
+    /// with an older authoritative snapshot.
+    private func applyIncoming(_ incoming: WatchScheduleData) {
+        if let current = scheduleData, incoming.updatedAt < current.updatedAt {
+            // Stale — probably an iPhone reply that crossed our optimistic
+            // write. Keep local state; the next authoritative payload will
+            // have a fresh timestamp and win cleanly.
+            return
+        }
+        persistAndUpdate(incoming)
+    }
+
     private func loadFromCache() {
         guard let data = UserDefaults.standard.data(forKey: "watchScheduleCache") else { return }
         let decoder = JSONDecoder()
@@ -343,7 +366,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             self.hasAttemptedSync = true
             self.extractAPIKey(from: context)
             if let data = WatchScheduleData.from(context: context) {
-                self.persistAndUpdate(data)
+                self.applyIncoming(data)
             }
         }
     }
@@ -353,7 +376,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             self.hasAttemptedSync = true
             self.extractAPIKey(from: applicationContext)
             if let data = WatchScheduleData.from(context: applicationContext) {
-                self.persistAndUpdate(data)
+                self.applyIncoming(data)
             }
         }
     }

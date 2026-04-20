@@ -66,6 +66,11 @@ struct BalancePulseCard: View {
     /// on first appear so a pre-populated state doesn't replay yesterday's
     /// pulses on view (re)mount.
     @State private var previousFills: [LifeDimension: Double] = [:]
+    /// Tracking handles for the Tier-1/2/3 reset Tasks so `.onDisappear`
+    /// can cancel any in-flight cleanup. Without this, tab switching
+    /// mid-animation leaves `bumpScale` / `crossedDims` / `goalHitDims`
+    /// state mutations running against a view already torn down.
+    @State private var tierResetTasks: [Task<Void, Never>] = []
 
     // MARK: - Collapsed-state border flash
 
@@ -145,6 +150,15 @@ struct BalancePulseCard: View {
         }
         .onChange(of: flightPulse?.token) { _, newToken in
             handleCollapsedFlash(newToken: newToken)
+        }
+        .onDisappear {
+            // Cancel any Tier-1/2/3 reset Tasks in flight so they don't
+            // mutate state on a torn-down view. Also cancel the collapsed
+            // flash Task for the same reason.
+            tierResetTasks.forEach { $0.cancel() }
+            tierResetTasks.removeAll()
+            collapsedFlashTask?.cancel()
+            collapsedFlashTask = nil
         }
     }
 
@@ -413,14 +427,20 @@ struct BalancePulseCard: View {
         guard newFill > previous else { return }
 
         // Tier 1 — elastic deposit bump. Always plays.
+        // All Tier reset Tasks are stored in `tierResetTasks` so
+        // `.onDisappear` can cancel them — without that, a user who
+        // taps complete then switches tabs leaves resets running
+        // against a view already torn down.
         if !reduceMotion {
             bumpScale[dim] = 1.08
-            Task { @MainActor in
+            let tierTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(180))
+                guard !Task.isCancelled else { return }
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                     bumpScale[dim] = 1.0
                 }
             }
+            tierResetTasks.append(tierTask)
         }
 
         // Tier 2 — crossing yesterday's tick. Fires once per day per dim
@@ -429,19 +449,23 @@ struct BalancePulseCard: View {
         // and this guard fails.
         if let t = tick, previous < t, newFill >= t, !crossedDims.contains(dim) {
             crossedDims.insert(dim)
-            Task { @MainActor in
+            let tierTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
                 crossedDims.remove(dim)
             }
+            tierResetTasks.append(tierTask)
         }
 
         // Tier 3 — hit daily target (100%). Same one-time-per-day logic.
         if previous < 1.0, newFill >= 1.0, !goalHitDims.contains(dim) {
             goalHitDims.insert(dim)
-            Task { @MainActor in
+            let tierTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(850))
+                guard !Task.isCancelled else { return }
                 goalHitDims.remove(dim)
             }
+            tierResetTasks.append(tierTask)
         }
 
         // Tier 4 handled inline via the `aboveTick`/`overflow`/`overflowStacks`
@@ -503,24 +527,36 @@ private struct BreathingBar: View {
     let color: Color
     let phaseIndex: Int
     @State private var pulse: Bool = false
+    @State private var delayTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         RoundedRectangle(cornerRadius: 6)
-            .fill(color.opacity(pulse ? 0.32 : 0.18))
+            .fill(color.opacity(reduceMotion ? 0.22 : (pulse ? 0.32 : 0.18)))
             .frame(width: 30, height: 54)
             .animation(
-                .easeInOut(duration: 2.8).repeatForever(autoreverses: true),
+                reduceMotion
+                    ? nil
+                    : .easeInOut(duration: 2.8).repeatForever(autoreverses: true),
                 value: pulse
             )
             .onAppear {
+                // Reduce Motion: hold a static mid-opacity fill so the
+                // card isn't visually silent but doesn't pulse at all.
+                guard !reduceMotion else { return }
                 // Stagger each dim's breathing phase by 800ms so the row
                 // reads as an organic rhythm rather than a synchronized
                 // pulse (which feels nervous on a cream background).
                 let delay = Double(phaseIndex) * 0.8
-                Task { @MainActor in
+                delayTask = Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(Int(delay * 1000)))
+                    guard !Task.isCancelled else { return }
                     pulse = true
                 }
+            }
+            .onDisappear {
+                delayTask?.cancel()
+                delayTask = nil
             }
     }
 }

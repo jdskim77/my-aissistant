@@ -1,6 +1,7 @@
 #if os(watchOS)
 import SwiftUI
 import WatchKit
+import WatchConnectivity
 
 struct WatchTodayView: View {
     var connectivity: WatchConnectivityManager
@@ -22,6 +23,16 @@ struct WatchTodayView: View {
     /// Guards the first arrival from firing particles for tasks the user
     /// completed off-watch before the view ever subscribed.
     @State private var hasSeededSnapshot = false
+    /// Flipped when `Try again` is tapped and the session is still
+    /// unreachable. Swaps the button label to "Still offline" briefly
+    /// so the tap isn't a silent no-op. Clears after 3 seconds.
+    @State private var retryFailedAt: Date?
+
+    private var retryFeedback: String {
+        guard let stamp = retryFailedAt,
+              Date().timeIntervalSince(stamp) < 3 else { return "Try again" }
+        return "Still offline"
+    }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -252,16 +263,23 @@ struct WatchTodayView: View {
     }
 
     /// Fallback target when the task has no dimensions tagged. Picks the
-    /// dimension that needs the most help — narratively "your action just
-    /// helped where you most needed it."
+    /// dimension with the lowest KNOWN score — narratively "your action
+    /// just helped where you most needed it." Nil scores are excluded
+    /// from the comparison so a user with only bodyScore tracked doesn't
+    /// get every untagged completion funneled to Body just because the
+    /// other three ?? 5.0 fallbacks are all equal and `.body` comes first.
+    /// Returns nil when no dimension has any data — caller should
+    /// `pulseInPlace` on a neutral dim or skip the flight entirely.
     private func lowestScoringDimension() -> WatchDimension? {
         guard let data = connectivity.scheduleData else { return nil }
         let scored: [(WatchDimension, Double)] = [
-            (.body,   data.bodyScore   ?? 5.0),
-            (.mind,   data.mindScore   ?? 5.0),
-            (.heart,  data.heartScore  ?? 5.0),
-            (.spirit, data.spiritScore ?? 5.0)
-        ]
+            (.body,   data.bodyScore),
+            (.mind,   data.mindScore),
+            (.heart,  data.heartScore),
+            (.spirit, data.spiritScore)
+        ].compactMap { (dim, score) in
+            score.map { (dim, $0) }
+        }
         return scored.min(by: { $0.1 < $1.1 })?.0
     }
 
@@ -316,8 +334,16 @@ struct WatchTodayView: View {
             Button {
                 WKInterfaceDevice.current().play(.click)
                 connectivity.requestUpdate()
+                // `requestUpdate` silently no-ops when the iPhone is
+                // unreachable — without surfacing that, the user taps
+                // and nothing visibly happens. Surface a brief "Still
+                // offline" subtitle so the tap is acknowledged.
+                if !WCSession.default.isReachable {
+                    WKInterfaceDevice.current().play(.failure)
+                    retryFailedAt = Date()
+                }
             } label: {
-                Text("Try again")
+                Text(retryFeedback)
                     .font(.system(size: 12, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 36)

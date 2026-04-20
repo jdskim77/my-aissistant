@@ -5,11 +5,6 @@ import WatchKit
 
 struct WatchVoiceChatView: View {
     var connectivity: WatchConnectivityManager
-    /// Optional preloaded prompt — used when the Today tab's COACH chip
-    /// opens this view. The suggestion is dropped into the input field so
-    /// the user can edit, send, or just tap the mic to refine. Empty/nil
-    /// means a normal cold open with no draft.
-    var seedQuery: String? = nil
 
     @State private var isProcessing = false
     @State private var lastQuery = ""
@@ -21,7 +16,6 @@ struct WatchVoiceChatView: View {
 
     // Text input (inline — user taps TextField to trigger watchOS dictation picker)
     @State private var textInputValue = ""
-    @State private var didApplySeed = false
     @FocusState private var isInputFocused: Bool
 
     private let claudeService = WatchClaudeService()
@@ -52,17 +46,6 @@ struct WatchVoiceChatView: View {
         }
         .navigationTitle("AI Assistant")
         // Sheet removed — input is inline
-        .onAppear {
-            // Pre-fill the input with the COACH suggestion if one was passed.
-            // Guarded by `didApplySeed` so re-appears (sheet dismiss, scroll
-            // refresh) don't overwrite user edits with the original seed.
-            if !didApplySeed,
-               let seed = seedQuery?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !seed.isEmpty {
-                textInputValue = seed
-                didApplySeed = true
-            }
-        }
         .onDisappear {
             synthesizer.stopSpeaking(at: .immediate)
             apiTask?.cancel()
@@ -449,7 +432,8 @@ struct WatchVoiceChatView: View {
     /// Parses a time expression like "at 3pm" or "at 14:30" from the input.
     /// Returns the cleaned string, the resolved Date, and whether a time was found.
     private func extractTime(from input: String) -> (cleaned: String, date: Date, hasTime: Bool) {
-        let today = Calendar.current.startOfDay(for: Date())
+        let now = Date()
+        let today = Calendar.current.startOfDay(for: now)
 
         // Match patterns: "at 3pm", "at 3:30pm", "at 3:30 pm", "at 15:00", "at 3 pm"
         let pattern = #"(?i)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)?"#
@@ -471,16 +455,17 @@ struct WatchVoiceChatView: View {
             minute = m
         }
 
-        // Extract optional am/pm
+        // Extract optional am/pm — and track whether we need to bump to
+        // tomorrow because both today's AM and PM slots have already passed.
+        var scheduleTomorrow = false
         if let ampmRange = Range(match.range(at: 3), in: input) {
             let ampm = input[ampmRange].lowercased()
             if ampm == "pm" && hour < 12 { hour += 12 }
             if ampm == "am" && hour == 12 { hour = 0 }
         } else if hour >= 1 && hour <= 11 {
-            // Ambiguous (no am/pm). Pick the NEXT occurrence relative to now —
-            // "at 7" said at 6 AM means 7 AM today, said at 9 AM means 7 PM
-            // today, said at 9 PM means 7 AM tomorrow (handled by date layer).
-            let currentHour = Calendar.current.component(.hour, from: Date())
+            // Ambiguous (no am/pm). Pick the NEXT future occurrence —
+            // never schedule a task for a time that's already passed today.
+            let currentHour = Calendar.current.component(.hour, from: now)
             let pmHour = hour + 12
             if currentHour < hour {
                 // AM today is still in the future — keep as-is.
@@ -488,12 +473,25 @@ struct WatchVoiceChatView: View {
                 // AM is past, PM still future — bump to PM.
                 hour = pmHour
             } else {
-                // Both today's AM and PM are past — keep AM (treated as
-                // tomorrow morning in the user's mental model).
+                // Both today's AM and PM are past — schedule for tomorrow's AM.
+                // Previously this silently kept AM + today's date, producing
+                // a task scheduled for a time already in the past.
+                scheduleTomorrow = true
             }
+        } else if hour == 12 {
+            // "at 12" with no AM/PM = noon (ambiguous but convention).
+            // Keep as-is; user can clarify if they meant midnight.
         }
 
-        let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: today) ?? today
+        let baseDay: Date = {
+            if scheduleTomorrow,
+               let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) {
+                return tomorrow
+            }
+            return today
+        }()
+
+        let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: baseDay) ?? baseDay
 
         // Remove the time expression from the string
         let fullMatchRange = Range(match.range, in: input)!
@@ -511,21 +509,66 @@ struct WatchVoiceChatView: View {
         return "Medium"
     }
 
+    /// Best-match task for a "complete X" voice query. Returns nil rather
+    /// than a fuzzy candidate when the match is weak or ambiguous —
+    /// silently completing the wrong task is worse than not completing any.
+    ///
+    /// Rules:
+    ///   • Ignore short stop-words ("a", "the", "to", …) so "complete the
+    ///     dentist" doesn't match "a call" just because both contain "a".
+    ///   • Require at least one ≥4-char content word to match — prevents
+    ///     "call" alone triggering any task containing "call".
+    ///   • Require ≥70% of meaningful words in the title to appear in the
+    ///     query (up from 50%).
+    ///   • If two tasks tie on score, return nil (ambiguous — ask again).
     private func findTaskInQuery(_ query: String) -> WatchScheduleData.WatchTask? {
+        let stopWords: Set<String> = [
+            "a", "an", "the", "to", "at", "in", "on", "of", "for",
+            "my", "and", "or", "is", "it", "this", "that", "with"
+        ]
+        var best: (task: WatchScheduleData.WatchTask, score: Double)?
+        var tied = false
+
         for task in connectivity.activeTasks {
-            let titleWords = task.title.lowercased().split(separator: " ")
-            let matchCount = titleWords.filter { query.contains($0) }.count
-            if matchCount >= 1 && Double(matchCount) / Double(titleWords.count) >= 0.5 {
-                return task
+            let titleWords = task.title.lowercased()
+                .split(separator: " ")
+                .map { String($0) }
+                .filter { !stopWords.contains($0) }
+            guard !titleWords.isEmpty else { continue }
+
+            let matchedWords = titleWords.filter { query.contains($0) }
+            let hasContentHit = matchedWords.contains { $0.count >= 4 }
+            guard hasContentHit else { continue }
+
+            let ratio = Double(matchedWords.count) / Double(titleWords.count)
+            guard ratio >= 0.7 else { continue }
+
+            if let current = best {
+                if ratio > current.score {
+                    best = (task, ratio)
+                    tied = false
+                } else if ratio == current.score {
+                    tied = true
+                }
+            } else {
+                best = (task, ratio)
             }
         }
-        return nil
+
+        return tied ? nil : best?.task
     }
 
+    /// Cached at the type level — `WatchScheduleData.WatchTask` already has
+    /// a static formatter for this purpose; we mirror the pattern here for
+    /// the voice-action confirmation string.
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
     private func timeString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: date)
+        Self.timeFormatter.string(from: date)
     }
 
     private func buildScheduleContext() -> String {

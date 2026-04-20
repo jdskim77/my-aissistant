@@ -46,13 +46,16 @@ struct OnboardingContainerView: View {
                 // Screen 1: Sign in with Apple (auth + free tier unlock)
                 SignInWithAppleView(
                     onSignedIn: { name in
-                        // If Apple shared a name, save it and skip the name capture screen
+                        // Pre-fill the Name Capture field with Apple's
+                        // returned name when present, but DON'T skip the
+                        // step — let the user confirm or edit. Previously
+                        // we auto-advanced past NameCapture, leaving users
+                        // stuck with a misspelled Apple name and no edit
+                        // path anywhere in the app.
                         if let name, !name.isEmpty {
                             capturedName = name
-                            advanceBy(2)  // Skip past Name Capture (page 2)
-                        } else {
-                            advance()
                         }
+                        advance()
                     },
                     onSkip: { advance() }
                 )
@@ -115,6 +118,12 @@ struct OnboardingContainerView: View {
                 .tag(9)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            // Disable user-driven horizontal swipe between onboarding
+            // pages — each screen has its own Continue / Skip gates that
+            // validate input. Swipe let users bypass e.g. NameCapture
+            // validation or the intent required before screen 6. Pages
+            // still advance programmatically via `advance()`.
+            .gesture(DragGesture().onChanged { _ in })
             .animation(.easeInOut(duration: 0.3), value: currentPage)
         }
         .background(AppColors.background.ignoresSafeArea())

@@ -36,6 +36,9 @@ struct CheckInDetailView: View {
     @Environment(\.userName) private var userName
     @State private var recapMessage: String?
     @State private var isLoadingRecap = false
+    /// Surfaces a brief "switched to <slot>" banner when the user tapped an
+    /// already-completed slot and we auto-advanced to the next open one.
+    @State private var didAutoAdvanceSlot = false
 
     // Habits due today
     @Query(filter: #Predicate<HabitItem> { $0.archivedAt == nil }) private var allHabits: [HabitItem]
@@ -54,6 +57,24 @@ struct CheckInDetailView: View {
                 // Context header + progress bar
                 if !isGated && currentStep != .complete {
                     progressHeader
+                }
+
+                // Auto-advance notice — only when we silently swapped the
+                // user's originally-requested (already-completed) slot for
+                // the next open one. VoiceOver also announces the swap.
+                if didAutoAdvanceSlot {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Switched to \(timeSlot.rawValue) — the one you picked is already done.")
+                            .font(AppFonts.caption(12))
+                        Spacer()
+                    }
+                    .foregroundColor(timeSlot.color)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(timeSlot.color.opacity(0.08))
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 ScrollView {
@@ -113,9 +134,24 @@ struct CheckInDetailView: View {
             .onAppear {
                 // If the initial slot is already completed today, advance to
                 // the first uncompleted slot so the user lands on something useful.
+                // A VoiceOver announcement + brief visible banner tells the user
+                // what happened — silent slot-swap previously confused users who
+                // opened "Morning" at 4pm and wondered why they were in "Afternoon".
                 if completedSlotsForDay.contains(timeSlot.rawValue),
                    let firstOpen = CheckInTime.allCases.first(where: { !completedSlotsForDay.contains($0.rawValue) }) {
+                    let originalLabel = timeSlot.rawValue
                     timeSlot = firstOpen
+                    didAutoAdvanceSlot = true
+                    UIAccessibility.post(
+                        notification: .announcement,
+                        argument: "\(originalLabel) check-in already done. Switched to \(firstOpen.rawValue)."
+                    )
+                    // Auto-hide the banner after 4 seconds so it doesn't hang
+                    // around for the whole session.
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(4))
+                        withAnimation { didAutoAdvanceSlot = false }
+                    }
                 }
                 if let gate = usageGateManager, !gate.canDoCheckIn(tier: tier) {
                     isGated = true
@@ -532,15 +568,16 @@ struct CheckInDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             Button {
-                // Dismiss check-in and navigate to AI chat with the daily recap context
+                // Dismiss check-in and navigate to AI chat with the daily recap context.
+                // We post the route BEFORE dismiss so observers see it during the dismiss
+                // transition — avoids the race where a user quickly taps another tab
+                // during a timer delay and then has the chat tab yanked out from under them.
+                NotificationCenter.default.post(
+                    name: .didTapNotification,
+                    object: nil,
+                    userInfo: ["destination": "assistant", "category": "DAILY_RECAP", "originalUserInfo": [:] as [String: Any]]
+                )
                 dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    NotificationCenter.default.post(
-                        name: .didTapNotification,
-                        object: nil,
-                        userInfo: ["destination": "assistant", "category": "DAILY_RECAP", "originalUserInfo": [:] as [String: Any]]
-                    )
-                }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "bubble.left")
@@ -678,9 +715,21 @@ struct CheckInDetailView: View {
     }
 
     private func loadGreeting() {
+        // Hard timeout so a hung Claude call never strands the user on
+        // the greeting screen. After 6 seconds we fall back to the
+        // hardcoded slot greeting and unblock the Continue button.
+        // Whichever completes first (the real greeting or the timeout)
+        // flips isLoadingGreeting; the other becomes a no-op.
         Task {
+            let timeoutTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(6))
+                guard !Task.isCancelled, isLoadingGreeting else { return }
+                aiGreeting = timeSlot.greeting
+                isLoadingGreeting = false
+            }
+
             if let manager = checkInManager {
-                aiGreeting = await manager.generateGreeting(
+                let greeting = await manager.generateGreeting(
                     timeSlot: timeSlot,
                     mood: nil,
                     keychain: keychainService,
@@ -689,10 +738,21 @@ struct CheckInDetailView: View {
                     completionRate: patternEngine?.completionRate() ?? 0,
                     streak: patternEngine?.currentStreak() ?? 0
                 )
+                // Only apply if we beat the timeout — otherwise the
+                // fallback has already been shown and we don't want to
+                // jolt the user by swapping the copy mid-read.
+                await MainActor.run {
+                    guard isLoadingGreeting else { return }
+                    aiGreeting = greeting
+                    isLoadingGreeting = false
+                }
             } else {
-                aiGreeting = timeSlot.greeting
+                await MainActor.run {
+                    aiGreeting = timeSlot.greeting
+                    isLoadingGreeting = false
+                }
             }
-            isLoadingGreeting = false
+            timeoutTask.cancel()
         }
     }
 

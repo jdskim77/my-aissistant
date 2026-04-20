@@ -36,8 +36,13 @@ struct AIGreetingCard: View {
                     .padding(6)
                     .background(AppColors.surface)
                     .cornerRadius(10)
+                    // Expand hit area to Apple's 44pt minimum without
+                    // enlarging the visible chip.
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss greeting")
         }
         .padding(14)
         .background(

@@ -1,6 +1,7 @@
 #if os(watchOS)
 import SwiftUI
 import WatchKit
+import WatchConnectivity
 
 /// Tab 3: Quick 2-tap check-in from the wrist — mood + energy, done.
 struct WatchQuickCheckInView: View {
@@ -9,6 +10,11 @@ struct WatchQuickCheckInView: View {
     @State private var selectedEnergy: Int?
     @State private var isSubmitted = false
     @State private var showComplete = false
+    /// True when the iPhone was unreachable at submit time — the check-in was
+    /// enqueued via `transferUserInfo` and will replay when the iPhone wakes.
+    /// Users need to know their data isn't live yet; without this the
+    /// "Checked in" screen is indistinguishable from a real sync.
+    @State private var submittedOffline = false
 
     /// Boundaries MUST match iOS `CheckInTime.slot(forHour:)` (CheckIn.swift) so
     /// the same moment produces the same slot label on Watch and iPhone.
@@ -144,6 +150,8 @@ struct WatchQuickCheckInView: View {
         guard let mood = selectedMood, let energy = selectedEnergy, !isSubmitted else { return }
         isSubmitted = true
 
+        submittedOffline = !WCSession.default.isReachable
+
         let message: [String: Any] = [
             "quickCheckIn": true,
             "mood": mood,
@@ -183,6 +191,17 @@ struct WatchQuickCheckInView: View {
 
             Text("Checked in")
                 .font(.system(.headline, design: .rounded))
+
+            if submittedOffline {
+                HStack(spacing: 3) {
+                    Image(systemName: "icloud.slash")
+                        .font(.system(size: 9))
+                    Text("Will sync when iPhone connects")
+                        .font(.system(size: 10, design: .rounded))
+                }
+                .foregroundStyle(.orange)
+                .accessibilityLabel("Pending sync. Will sync when iPhone connects.")
+            }
 
             if let quote = connectivity.scheduleData?.quoteText {
                 Text(quote)

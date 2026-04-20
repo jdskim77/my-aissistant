@@ -112,6 +112,10 @@ final class ShareExtensionViewModel {
     // MARK: - Save
 
     func saveTask() {
+        // Clear any stale error from a previous attempt — otherwise a
+        // successful second save would be read as a failure by ShareView's
+        // `errorMessage == nil` dismiss check and the sheet would stay open.
+        errorMessage = nil
         guard !proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             errorMessage = "Task title can't be empty."
             return

@@ -4,10 +4,17 @@ struct CalendarEventRow: View {
     let task: TaskItem
     let onToggle: () -> Void
 
+    /// Cached formatter — previously allocated on every body eval
+    /// (~2ms each) which compounded N× per scroll frame on a schedule
+    /// with many calendar events. Static reuses a single instance.
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
     private var timeText: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter.string(from: task.date)
+        Self.timeFormatter.string(from: task.date)
     }
 
     private var sourceLabel: String {

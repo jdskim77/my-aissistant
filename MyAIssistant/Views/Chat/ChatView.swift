@@ -52,6 +52,7 @@ struct ChatView: View {
     // picks still pass through (BUG-01 from the Skip/Done QA pass).
     @State private var lastChipTapAt: Date = .distantPast
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let quickActions = [
         "Create a Task",
@@ -94,7 +95,9 @@ struct ChatView: View {
                             showReSignIn = false
                         } label: {
                             Image(systemName: "xmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 12, weight: .bold))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
                         }
                         .accessibilityLabel("Dismiss")
                     }
@@ -128,7 +131,9 @@ struct ChatView: View {
                         self.errorMessage = nil
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Dismiss error")
                 }
@@ -165,7 +170,9 @@ struct ChatView: View {
                         showClockAppPrompt = false
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Dismiss")
                 }
@@ -1232,14 +1239,13 @@ struct ChatView: View {
             return false
         }
 
-        // Bug fix #4: try multiple time formats to handle "7:00" as well as "07:00"
-        let formats = ["HH:mm", "H:mm", "h:mm a", "h:mma", "h:mm"]
+        // Bug fix #4: try multiple time formats to handle "7:00" as well as "07:00".
+        // Formatters are cached once at module-load time via AlarmTimeFormatters
+        // — previously a fresh DateFormatter was allocated for each format
+        // attempt (up to 5× per alarm), which the dont-do list explicitly bans.
         var parsedTime: Date?
-        for format in formats {
-            let f = DateFormatter()
-            f.dateFormat = format
-            f.locale = Locale(identifier: "en_US_POSIX")
-            if let d = f.date(from: alarm.timeString) { parsedTime = d; break }
+        for formatter in AlarmTimeFormatters.all {
+            if let d = formatter.date(from: alarm.timeString) { parsedTime = d; break }
         }
         guard let parsedTime else {
             errorMessage = "Couldn't parse alarm time \"\(alarm.timeString)\". Please try again."
@@ -1291,6 +1297,7 @@ private struct ConversationMessages: View {
     let isAITyping: Bool
 
     @Query private var messages: [ChatMessage]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(conversationID: String, isAITyping: Bool) {
         self.conversationID = conversationID
@@ -1302,6 +1309,22 @@ private struct ConversationMessages: View {
         )
     }
 
+    /// Rendered window — cap at the most recent 200 messages so a power
+    /// user with 1000+ messages doesn't incur LazyVStack traversal +
+    /// memory spike on every jump-to-bottom. "Load earlier" button
+    /// expands the window by another 200 when requested. Raw `messages`
+    /// is still the Codable source of truth; this only scopes rendering.
+    @State private var renderedWindow: Int = 200
+
+    private var visibleMessages: [ChatMessage] {
+        guard messages.count > renderedWindow else { return Array(messages) }
+        return Array(messages.suffix(renderedWindow))
+    }
+
+    private var hasHiddenHistory: Bool {
+        messages.count > renderedWindow
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -1310,7 +1333,19 @@ private struct ConversationMessages: View {
                         emptyState
                     }
 
-                    ForEach(messages, id: \.id) { message in
+                    if hasHiddenHistory {
+                        Button {
+                            renderedWindow += 200
+                        } label: {
+                            Text("Load earlier messages")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.accent)
+                                .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    ForEach(visibleMessages, id: \.id) { message in
                         ChatBubble(message: message)
                             .id(message.id)
                     }
@@ -1364,15 +1399,20 @@ private struct ConversationMessages: View {
     private var typingIndicator: some View {
         HStack {
             HStack(spacing: 5) {
+                // Reduce Motion: render three static dots (WCAG 2.3.3 —
+                // avoid repeating animations) + an "assistant is typing"
+                // accessibility label so VoiceOver announces the state.
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
                         .fill(AppColors.textMuted)
                         .frame(width: 7, height: 7)
-                        .opacity(0.5)
+                        .opacity(reduceMotion ? 0.5 : 0.5)
                         .animation(
-                            .easeInOut(duration: 0.6)
-                                .repeatForever()
-                                .delay(Double(i) * 0.2),
+                            reduceMotion
+                                ? nil
+                                : .easeInOut(duration: 0.6)
+                                    .repeatForever()
+                                    .delay(Double(i) * 0.2),
                             value: isAITyping
                         )
                 }
@@ -1385,8 +1425,23 @@ private struct ConversationMessages: View {
                 RoundedRectangle(cornerRadius: 18)
                     .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
             )
+            .accessibilityElement()
+            .accessibilityLabel("Assistant is typing")
 
             Spacer()
         }
+    }
+}
+
+/// Cached formatters for alarm time-string parsing in `scheduleAlarm`.
+/// Allocating 5 new DateFormatters per alarm (the old pattern) violated
+/// the dont-do rule and cost ~10ms per alarm for no reason — these are
+/// immutable and safe to share at file scope.
+private enum AlarmTimeFormatters {
+    static let all: [DateFormatter] = ["HH:mm", "H:mm", "h:mm a", "h:mma", "h:mm"].map {
+        let f = DateFormatter()
+        f.dateFormat = $0
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
     }
 }

@@ -79,6 +79,11 @@ struct ContentView: View {
                 NotificationDelegate.shared.pendingDestination = nil
                 navigateToDestination(pending)
             }
+            // Cold-launch path for StartFocusIntent: NotificationCenter posts
+            // before any observer exists, so the intent persists a request to
+            // UserDefaults and we replay it here. 30s freshness window prevents
+            // firing a stale request from a previous session.
+            consumePendingFocusRequest()
         }
         .task {
             // Delayed check for cold-launch race: didReceive is async and may complete
@@ -89,6 +94,24 @@ struct ContentView: View {
                 navigateToDestination(pending)
             }
         }
+    }
+
+    /// Replay a StartFocusIntent request that arrived via cold launch. The
+    /// intent's NotificationCenter post runs before ContentView's observer is
+    /// registered, so we persist the request and consume it here. 30s
+    /// freshness prevents a request left over from a terminated previous
+    /// session from auto-opening the focus timer.
+    private func consumePendingFocusRequest() {
+        let defaults = UserDefaults.standard
+        let requestedAt = defaults.double(forKey: "pendingFocusRequestedAt")
+        guard requestedAt > 0 else { return }
+        let duration = defaults.integer(forKey: "pendingFocusDurationMinutes")
+        defaults.removeObject(forKey: "pendingFocusRequestedAt")
+        defaults.removeObject(forKey: "pendingFocusDurationMinutes")
+        let age = Date().timeIntervalSince1970 - requestedAt
+        guard age < 30 else { return }
+        focusDuration = duration > 0 ? duration : 25
+        showingFocusTimer = true
     }
 
     private func navigateToDestination(_ destination: String) {

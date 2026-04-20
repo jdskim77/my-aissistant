@@ -18,6 +18,9 @@ final class ChatManager {
     var calendarSyncManager: CalendarSyncManager?
     var usageGateManager: UsageGateManager?
     var subscriptionTier: SubscriptionTier = .free
+    /// Optional connectivity probe. When injected, sends short-circuit with a
+    /// friendly error instead of waiting for URLSession to time out.
+    var networkMonitor: NetworkMonitor?
 
     /// Re-entrancy guard. A double-tap on Send (or a fast tap from voice mode,
     /// or simultaneous Watch + iPhone) was firing two parallel API calls and
@@ -126,6 +129,20 @@ final class ChatManager {
                 alarms: [],
                 hasError: true,
                 errorMessage: "paywall"
+            )
+        }
+
+        // Preflight: no network → short-circuit with a clear message instead
+        // of burning 60s on a URLSession timeout. The user still sees their
+        // message in the thread (persisted below) so drafts aren't lost when
+        // the monitor flips back online.
+        if let networkMonitor, !networkMonitor.isConnected {
+            return SendResult(
+                displayText: "",
+                calendarActions: [],
+                alarms: [],
+                hasError: true,
+                errorMessage: "You're offline. Send this again when you reconnect."
             )
         }
 

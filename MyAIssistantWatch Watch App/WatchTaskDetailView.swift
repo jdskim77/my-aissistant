@@ -7,6 +7,7 @@ struct WatchTaskDetailView: View {
     var connectivity: WatchConnectivityManager
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirmation = false
+    @State private var showUncompleteConfirmation = false
     @State private var didAct = false
 
     var body: some View {
@@ -16,6 +17,12 @@ struct WatchTaskDetailView: View {
                 HStack(alignment: .top, spacing: 10) {
                     Button {
                         guard !didAct else { return }
+                        if task.done {
+                            // Un-completing a done task is rarely intentional from
+                            // the detail circle — confirm before reversing.
+                            showUncompleteConfirmation = true
+                            return
+                        }
                         didAct = true
                         WKInterfaceDevice.current().play(.success)
                         connectivity.toggleTaskCompletion(task.id)
@@ -109,6 +116,15 @@ struct WatchTaskDetailView: View {
                 didAct = true
                 WKInterfaceDevice.current().play(.click)
                 connectivity.deleteTask(task.id)
+                dismiss()
+            }
+        }
+        .confirmationDialog("Mark incomplete?", isPresented: $showUncompleteConfirmation) {
+            Button("Mark incomplete", role: .destructive) {
+                guard !didAct else { return }
+                didAct = true
+                WKInterfaceDevice.current().play(.click)
+                connectivity.toggleTaskCompletion(task.id)
                 dismiss()
             }
         }

@@ -87,10 +87,25 @@ struct HomeView: View {
 
     private enum HomeStage { case day0, normal }
 
+    /// Once the user has reached `.normal`, record it in UserDefaults so
+    /// the screen never regresses to the Start-Here experience. Prior
+    /// behavior: deleting the last completed task with no check-ins yet
+    /// collapsed the whole Hero/Balance/Insight stack back to day-0 —
+    /// jarring for anyone who'd already explored the app.
+    @AppStorage("home.hasReachedNormalStage") private var hasReachedNormalStage: Bool = false
+
     private var homeStage: HomeStage {
+        if hasReachedNormalStage { return .normal }
         let hasCheckIn = !allCheckIns.isEmpty
         let hasCompletedTask = allTasks.contains { $0.done }
-        return (hasCheckIn || hasCompletedTask) ? .normal : .day0
+        if hasCheckIn || hasCompletedTask {
+            // One-time flip — future body evals see the flag and skip this
+            // computation. We don't un-set on deletion, so the user stays
+            // in normal stage once they've activated.
+            Task { @MainActor in hasReachedNormalStage = true }
+            return .normal
+        }
+        return .day0
     }
 
     // MARK: - Check-in State
@@ -138,7 +153,12 @@ struct HomeView: View {
     }
 
     private var overdueTasks: [TaskItem] {
-        allTasks.filter { $0.date < startOfToday && !$0.done }
+        // Cap the overdue lookback at 30 days so calendar-imported users
+        // don't land on Home with a 50-row pile of years-old incomplete
+        // events. Tasks older than the window are still in Schedule; they
+        // just stop screaming for attention on Home.
+        let cutoff = Calendar.current.safeDate(byAdding: .day, value: -30, to: startOfToday)
+        return allTasks.filter { $0.date < startOfToday && $0.date >= cutoff && !$0.done }
             .sorted { $0.priority.sortOrder < $1.priority.sortOrder }
     }
 
@@ -879,13 +899,19 @@ struct HomeView: View {
             // one bandHeight above the overlay top regardless of where the
             // tap came from, keeping the visible portion at 85–95% of the
             // flight duration on every device.
-            let target: CGPoint
-            if let measured = self.dimensionBarCenters[dimension], measured != .zero {
-                target = measured
-            } else {
-                target = CGPoint(x: source.x, y: -140)
+            // If the Balance bar isn't laid out (card collapsed, hidden,
+            // or measured at zero) skip the particle flight entirely and
+            // fall back to `pulseInPlace`. The previous synthetic
+            // `(source.x, -140)` target animated off-screen, which meant
+            // the user paid 700ms of animation cost for a visual they
+            // couldn't see. The collapsed-flash border — which we ALSO
+            // fire via the bus bridge — is the authoritative signal when
+            // the bar isn't visible.
+            guard let measured = self.dimensionBarCenters[dimension], measured != .zero else {
+                self.particleAnimator.pulseInPlace(dimension: dimension)
+                return
             }
-            self.particleAnimator.fire(dimension: dimension, from: source, to: target)
+            self.particleAnimator.fire(dimension: dimension, from: source, to: measured)
         }
     }
 
@@ -1005,11 +1031,24 @@ struct HomeView: View {
         min(1, Double(todayCheckInCount) / 4.0)
     }
 
-    /// Blended day-percentage shown in the ring center. Counts tasks and
-    /// check-ins together toward a single "how much of today did I do"
-    /// fraction.
+    /// Blended day-percentage shown in the ring center.
+    ///
+    /// When the user has NO tasks scheduled today (totalTodayCount == 0),
+    /// the check-ins become the sole signal — completing all 4 check-ins
+    /// should read as "100% done" rather than "4 of 4+0 = bucket division
+    /// by a fake +4 task-count that's really counting check-ins." Previously
+    /// a user with 0 tasks and 4 check-ins read as 100% (correct) but a
+    /// user with 0 tasks and 0 check-ins at 6 AM read as 0% of a 4-unit
+    /// bucket they hadn't scheduled — a misleading "you've done nothing
+    /// today" when they haven't had breakfast yet.
     private var dayCompletionFraction: Double {
-        let totalUnits = totalTodayCount + 4
+        // Task side contributes when tasks exist; check-in side always
+        // weighs the 4 slots. Sum only the units the user actually signed
+        // up for. If nothing's scheduled AND no check-ins yet, fraction
+        // is 0 but the ring UI shows it as "ready for today" copy upstream.
+        let taskUnits = max(0, totalTodayCount)
+        let checkInUnits = 4
+        let totalUnits = taskUnits + checkInUnits
         guard totalUnits > 0 else { return 0 }
         let doneUnits = completedTodayCount + todayCheckInCount
         return min(1.0, Double(doneUnits) / Double(totalUnits))

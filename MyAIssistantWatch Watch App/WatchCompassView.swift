@@ -33,7 +33,12 @@ struct WatchCompassView: View {
             .padding(.bottom, 8)
         }
         .containerBackground(for: .navigation) {
-            timeOfDayGradient
+            // Refresh the gradient when we cross an hour boundary so the
+            // palette actually reflects the current time if the view stays
+            // on screen past e.g. dusk → night.
+            TimelineView(.everyMinute) { context in
+                gradient(for: context.date)
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             WatchAIPill {
@@ -257,8 +262,8 @@ struct WatchCompassView: View {
 
     // MARK: - Background Gradient
 
-    private var timeOfDayGradient: some View {
-        let hour = Calendar.current.component(.hour, from: Date())
+    private func gradient(for date: Date) -> LinearGradient {
+        let hour = Calendar.current.component(.hour, from: date)
         let colors: [Color] = {
             switch hour {
             case 5..<8:   return [Color(red: 0.95, green: 0.6, blue: 0.3),  Color(red: 0.15, green: 0.1, blue: 0.2)]   // dawn

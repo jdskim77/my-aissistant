@@ -10,11 +10,21 @@ actor APIClient {
     private var lastRefill: Date
 
     init(
-        session: URLSession = .shared,
+        session: URLSession? = nil,
         bucketSize: Int = 5,
         refillInterval: TimeInterval = 10
     ) {
-        self.session = session
+        // Use a dedicated session with explicit timeouts for AI traffic.
+        // URLSession.shared defaults to 60s request / 7d resource which can
+        // leave a slow LLM request hanging long past when the user has given
+        // up. These values fit streaming-completion latency for Claude.
+        self.session = session ?? {
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 60
+            config.timeoutIntervalForResource = 120
+            config.waitsForConnectivity = false
+            return URLSession(configuration: config)
+        }()
         self.bucketSize = bucketSize
         self.refillInterval = refillInterval
         self.tokens = bucketSize

@@ -23,6 +23,7 @@ struct ScheduleView: View {
 
     // Quick-add
     @State private var quickAddText = ""
+    @FocusState private var quickAddFocused: Bool
     @State private var quickAddExpanded = false
     @State private var newDate = Date()
     @State private var newPriority: TaskPriority = .medium
@@ -742,7 +743,22 @@ struct ScheduleView: View {
                                 .stroke(AppColors.border, lineWidth: 1)
                         )
                         .submitLabel(.done)
+                        .focused($quickAddFocused)
                         .onSubmit { submitQuickAdd() }
+                        .toolbar {
+                            // Explicit Done button on the keyboard toolbar —
+                            // without this, users who start typing then decide
+                            // not to submit have no way to dismiss the keyboard
+                            // short of tapping a scroll area.
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                if quickAddFocused {
+                                    Button("Done") { quickAddFocused = false }
+                                        .font(AppFonts.bodyMedium(15))
+                                        .foregroundColor(AppColors.accent)
+                                }
+                            }
+                        }
 
                     Button {
                         submitQuickAdd()

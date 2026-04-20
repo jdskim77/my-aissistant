@@ -24,10 +24,22 @@ struct NextCheckInProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<NextCheckInEntry>) -> Void) {
         let now = Date()
         let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: now)
+        let currentMinutes =
+            calendar.component(.hour, from: now) * 60 +
+            calendar.component(.minute, from: now)
 
-        let (slot, greeting, nextHour) = nextCheckIn(hour: hour)
-        var nextDate = calendar.date(bySetting: .hour, value: nextHour, of: now) ?? now
+        // Read user-configured check-in windows from the App Group.
+        // Falls back to 8/13/18/22 defaults only if the main app hasn't
+        // written its preference yet.
+        let windows = enabledWindows()
+        let (slot, greeting, nextHour, nextMinute) = nextCheckIn(
+            currentMinutes: currentMinutes,
+            windows: windows
+        )
+
+        var nextDate = calendar.date(
+            bySettingHour: nextHour, minute: nextMinute, second: 0, of: now
+        ) ?? now
         if nextDate <= now {
             nextDate = calendar.date(byAdding: .day, value: 1, to: nextDate) ?? now
         }
@@ -39,13 +51,50 @@ struct NextCheckInProvider: TimelineProvider {
         completion(timeline)
     }
 
-    private func nextCheckIn(hour: Int) -> (slot: String, greeting: String, nextHour: Int) {
-        if hour < 8 { return ("Morning", "Good morning!", 8) }
-        if hour < 13 { return ("Midday", "How's your morning going?", 13) }
-        if hour < 18 { return ("Afternoon", "Afternoon check-in", 18) }
-        if hour < 22 { return ("Night", "Evening reflection", 22) }
-        return ("Morning", "Good morning!", 8) // Tomorrow
+    /// Read user-configured check-in windows from App Group UserDefaults
+    /// (written by the main app's CheckInBehaviorEngine). Falls back to
+    /// hardcoded defaults if nothing is stored yet.
+    private func enabledWindows() -> [WidgetCheckInWindow] {
+        let defaults = UserDefaults(suiteName: "group.com.myaissistant.shared")
+        if let data = defaults?.data(forKey: "enabledCheckInWindows"),
+           let decoded = try? JSONDecoder().decode([WidgetCheckInWindow].self, from: data) {
+            return decoded
+        }
+        return [
+            WidgetCheckInWindow(name: "Morning", hour: 8, minute: 0, greeting: "Good morning!"),
+            WidgetCheckInWindow(name: "Midday", hour: 13, minute: 0, greeting: "How's your morning going?"),
+            WidgetCheckInWindow(name: "Afternoon", hour: 18, minute: 0, greeting: "Afternoon check-in"),
+            WidgetCheckInWindow(name: "Night", hour: 22, minute: 0, greeting: "Evening reflection"),
+        ]
     }
+
+    private func nextCheckIn(
+        currentMinutes: Int,
+        windows: [WidgetCheckInWindow]
+    ) -> (slot: String, greeting: String, nextHour: Int, nextMinute: Int) {
+        let sorted = windows.sorted { $0.hour * 60 + $0.minute < $1.hour * 60 + $1.minute }
+        for window in sorted {
+            let windowMinutes = window.hour * 60 + window.minute
+            if currentMinutes < windowMinutes {
+                return (window.name, window.greeting, window.hour, window.minute)
+            }
+        }
+        if let first = sorted.first {
+            return (first.name, first.greeting, first.hour, first.minute)
+        }
+        return ("Morning", "Good morning!", 8, 0)
+    }
+}
+
+// Codable shape used to ferry the user's check-in windows from the main
+// app through the App Group into the widget process. Mirrors the in-repo
+// `MyAIssistant/Models/WidgetCheckInWindow.swift` struct — kept in both
+// targets because the widget extension can't import main-app models.
+struct WidgetCheckInWindow: Codable {
+    let name: String
+    let hour: Int
+    let minute: Int
+    let greeting: String
 }
 
 // MARK: - Widget View

@@ -61,15 +61,17 @@ struct OnboardingCompleteView: View {
             .opacity(appeared ? 1 : 0)
         }
         .background(AppColors.background.ignoresSafeArea())
-        .onAppear {
+        .task {
+            // `.task` auto-cancels on disappear — unlike the previous
+            // DispatchQueue.main.asyncAfter(0.3) which kept running if
+            // the user dismissed mid-delay and fired confetti into a
+            // view that was already gone.
             withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                 appeared = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                withAnimation {
-                    showConfetti = true
-                }
-            }
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            withAnimation { showConfetti = true }
         }
     }
 
