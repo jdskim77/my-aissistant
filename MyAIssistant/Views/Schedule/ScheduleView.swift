@@ -29,6 +29,11 @@ struct ScheduleView: View {
     @State private var newPriority: TaskPriority = .medium
     @State private var newRecurrence: TaskRecurrence = .none
 
+    /// Completed-items disclosure — collapsed by default so a user with a
+    /// morning routine of checked-off habits/tasks doesn't see half their
+    /// Schedule screen cross-hatched. Reclaims ~50pt per row × 3+ rows.
+    @State private var showCompleted = false
+
     private let calendar = Calendar.current
 
     // MARK: - Computed
@@ -98,6 +103,19 @@ struct ScheduleView: View {
         return items.sorted { $0.sortMinutes < $1.sortMinutes }
     }
 
+    /// Items still to do today — displayed in the main chronological flow.
+    private var pendingTimelineItems: [TimelineItem] {
+        timelineItems.filter { !$0.isCompleted(today: Date()) }
+    }
+
+    /// Items already checked off — grouped into a collapsible disclosure at
+    /// the top of the list to recover vertical space. Only shown when there
+    /// are completions; non-today views skip the grouping so the habit-less
+    /// historical layout reads the same as before.
+    private var completedTimelineItems: [TimelineItem] {
+        timelineItems.filter { $0.isCompleted(today: Date()) }
+    }
+
     /// Minutes since midnight for "Up Next" calculation
     private var currentMinutes: Int {
         let now = Date()
@@ -163,8 +181,19 @@ struct ScheduleView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(timelineItems) { item in
-                            timelineRow(item: item, isFirst: item.id == timelineItems.first?.id)
+                        // Completed disclosure — collapsed by default. Only
+                        // renders when there's at least one completion so the
+                        // header doesn't show as "0 done" filler.
+                        if !completedTimelineItems.isEmpty {
+                            completedDisclosure
+                        }
+
+                        // Pending timeline — the main focus of the screen.
+                        // First-item rule is re-scoped to pending items so
+                        // "UP NEXT" anchors on the first remaining commitment
+                        // rather than the first absolute-chronological item.
+                        ForEach(pendingTimelineItems) { item in
+                            timelineRow(item: item, isFirst: item.id == pendingTimelineItems.first?.id)
                         }
                     }
                     .padding(.bottom, 100) // space for quick-add bar
@@ -334,10 +363,62 @@ struct ScheduleView: View {
     }
 
     private func isFirstFutureItem(_ item: TimelineItem) -> Bool {
-        guard let firstFuture = timelineItems.first(where: { $0.sortMinutes > currentMinutes }) else {
+        // "Up Next" anchors on the first incomplete future item — using
+        // `timelineItems` (which includes completed) would point the marker
+        // at something already crossed off.
+        guard let firstFuture = pendingTimelineItems.first(where: { $0.sortMinutes > currentMinutes }) else {
             return false
         }
         return firstFuture.sortMinutes == item.sortMinutes
+    }
+
+    // MARK: - Completed disclosure
+    //
+    // Tap the header to reveal the checked-off rows; uncheck leaves the
+    // disclosure open so the user can keep undoing mistakes without the
+    // list snapping shut underneath them.
+
+    private var completedDisclosure: some View {
+        VStack(spacing: 0) {
+            Button {
+                Haptics.light()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    showCompleted.toggle()
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.completionGreen)
+                    Text("\(completedTimelineItems.count) done")
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textSecondary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                        .rotationEffect(.degrees(showCompleted ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(completedTimelineItems.count) completed items")
+            .accessibilityValue(showCompleted ? "Expanded" : "Collapsed")
+            .accessibilityHint("Double tap to \(showCompleted ? "collapse" : "expand")")
+
+            if showCompleted {
+                ForEach(completedTimelineItems) { item in
+                    timelineRow(item: item, isFirst: false)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            Divider()
+                .padding(.horizontal, 16)
+                .padding(.top, showCompleted ? 4 : 0)
+        }
     }
 
     private var upNextMarker: some View {
@@ -364,10 +445,13 @@ struct ScheduleView: View {
         let minute = calendar.component(.minute, from: task.date)
         let hasTime = hour != 0 || minute != 0
 
-        return HStack(alignment: .top, spacing: 12) {
-            // Time column
-            VStack {
-                if hasTime {
+        return HStack(alignment: .top, spacing: 10) {
+            // Time column — collapses to 0pt width for timeless tasks so
+            // habits / untimed tasks don't leave a 48pt empty gutter on the
+            // left. When present it still right-aligns to preserve the
+            // clean "time | bar | content" grid for timed items.
+            if hasTime {
+                VStack {
                     Text(task.date.formatted(as: "h:mm"))
                         .font(AppFonts.mono(13))
                         .foregroundColor(AppColors.textMuted)
@@ -375,14 +459,17 @@ struct ScheduleView: View {
                         .font(AppFonts.caption(11))
                         .foregroundColor(AppColors.textMuted)
                 }
+                .frame(width: 48, alignment: .trailing)
             }
-            .frame(width: 48, alignment: .trailing)
 
-            // Color bar (calendar events get accent, tasks get priority color)
+            // Color bar (calendar events get accent, tasks get priority color).
+            // Shortened from minHeight 44 → 28 so stacked rows don't create a
+            // chunky visual "spine"; full content height is governed by the
+            // row's own padding, not the bar.
             RoundedRectangle(cornerRadius: 2)
                 .fill(isCalendarEvent ? AppColors.skyBlue : AppColors.checkboxColor(task.priority))
-                .frame(width: 4)
-                .frame(minHeight: 44)
+                .frame(width: 3)
+                .frame(minHeight: 28)
 
             // Content
             VStack(alignment: .leading, spacing: 4) {
@@ -507,12 +594,14 @@ struct ScheduleView: View {
         let color = habit.effectiveColor
         let hasTime = habit.reminderHour != nil
 
-        return HStack(alignment: .top, spacing: 12) {
-            // Time column
-            VStack {
-                if hasTime, let h = habit.reminderHour {
-                    let displayHour = h == 0 ? 12 : (h > 12 ? h - 12 : h)
-                    let minute = habit.reminderMinute ?? 0
+        return HStack(alignment: .top, spacing: 10) {
+            // Time column — collapsed for timeless habits so the content
+            // edge stays flush with the row padding instead of floating
+            // 60pt to the right behind an empty gutter.
+            if hasTime, let h = habit.reminderHour {
+                let displayHour = h == 0 ? 12 : (h > 12 ? h - 12 : h)
+                let minute = habit.reminderMinute ?? 0
+                VStack {
                     Text(String(format: "%d:%02d", displayHour, minute))
                         .font(AppFonts.mono(13))
                         .foregroundColor(AppColors.textMuted)
@@ -520,14 +609,16 @@ struct ScheduleView: View {
                         .font(AppFonts.caption(11))
                         .foregroundColor(AppColors.textMuted)
                 }
+                .frame(width: 48, alignment: .trailing)
             }
-            .frame(width: 48, alignment: .trailing)
 
-            // Color bar (habit's own color)
+            // Color bar (habit's own color). Matches taskTimelineRow's
+            // compacted dimensions (3×28) so task and habit rows share the
+            // same vertical rhythm.
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
-                .frame(width: 4)
-                .frame(minHeight: 44)
+                .frame(width: 3)
+                .frame(minHeight: 28)
 
             // Content
             VStack(alignment: .leading, spacing: 4) {
@@ -610,7 +701,7 @@ struct ScheduleView: View {
     // MARK: - Check-in Row
 
     private func checkInTimelineRow(_ slot: CheckInTime) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             // Time column
             VStack {
                 Text(String(format: "%d:00", slot.hour > 12 ? slot.hour - 12 : slot.hour))
@@ -622,10 +713,11 @@ struct ScheduleView: View {
             }
             .frame(width: 48, alignment: .trailing)
 
-            // Color bar
+            // Color bar — matches task/habit row compaction for a uniform
+            // vertical rhythm across all three row types.
             RoundedRectangle(cornerRadius: 2)
                 .fill(AppColors.accentWarm.opacity(0.5))
-                .frame(width: 4, height: 44)
+                .frame(width: 3, height: 28)
 
             // Content
             Button {
@@ -925,6 +1017,17 @@ private enum TimelineItem: Identifiable {
         case .task(_, let m): return m
         case .checkIn(_, let m): return m
         case .habit(_, let m): return m
+        }
+    }
+
+    /// Whether the item should collapse into the "done today" disclosure.
+    /// Check-ins stay in the flow (they disappear on their own once complete
+    /// via CheckInTime slot filtering, so we never mark them completed here).
+    func isCompleted(today: Date) -> Bool {
+        switch self {
+        case .task(let t, _): return t.done
+        case .habit(let h, _): return h.isCompletedOn(Calendar.current.startOfDay(for: today))
+        case .checkIn: return false
         }
     }
 }

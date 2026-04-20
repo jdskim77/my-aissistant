@@ -219,10 +219,15 @@ final class BalanceManager {
 
     /// Target effort points per dimension per day. Defaults to
     /// `personalTarget() / 5` (weekdays-only pacing so rest days don't
-    /// feel like falling behind). Minimum 1 so the bar is always divisible.
+    /// feel like falling behind), floored at 4 pts so a single moderate
+    /// task (2 pts) or habit completion (2 pts) reads as partial progress
+    /// (~50%) rather than instant-100%. With the prior floor of 1, the
+    /// default 10-pt weekly target produced a 2-pt daily target and any
+    /// single completion maxed the bar in one tap — defeating the whole
+    /// "fill across the day" narrative the card is selling.
     func dailyTarget(for dim: LifeDimension) -> Double {
         let weekly = personalTarget(for: dim)
-        return Double(max(1, Int((Double(weekly) / 5.0).rounded())))
+        return Double(max(4, Int((Double(weekly) / 5.0).rounded())))
     }
 
     /// Normalized today's fill for a dimension, 0.0–1.0+. Values >1.0 mean
@@ -255,8 +260,9 @@ final class BalanceManager {
     }
 
     /// Shared point-sum helper used by `todayPoints` and `yesterdayTickValue`.
-    /// Fetches tasks completed in [start, end), sums effort per scored dim
-    /// with multi-dim tasks split evenly. Excludes unscored (practical) dims.
+    /// Aggregates both task and habit completions in [start, end), summing
+    /// effort per scored dim with multi-dim contributions split evenly.
+    /// Excludes unscored (practical) dims.
     private func pointsInWindow(start: Date, end: Date) -> [LifeDimension: Double] {
         // Fetch by done-flag in SQL, then range-filter completedAt in Swift.
         // `#Predicate` can't express an optional Date comparison without
@@ -279,6 +285,41 @@ final class BalanceManager {
             let split = Double(task.effort.points) / Double(scored.count)
             for dim in scored {
                 points[dim, default: 0] += split
+            }
+        }
+
+        // Habits contribute `HabitManager.habitEffortPoints` per completion,
+        // split across scored dims. Without this, toggling a habit pulsed
+        // the bus (particle flash) but never raised the bar height — the
+        // bar reads today's fill from this helper.
+        //
+        // Habit completions are stored as `yyyy-MM-dd` day keys, so we match
+        // by calendar day rather than timestamp: the session day starts at
+        // 4 AM but a habit key for "today" parses to 00:00, which would
+        // otherwise be excluded by a strict `date >= start` check.
+        let habitDescriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil }
+        )
+        let habits = (try? modelContext.fetch(habitDescriptor)) ?? []
+        let cal = Calendar.current
+        let df = Self.habitDateKeyFormatter
+        var dayKeys: Set<String> = []
+        var cursor = cal.startOfDay(for: start)
+        while cursor < end {
+            dayKeys.insert(df.string(from: cursor))
+            guard let next = cal.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        for habit in habits {
+            let scored = habit.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            let overlap = habit.completionDates.intersection(dayKeys)
+            guard !overlap.isEmpty else { continue }
+            let split = Double(HabitManager.habitEffortPoints) / Double(scored.count)
+            for _ in overlap {
+                for dim in scored {
+                    points[dim, default: 0] += split
+                }
             }
         }
         return points

@@ -296,13 +296,18 @@ struct HomeView: View {
                     todayFill[dim] = bm.todayFill(for: dim)
                     yesterdayTick[dim] = bm.yesterdayTickValue(for: dim)
                 }
+                // Representative daily target for the caption — scored dims
+                // share the same default; if the user later customizes per-dim
+                // targets we'd display the median or per-dim labels.
+                let targetDim = LifeDimension.scored.first ?? .physical
                 return HomeBalanceSnapshot(
                     scores: bm.weeklyScores(),
                     harmony: bm.harmonyScore(),
                     stage: bm.harmonyStage(),
                     hasData: bm.hasRealData(),
                     todayFill: todayFill,
-                    yesterdayTick: yesterdayTick
+                    yesterdayTick: yesterdayTick,
+                    dailyTarget: Int(bm.dailyTarget(for: targetDim))
                 )
             }()
 
@@ -360,6 +365,7 @@ struct HomeView: View {
                         BalancePulseCard(
                             todayFill: snapshot.todayFill,
                             yesterdayTick: snapshot.yesterdayTick,
+                            dailyTarget: snapshot.dailyTarget,
                             harmonyScore: snapshot.harmony,
                             stage: snapshot.stage,
                             hasData: snapshot.hasData,
@@ -1782,6 +1788,7 @@ struct HomeView: View {
         let hasData: Bool
         let todayFill: [LifeDimension: Double]
         let yesterdayTick: [LifeDimension: Double?]
+        let dailyTarget: Int
 
         static let empty = HomeBalanceSnapshot(
             scores: [:],
@@ -1789,7 +1796,8 @@ struct HomeView: View {
             stage: .resting,
             hasData: false,
             todayFill: [:],
-            yesterdayTick: [:]
+            yesterdayTick: [:],
+            dailyTarget: 4
         )
     }
 

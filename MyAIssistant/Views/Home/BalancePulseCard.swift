@@ -25,6 +25,10 @@ struct BalancePulseCard: View {
     /// had no activity in the past 7 days (tick is hidden). Sourced from
     /// `BalanceManager.yesterdayTickValue(for:)`.
     let yesterdayTick: [LifeDimension: Double?]
+    /// Representative daily target (points) to display under the bars.
+    /// Sourced from `BalanceManager.dailyTarget(for:)`; defaults to 4 when
+    /// the host doesn't supply one so the caption stays readable.
+    var dailyTarget: Int = 4
     /// Display score (30–100, V3-floored). Driven by `BalanceManager.harmonyScore()`.
     let harmonyScore: Int
     /// Current stage derived from the display score. Supplies label + color
@@ -374,7 +378,7 @@ struct BalancePulseCard: View {
     // never tap a bar get the unit in 5 words without affecting the header.
 
     private var captionRow: some View {
-        Text("Today · target 2 pts each")
+        Text("Today · target \(dailyTarget) pts each")
             .font(AppFonts.caption(11))
             .foregroundColor(AppColors.textMuted)
             .accessibilityHidden(true)
