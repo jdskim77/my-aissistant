@@ -33,7 +33,14 @@ struct TaskCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var pulseColor: Color {
-        task.dimensions.primaryScored?.color ?? AppColors.completionGreen
+        // BUG-02 fix: prefer the primary SCORED dimension (so pulse colour
+        // matches the Balance bar that will move). Fall back to the task's
+        // first dimension — this covers all-practical tasks which would
+        // otherwise flash green (Body colour) and mislead the user into
+        // thinking they'd just fed Body. `completionGreen` is only the
+        // last-resort fallback for tasks with no dimensions at all.
+        (task.dimensions.primaryScored ?? task.dimensions.first)?.color
+            ?? AppColors.completionGreen
     }
 
     private var rowBaseColor: Color {

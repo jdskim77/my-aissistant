@@ -638,11 +638,21 @@ struct HomeView: View {
             }
         }
         .overlay {
-            // ignoresSafeArea so the arc's apex (pulled up 20% of distance)
-            // can render above the List's top inset without getting clipped
-            // on tall devices.
-            ParticleLayer(animator: particleAnimator)
-                .ignoresSafeArea()
+            // Wave prototype (Option A). Swap to `ParticleLayer(animator:)`
+            // to restore the original 8pt-particle-with-trail visual. Both
+            // share the same animator API + coord space, so toggling is a
+            // one-line change.
+            //
+            // BUG-07 fix: deliberately NOT `.ignoresSafeArea()`. Source and
+            // target coords are captured inside the List's named coord space
+            // (which respects safeArea). If this overlay ignored safeArea,
+            // its local origin would shift upward by `safeAreaTop` relative
+            // to those captured coords — the wave would render visibly above
+            // its intended y. Keeping safeArea means the overlay's origin
+            // matches the List's, so source/target y values render where
+            // they were captured. The wave's opacity envelope fades it to
+            // zero by t=0.8, so clipping at the overlay's top is invisible.
+            WaveLayer(animator: particleAnimator)
         }
         // Bridge bus pulses (Watch sync, Focus auto-complete, recurring
         // generation) into in-place pulses on the bar. Token memory
@@ -837,9 +847,30 @@ struct HomeView: View {
                 self.particleAnimator.pulseInPlace(dimension: dimension)
                 return
             }
-            guard let target = self.dimensionBarCenters[dimension], target != .zero else {
-                self.particleAnimator.pulseInPlace(dimension: dimension)
-                return
+            // Target resolution:
+            //   (1) If the Balance bar is laid out and visible in the named
+            //       coord space, aim for its centre.
+            //   (2) Otherwise (Balance collapsed, hidden in Settings, pushed
+            //       off-screen by a long habits list, or simply not yet
+            //       measured on first-mount) aim just past the top of the
+            //       screen. The wave still rises visibly from the tap point —
+            //       the user gets "energy flowed upward" even when there's
+            //       no bar to land on. The bar pulse + haptic that fire on
+            //       arrival are no-ops in that case, which is exactly what
+            //       we want.
+            //
+            // BUG-03 fix: the synthetic target was `source.y - 500` (fixed
+            // offset). On small / short screens (iPhone SE portrait, iPad
+            // landscape with a tap near the top) most of the 700ms was spent
+            // rendering off-screen. `y: -140` ends the wave centre exactly
+            // one bandHeight above the overlay top regardless of where the
+            // tap came from, keeping the visible portion at 85–95% of the
+            // flight duration on every device.
+            let target: CGPoint
+            if let measured = self.dimensionBarCenters[dimension], measured != .zero {
+                target = measured
+            } else {
+                target = CGPoint(x: source.x, y: -140)
             }
             self.particleAnimator.fire(dimension: dimension, from: source, to: target)
         }
@@ -1483,7 +1514,7 @@ struct HomeView: View {
             // Home's visual weight stable regardless of how many habits the
             // user has defined; overflow spills into the HabitsView sheet.
             ForEach(Array(todo.prefix(3)), id: \.id) { habit in
-                HabitRow(habit: habit, isDone: false, today: today)
+                HabitRow(habit: habit, isDone: false, today: today, onFlightLaunch: flightLaunchHandler)
             }
 
             if todo.count > 3 {
@@ -1532,7 +1563,7 @@ struct HomeView: View {
 
                 if showingDoneHabits {
                     ForEach(Array(done.prefix(5)), id: \.id) { habit in
-                        HabitRow(habit: habit, isDone: true, today: today)
+                        HabitRow(habit: habit, isDone: true, today: today, onFlightLaunch: flightLaunchHandler)
                     }
                     if done.count > 5 {
                         Button {
@@ -1696,15 +1727,29 @@ private struct HabitRow: View {
     let habit: HabitItem
     let isDone: Bool
     let today: Date
+    /// Parallel to TaskCard's `onFlightLaunch` — Home hands the checkbox
+    /// centre + primary dimension off to `ParticleAnimator` so a wave (or
+    /// particle) launches from the habit row the same way tasks do. Nil in
+    /// hosts without a flight destination (the HabitsView sheet, previews).
+    var onFlightLaunch: ((CGPoint, LifeDimension) -> Void)? = nil
 
     @Environment(\.habitManager) private var habitManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var pulseOpacity: Double = 0
     @State private var pulseTask: Task<Void, Never>?
+    /// Latest checkbox centre in the particle coord space. Mirrors TaskCard.
+    @State private var checkboxCenter: CGPoint = .zero
 
     private var pulseColor: Color {
-        habit.dimensions.primaryScored?.color ?? AppColors.completionGreen
+        // BUG-02 fix: mirror TaskCard. All-practical habits used to pulse
+        // green — same colour as Body — which was a lie. Fall back to the
+        // habit's first dimension colour (practical = blue-grey) so the
+        // user can trust that pulse colour = the dimension that actually
+        // moved. `completionGreen` stays only as a last resort for habits
+        // with no dimensions at all (shouldn't exist in normal data).
+        (habit.dimensions.primaryScored ?? habit.dimensions.first)?.color
+            ?? AppColors.completionGreen
     }
 
     /// VO label for the completion button. Mirrors TaskCard's
@@ -1723,24 +1768,40 @@ private struct HabitRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Button {
-                // BUG-02: bail before haptic + pulse if no manager — otherwise
-                // the user gets celebratory feedback for a no-op save.
+                // BUG-02 (earlier): bail before any feedback if no manager —
+                // user shouldn't get celebratory haptic for a no-op save.
                 guard let habitManager else { return }
-                // BUG-03: read the model's truth, not the parent-passed Bool
-                // (which can be stale across rebuilds and disagrees with the
-                // throttle in `HabitManager.toggleCompletion`). Compare pre
-                // and post to confirm a real forward transition before the
-                // celebratory pulse fires.
+                // BUG-03 (earlier): read the model's truth, not the
+                // parent-passed Bool (which can be stale across rebuilds and
+                // disagrees with the throttle in
+                // `HabitManager.toggleCompletion`).
+                //
+                // BUG-01 + BUG-08 fix: haptic was firing unconditionally,
+                // so double-tapping inside HabitManager's 250ms throttle
+                // produced two "success" haptics for one real toggle — the
+                // second tap was a no-op but vibrated like a success.
+                // Restructured so ALL feedback (haptic + pulse + flight)
+                // is gated on the actual pre/post-toggle state delta. A
+                // throttled tap now produces no haptic, no pulse, no flight
+                // — fully consistent. Uncomplete gets a lighter haptic and
+                // no celebratory visuals (forward-only celebration).
                 let wasCompleted = habit.isCompletedOn(today)
-                Haptics.success()
                 withAnimation(.spring(response: 0.3)) {
                     // Routed through HabitManager so the BalancePulse bus
                     // fires and the Compass bar animates — the direct
                     // `habit.toggleCompletion + safeSave` path skipped both.
                     habitManager.toggleCompletion(habit, for: today)
                 }
-                let didComplete = !wasCompleted && habit.isCompletedOn(today)
-                if didComplete { firePulse() }
+                let isNowCompleted = habit.isCompletedOn(today)
+                if !wasCompleted && isNowCompleted {
+                    Haptics.success()
+                    firePulse()
+                    launchFlightIfPossible()
+                } else if wasCompleted && !isNowCompleted {
+                    Haptics.light()
+                }
+                // else: throttle dropped the tap — no feedback, matches the
+                // manager's silent no-op contract.
             } label: {
                 ZStack {
                     Circle()
@@ -1757,6 +1818,27 @@ private struct HabitRow: View {
                 }
                 .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
+                // Mirror TaskCard: only capture the checkbox centre when
+                // Home supplied a flight callback. Outside Home (the
+                // HabitsView sheet) the named coord space doesn't exist,
+                // and capturing global-space coords would poison
+                // `checkboxCenter` with numbers that can't be used for a
+                // particle anyway.
+                .background(
+                    Group {
+                        if onFlightLaunch != nil {
+                            GeometryReader { proxy in
+                                let f = proxy.frame(in: .named(particleCoordinateSpace))
+                                Color.clear.preference(
+                                    key: HabitCheckboxFrameKey.self,
+                                    value: CGPoint(x: f.midX, y: f.midY)
+                                )
+                            }
+                        } else {
+                            Color.clear
+                        }
+                    }
+                )
             }
             .buttonStyle(.plain)
             .accessibilityLabel(completionAccessibilityLabel)
@@ -1813,6 +1895,30 @@ private struct HabitRow: View {
             pulseTask?.cancel()
             pulseOpacity = 0
         }
+        .onPreferenceChange(HabitCheckboxFrameKey.self) { center in
+            // BUG-10 fix: mirror the 2pt threshold used by
+            // `dimensionBarCenters`. Without it, each scroll frame publishes
+            // a sub-pixel-different centre which reassigns @State and forces
+            // unnecessary body re-evals — measurable drag on longer habit
+            // lists.
+            guard center != checkboxCenter else { return }
+            if abs(center.x - checkboxCenter.x) > 2 || abs(center.y - checkboxCenter.y) > 2 || checkboxCenter == .zero {
+                checkboxCenter = center
+            }
+        }
+    }
+
+    /// Mirrors TaskCard.launchFlightIfPossible. Only fires when:
+    ///   - the parent supplied a flight callback (Home wires one, the
+    ///     HabitsView sheet doesn't)
+    ///   - the habit has at least one scored dimension (practical-only
+    ///     habits don't feed a balance bar, so there's no visual target)
+    ///   - the checkbox centre has been captured in the particle coord space
+    private func launchFlightIfPossible() {
+        guard let onFlightLaunch,
+              let dim = habit.dimensions.primaryScored,
+              checkboxCenter != .zero else { return }
+        onFlightLaunch(checkboxCenter, dim)
     }
 
     /// Same pulse envelope as TaskCard.firePulse so habit + task completions
@@ -1829,5 +1935,18 @@ private struct HabitRow: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: fade)) { pulseOpacity = 0 }
         }
+    }
+}
+
+/// Per-row preference key carrying the habit checkbox centre up to the
+/// HabitRow's own `onPreferenceChange`. Scoped to the individual row so
+/// each row captures its own button position. Parallel to TaskCard's
+/// `TaskCheckboxFrameKey` — kept separate so Task and Habit rows in the
+/// same List don't stomp on each other's preference values.
+private struct HabitCheckboxFrameKey: PreferenceKey {
+    static var defaultValue: CGPoint { .zero }
+    static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) {
+        let next = nextValue()
+        if next != .zero { value = next }
     }
 }

@@ -42,7 +42,11 @@ final class ParticleAnimator {
 
     // MARK: Spec tunables
 
-    private let particleDuration: TimeInterval = 0.450
+    /// Flight duration — sourced from the file-level `flightDuration` so the
+    /// animator's landing scheduler and the visual layer (`Wave` / `Particle`)
+    /// can't desync. Bumped from 0.45s (particle-era) to 0.70s for the
+    /// calmer wave visual — landing haptic + bar pulse fire after this window.
+    private let particleDuration: TimeInterval = flightDuration
     private let launchInterval: TimeInterval = 0.120
     private let maxInFlight = 4
     /// How long after a tap-driven fire we ignore an equivalent bus event
@@ -124,11 +128,21 @@ final class ParticleAnimator {
     /// Cancel all pending landing Tasks + clear inFlight + queue. Call from
     /// HomeView's `.onDisappear` so a particle in flight when the user
     /// switches tabs doesn't fire haptic + pulseRequest from the background.
+    ///
+    /// BUG-11 fix: also reset the `lastTapFire` / `lastLaunchTime` /
+    /// `lastHapticTime` ledgers. Without this, a user who taps Home once
+    /// then immediately switches tabs carries a 0.6s `busSuppressionWindow`
+    /// over the switch — a Watch-driven bus pulse for the same dimension
+    /// arriving seconds later gets silently dropped because `shouldHandleBusPulse`
+    /// still sees the old fire.
     func cancelAll() {
         pendingLandings.values.forEach { $0.cancel() }
         pendingLandings.removeAll()
         inFlight.removeAll()
         queue.removeAll()
+        lastTapFire.removeAll()
+        lastLaunchTime = .distantPast
+        lastHapticTime = .distantPast
         processing = false
     }
 
@@ -316,3 +330,134 @@ struct DimensionBarPositionKey: PreferenceKey {
 /// Coordinate space name — both bar centers and TaskCard checkbox
 /// positions resolve into this space so particle math is consistent.
 let particleCoordinateSpace = "iOSParticleCoord"
+
+/// Single source of truth for flight duration. The animator's landing
+/// scheduler (`ParticleAnimator.particleDuration`) and the visual layer
+/// (`Wave.duration`) both reference this so haptic + bar pulse fire as the
+/// visual arrives. Changing this one value re-tunes the whole system.
+let flightDuration: TimeInterval = 0.700
+
+// MARK: - Wave view (Option A — soft color band rising from tap to bar)
+//
+// Drop-in alternative to `Particle` / `ParticleLayer`. Same animator API,
+// same coord space, same source+target semantics. Only the visual changes:
+// a full-width, gaussian-edged horizontal band of the dimension colour
+// translates from the tap origin up to the Balance bar over `duration` ms.
+//
+// Why full-width rather than a narrow aimed band: four dimension bars sit
+// side by side at the top. A narrow band "aimed" at one bar reads as a
+// projectile (the thing we're moving AWAY from). A full-width band lets the
+// *colour* do the identification — pink wave → pink bar pulses. The landing
+// pulse (saturation + scale on the matching bar) names the specific
+// dimension precisely.
+//
+// Duration must match `ParticleAnimator.particleDuration` so the landing
+// scheduler fires haptic + bar pulse as the wave arrives.
+struct Wave: View {
+    let dimension: LifeDimension
+    let source: CGPoint
+    let target: CGPoint
+    let startTime: Date
+
+    /// Pulled from the file-level `flightDuration` so it can never desync
+    /// from `ParticleAnimator.particleDuration` — BUG-06 fix.
+    private let duration: TimeInterval = flightDuration
+    /// Band thickness. Small enough not to dominate the screen, big enough
+    /// to read as a swell rather than a line.
+    private let bandHeight: CGFloat = 140
+    /// Peak opacity at the band's centre-line. Intentionally low — waves
+    /// should whisper, not announce. Tuned down from 0.18 → 0.14 (BUG-09):
+    /// 3–4 overlapping waves used to accumulate to ~0.55 effective opacity
+    /// over list text during bulk completions; 0.14 caps the stack at ~0.45
+    /// while a single wave stays plenty visible.
+    private let maxOpacity: Double = 0.14
+    /// Soft edge blur. Sells "water" over "rectangle." Reduced 8 → 4pt
+    /// (BUG-04): blur is an off-screen render pass and cost scales with
+    /// radius² × area; 4pt is ~4× cheaper per-frame which matters when up
+    /// to 4 waves animate simultaneously.
+    private let blurRadius: CGFloat = 4
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let elapsed = context.date.timeIntervalSince(startTime)
+            let raw = max(0, min(1, elapsed / duration))
+            let t = easeInOut(raw)
+
+            // Vertical travel — source (tap) → target (bar). Y decreases on
+            // iOS when moving up the screen, so this works for both upward
+            // (tap below Balance card) and downward (unlikely but safe)
+            // trajectories.
+            let y = source.y + (target.y - source.y) * t
+
+            // Opacity envelope — quick fade-in (~15%), long hold, gentle
+            // fade-out (~20%) so the wave dissolves into the bar rather
+            // than slamming into it.
+            let alpha = opacityEnvelope(t: t)
+
+            GeometryReader { proxy in
+                Rectangle()
+                    .fill(
+                        // Gaussian-feathered top + bottom edges so the band
+                        // dissolves into the background instead of showing
+                        // two hard horizontal lines.
+                        LinearGradient(
+                            colors: [
+                                dimension.color.opacity(0),
+                                dimension.color.opacity(maxOpacity),
+                                dimension.color.opacity(0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    // Extend past the screen edges by just enough to hide
+                    // the blur's inward feather — BUG-04 fix. Was +40pt
+                    // (overkill: wasted ~32pt of off-screen fill per side).
+                    // `2 * blurRadius` is the minimum that keeps the feather
+                    // from biting into visible pixels.
+                    .frame(width: proxy.size.width + blurRadius * 2, height: bandHeight)
+                    .blur(radius: blurRadius)
+                    .opacity(alpha)
+                    .position(x: proxy.size.width / 2, y: y)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    /// Triangular-ish envelope — ramps in, holds, ramps out. Prevents the
+    /// "pop in" that a hard opacity=1 would cause at t=0 and the "slam" at
+    /// arrival when the wave meets the bar.
+    private func opacityEnvelope(t: Double) -> Double {
+        if t < 0.15 { return t / 0.15 }
+        if t > 0.80 { return max(0, (1.0 - t) / 0.20) }
+        return 1.0
+    }
+
+    private func easeInOut(_ t: Double) -> Double {
+        t < 0.5
+            ? 2 * t * t
+            : 1 - pow(-2 * t + 2, 2) / 2
+    }
+}
+
+/// Drop-in replacement for `ParticleLayer`. Reads the same `animator.inFlight`
+/// array — no API changes in `ParticleAnimator` — and renders each flight as
+/// a `Wave` instead of a `Particle`. Swap `ParticleLayer(animator:)` for
+/// `WaveLayer(animator:)` in HomeView to toggle.
+struct WaveLayer: View {
+    let animator: ParticleAnimator
+
+    var body: some View {
+        ZStack {
+            ForEach(animator.inFlight) { item in
+                Wave(
+                    dimension: item.dimension,
+                    source: item.source,
+                    target: item.target,
+                    startTime: item.startTime
+                )
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
