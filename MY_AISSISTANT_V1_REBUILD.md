@@ -4,6 +4,8 @@
 > **Platform:** iOS 17+ (SwiftUI, SwiftData)
 > **Bundle ID:** `com.myaissistant.app`
 > **No external dependencies.** No CocoaPods, SPM, or third-party libraries.
+>
+> **⚠️ This document is the V1 snapshot. The live code has evolved — read `MY_AISSISTANT_V1_REBUILD_ADDENDA.md` alongside this file for: the Compass feature (new tab replacing Patterns, full spec in `COMPASS_SPEC.md`), Habits, Focus Timer, 12-step onboarding (vs 5 here), and ~15 additional SwiftData models. When this doc and the addenda conflict, the addenda wins.**
 
 ---
 
