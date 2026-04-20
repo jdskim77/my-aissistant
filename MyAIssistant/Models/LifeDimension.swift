@@ -23,8 +23,8 @@ enum LifeDimension: String, CaseIterable, Codable, Identifiable {
 
     var icon: String {
         switch self {
-        case .physical:  return "figure.run"
-        case .mental:    return "brain.head.profile"
+        case .physical:  return "figure.walk"        // V3: clearer silhouette than figure.run
+        case .mental:    return "lightbulb.fill"     // V3: clearer than brain.head.profile at 18pt
         case .emotional: return "heart.fill"
         case .spiritual: return "sparkles"
         case .practical: return "wrench.and.screwdriver"
@@ -92,5 +92,68 @@ extension Array where Element == LifeDimension {
     /// the visual + the pulse always pick the same bar.
     var primaryScored: LifeDimension? {
         self.filter(\.isScored).min(by: { $0.sortOrder < $1.sortOrder })
+    }
+}
+
+// MARK: - Harmony Stage (V3)
+//
+// Display-score band → label + earth-tone color + coach copy. Drives the
+// BalancePulseCard header and is the ONLY way the UI should colorize the
+// harmony number — no more hand-tuned 40 / 70 red-orange-green thresholds.
+//
+// V3 uses the Growth metaphor (Resting → Growing → Flowing → Thriving →
+// Radiant) paired with low-saturation earth tones, replacing the alarm
+// palette so the lowest state still reads as "you're here, you're trying."
+
+enum HarmonyStage: String, CaseIterable {
+    case resting   // 30–44 — just showing up, recovery
+    case growing   // 45–59 — starting to land
+    case flowing   // 60–74 — in motion
+    case thriving  // 75–89 — steady and well
+    case radiant   // 90–100 — a rare strong week
+
+    /// Map a V3 display score (30–100) to its stage.
+    static func from(display: Int) -> HarmonyStage {
+        switch display {
+        case ...44:       return .resting
+        case 45...59:     return .growing
+        case 60...74:     return .flowing
+        case 75...89:     return .thriving
+        default:          return .radiant
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .resting:  return "Resting"
+        case .growing:  return "Growing"
+        case .flowing:  return "Flowing"
+        case .thriving: return "Thriving"
+        case .radiant:  return "Radiant"
+        }
+    }
+
+    /// Earth-tone palette. Cleared for contrast against cream + conflicts
+    /// with existing AppColors (streak flame, medium-priority gold).
+    var color: Color {
+        switch self {
+        case .resting:  return Color(hex: "B87878") // dusty rose
+        case .growing:  return Color(hex: "C89868") // sand
+        case .flowing:  return Color(hex: "5E8A88") // teal
+        case .thriving: return Color(hex: "6B8E72") // moss
+        case .radiant:  return Color(hex: "A8915A") // olive-gold
+        }
+    }
+
+    /// Short "next small step" framing used in coach copy. Never tells the
+    /// user they're *below* something — tells them where the next step leads.
+    var nextStepCopy: String {
+        switch self {
+        case .resting:  return "Every small tag counts."
+        case .growing:  return "Build the rhythm a little at a time."
+        case .flowing:  return "You've got momentum — keep it light."
+        case .thriving: return "Steady and whole."
+        case .radiant:  return "Every dimension got attention."
+        }
     }
 }

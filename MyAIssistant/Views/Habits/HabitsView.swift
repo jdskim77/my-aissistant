@@ -28,8 +28,11 @@ struct HabitsView: View {
         activeHabits.filter { !$0.isMissedOn(today) }
     }
 
+    /// Habits marked missed AND still scheduled for today. If a habit's
+    /// `targetDays` is edited after being marked missed, it should no longer
+    /// show a "missed today" badge on a day it's not scheduled for.
     private var missedTodayHabits: [HabitItem] {
-        activeHabits.filter { $0.isMissedOn(today) }
+        activeHabits.filter { $0.isMissedOn(today) && $0.targetDays.appliesTo(date: today) }
     }
 
     /// Last 7 days for the grid header
@@ -86,6 +89,25 @@ struct HabitsView: View {
             .sheet(item: $habitToEdit) { habit in
                 HabitFormView(mode: .edit(habit))
             }
+            // Pause the toast's auto-dismiss while an edit sheet is up (toast
+            // is hidden behind it) or while the user is on another tab —
+            // then reset a fresh 5 s window when they return, so the undo
+            // opportunity isn't lost to out-of-view time.
+            .onChange(of: habitToEdit) { _, newValue in
+                if newValue != nil {
+                    cancelUndoTimer()
+                } else if lastMissed != nil {
+                    startUndoTimer()
+                }
+            }
+            .onDisappear {
+                cancelUndoTimer()
+            }
+            .onAppear {
+                if lastMissed != nil, undoDismissTask == nil {
+                    startUndoTimer()
+                }
+            }
         }
     }
 
@@ -131,8 +153,11 @@ struct HabitsView: View {
                     .font(AppFonts.heading(18))
                     .foregroundColor(AppColors.textPrimary)
                 Spacer()
-                let done = activeHabits.filter { $0.isCompletedOn(today) }.count
-                Text("\(done)/\(activeHabits.count)")
+                // Denominator = habits scheduled for today (includes missed so
+                // the day's expected load stays honest); numerator = completed.
+                let applicableToday = activeHabits.filter { $0.targetDays.appliesTo(date: today) }
+                let done = applicableToday.filter { $0.isCompletedOn(today) }.count
+                Text("\(done)/\(applicableToday.count)")
                     .font(AppFonts.bodyMedium(14))
                     .foregroundColor(AppColors.textSecondary)
             }
@@ -141,16 +166,32 @@ struct HabitsView: View {
             ForEach(todayVisibleHabits) { habit in
                 let isDone = habit.isCompletedOn(today)
                 let appliesToday = habit.targetDays.appliesTo(date: today)
+                let canMiss = !isDone && appliesToday
                 SwipeToMissRow(
-                    enabled: !isDone && appliesToday,
+                    enabled: canMiss,
                     reduceMotion: reduceMotion,
                     onCommit: { commitMiss(habit) }
                 ) {
-                    habitRow(habit)
+                    habitRowWithActions(habit, canMiss: canMiss)
                 }
             }
         }
         .padding(.top, 8)
+    }
+
+    /// Wraps `habitRow` with a VoiceOver custom action so the swipe-to-miss
+    /// gesture has a non-gestural equivalent. Screen reader users get
+    /// "Mark as missed today" in the rotor actions list.
+    @ViewBuilder
+    private func habitRowWithActions(_ habit: HabitItem, canMiss: Bool) -> some View {
+        if canMiss {
+            habitRow(habit)
+                .accessibilityAction(named: Text("Mark as missed today")) {
+                    commitMiss(habit)
+                }
+        } else {
+            habitRow(habit)
+        }
     }
 
     private func habitRow(_ habit: HabitItem) -> some View {
@@ -160,9 +201,16 @@ struct HabitsView: View {
         return HStack(spacing: 14) {
             // Checkbox
             Button {
-                Haptics.success()
+                let wasDone = habit.isCompletedOn(today)
                 withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
                     habitManager?.toggleCompletion(habit, for: today)
+                }
+                // Only fire the haptic when the toggle actually mutated
+                // state. HabitManager throttles rapid taps (0.25 s window);
+                // without this guard a throttled tap still buzzed, lying
+                // about whether the tap landed.
+                if habit.isCompletedOn(today) != wasDone {
+                    Haptics.success()
                 }
             } label: {
                 ZStack {
@@ -230,6 +278,7 @@ struct HabitsView: View {
             }
             Button(role: .destructive) {
                 Haptics.medium()
+                dismissToastIfReferencing(habit.id)
                 habitManager?.archive(habit)
             } label: {
                 Label("Archive", systemImage: "archivebox")
@@ -238,7 +287,7 @@ struct HabitsView: View {
             Image(systemName: "ellipsis")
                 .font(AppFonts.body(14).weight(.medium))
                 .foregroundColor(AppColors.textMuted)
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel("More options for \(habit.title)")
@@ -337,7 +386,7 @@ struct HabitsView: View {
                 Image(systemName: "ellipsis")
                     .font(AppFonts.body(14).weight(.medium))
                     .foregroundColor(AppColors.textMuted)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel("More options for \(habit.title)")
@@ -346,6 +395,11 @@ struct HabitsView: View {
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(habit.title), missed today")
+        .accessibilityAction(named: Text("Unmark missed")) {
+            withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.22)) {
+                habitManager?.unmarkMissed(habit, for: today)
+            }
+        }
     }
 
     // MARK: - Miss / Undo flow
@@ -353,14 +407,30 @@ struct HabitsView: View {
     private struct LastMissed: Equatable {
         let habitID: String
         let title: String
+        /// The day the miss was committed for. Captured at commit time so
+        /// tapping Undo after a day-boundary crossing unmarks the correct
+        /// date rather than the current `today`.
+        let date: Date
     }
 
     private func commitMiss(_ habit: HabitItem) {
+        // Cancel the prior dismiss task BEFORE mutating state so its delayed
+        // `lastMissed = nil` can't clobber the new toast.
+        cancelUndoTimer()
+        let committedDate = today
         withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.25)) {
-            habitManager?.markMissed(habit, for: today)
-            lastMissed = LastMissed(habitID: habit.id, title: habit.title)
+            habitManager?.markMissed(habit, for: committedDate)
+            lastMissed = LastMissed(habitID: habit.id, title: habit.title, date: committedDate)
         }
-        undoDismissTask?.cancel()
+        startUndoTimer()
+    }
+
+    /// Start (or restart) the 5 s auto-dismiss timer for the undo toast.
+    /// Extracted so the timer can be paused while the user is on another
+    /// tab or in a modal sheet — without those pauses, the toast silently
+    /// expires out-of-view and the user loses the chance to undo.
+    private func startUndoTimer() {
+        cancelUndoTimer()
         undoDismissTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
             guard !Task.isCancelled else { return }
@@ -370,12 +440,32 @@ struct HabitsView: View {
         }
     }
 
-    private func undoLastMiss() {
-        guard let last = lastMissed,
-              let habit = habitManager?.findHabit(byID: last.habitID) else { return }
+    private func cancelUndoTimer() {
         undoDismissTask?.cancel()
+        undoDismissTask = nil
+    }
+
+    private func undoLastMiss() {
+        guard let last = lastMissed else { return }
+        cancelUndoTimer()
+        // Unmark the day the miss was committed on, not "today" — they can
+        // differ when the app was open across midnight. If the habit was
+        // archived or deleted meanwhile, the toast still dismisses so the
+        // Undo button isn't a silent no-op.
         withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.25)) {
-            habitManager?.unmarkMissed(habit, for: today)
+            if let habit = habitManager?.findHabit(byID: last.habitID) {
+                habitManager?.unmarkMissed(habit, for: last.date)
+            }
+            lastMissed = nil
+        }
+    }
+
+    /// Dismiss any undo toast that references the given habit. Called when a
+    /// habit is archived/deleted so Undo isn't left pointing at a gone target.
+    private func dismissToastIfReferencing(_ habitID: String) {
+        guard lastMissed?.habitID == habitID else { return }
+        cancelUndoTimer()
+        withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.2)) {
             lastMissed = nil
         }
     }
@@ -389,6 +479,8 @@ struct HabitsView: View {
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textPrimary)
                 .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(0)
             Spacer(minLength: 8)
             Button {
                 Haptics.light()
@@ -401,6 +493,10 @@ struct HabitsView: View {
                     .padding(.vertical, 6)
                     .contentShape(Rectangle())
             }
+            // Keep the Undo button at its natural width regardless of how
+            // long the habit title is — title truncates, Undo stays tappable.
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
             .accessibilityLabel("Undo marking \(last.title) as missed")
         }
         .padding(.horizontal, 14)
@@ -463,6 +559,7 @@ struct HabitsView: View {
                                 if missed { return "missed" }
                                 return "not completed"
                             }()
+                            let isToday = calendar.isDateInToday(date)
                             ZStack {
                                 if applies {
                                     RoundedRectangle(cornerRadius: 6)
@@ -482,9 +579,17 @@ struct HabitsView: View {
                                         .fill(AppColors.background)
                                         .frame(width: 24, height: 24)
                                 }
+                                // Today indicator: ring overlay so the current
+                                // day is identifiable regardless of whether
+                                // it's done, missed, pending, or off-day.
+                                if isToday {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(AppColors.accent, lineWidth: 1.5)
+                                        .frame(width: 24, height: 24)
+                                }
                             }
                             .frame(maxWidth: .infinity)
-                            .accessibilityLabel("\(dayName), \(stateLabel)")
+                            .accessibilityLabel("\(dayName)\(isToday ? " (today)" : ""), \(stateLabel)")
                         }
                     }
                     .padding(.vertical, 6)

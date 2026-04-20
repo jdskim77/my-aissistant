@@ -89,21 +89,25 @@ final class HabitManager {
 
     /// Explicitly mark a habit as missed for a given day. Clears any prior
     /// completion for the same day (invariant enforced in the model) and
-    /// invalidates the Balance cache so a previously-scored completion is
-    /// removed from today's dimension scoring.
+    /// invalidates the Balance cache so today's consistency/data-weight
+    /// scoring reflects the explicit miss.
     func markMissed(_ habit: HabitItem, for date: Date) {
-        let wasCompleted = habit.isCompletedOn(date)
         habit.markMissed(for: date)
         modelContext.safeSave()
-        if wasCompleted, habit.dimensions.primaryScored != nil {
+        if habit.dimensions.primaryScored != nil {
             balanceManager?.invalidateCache()
         }
     }
 
     /// Clear the "missed" flag for a day, returning the habit to pending.
+    /// Invalidates Balance cache because the removal can restore `hasRealData`
+    /// semantics for scored dimensions.
     func unmarkMissed(_ habit: HabitItem, for date: Date) {
         habit.unmarkMissed(for: date)
         modelContext.safeSave()
+        if habit.dimensions.primaryScored != nil {
+            balanceManager?.invalidateCache()
+        }
     }
 
     // MARK: - Create / Update

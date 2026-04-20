@@ -235,13 +235,28 @@ struct HomeView: View {
             // older form did via separate `harmonyScore()` + `weeklyScores()`
             // calls. Skip the work entirely on day-0 since nothing in the
             // .day0 branch reads them.
-            let snapshot = (homeStage == .day0)
-                ? HomeBalanceSnapshot.empty
-                : HomeBalanceSnapshot(
-                    scores: balanceManager?.weeklyScores() ?? [:],
-                    harmony: balanceManager?.harmonyScore() ?? 50,
-                    hasData: balanceManager?.hasRealData() ?? false
+            // V3: per-dim today-fill + yesterday-tick memoized per body
+            // eval so the BalancePulseCard rendering doesn't re-query
+            // BalanceManager four times per frame during scroll.
+            let snapshot: HomeBalanceSnapshot = {
+                guard homeStage != .day0, let bm = balanceManager else {
+                    return HomeBalanceSnapshot.empty
+                }
+                var todayFill: [LifeDimension: Double] = [:]
+                var yesterdayTick: [LifeDimension: Double?] = [:]
+                for dim in LifeDimension.scored {
+                    todayFill[dim] = bm.todayFill(for: dim)
+                    yesterdayTick[dim] = bm.yesterdayTickValue(for: dim)
+                }
+                return HomeBalanceSnapshot(
+                    scores: bm.weeklyScores(),
+                    harmony: bm.harmonyScore(),
+                    stage: bm.harmonyStage(),
+                    hasData: bm.hasRealData(),
+                    todayFill: todayFill,
+                    yesterdayTick: yesterdayTick
                 )
+            }()
 
             if homeStage == .day0 {
                 // MARK: - Day 0: Start-Here card only
@@ -295,13 +310,11 @@ struct HomeView: View {
                 if showLifeBalance {
                     Section {
                         BalancePulseCard(
-                            scores: snapshot.scores,
+                            todayFill: snapshot.todayFill,
+                            yesterdayTick: snapshot.yesterdayTick,
                             harmonyScore: snapshot.harmony,
+                            stage: snapshot.stage,
                             hasData: snapshot.hasData,
-                            // Pulse signal now sourced from the particle
-                            // coordinator — fires on landing for tap-source
-                            // completions, or via `pulseInPlace` for off-tap
-                            // (Watch sync, Focus, Reduce Motion).
                             flightPulse: particleAnimator.pulseRequest,
                             tagline: showWisdom ? wisdomTagline(balanceScores: snapshot.scores) : nil,
                             onTapCompass: { selectedTab = .compass }
@@ -1689,9 +1702,19 @@ struct HomeView: View {
     private struct HomeBalanceSnapshot {
         let scores: [LifeDimension: Double]
         let harmony: Int
+        let stage: HarmonyStage
         let hasData: Bool
+        let todayFill: [LifeDimension: Double]
+        let yesterdayTick: [LifeDimension: Double?]
 
-        static let empty = HomeBalanceSnapshot(scores: [:], harmony: 50, hasData: false)
+        static let empty = HomeBalanceSnapshot(
+            scores: [:],
+            harmony: 30,
+            stage: .resting,
+            hasData: false,
+            todayFill: [:],
+            yesterdayTick: [:]
+        )
     }
 
     private func quickRescheduleButton(_ label: String, daysFromNow: Int, task: TaskItem) -> some View {

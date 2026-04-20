@@ -108,7 +108,8 @@ struct DataExportService {
                 var d: [String: Any] = [
                     "id": h.id, "title": h.title, "icon": h.icon,
                     "colorHex": h.colorHex, "createdAt": iso.string(from: h.createdAt),
-                    "targetDaysRaw": h.targetDaysRaw, "completionDatesRaw": h.completionDatesRaw
+                    "targetDaysRaw": h.targetDaysRaw, "completionDatesRaw": h.completionDatesRaw,
+                    "missedDatesRaw": h.missedDatesRaw
                 ]
                 if let a = h.archivedAt { d["archivedAt"] = iso.string(from: a) }
                 if let rh = h.reminderHour { d["reminderHour"] = rh }
@@ -430,6 +431,7 @@ struct DataExportService {
                 habit.id = id
                 habit.targetDaysRaw = dict["targetDaysRaw"] as? String ?? "daily"
                 habit.completionDatesRaw = dict["completionDatesRaw"] as? String ?? ""
+                habit.missedDatesRaw = dict["missedDatesRaw"] as? String ?? ""
                 if let createdStr = dict["createdAt"] as? String, let created = iso.date(from: createdStr) {
                     habit.createdAt = created
                 }

@@ -1,184 +1,120 @@
 import SwiftUI
 
-/// Compact Home-screen card showing the 4 scored life dimensions as mini progress
-/// bars + an overall harmony score. Tapping navigates to the Compass tab.
+/// Home-screen Life Balance card (V3) — "today's momentum" surface.
 ///
-/// This bridges Pillar 1 ("I did stuff") with Pillar 3 ("my life is better") by
-/// making balance visible on the highest-traffic screen in the app. When a
-/// dimension-tagged task is completed, the matching bar pulses (1.08× scale +
-/// saturation bump) — synchronized with the particle-flight landing per the
-/// shared iOS+watchOS animation spec.
+/// Each of the 4 scored dimensions has a vertical bar that fills with the
+/// day's tagged-task effort points (0 → 100% = daily target). A 2pt horizontal
+/// "tick" notch marks yesterday's same-dimension contribution so the user can
+/// see at a glance whether today is tracking above / below yesterday. The
+/// tick's visual weight ramps with time of day (whisper at 6 AM → clear at
+/// 8 PM) so a 0 bar in the morning never feels punishing.
+///
+/// Pillar alignment: Pillar 3 (whole-life balance) visualizes the four
+/// dimensions; Pillar 1 (daily ritual) gets reinforced by the four-tier
+/// deposit animation — every completion registers (Tier 1 elastic bump),
+/// crossing yesterday's tick is celebrated (Tier 2 shimmer), hitting daily
+/// target pulses (Tier 3 ring), each overflow compounds the glow (Tier 4).
 struct BalancePulseCard: View {
-    let scores: [LifeDimension: Double]
+
+    // MARK: - Data inputs
+
+    /// Today's fill per dimension on a 0.0–1.0+ scale (>1.0 = overflow).
+    /// Comes from `BalanceManager.todayFill(for:)`.
+    let todayFill: [LifeDimension: Double]
+    /// Yesterday's tick position per dimension (0.0–1.0), nil when the user
+    /// had no activity in the past 7 days (tick is hidden). Sourced from
+    /// `BalanceManager.yesterdayTickValue(for:)`.
+    let yesterdayTick: [LifeDimension: Double?]
+    /// Display score (30–100, V3-floored). Driven by `BalanceManager.harmonyScore()`.
     let harmonyScore: Int
-    /// Whether the user has real data this week. Passed in from HomeView so
-    /// the card doesn't have to rely on a score-value heuristic (which falsely
-    /// flagged genuine 5.0 scores as "no data").
+    /// Current stage derived from the display score. Supplies label + color
+    /// for the header and the leaf icon.
+    let stage: HarmonyStage
+    /// Whether the user has enough real data for a meaningful score.
+    /// When false the bars render as staggered breathing pulses and the
+    /// stage label is suppressed.
     var hasData: Bool
-    /// Pulse signal from `ParticleAnimator` — fires on particle
-    /// landing (tap-source completions) or in-place pulse (Reduce Motion,
-    /// overflow, off-tap completions like Watch sync). Token-keyed so
-    /// rapid same-dimension pulses re-fire instead of collapsing.
+    /// Pulse signal from `ParticleAnimator` — fires when a particle lands.
+    /// Token-keyed so rapid same-dimension pulses re-fire instead of
+    /// collapsing. Drives the collapsed-state border flash.
     var flightPulse: ParticlePulseRequest? = nil
     /// Optional wisdom quote rendered as a small italic tagline below the
-    /// harmony row. Replaces the standalone Wisdom card on Home.
+    /// bars. Replaces the standalone Wisdom card on Home.
     var tagline: (text: String, author: String)? = nil
-    /// Optional callback to open the Compass tab. When non-nil, the expanded
-    /// card renders a footer "Open Compass" link. The whole-card tap toggles
-    /// collapse now, so this link is the sole in-card affordance for reaching
-    /// Compass — kept so returning users who relied on the old card-tap
-    /// shortcut aren't stranded.
+    /// Optional callback to open the Compass tab from the footer link.
     var onTapCompass: (() -> Void)? = nil
 
-    /// Persisted collapse state. Default expanded on first launch so the user
-    /// sees the full card until they choose to hide it — matches the Overdue
-    /// section's disclosure pattern.
+    // MARK: - Persisted state
+
+    /// Collapse state remembered across sessions. Expanded by default so
+    /// first-launch users see the whole card.
     @AppStorage("home.lifeBalance.expanded") private var isExpanded: Bool = true
 
-    // MARK: - Pulse state (per the shared iOS+watchOS animation spec)
-    //
-    // Spec: 1.08× scale over 120ms → return over 180ms (spring damping 0.7).
-    // Bar fill saturation bumps +15% during the same window. No glow halo,
-    // no floating "+N Body" label — those decorations were dropped when the
-    // particle became the celebratory element. The bar pulse is now just
-    // synchronized acknowledgment of the landing.
+    // MARK: - Pulse animation state (per-dimension)
 
-    @State private var activePulseDimension: LifeDimension?
-    @State private var pulseScale: CGFloat = 1.0
-    /// Cancel-prior-Task handle so a rapid second pulse doesn't get its
-    /// settle clobbered by the previous cleanup's reset.
-    @State private var pulseAnimationTask: Task<Void, Never>?
-    /// Token of the last pulse we actually animated. Used to ignore the
-    /// initial onChange fire when the view (re)appears with a pre-existing
-    /// pulse value — prevents re-playing the last completion's pulse every
-    /// time the user switches back to Home.
-    @State private var lastHandledToken: UUID?
+    /// Per-dim transient "crossed yesterday's tick" flag — drives the
+    /// shimmer sweep. Set on detection, cleared after the shimmer duration.
+    @State private var crossedDims: Set<LifeDimension> = []
+    /// Per-dim transient "just hit 100%" flag — drives the concentric ring
+    /// pulse. Set on detection, cleared after the ring animation.
+    @State private var goalHitDims: Set<LifeDimension> = []
+    /// Per-dim "elastic bump" pulse scale, set to 1.08 on fill change then
+    /// animated back to 1.0. One-shot; doesn't persist.
+    @State private var bumpScale: [LifeDimension: CGFloat] = [:]
+    /// Cached previous fill values so an `onChange` can detect crossing /
+    /// goal-hit transitions. Keyed by dim, initialized from `todayFill`
+    /// on first appear so a pre-populated state doesn't replay yesterday's
+    /// pulses on view (re)mount.
+    @State private var previousFills: [LifeDimension: Double] = [:]
 
     // MARK: - Collapsed-state border flash
-    //
-    // When the user has the card collapsed, the bar pulse is invisible — they
-    // get no signal that their completion moved their balance. A brief
-    // dimension-coloured border flash on the collapsed card closes the loop:
-    // "something changed; tap to see." The on-expand replay (further down)
-    // still plays the full bar pulse when they actually open the card, so this
-    // flash is purely a hint, not the feedback itself.
+
+    /// When the card is collapsed, the bar animations are invisible. The
+    /// card itself briefly flashes its border in the dimension's color so
+    /// the user still gets a "something happened" hint on completion.
     @State private var collapsedFlashOpacity: Double = 0
     @State private var collapsedFlashColor: Color = .clear
     @State private var collapsedFlashTask: Task<Void, Never>?
-    /// Tracked separately from `lastHandledToken` so the collapsed flash
-    /// doesn't suppress the on-expand bar pulse — that path checks
-    /// `lastHandledToken` only.
     @State private var lastCollapsedFlashToken: UUID?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    // MARK: - Computed
+    // MARK: - Derived
 
     private var sortedDimensions: [LifeDimension] {
         LifeDimension.scored.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// Time-of-day opacity for the yesterday tick. Whisper at 4 AM, full
+    /// at 8 PM. Formula: `0.15 + 0.40 · clamp((hour − 4) / 16, 0, 1)`.
+    /// Solves the "tick at top of bar at 10 AM feels like failure" problem
+    /// — morning users barely see the tick; evening users see it clearly.
+    private var tickOpacity: Double {
+        let hour = Double(Calendar.current.component(.hour, from: Date()))
+        let fraction = max(0, min(1, (hour - 4) / 16))
+        return 0.15 + 0.40 * fraction
     }
 
     // MARK: - Body
 
     var body: some View {
         VStack(spacing: 12) {
-            // Header — tap anywhere to toggle expand/collapse. Mirrors the
-            // Overdue section's disclosure pattern so the two cards behave
-            // the same way. The score stays inline with the title, chevron
-            // on the right rotates to indicate state.
-            Button {
-                Haptics.light()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                headerLabel
-            }
-            .buttonStyle(.plain)
-            // Combine the icon + label + chevron into one VoiceOver element
-            // and mark it as a section header with an expand/collapse value,
-            // so VO reads e.g. "Life balance, harmony 39 out of 100.
-            // Collapsed. Header. Double tap to expand."
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(hasData
-                ? "Life balance, harmony \(harmonyScore) out of 100"
-                : "Life balance, no data yet")
-            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
-            .accessibilityHint("Double tap to \(isExpanded ? "collapse" : "expand")")
-            .accessibilityAddTraits(.isHeader)
+            header
 
             if isExpanded {
                 if hasData {
-                    // Dimension bars — real data
-                    HStack(spacing: 10) {
-                        ForEach(sortedDimensions) { dim in
-                            dimensionBar(dim)
-                        }
-                    }
+                    bars
+                    captionRow
                 } else {
-                    // Empty state — no check-ins or tasks yet this week
-                    VStack(spacing: 8) {
-                        HStack(spacing: 10) {
-                            ForEach(sortedDimensions) { dim in
-                                emptyDimensionBar(dim)
-                            }
-                        }
-                        Text("Complete a check-in to see your balance")
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textMuted)
-                    }
+                    emptyBars
                 }
 
-                // Wisdom tagline (replaces the standalone Wisdom card on Home).
-                // Kept small and italic so it reads as a supporting line, not a
-                // competing content block.
                 if let tagline {
-                    Divider()
-                        .padding(.top, 2)
-                    HStack(alignment: .top, spacing: 8) {
-                        Rectangle()
-                            .fill(AppColors.accentWarm.opacity(0.6))
-                            .frame(width: 2)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\u{201C}\(tagline.text)\u{201D}")
-                                .font(AppFonts.body(12))
-                                .italic()
-                                .foregroundColor(AppColors.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .lineSpacing(1)
-                                .multilineTextAlignment(.leading)
-                            Text("\u{2014} \(tagline.author)")
-                                .font(AppFonts.caption(10))
-                                .foregroundColor(AppColors.textMuted)
-                                .tracking(0.2)
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Daily wisdom: \(tagline.text), by \(tagline.author)")
+                    taglineView(tagline)
                 }
 
-                // Compass footer link — restored as an explicit button so the
-                // old "tap-anywhere-to-open-Compass" shortcut isn't lost. The
-                // header tap now handles collapse, so this link takes over
-                // the nav role.
                 if let onTapCompass {
-                    Button {
-                        Haptics.light()
-                        onTapCompass()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Spacer()
-                            Text("Open Compass")
-                                .font(AppFonts.caption(12))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                        }
-                        .foregroundColor(AppColors.accent)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Open Compass tab")
+                    openCompassLink(onTapCompass)
                 }
             }
         }
@@ -192,11 +128,6 @@ struct BalancePulseCard: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(AppColors.accent.opacity(0.10), lineWidth: 1)
         )
-        // Collapsed-state pulse hint. Stroke colour is dimension-specific so
-        // even the brief flash hints at *which* part of the user's balance
-        // moved — the same hue they'll see on the bar when they expand.
-        // BUG-07: explicitly animate the colour change so a 2nd pulse on a
-        // different dimension arriving mid-fade crossfades instead of popping.
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .stroke(collapsedFlashColor, lineWidth: 1.5)
@@ -205,90 +136,327 @@ struct BalancePulseCard: View {
                 .allowsHitTesting(false)
         )
         .onAppear {
-            // Record the pre-mount token so the first onChange fire doesn't
-            // re-animate the last pulse on view (re)appear.
-            lastHandledToken = flightPulse?.token
+            // Seed previousFills so the first onChange doesn't retroactively
+            // fire crossing/goal animations for data that was already there.
+            for dim in LifeDimension.scored {
+                previousFills[dim] = todayFill[dim] ?? 0
+            }
             lastCollapsedFlashToken = flightPulse?.token
         }
         .onChange(of: flightPulse?.token) { _, newToken in
-            handlePulseChange(newToken: newToken)
-        }
-        // Replay the latest pending pulse when the card expands. While
-        // collapsed, `handlePulseChange` returns early WITHOUT marking the
-        // token as handled, so the newest pulse can animate on expand —
-        // otherwise users who complete tasks with the card collapsed would
-        // get no feedback at all when they open it.
-        .onChange(of: isExpanded) { _, nowExpanded in
-            guard nowExpanded else { return }
-            collapsedFlashTask?.cancel()
-            withAnimation(.easeOut(duration: 0.15)) { collapsedFlashOpacity = 0 }
-            handlePulseChange(newToken: flightPulse?.token, fromExpand: true)
+            handleCollapsedFlash(newToken: newToken)
         }
     }
 
-    // MARK: - Pulse animation (spec)
+    // MARK: - Header
+
+    private var header: some View {
+        Button {
+            Haptics.light()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            headerLabel
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(hasData
+            ? "Life balance, \(stage.label) \(harmonyScore) out of 100"
+            : "Life balance, no data yet")
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .accessibilityHint("Double tap to \(isExpanded ? "collapse" : "expand")")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var headerLabel: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Image(systemName: "circle.grid.cross")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(hasData ? stage.color : AppColors.textMuted)
+                Text("LIFE BALANCE")
+                    .font(AppFonts.label(11))
+                    .tracking(0.8)
+                    .foregroundColor(AppColors.textMuted)
+                if hasData {
+                    Text("·")
+                        .font(AppFonts.label(11))
+                        .foregroundColor(AppColors.textMuted)
+                    Text(stage.label)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(stage.color)
+                    Text("\(harmonyScore)")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(stage.color)
+                        .monospacedDigit()
+                    Text("/100")
+                        .font(AppFonts.label(11))
+                        .foregroundColor(AppColors.textMuted)
+                }
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(AppColors.textMuted)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+        }
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Bars (with data)
+
+    private var bars: some View {
+        HStack(spacing: 10) {
+            ForEach(sortedDimensions) { dim in
+                dimensionBar(dim)
+            }
+        }
+    }
+
+    private func dimensionBar(_ dim: LifeDimension) -> some View {
+        let fillRaw = todayFill[dim] ?? 0
+        let fillClamped = max(0, min(1, fillRaw))
+        let overflow = fillRaw > 1.0
+        let overflowStacks = overflow ? min(5, Int(fillRaw - 1.0) + 1) : 0
+        let tickValue = yesterdayTick[dim] ?? nil
+        let aboveTick = tickValue.map { fillRaw > $0 && fillRaw > 0 } ?? false
+        let scale = bumpScale[dim] ?? 1.0
+        let isCrossed = crossedDims.contains(dim)
+        let isGoal = goalHitDims.contains(dim)
+
+        return VStack(spacing: 6) {
+            ZStack(alignment: .top) {
+                // Bar track + fill
+                ZStack(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(AppColors.border)
+                        .frame(width: 30, height: 54)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(dim.color)
+                        .frame(width: 30, height: max(3, 54 * fillClamped))
+                        .animation(.spring(response: 0.35, dampingFraction: 0.6), value: fillClamped)
+                    // Yesterday tick — opacity ramps with time of day
+                    if let tv = tickValue {
+                        Rectangle()
+                            .fill(AppColors.textMuted)
+                            .frame(width: 36, height: 2)
+                            .opacity(reduceMotion ? 0.55 : tickOpacity)
+                            .offset(y: -(CGFloat(tv) * 54) + 1)
+                            .allowsHitTesting(false)
+                    }
+                    // Crossing shimmer — 700ms, one-shot on detected crossing
+                    if isCrossed && !reduceMotion {
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0),
+                                Color.white.opacity(0.6),
+                                Color.white.opacity(0)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(width: 30, height: 54)
+                        .mask(RoundedRectangle(cornerRadius: 6).frame(width: 30, height: 54))
+                        .offset(y: isCrossed ? -54 : 0)
+                        .animation(.easeOut(duration: 0.7), value: isCrossed)
+                        .allowsHitTesting(false)
+                    }
+                }
+                .scaleEffect(scale, anchor: .bottom)
+                // Tier 4 glow — breathes when above tick; stronger + stacks on overflow
+                .shadow(
+                    color: aboveTick ? dim.color.opacity(0.5) : Color.clear,
+                    radius: aboveTick ? CGFloat(8 + overflowStacks * 2) : 0
+                )
+                // Tier 3 goal-hit concentric ring pulse
+                if isGoal && !reduceMotion {
+                    Circle()
+                        .stroke(dim.color, lineWidth: 2)
+                        .frame(width: 30, height: 30)
+                        .scaleEffect(isGoal ? 2.0 : 1.0)
+                        .opacity(isGoal ? 0 : 0.9)
+                        .animation(.easeOut(duration: 0.85), value: isGoal)
+                        .allowsHitTesting(false)
+                }
+                // Overflow "+" cap
+                if overflow {
+                    Text("+")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(dim.color)
+                        .offset(y: -8)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            Image(systemName: dim.icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(dim.color)
+            Text(dim.shortLabel)
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel(for: dim, fill: fillRaw, tick: tickValue))
+        .onChange(of: todayFill[dim] ?? 0) { _, newFill in
+            handleFillChange(dim: dim, newFill: newFill, tick: tickValue)
+        }
+    }
+
+    // MARK: - Empty bars (staggered breathing)
     //
-    // Per the shared iOS+watchOS contract:
-    //   • Scale: 1.08× over 120ms then back over 180ms (spring damping 0.7)
-    //   • Saturation +15% bump on the bar fill during the same window
-    //   • No glow halo, no floating "+N Body" label
+    // Each dimension pulses at a different phase (0 / 0.8 / 1.6 / 2.4s) so
+    // the empty state feels alive without being nervous. On cream background,
+    // phase-locked breathing across all four reads as dashboardy; the stagger
+    // softens that to an organic ambient rhythm.
 
-    private func handlePulseChange(newToken: UUID?, fromExpand: Bool = false) {
-        guard let pulse = flightPulse, let newToken, newToken != lastHandledToken else { return }
-
-        // When collapsed, defer the bar pulse but show a brief border flash
-        // in the dimension colour so the user gets a "something moved" hint
-        // without having to expand. lastHandledToken stays unset so the
-        // pulse animates when the card is opened.
-        guard isExpanded else {
-            if newToken != lastCollapsedFlashToken {
-                lastCollapsedFlashToken = newToken
-                triggerCollapsedFlash(color: pulse.dimension.color)
+    private var emptyBars: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                ForEach(Array(sortedDimensions.enumerated()), id: \.element) { idx, dim in
+                    emptyDimensionBar(dim, phaseIndex: idx)
+                }
             }
-            return
-        }
-
-        lastHandledToken = newToken
-
-        // Cancel any in-flight settle so a rapid second pulse doesn't get
-        // its state clobbered by the previous cleanup.
-        pulseAnimationTask?.cancel()
-        pulseScale = 1.0
-        activePulseDimension = pulse.dimension
-
-        if reduceMotion {
-            // Reduce Motion: skip the scale, keep the saturation bump as
-            // static color feedback. Same duration so the visible state
-            // matches the synchronized haptic timing.
-            pulseAnimationTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(300))
-                guard !Task.isCancelled, activePulseDimension == pulse.dimension else { return }
-                activePulseDimension = nil
-            }
-            return
-        }
-
-        // Phase 1: scale to 1.08× over 120ms (spring damping 0.7).
-        withAnimation(.spring(response: 0.12, dampingFraction: 0.7)) {
-            pulseScale = 1.08
-        }
-        // Phase 2: settle back over 180ms.
-        pulseAnimationTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(120))
-            guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.18, dampingFraction: 0.7)) {
-                pulseScale = 1.0
-            }
-            try? await Task.sleep(for: .milliseconds(220))
-            guard !Task.isCancelled, activePulseDimension == pulse.dimension else { return }
-            activePulseDimension = nil
+            Text("Fresh start. Tag a task to begin.")
+                .font(AppFonts.caption(12))
+                .foregroundColor(AppColors.textMuted)
         }
     }
 
-    /// Brief border glow when a pulse arrives while the card is collapsed.
-    /// ~800ms total — short enough to feel like a notification, not an
-    /// animation that demands action. Reduce Motion users get a slightly
-    /// longer fade with no perceived "bloom" curve, only opacity change.
+    private func emptyDimensionBar(_ dim: LifeDimension, phaseIndex: Int) -> some View {
+        VStack(spacing: 6) {
+            BreathingBar(color: dim.color, phaseIndex: phaseIndex)
+            Image(systemName: dim.icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(AppColors.textMuted)
+            Text(dim.shortLabel)
+                .font(AppFonts.caption(11))
+                .foregroundColor(AppColors.textMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Caption row (always visible under the bars)
+    //
+    // Resolves the "what is the bar measuring?" UX risk — silent users who
+    // never tap a bar get the unit in 5 words without affecting the header.
+
+    private var captionRow: some View {
+        Text("Today · target 2 pts each")
+            .font(AppFonts.caption(11))
+            .foregroundColor(AppColors.textMuted)
+            .accessibilityHidden(true)
+    }
+
+    // MARK: - Tagline (optional wisdom)
+
+    private func taglineView(_ t: (text: String, author: String)) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Divider().padding(.top, 2)
+            HStack(alignment: .top, spacing: 8) {
+                Rectangle()
+                    .fill(AppColors.accentWarm.opacity(0.6))
+                    .frame(width: 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\u{201C}\(t.text)\u{201D}")
+                        .font(AppFonts.body(12))
+                        .italic()
+                        .foregroundColor(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .lineSpacing(1)
+                        .multilineTextAlignment(.leading)
+                    Text("\u{2014} \(t.author)")
+                        .font(AppFonts.caption(10))
+                        .foregroundColor(AppColors.textMuted)
+                        .tracking(0.2)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Daily wisdom: \(t.text), by \(t.author)")
+        }
+    }
+
+    // MARK: - Open Compass footer link
+
+    private func openCompassLink(_ action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.light()
+            action()
+        } label: {
+            HStack(spacing: 4) {
+                Spacer()
+                Text("Open Compass")
+                    .font(AppFonts.caption(12))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundColor(AppColors.accent)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Compass tab")
+    }
+
+    // MARK: - Handlers
+
+    private func handleFillChange(dim: LifeDimension, newFill: Double, tick: Double?) {
+        let previous = previousFills[dim] ?? 0
+        previousFills[dim] = newFill
+
+        // No animation for decreases (uncompleting a task should not celebrate).
+        guard newFill > previous else { return }
+
+        // Tier 1 — elastic deposit bump. Always plays.
+        if !reduceMotion {
+            bumpScale[dim] = 1.08
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(180))
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
+                    bumpScale[dim] = 1.0
+                }
+            }
+        }
+
+        // Tier 2 — crossing yesterday's tick. Fires once per day per dim
+        // because previousFills persists within the session; once newFill
+        // has crossed tick, subsequent onChange calls have `previous >= tick`
+        // and this guard fails.
+        if let t = tick, previous < t, newFill >= t, !crossedDims.contains(dim) {
+            crossedDims.insert(dim)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(700))
+                crossedDims.remove(dim)
+            }
+        }
+
+        // Tier 3 — hit daily target (100%). Same one-time-per-day logic.
+        if previous < 1.0, newFill >= 1.0, !goalHitDims.contains(dim) {
+            goalHitDims.insert(dim)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(850))
+                goalHitDims.remove(dim)
+            }
+        }
+
+        // Tier 4 handled inline via the `aboveTick`/`overflow`/`overflowStacks`
+        // derivations in `dimensionBar(_:)` — no state bookkeeping needed.
+    }
+
+    private func handleCollapsedFlash(newToken: UUID?) {
+        guard let token = newToken,
+              token != lastCollapsedFlashToken,
+              let pulse = flightPulse else { return }
+        lastCollapsedFlashToken = token
+        guard !isExpanded else { return }
+        triggerCollapsedFlash(color: pulse.dimension.color)
+    }
+
     private func triggerCollapsedFlash(color: Color) {
         collapsedFlashTask?.cancel()
         collapsedFlashColor = color
@@ -302,7 +470,6 @@ struct BalancePulseCard: View {
             }
             return
         }
-
         withAnimation(.easeOut(duration: 0.15)) { collapsedFlashOpacity = 0.7 }
         collapsedFlashTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(300))
@@ -311,145 +478,52 @@ struct BalancePulseCard: View {
         }
     }
 
-    // MARK: - Header label
+    // MARK: - Accessibility helpers
 
-    /// Extracted to break up the Button label expression — with the nested
-    /// `if hasData` branch and five chained modifiers per Text, the inline
-    /// form tripped the Swift type-checker's "expression too complex" limit.
-    private var headerLabel: some View {
-        HStack {
-            HStack(spacing: 6) {
-                Image(systemName: "circle.grid.cross")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.accent)
-                Text("LIFE BALANCE")
-                    .font(AppFonts.label(11))
-                    .tracking(0.8)
-                    .foregroundColor(AppColors.textMuted)
-                if hasData {
-                    headerScore
-                }
+    private func accessibilityLabel(for dim: LifeDimension, fill: Double, tick: Double?) -> String {
+        let pct = Int((min(1, fill) * 100).rounded())
+        var s = "\(dim.shortLabel), \(pct) percent of today's target"
+        if fill > 1.0 {
+            s += ", exceeded"
+        }
+        if let t = tick {
+            let tPct = Int((t * 100).rounded())
+            s += ", yesterday \(tPct) percent"
+            if fill > t && fill > 0 {
+                s += ", beat yesterday"
             }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(AppColors.textMuted)
-                .rotationEffect(.degrees(isExpanded ? 90 : 0))
         }
-        .contentShape(Rectangle())
-    }
-
-    /// Inline "· 39/100" fragment shown next to the header title when the
-    /// user has real data. Split out so the parent `headerLabel` stays
-    /// shallow enough for the type-checker.
-    private var headerScore: some View {
-        HStack(spacing: 1) {
-            Text("·")
-                .font(AppFonts.label(11))
-                .foregroundColor(AppColors.textMuted)
-                .padding(.trailing, 2)
-            Text("\(harmonyScore)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundColor(harmonyColor)
-                .monospacedDigit()
-            Text("/100")
-                .font(AppFonts.label(11))
-                .foregroundColor(AppColors.textMuted)
-        }
-    }
-
-    // MARK: - Dimension Bar (with data)
-
-    private func dimensionBar(_ dim: LifeDimension) -> some View {
-        let score = max(0, min(10, scores[dim] ?? 5.0))
-        let fraction = score / 10.0
-        let isPulsing = activePulseDimension == dim
-
-        return VStack(spacing: 6) {
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(AppColors.border)
-                    .frame(width: 28, height: 48)
-                    // Publishes this bar's center in the particle coord space
-                    // so ParticleAnimator.fire knows where to aim. Uses the
-                    // full bar center — not the filled portion's top — so
-                    // particles always land on the bar regardless of the
-                    // current score (fill height varies with score).
-                    .background(
-                        GeometryReader { proxy in
-                            let f = proxy.frame(in: .named(particleCoordinateSpace))
-                            Color.clear.preference(
-                                key: DimensionBarPositionKey.self,
-                                value: [dim: CGPoint(x: f.midX, y: f.midY)]
-                            )
-                        }
-                    )
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(dim.color)
-                    // Spec: saturation +15% bump during the pulse window.
-                    // Combined with the 1.08× scaleEffect below, this is the
-                    // entire landing-pulse signal — no glow halo, no label.
-                    .saturation(isPulsing ? 1.15 : 1.0)
-                    .frame(width: 28, height: max(4, 48 * fraction))
-                    .animation(.spring(response: 0.55, dampingFraction: 0.75), value: fraction)
-            }
-            .scaleEffect(isPulsing ? pulseScale : 1.0)
-
-            Image(systemName: dim.icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(dim.color)
-            Text(dim.shortLabel)
-                .font(AppFonts.caption(11))
-                .foregroundColor(AppColors.textMuted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityHidden(true)
-    }
-
-    // MARK: - Empty Dimension Bar (no data)
-
-    private func emptyDimensionBar(_ dim: LifeDimension) -> some View {
-        VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(AppColors.border)
-                .frame(width: 28, height: 48)
-                // Publish center even in the no-data branch — otherwise
-                // day-0 users who complete a tagged task before any
-                // check-ins exist get a silent in-place pulse instead
-                // of the celebratory particle flight.
-                .background(
-                    GeometryReader { proxy in
-                        let f = proxy.frame(in: .named(particleCoordinateSpace))
-                        Color.clear.preference(
-                            key: DimensionBarPositionKey.self,
-                            value: [dim: CGPoint(x: f.midX, y: f.midY)]
-                        )
-                    }
-                )
-            Image(systemName: dim.icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(AppColors.textMuted)
-            Text(dim.shortLabel)
-                .font(AppFonts.caption(11))
-                .foregroundColor(AppColors.textMuted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Helpers
-
-    private var harmonyColor: Color {
-        switch harmonyScore {
-        case 70...: return AppColors.completionGreen
-        case 40..<70: return AppColors.accentWarm
-        default: return AppColors.overdueRed
-        }
+        return s
     }
 }
 
-// LifeDimension helpers (shortLabel, sortOrder, primaryScored) moved to
+// MARK: - Breathing bar (empty-state pulse with staggered phase)
+
+private struct BreathingBar: View {
+    let color: Color
+    let phaseIndex: Int
+    @State private var pulse: Bool = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(color.opacity(pulse ? 0.32 : 0.18))
+            .frame(width: 30, height: 54)
+            .animation(
+                .easeInOut(duration: 2.8).repeatForever(autoreverses: true),
+                value: pulse
+            )
+            .onAppear {
+                // Stagger each dim's breathing phase by 800ms so the row
+                // reads as an organic rhythm rather than a synchronized
+                // pulse (which feels nervous on a cream background).
+                let delay = Double(phaseIndex) * 0.8
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(Int(delay * 1000)))
+                    pulse = true
+                }
+            }
+    }
+}
+
+// LifeDimension helpers (shortLabel, sortOrder, primaryScored) live in
 // LifeDimension.swift so they're visible in the Share Extension target too.

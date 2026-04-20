@@ -282,9 +282,12 @@ struct CompassView: View {
     // MARK: - Helpers
 
     private var balanceColor: Color {
-        if balanceScoreValue >= 7 { return AppColors.completionGreen }
-        if balanceScoreValue >= 4 { return AppColors.gold }
-        return AppColors.coral
+        // V3: use the HarmonyStage palette so Home and Compass render the
+        // same color for the same underlying score. The old 0–10 thresholds
+        // (7 → green, 4 → gold, else coral) used AppColors that conflicted
+        // with streak flame + priority gold; earth-tone stages are cleaner.
+        let display = Int((30.0 + 70.0 * pow(balanceScoreValue / 10.0, 0.75)).rounded())
+        return HarmonyStage.from(display: display).color
     }
 
     private func angleForIndex(_ index: Int, total: Int) -> Double {

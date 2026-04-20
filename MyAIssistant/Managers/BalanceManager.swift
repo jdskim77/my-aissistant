@@ -155,25 +155,129 @@ final class BalanceManager {
         return result
     }
 
-    /// Balance Score (0-10): penalizes imbalance via standard deviation.
-    /// A user with all 5s scores higher than one with 10, 10, 1, 1.
+    /// Balance Score (0-10): blend of arithmetic and geometric mean. The
+    /// geometric mean naturally rewards breadth (drops faster when any dim
+    /// is near zero), so no hand-tuned stdev penalty is needed.
+    /// V3: replaced `mean − 1.5·stdev` (which could collapse to near-zero
+    /// for legitimately-weak-in-one-area users) with this gentler blend.
     func balanceScore(for weekStart: Date? = nil) -> Double {
         let scores = weeklyScores(for: weekStart)
         let values = LifeDimension.scored.map { scores[$0] ?? 0 }
-        guard !values.isEmpty else { return 5 }
+        guard !values.isEmpty else { return 0 }
 
         let mean = values.reduce(0, +) / Double(values.count)
-        guard mean > 0 else { return 0 }
+        // +0.1 prevents a single zero dim from zeroing the entire product.
+        let product = values.reduce(1.0) { $0 * ($1 + 0.1) }
+        let geom = pow(product, 1.0 / Double(values.count))
 
-        let variance = values.map { ($0 - mean) * ($0 - mean) }.reduce(0, +) / Double(values.count)
-        let stdev = sqrt(variance)
-
-        return max(0, min(10, mean - 1.5 * stdev))
+        return max(0, min(10, 0.7 * mean + 0.3 * geom))
     }
 
-    /// Harmony Score 0-100 (for display). Maps balance score to percentage.
+    /// Harmony Score (30-100, for display). Floor + gentle power curve so
+    /// users never see a punishingly-low number. At raw=0 the score is 30
+    /// ("you're here"); at raw=10 it's 100. The 0.75 exponent keeps quick
+    /// early gains while leaving Radiant (90+) genuinely earned.
+    /// V3: replaced linear raw×10 with `30 + 70·(raw/10)^0.75`.
     func harmonyScore(for weekStart: Date? = nil) -> Int {
-        Int(balanceScore(for: weekStart) * 10)
+        let raw = balanceScore(for: weekStart)
+        let display = 30.0 + 70.0 * pow(raw / 10.0, 0.75)
+        return Int(display.rounded())
+    }
+
+    /// The stage that corresponds to the current display score.
+    /// Used for color + label + coach copy on Home and Compass.
+    func harmonyStage(for weekStart: Date? = nil) -> HarmonyStage {
+        HarmonyStage.from(display: harmonyScore(for: weekStart))
+    }
+
+    // MARK: - V3 Today-Fill (Home momentum surface)
+
+    /// "Today" starts at 4 AM local so early-morning completions attach to
+    /// the same day the user was in the night before. Returns the most
+    /// recent 4 AM local at or before `now`.
+    /// Computed on-the-fly — no snapshot persistence. Travel across time
+    /// zones is handled naturally: "today" re-derives from device-local
+    /// calendar + current timezone on every call.
+    func sessionDayStart(_ now: Date = Date()) -> Date {
+        let cal = Calendar.current
+        guard let todayFourAM = cal.date(
+            bySettingHour: 4, minute: 0, second: 0, of: now
+        ) else { return cal.startOfDay(for: now) }
+        return now < todayFourAM
+            ? cal.date(byAdding: .day, value: -1, to: todayFourAM) ?? todayFourAM
+            : todayFourAM
+    }
+
+    /// Effort points this dim has accumulated since the most recent 4 AM.
+    /// Multi-dim tasks split their effort evenly across tagged scored dims
+    /// (matches activitySignal's split convention).
+    func todayPoints(for dim: LifeDimension) -> Double {
+        let start = sessionDayStart()
+        let end = Date()
+        return pointsInWindow(start: start, end: end)[dim] ?? 0
+    }
+
+    /// Target effort points per dimension per day. Defaults to
+    /// `personalTarget() / 5` (weekdays-only pacing so rest days don't
+    /// feel like falling behind). Minimum 1 so the bar is always divisible.
+    func dailyTarget(for dim: LifeDimension) -> Double {
+        let weekly = personalTarget(for: dim)
+        return Double(max(1, Int((Double(weekly) / 5.0).rounded())))
+    }
+
+    /// Normalized today's fill for a dimension, 0.0–1.0+. Values >1.0 mean
+    /// the user has exceeded the daily target; the card renders `+` and a
+    /// stacking glow for each extra completion.
+    func todayFill(for dim: LifeDimension) -> Double {
+        todayPoints(for: dim) / dailyTarget(for: dim)
+    }
+
+    /// Reference value for the "yesterday tick" notch on the bar. Returns
+    /// the most recent *active* day in the past 7 days (as a fraction of
+    /// daily target). Suppresses the tick (returns nil) when nothing in
+    /// the past week has activity — signals a "welcome back" empty state
+    /// instead of a visible-but-zero notch.
+    /// V3 rule: last-active-day-within-7, not literally yesterday. Keeps
+    /// the reference fresh without weeks-stale data inflating expectations.
+    func yesterdayTickValue(for dim: LifeDimension) -> Double? {
+        let cal = Calendar.current
+        let now = Date()
+        let todayStart = sessionDayStart(now)
+        for daysBack in 1...7 {
+            guard let dayStart = cal.date(byAdding: .day, value: -daysBack, to: todayStart),
+                  let dayEnd = cal.date(byAdding: .day, value: 1, to: dayStart) else { continue }
+            let points = pointsInWindow(start: dayStart, end: dayEnd)[dim] ?? 0
+            if points > 0 {
+                return points / dailyTarget(for: dim)
+            }
+        }
+        return nil
+    }
+
+    /// Shared point-sum helper used by `todayPoints` and `yesterdayTickValue`.
+    /// Fetches tasks completed in [start, end), sums effort per scored dim
+    /// with multi-dim tasks split evenly. Excludes unscored (practical) dims.
+    private func pointsInWindow(start: Date, end: Date) -> [LifeDimension: Double] {
+        let descriptor = FetchDescriptor<TaskItem>(
+            predicate: #Predicate { task in
+                task.completedAt != nil
+                    && task.completedAt! >= start
+                    && task.completedAt! < end
+                    && task.done == true
+            }
+        )
+        let tasks = (try? modelContext.fetch(descriptor)) ?? []
+        var points: [LifeDimension: Double] = [:]
+        for dim in LifeDimension.scored { points[dim] = 0 }
+        for task in tasks {
+            let scored = task.dimensions.filter(\.isScored)
+            guard !scored.isEmpty else { continue }
+            let split = Double(task.effort.points) / Double(scored.count)
+            for dim in scored {
+                points[dim, default: 0] += split
+            }
+        }
+        return points
     }
 
     // MARK: - Signal 1: Activity (Effort-Weighted)
@@ -912,12 +1016,18 @@ final class BalanceManager {
     func balanceSummaryForAI() -> String {
         let breakdowns = weeklyBreakdowns()
         let balance = balanceScore()
+        let display = harmonyScore()
+        let stage = harmonyStage()
         let points = thisWeekEffortPoints()
         let streak = balanceStreak()
         let seasonGoal = activeSeasonGoal()
 
         var lines: [String] = []
-        lines.append("Life Compass this week (Balance: \(String(format: "%.1f", balance))/10):")
+        // V3: send BOTH the raw 0–10 balance (for the model to reason about)
+        // AND the display score + stage (so AI messages match what the user
+        // sees in the UI — otherwise the model says "your balance is 5.2"
+        // while the UI shows "Thriving 77" and the two narratives contradict).
+        lines.append("Life Compass this week: UI shows \"\(stage.label) \(display)\" (display 30–100, floored + curved). Raw balance: \(String(format: "%.1f", balance))/10.")
 
         for dim in LifeDimension.scored {
             let bd = breakdowns[dim] ?? DimensionBreakdown(activity: 0, satisfaction: 5, consistency: 0)

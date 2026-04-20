@@ -40,26 +40,37 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
+/// V2: added `HabitItem.missedDatesRaw` (additive, default ""). Lightweight
+/// migration from V1 — SwiftData adds the column with its default on existing
+/// stores so no data is lost.
+enum SchemaV2: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 1, 0)
+
+    static var models: [any PersistentModel.Type] {
+        SchemaV1.models
+    }
+}
+
 /// Convenience for code that wants the current model list (e.g. the
 /// developer-tools "Wipe All Data" action). Always points at the latest
 /// schema version's models.
 enum AppSchema {
     static var allModels: [any PersistentModel.Type] {
-        SchemaV1.models
+        SchemaV2.models
     }
 }
 
 // MARK: - Migration Plan
 
-/// Empty migration plan for the v1.0 baseline. When SchemaV2 is introduced,
-/// add it to `schemas` and append a `MigrationStage.lightweight` (or `.custom`
-/// for renames/type changes) to `stages`.
+/// Migrations in order: V1 → V2 (lightweight for `missedDatesRaw` addition).
 enum AppMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
+        [SchemaV1.self, SchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [
+            .lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)
+        ]
     }
 }

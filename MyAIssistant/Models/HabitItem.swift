@@ -149,7 +149,14 @@ final class HabitItem {
     }
 
     func isMissedOn(_ date: Date) -> Bool {
-        missedDates.contains(dateKey(for: date))
+        let key = dateKey(for: date)
+        let missed = missedDates.contains(key)
+        // Defense-in-depth: if the mutually-exclusive invariant was violated
+        // (e.g. by a corrupted store or an external writer), treat the day as
+        // completed — completion is the more user-positive state — so the UI
+        // doesn't render contradictory "done + missed" markers.
+        if missed, completionDates.contains(key) { return false }
+        return missed
     }
 
     func markMissed(for date: Date) {

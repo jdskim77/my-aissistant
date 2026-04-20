@@ -44,10 +44,10 @@ struct MyAIssistantApp: App {
             UserDefaults.standard.set(true, forKey: voiceMigrationKey)
         }
 
-        // Use the versioned schema baseline. SchemaV1 is the v1.0 ship state;
-        // any future model change must add SchemaV2 + a MigrationStage in
-        // AppMigrationPlan.
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        // Use the latest versioned schema. Adding a new @Model property
+        // requires bumping this to SchemaV(n) + a MigrationStage in
+        // AppMigrationPlan; see SchemaVersioning.swift.
+        let schema = Schema(versionedSchema: SchemaV2.self)
         let container: ModelContainer
 
         // Attempt 1: CloudKit-synced store
