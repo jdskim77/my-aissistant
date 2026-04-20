@@ -209,6 +209,23 @@ extension WatchSyncManager: WCSessionDelegate {
         }
     }
 
+    /// Handle app-context pushes (latest-state, overwriting). Watch doesn't
+    /// push contexts today, but implementing this means a future Watch-side
+    /// updateApplicationContext won't vanish silently — it'll route through
+    /// the same message handlers below.
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        if let taskID = applicationContext["toggleTask"] as? String {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
+            }
+        }
+        if applicationContext["quickCheckIn"] as? Bool == true {
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: applicationContext)
+            }
+        }
+    }
+
     /// Handle queued messages sent via transferUserInfo (when iPhone wasn't reachable)
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         if let taskID = userInfo["toggleTask"] as? String {

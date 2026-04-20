@@ -38,6 +38,17 @@ final class WeatherManager {
 
     var isAuthorized: Bool { locationProvider.isAuthorized }
 
+    /// True when the user has actively denied or restricted location
+    /// permission. Used by Today's Context to swap the Enable-Location CTA
+    /// for an Open-Settings deep-link, since CLLocationManager won't
+    /// re-prompt after denial.
+    var isDenied: Bool {
+        switch locationProvider.authorizationStatus {
+        case .denied, .restricted: return true
+        default: return false
+        }
+    }
+
     /// Auto-refresh path used on Home appear — only fetches if authorized
     /// and the cache is stale. Never prompts for permission.
     func refreshIfAuthorizedAndStale() async {

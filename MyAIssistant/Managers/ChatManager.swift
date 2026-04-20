@@ -182,9 +182,15 @@ final class ChatManager {
                 habitSummary: buildHabitSummary()
             )
 
+            // Filter out app-generated error stubs before sending to the AI —
+            // those are shown inline for user continuity but were never
+            // actually said by the model, and echoing them back shapes the
+            // next response around a fake prior turn.
+            let cleanHistory = priorHistory.filter { !$0.isErrorStub }
+
             let aiResponse = try await provider.sendMessage(
                 userMessage: text,
-                conversationHistory: Array(priorHistory.suffix(10)),
+                conversationHistory: Array(cleanHistory.suffix(10)),
                 systemPromptStable: systemPromptStable,
                 systemPromptVolatile: systemPromptVolatile
             )
@@ -278,7 +284,8 @@ final class ChatManager {
             let msg = ChatMessage(
                 role: .assistant,
                 content: assistantContent,
-                conversationID: conversationID
+                conversationID: conversationID,
+                isErrorStub: true
             )
             modelContext.insert(msg)
             modelContext.safeSave()
@@ -415,18 +422,27 @@ final class ChatManager {
         let now = Date()
         let trimmed = alarm.timeString.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        var hour: Int?
-        var minute: Int?
+        var resolvedDate: Date?
 
-        // 1. Unambiguous: "HH:mm" or "h:mm a"
+        // 1. Unambiguous: "HH:mm" or "h:mm a". Today's occurrence if still
+        //    ahead, else tomorrow's.
         let unambiguousFormats = ["HH:mm", "H:mm", "h:mm a", "h:mma"]
         for format in unambiguousFormats {
             let f = DateFormatter()
             f.dateFormat = format
             f.locale = Locale(identifier: "en_US_POSIX")
             if let d = f.date(from: trimmed) {
-                hour = calendar.component(.hour, from: d)
-                minute = calendar.component(.minute, from: d)
+                let hour = calendar.component(.hour, from: d)
+                let minute = calendar.component(.minute, from: d)
+                var comps = calendar.dateComponents([.year, .month, .day], from: now)
+                comps.hour = hour
+                comps.minute = minute
+                comps.second = 0
+                if let same = calendar.date(from: comps) {
+                    resolvedDate = same > now
+                        ? same
+                        : calendar.date(byAdding: .day, value: 1, to: same)
+                }
                 break
             }
         }
@@ -434,7 +450,7 @@ final class ChatManager {
         // 2. Ambiguous fallback: bare "h:mm" or just "h". Pick the next future
         //    occurrence (today's AM if it's still ahead, today's PM if AM is
         //    past, otherwise tomorrow's AM).
-        if hour == nil {
+        if resolvedDate == nil {
             let f = DateFormatter()
             f.dateFormat = "h:mm"
             f.locale = Locale(identifier: "en_US_POSIX")
@@ -442,48 +458,29 @@ final class ChatManager {
                 let baseHour = calendar.component(.hour, from: d) // 1-12 mapped to 1-12
                 let baseMinute = calendar.component(.minute, from: d)
 
-                // Try AM today, PM today, AM tomorrow — pick the first that's still in the future.
+                // Try AM today, PM today, AM tomorrow — pick the first that's still > now + 60s.
                 let candidates: [(hour: Int, dayOffset: Int)] = [
-                    (baseHour, 0),         // AM today
-                    (baseHour + 12, 0),    // PM today
-                    (baseHour, 1),         // AM tomorrow
+                    (baseHour, 0),
+                    (baseHour + 12, 0),
+                    (baseHour, 1),
                 ]
                 for cand in candidates {
-                    var comps = calendar.dateComponents([.year, .month, .day], from: now)
-                    if cand.dayOffset > 0 {
-                        comps = calendar.dateComponents([.year, .month, .day], from: calendar.safeDate(byAdding: .day, value: cand.dayOffset, to: now))
-                    }
+                    let baseDate = cand.dayOffset > 0
+                        ? calendar.safeDate(byAdding: .day, value: cand.dayOffset, to: now)
+                        : now
+                    var comps = calendar.dateComponents([.year, .month, .day], from: baseDate)
                     comps.hour = cand.hour % 24
                     comps.minute = baseMinute
+                    comps.second = 0
                     if let candidate = calendar.date(from: comps), candidate > now.addingTimeInterval(60) {
-                        hour = cand.hour % 24
-                        minute = baseMinute
-                        var matched = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: candidate)
-                        matched.second = 0
-                        // Build the final alarmDate via the matched components below by setting hour/minute.
-                        // We re-enter the main path so the rest of the function stays a single shape.
+                        resolvedDate = candidate
                         break
                     }
                 }
             }
         }
 
-        guard let hour, let minute else { return false }
-
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
-
-        let alarmDate: Date
-        if let candidate = calendar.date(from: components), candidate > now {
-            alarmDate = candidate
-        } else {
-            // Already in the past today — schedule for tomorrow at the same wall-clock time.
-            alarmDate = calendar.date(from: components).flatMap {
-                calendar.date(byAdding: .day, value: 1, to: $0)
-            } ?? now
-        }
+        guard let alarmDate = resolvedDate else { return false }
 
         let entry = AlarmEntry(
             label: alarm.label,

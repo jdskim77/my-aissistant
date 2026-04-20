@@ -118,6 +118,7 @@ struct CheckInDetailView: View {
                 }
             }
             .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle("\(timeSlot.rawValue) Check-in")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -719,7 +720,9 @@ struct CheckInDetailView: View {
         // the greeting screen. After 6 seconds we fall back to the
         // hardcoded slot greeting and unblock the Continue button.
         // Whichever completes first (the real greeting or the timeout)
-        // flips isLoadingGreeting; the other becomes a no-op.
+        // flips isLoadingGreeting; the other becomes a no-op. The timeout
+        // task is always cancelled on exit (including any future error
+        // path from `generateGreeting`) so it can't leak past the view.
         Task {
             let timeoutTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(6))
@@ -727,6 +730,9 @@ struct CheckInDetailView: View {
                 aiGreeting = timeSlot.greeting
                 isLoadingGreeting = false
             }
+            // Cancel even if the body below throws — stops the fallback
+            // from jolting the user after a successful / explicit result.
+            defer { timeoutTask.cancel() }
 
             if let manager = checkInManager {
                 let greeting = await manager.generateGreeting(
@@ -752,7 +758,6 @@ struct CheckInDetailView: View {
                     isLoadingGreeting = false
                 }
             }
-            timeoutTask.cancel()
         }
     }
 

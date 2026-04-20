@@ -44,6 +44,18 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     var hasAttemptedSync = false
     private(set) var apiKey: String?
 
+    /// Slots the user checked in from the Watch that iPhone hasn't yet
+    /// echoed back as authoritative. Preserved across `applyIncoming` so an
+    /// iPhone payload that predates the offline check-in doesn't silently
+    /// erase it. Cleared per-slot as iPhone catches up.
+    private var pendingCheckIns: Set<String> = []
+
+    /// Safety net: if `activationDidCompleteWith` never fires (entitlement
+    /// misconfig, WC subsystem stuck), we'd spin on "Syncing…" forever. A
+    /// one-shot timer flips `hasAttemptedSync = true` so views fall back to
+    /// their offline state cleanly.
+    private var activationTimeoutTask: Task<Void, Never>?
+
     override init() {
         super.init()
         loadFromCache()
@@ -51,6 +63,11 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()
+            activationTimeoutTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(12))
+                guard let self, !self.hasAttemptedSync else { return }
+                self.hasAttemptedSync = true
+            }
         }
     }
 
@@ -95,6 +112,9 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         // yet) so the user gets visible feedback that their tap landed —
         // previously this dropped silently.
         guard let slot = message["timeSlot"] as? String else { return }
+        // Track the slot as pending so a subsequent iPhone sync with a
+        // newer timestamp but older check-in list won't quietly erase it.
+        pendingCheckIns.insert(slot)
         let base = scheduleData ?? WatchScheduleData(
             tasks: [], streakDays: 0, completedToday: 0, totalToday: 0,
             quoteText: nil, quoteAuthor: nil, nextCheckIn: nil, updatedAt: Date(),
@@ -269,12 +289,17 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
 
     private func extractAPIKey(from dict: [String: Any]) {
         guard let key = dict["apiKey"] as? String, !key.isEmpty else { return }
-        // Shape-validate before committing to Keychain. Anthropic keys
-        // start with "sk-ant-" and are long base64-ish. Rejecting
-        // obvious non-keys prevents a garbled/injected payload from
-        // silently overwriting the real key and breaking AI on Watch.
+        // Shape-validate before committing to Keychain. Historically we
+        // required an "sk-ant-" prefix, but that silently rejected legit
+        // keys with future prefixes (admin tokens, gateway keys) and left
+        // the user with no feedback about why Watch AI wasn't working.
+        // Loose validation: length + visible ASCII only. Enough to reject
+        // obvious garbage without locking out legitimate variants.
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.hasPrefix("sk-ant-"), trimmed.count >= 32 else { return }
+        guard trimmed.count >= 20,
+              trimmed.unicodeScalars.allSatisfy({ $0.value >= 0x21 && $0.value <= 0x7E }) else {
+            return
+        }
         // No-op if the key hasn't changed — avoids excess Keychain churn
         // every applicationContext delivery.
         guard trimmed != apiKey else { return }
@@ -345,7 +370,44 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             // have a fresh timestamp and win cleanly.
             return
         }
-        persistAndUpdate(incoming)
+        // Merge pending (offline-tapped) check-ins into the authoritative
+        // list so the user never sees their slot "disappear" after sync.
+        // Clear a pending slot once iPhone has echoed it back — then we
+        // trust iPhone as the source of truth.
+        let incomingSlots = Set(incoming.completedCheckIns ?? [])
+        pendingCheckIns.subtract(incomingSlots)
+        let merged: [String]?
+        if pendingCheckIns.isEmpty {
+            merged = incoming.completedCheckIns
+        } else {
+            var union = incomingSlots
+            union.formUnion(pendingCheckIns)
+            // Preserve iPhone's ordering, append any pending that aren't
+            // already present. Order matters for `nextCheckInAfter`.
+            var ordered = incoming.completedCheckIns ?? []
+            for slot in pendingCheckIns where !incomingSlots.contains(slot) {
+                ordered.append(slot)
+            }
+            merged = ordered
+        }
+        let reconciled = WatchScheduleData(
+            tasks: incoming.tasks,
+            streakDays: incoming.streakDays,
+            completedToday: incoming.completedToday,
+            totalToday: incoming.totalToday,
+            quoteText: incoming.quoteText,
+            quoteAuthor: incoming.quoteAuthor,
+            nextCheckIn: incoming.nextCheckIn,
+            updatedAt: incoming.updatedAt,
+            bodyScore: incoming.bodyScore,
+            mindScore: incoming.mindScore,
+            heartScore: incoming.heartScore,
+            spiritScore: incoming.spiritScore,
+            userName: incoming.userName,
+            aiInsight: incoming.aiInsight,
+            completedCheckIns: merged
+        )
+        persistAndUpdate(reconciled)
     }
 
     private func loadFromCache() {

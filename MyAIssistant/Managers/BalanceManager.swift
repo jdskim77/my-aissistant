@@ -258,15 +258,19 @@ final class BalanceManager {
     /// Fetches tasks completed in [start, end), sums effort per scored dim
     /// with multi-dim tasks split evenly. Excludes unscored (practical) dims.
     private func pointsInWindow(start: Date, end: Date) -> [LifeDimension: Double] {
+        // Fetch by done-flag in SQL, then range-filter completedAt in Swift.
+        // `#Predicate` can't express an optional Date comparison without
+        // either a force-unwrap (crash-safe inside #Predicate but banned by
+        // style rules) or a NilCoalesce expression that's rejected by the
+        // predicate compiler. Filtering a small done-set in Swift is fine.
         let descriptor = FetchDescriptor<TaskItem>(
-            predicate: #Predicate { task in
-                task.completedAt != nil
-                    && task.completedAt! >= start
-                    && task.completedAt! < end
-                    && task.done == true
-            }
+            predicate: #Predicate { task in task.done == true }
         )
-        let tasks = (try? modelContext.fetch(descriptor)) ?? []
+        let rawTasks = (try? modelContext.fetch(descriptor)) ?? []
+        let tasks = rawTasks.filter { task in
+            guard let completed = task.completedAt else { return false }
+            return completed >= start && completed < end
+        }
         var points: [LifeDimension: Double] = [:]
         for dim in LifeDimension.scored { points[dim] = 0 }
         for task in tasks {
@@ -344,6 +348,11 @@ final class BalanceManager {
     private static let habitDateKeyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
+        // Pin locale/calendar so this key round-trips the same value on
+        // non-Gregorian device calendars (e.g. Japanese era) and on locales
+        // that reformat "yyyy-MM-dd" differently.
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         return f
     }()
 
@@ -576,11 +585,16 @@ final class BalanceManager {
 
     /// Record satisfaction ratings for all dimensions at once during a check-in.
     func recordSatisfaction(ratings: [LifeDimension: Int], energyRating: Int? = nil) {
-        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
 
-        // Find or create today's check-in
+        // Find or create today's check-in. Range predicate (not `== today`)
+        // tolerates sub-second drift that can sneak in through CloudKit
+        // round-trips, Watch sync, or any path that doesn't pin the date to
+        // exact midnight — without it we were inserting duplicate rows.
         let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date == today }
+            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
         )
         let existing = try? modelContext.fetch(descriptor).first
 
@@ -606,9 +620,11 @@ final class BalanceManager {
 
     /// Legacy: Record a single-dimension check-in (backwards compatible).
     func recordCheckIn(dimension: LifeDimension, energyRating: Int? = nil) {
-        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
         let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date == today }
+            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
         )
         if let existing = try? modelContext.fetch(descriptor).first {
             modelContext.delete(existing)
@@ -620,18 +636,22 @@ final class BalanceManager {
 
     /// Whether the user has completed today's balance check-in.
     func hasCheckedInToday() -> Bool {
-        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
         let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date == today }
+            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
         )
         return ((try? modelContext.fetchCount(descriptor)) ?? 0) > 0
     }
 
     /// Today's satisfaction ratings, if any.
     func todaySatisfaction() -> [LifeDimension: Int] {
-        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
         let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date == today }
+            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
         )
         guard let checkIn = try? modelContext.fetch(descriptor).first else { return [:] }
         var result: [LifeDimension: Int] = [:]

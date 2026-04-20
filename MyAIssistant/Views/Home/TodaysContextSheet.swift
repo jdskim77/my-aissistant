@@ -8,9 +8,30 @@ struct TodaysContextSheet: View {
     let snapshot: WeatherSnapshot?
     let isLoading: Bool
     let isAuthorized: Bool
+    /// True when the user has actively denied location permission. Distinct
+    /// from `!isAuthorized`, which also covers `.notDetermined` — in the
+    /// denied case the only way to recover is through Settings, so the CTA
+    /// deep-links there instead of uselessly re-prompting.
+    let isDenied: Bool
     let currentSlot: CheckInTime
     let onRefresh: () -> Void
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        snapshot: WeatherSnapshot?,
+        isLoading: Bool,
+        isAuthorized: Bool,
+        isDenied: Bool = false,
+        currentSlot: CheckInTime,
+        onRefresh: @escaping () -> Void
+    ) {
+        self.snapshot = snapshot
+        self.isLoading = isLoading
+        self.isAuthorized = isAuthorized
+        self.isDenied = isDenied
+        self.currentSlot = currentSlot
+        self.onRefresh = onRefresh
+    }
 
     var body: some View {
         NavigationStack {
@@ -67,15 +88,26 @@ struct TodaysContextSheet: View {
                 }
             } else if !isAuthorized {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Enable location to see local weather and personalize your day.")
+                    Text(isDenied
+                        ? "Location access is off. Open Settings to turn it on and see local weather."
+                        : "Enable location to see local weather and personalize your day.")
                         .font(AppFonts.body(14))
                         .foregroundColor(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button {
                         Haptics.light()
-                        onRefresh()
+                        if isDenied {
+                            // Denial is persistent — CLLocationManager won't
+                            // re-prompt. Deep-link into Settings so the user
+                            // has a path to recover from the dead-end.
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } else {
+                            onRefresh()
+                        }
                     } label: {
-                        Text("Enable Location")
+                        Text(isDenied ? "Open Settings" : "Enable Location")
                             .font(AppFonts.bodyMedium(14))
                             .foregroundColor(.white)
                             .padding(.horizontal, 16)

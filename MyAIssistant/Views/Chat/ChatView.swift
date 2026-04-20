@@ -51,6 +51,11 @@ struct ChatView: View {
     // double-tap, short enough that deliberate consecutive dimension
     // picks still pass through (BUG-01 from the Skip/Done QA pass).
     @State private var lastChipTapAt: Date = .distantPast
+    /// Handle for the in-flight send so `.onDisappear` can cancel it.
+    /// Without this, closing the chat while a response was streaming left
+    /// the network request running and the state-mutation tail would fire
+    /// against a view that was already gone.
+    @State private var sendTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -281,6 +286,10 @@ struct ChatView: View {
             speechSynthesizer.onFinishedSpeaking = nil
             speechRecognizer.onSilenceDetected = nil
             isMicTransitioning = false
+            // Cancel any in-flight send so we don't burn the response into
+            // state on a view that's already gone.
+            sendTask?.cancel()
+            sendTask = nil
         }
         .onChange(of: speechRecognizer.transcript) { _, newValue in
             if !newValue.isEmpty && speechRecognizer.isRecording {
@@ -739,12 +748,17 @@ struct ChatView: View {
         chatManager.subscriptionTier = tier
 
         let convoID = conversationID
-        Task {
+        sendTask?.cancel()
+        sendTask = Task {
             // ChatManager handles: insert user msg → fetch history → build split prompt
             // (cached stable + uncached volatile) → call provider → parse tags →
             // insert assistant msg → record usage with cache token weighting → persist
             // activity entries → insert error messages on failure.
             let result = await chatManager.sendMessage(text, conversationID: convoID)
+
+            // If the view disappeared while the request was in flight, stop
+            // here — assistant message is already persisted by ChatManager.
+            guard !Task.isCancelled else { return }
 
             await MainActor.run {
                 isAITyping = false

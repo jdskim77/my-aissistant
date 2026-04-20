@@ -1,6 +1,28 @@
 import SwiftUI
 import SwiftData
 
+/// Enumerates the sheets Home can present. A single `@State private var
+/// activeSheet: HomeSheet?` drives a single `.sheet(item:)` so two triggers
+/// can never race and silently drop one presentation (prior behaviour with
+/// five parallel `.sheet()` modifiers).
+enum HomeSheet: Identifiable {
+    case todaysContext
+    case checkIn
+    case habits
+    case addHabit
+    case reschedule(TaskItem)
+
+    var id: String {
+        switch self {
+        case .todaysContext: return "todaysContext"
+        case .checkIn: return "checkIn"
+        case .habits: return "habits"
+        case .addHabit: return "addHabit"
+        case .reschedule(let task): return "reschedule-\(task.id)"
+        }
+    }
+}
+
 struct HomeView: View {
     @Binding var selectedTab: Tab
     @Environment(\.taskManager) private var taskManager
@@ -20,7 +42,11 @@ struct HomeView: View {
            sort: \CheckInRecord.date, order: .reverse) private var allCheckIns: [CheckInRecord]
 
     @State private var appeared = false
-    @State private var showingCheckIn = false
+    /// Single mutually-exclusive sheet slot. Replaces the prior stack of five
+    /// independent `.sheet()` modifiers so the five triggers can't race each
+    /// other (SwiftUI only presents one at a time — the old layout made the
+    /// losing state silently vanish).
+    @State private var activeSheet: HomeSheet?
     // Collapse state is persisted so the user's disclosure choices survive
     // relaunches — matches Overdue/Completed/Tomorrow/Life Balance/Habits
     // behaviour (all collapsible, all remembered).
@@ -34,10 +60,7 @@ struct HomeView: View {
     @AppStorage("home.show.habits") private var showHabits = true
     @AppStorage("home.show.tomorrow") private var showTomorrow = true
     @AppStorage("home.show.wisdom") private var showWisdom = true
-    @State private var taskToReschedule: TaskItem?
     @State private var taskToDelete: TaskItem?
-    @State private var showingHabits = false
-    @State private var showingAddHabit = false
     @State private var showingDoneHabits = false
     @State private var rescheduleDate = Date()
     @State private var greetingManager = GreetingManager()
@@ -45,7 +68,6 @@ struct HomeView: View {
     @State private var orbTask: Task<Void, Never>?
     @State private var dismissTask: Task<Void, Never>?
     @State private var celebrationMilestone: Int?
-    @State private var showingTodaysContext = false
     /// Owns in-flight "task → Life Balance" particles and the landing
     /// pulseRequest the BalancePulseCard watches. Lives on Home (not in an
     /// env/manager) because source and target are both Home-local — no other
@@ -98,14 +120,20 @@ struct HomeView: View {
         if hasReachedNormalStage { return .normal }
         let hasCheckIn = !allCheckIns.isEmpty
         let hasCompletedTask = allTasks.contains { $0.done }
+        return (hasCheckIn || hasCompletedTask) ? .normal : .day0
+    }
+
+    /// Called from .onChange handlers on allCheckIns / allTasks so the
+    /// one-time flip from day0 → normal happens outside `body`. We don't
+    /// un-set on deletion — once a user has activated, they stay in the
+    /// normal experience even if they later delete all their data.
+    private func promoteFromDay0IfNeeded() {
+        guard !hasReachedNormalStage else { return }
+        let hasCheckIn = !allCheckIns.isEmpty
+        let hasCompletedTask = allTasks.contains { $0.done }
         if hasCheckIn || hasCompletedTask {
-            // One-time flip — future body evals see the flag and skip this
-            // computation. We don't un-set on deletion, so the user stays
-            // in normal stage once they've activated.
-            Task { @MainActor in hasReachedNormalStage = true }
-            return .normal
+            hasReachedNormalStage = true
         }
-        return .day0
     }
 
     // MARK: - Check-in State
@@ -400,7 +428,7 @@ struct HomeView: View {
                                 }
                                 Button {
                                     Haptics.light()
-                                    taskToReschedule = task
+                                    activeSheet = .reschedule(task)
                                     rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                                 } label: {
                                     Label("Reschedule", systemImage: "calendar.badge.clock")
@@ -485,7 +513,7 @@ struct HomeView: View {
                             }
                             Button {
                                 Haptics.light()
-                                taskToReschedule = task
+                                activeSheet = .reschedule(task)
                                 rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                             } label: {
                                 Label("Reschedule", systemImage: "calendar.badge.clock")
@@ -594,7 +622,7 @@ struct HomeView: View {
                                     Label("Delete", systemImage: "trash")
                                 }
                                 Button {
-                                    taskToReschedule = task
+                                    activeSheet = .reschedule(task)
                                     rescheduleDate = TaskManager.rescheduleSeedDate(for: task)
                                 } label: {
                                     Label("Reschedule", systemImage: "calendar.badge.clock")
@@ -742,6 +770,12 @@ struct HomeView: View {
                 Task { await weatherManager?.refreshIfAuthorizedAndStale() }
             }
         }
+        .onChange(of: allCheckIns.isEmpty) { _, _ in
+            promoteFromDay0IfNeeded()
+        }
+        .onChange(of: allTasks.contains(where: { $0.done })) { _, _ in
+            promoteFromDay0IfNeeded()
+        }
         .overlay {
             if let milestone = celebrationMilestone {
                 CelebrationView(milestone: milestone) {
@@ -766,6 +800,10 @@ struct HomeView: View {
 
             // Re-check insight dismissal — the UserDefaults key rolls daily.
             insightBannerDismissed = PatternInsightBanner.isDismissedToday()
+
+            // Catch any pending day0 → normal promotion on appear, in case
+            // data arrived while another tab was active.
+            promoteFromDay0IfNeeded()
 
             // Generate contextual AI greeting
             let todayTasks = taskManager?.todayTasks() ?? []
@@ -811,26 +849,26 @@ struct HomeView: View {
         .task {
             await weatherManager?.refreshIfAuthorizedAndStale()
         }
-        .sheet(isPresented: $showingTodaysContext) {
-            TodaysContextSheet(
-                snapshot: weatherManager?.latest,
-                isLoading: weatherManager?.isLoading ?? false,
-                isAuthorized: weatherManager?.isAuthorized ?? false,
-                currentSlot: CheckInTime.current(),
-                onRefresh: { Task { await weatherManager?.refresh() } }
-            )
-        }
-        .sheet(isPresented: $showingCheckIn) {
-            CheckInDetailView(timeSlot: CheckInTime.next())
-        }
-        .sheet(isPresented: $showingHabits) {
-            HabitsView()
-        }
-        .sheet(isPresented: $showingAddHabit) {
-            HabitFormView(mode: .create)
-        }
-        .sheet(item: $taskToReschedule) { task in
-            rescheduleSheet(for: task)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .todaysContext:
+                TodaysContextSheet(
+                    snapshot: weatherManager?.latest,
+                    isLoading: weatherManager?.isLoading ?? false,
+                    isAuthorized: weatherManager?.isAuthorized ?? false,
+                    isDenied: weatherManager?.isDenied ?? false,
+                    currentSlot: CheckInTime.current(),
+                    onRefresh: { Task { await weatherManager?.refresh() } }
+                )
+            case .checkIn:
+                CheckInDetailView(timeSlot: CheckInTime.next())
+            case .habits:
+                HabitsView()
+            case .addHabit:
+                HabitFormView(mode: .create)
+            case .reschedule(let task):
+                rescheduleSheet(for: task)
+            }
         }
         .alert("Delete Task", isPresented: Binding(
             get: { taskToDelete != nil },
@@ -971,7 +1009,7 @@ struct HomeView: View {
 
             Button {
                 Haptics.light()
-                showingCheckIn = true
+                activeSheet = .checkIn
             } label: {
                 HStack(spacing: 8) {
                     Text("Start \(slot.rawValue) check-in")
@@ -1234,7 +1272,7 @@ struct HomeView: View {
     private var heroActionRow: some View {
         switch checkInCardState {
         case .prominent(let slot):
-            Button { showingCheckIn = true } label: {
+            Button { activeSheet = .checkIn } label: {
                 HStack(spacing: 10) {
                     Image(systemName: slot.sfSymbol)
                         .font(.system(size: 16, weight: .semibold))
@@ -1275,7 +1313,7 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         case .progress:
             // Between active windows — no urgent action.
-            Button { showingCheckIn = true } label: {
+            Button { activeSheet = .checkIn } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 14))
@@ -1313,7 +1351,7 @@ struct HomeView: View {
                 snapshot: weatherManager?.latest,
                 isLoading: weatherManager?.isLoading ?? false,
                 isAuthorized: weatherManager?.isAuthorized ?? false,
-                onTap: { showingTodaysContext = true }
+                onTap: { activeSheet = .todaysContext }
             )
         }
         .padding(.horizontal, 16)
@@ -1434,7 +1472,7 @@ struct HomeView: View {
     private var emptyHabitsCard: some View {
         Button {
             Haptics.light()
-            showingAddHabit = true
+            activeSheet = .addHabit
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "leaf.fill")
@@ -1515,7 +1553,7 @@ struct HomeView: View {
 
             Button {
                 Haptics.light()
-                showingAddHabit = true
+                activeSheet = .addHabit
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 18))
@@ -1572,7 +1610,7 @@ struct HomeView: View {
             if todo.count > 3 {
                 Button {
                     Haptics.light()
-                    showingHabits = true
+                    activeSheet = .habits
                 } label: {
                     HStack {
                         Text("+\(todo.count - 3) more to do")
@@ -1620,7 +1658,7 @@ struct HomeView: View {
                     if done.count > 5 {
                         Button {
                             Haptics.light()
-                            showingHabits = true
+                            activeSheet = .habits
                         } label: {
                             HStack {
                                 // Spelling out the overflow count here so the
@@ -1643,7 +1681,7 @@ struct HomeView: View {
             // focused on the toggle/add actions.
             Button {
                 Haptics.light()
-                showingHabits = true
+                activeSheet = .habits
             } label: {
                 HStack(spacing: 4) {
                     Spacer()
@@ -1701,10 +1739,9 @@ struct HomeView: View {
                         .tint(AppColors.accent)
 
                     Button {
-                        guard taskToReschedule != nil else { return }
                         Haptics.success()
                         taskManager?.rescheduleTask(task, to: rescheduleDate)
-                        taskToReschedule = nil
+                        activeSheet = nil
                     } label: {
                         Text("Reschedule")
                             .font(AppFonts.bodyMedium(16))
@@ -1724,7 +1761,7 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { taskToReschedule = nil }
+                    Button("Cancel") { activeSheet = nil }
                 }
             }
         }
@@ -1764,7 +1801,7 @@ struct HomeView: View {
             let target = Calendar.current.safeDate(byAdding: .day, value: daysFromNow, to: Date())
             let composed = TaskManager.composeDate(targetDay: target, preservingTimeFrom: task.date)
             taskManager?.rescheduleTask(task, to: composed)
-            taskToReschedule = nil
+            activeSheet = nil
         } label: {
             Text(label)
                 .font(AppFonts.label(13))

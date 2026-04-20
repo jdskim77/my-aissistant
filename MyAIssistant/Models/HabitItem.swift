@@ -120,6 +120,12 @@ final class HabitItem {
     private static let dateKeyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
+        // Pin locale/calendar so keys written on one device (or one locale)
+        // parse identically everywhere. Without this, a Japanese-era device
+        // writes "R08-04-20" and breaks all lookups; a non-POSIX locale can
+        // reformat separators and drift the key across days.
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         return f
     }()
 

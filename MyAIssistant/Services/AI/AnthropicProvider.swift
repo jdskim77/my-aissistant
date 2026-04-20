@@ -30,7 +30,8 @@ actor AnthropicProvider: AIProvider {
         systemPrompt: String
     ) async throws -> AIResponse {
         let messages = buildMessages(conversationHistory: conversationHistory, userMessage: userMessage)
-        let body = buildRequestBody(systemPrompt: systemPrompt, messages: messages)
+        let clampedSystem = Self.clamp(systemPrompt, max: Self.maxSystemChars)
+        let body = buildRequestBody(systemPrompt: clampedSystem, messages: messages)
 
         let jsonData = try JSONSerialization.data(withJSONObject: body)
 
@@ -61,9 +62,14 @@ actor AnthropicProvider: AIProvider {
         systemPromptVolatile: String
     ) async throws -> AIResponse {
         let messages = buildMessages(conversationHistory: conversationHistory, userMessage: userMessage)
+        let (clampedStable, clampedVolatile) = Self.clamp(
+            stable: systemPromptStable,
+            volatile: systemPromptVolatile,
+            max: Self.maxSystemChars
+        )
         let body = buildSplitRequestBody(
-            systemPromptStable: systemPromptStable,
-            systemPromptVolatile: systemPromptVolatile,
+            systemPromptStable: clampedStable,
+            systemPromptVolatile: clampedVolatile,
             messages: messages
         )
 
@@ -234,6 +240,35 @@ actor AnthropicProvider: AIProvider {
             "system": systemBlocks,
             "messages": messages
         ]
+    }
+
+    // MARK: - System Prompt Clamping
+
+    /// The backend proxy caps the `system` field at 20,000 chars. We stay a
+    /// little under that so split blocks + the structural JSON overhead don't
+    /// push us over. Sacrifices the volatile tail first so the cached stable
+    /// block stays intact (and the cache stays warm).
+    static let maxSystemChars = 19_500
+
+    static func clamp(_ text: String, max limit: Int) -> String {
+        guard text.count > limit else { return text }
+        let cut = text.index(text.startIndex, offsetBy: limit)
+        return String(text[..<cut])
+    }
+
+    static func clamp(stable: String, volatile: String, max limit: Int) -> (String, String) {
+        // Account for the "\n\n" separator when stable + volatile are both present.
+        let separatorOverhead = (stable.isEmpty || volatile.isEmpty) ? 0 : 2
+        let total = stable.count + volatile.count + separatorOverhead
+        guard total > limit else { return (stable, volatile) }
+
+        if stable.count >= limit {
+            // Stable alone is over — truncate stable, drop volatile entirely.
+            return (clamp(stable, max: limit), "")
+        }
+        // Stable fits — truncate the volatile tail to fill the remaining budget.
+        let remaining = max(0, limit - stable.count - separatorOverhead)
+        return (stable, clamp(volatile, max: remaining))
     }
 
     // MARK: - Response Parsing

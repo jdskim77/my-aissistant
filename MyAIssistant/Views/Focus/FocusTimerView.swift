@@ -84,6 +84,17 @@ struct FocusTimerView: View {
                     }
                 }
             }
+            .onDisappear {
+                // Sheet swipe-dismiss doesn't route through the End button —
+                // without this, a running Timer keeps firing tick() against a
+                // dead view and any partial session (secondsRemaining > 0 or
+                // intervalsCompleted > 0) is lost on the way out.
+                if timer != nil || session.totalFocusSeconds > 0 || session.intervalsCompleted > 0 {
+                    endSession()
+                } else {
+                    pauseTimer()
+                }
+            }
         }
     }
 
