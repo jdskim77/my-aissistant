@@ -6,18 +6,42 @@ struct WatchTodayView: View {
     var connectivity: WatchConnectivityManager
     @State private var hasLoaded = false
 
+    // Particle animation: lives across re-renders. Holds in-flight particles
+    // and the latest pulseRequest that WatchBalancePulse watches.
+    @State private var animator = WatchParticleAnimator()
+
+    // Position tracking — populated by PreferenceKey reads. Bars publish
+    // their centers from inside WatchBalancePulse; the inline next row
+    // publishes its checkbox center for the particle source.
+    @State private var dimensionPositions: [WatchDimension: CGPoint] = [:]
+    @State private var checkboxPosition: CGPoint = .zero
+
+    // Completion detection — diff each scheduleData update against this
+    // snapshot. Tasks that were active before and are now done fire one
+    // particle each, queued via the animator.
+    @State private var lastDoneSnapshot: [String: Bool] = [:]
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         Group {
-            if let data = connectivity.scheduleData, !data.tasks.isEmpty {
-                scheduleContent(data)
+            if let data = connectivity.scheduleData {
+                content(data)
             } else if !hasLoaded {
                 loadingState
             } else {
-                emptyState
+                unreachableState
             }
         }
         .navigationTitle("Today")
-        .onAppear { connectivity.requestUpdate() }
+        .onAppear {
+            connectivity.requestUpdate()
+            // Seed snapshot so the first render doesn't fire particles for
+            // tasks that were already done before the view appeared.
+            if let data = connectivity.scheduleData {
+                lastDoneSnapshot = Dictionary(uniqueKeysWithValues: data.tasks.map { ($0.id, $0.done) })
+            }
+        }
         .task {
             try? await Task.sleep(for: .seconds(2))
             hasLoaded = true
@@ -25,9 +49,232 @@ struct WatchTodayView: View {
         .onChange(of: connectivity.scheduleData != nil) { _, hasData in
             if hasData { hasLoaded = true }
         }
+        .onChange(of: connectivity.scheduleData?.updatedAt) { _, _ in
+            handleScheduleUpdate()
+        }
     }
 
-    // MARK: - Loading State
+    // MARK: - Loaded content
+
+    @ViewBuilder
+    private func content(_ data: WatchScheduleData) -> some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                WatchBalancePulse(
+                    bodyScore: data.bodyScore,
+                    mindScore: data.mindScore,
+                    heartScore: data.heartScore,
+                    spiritScore: data.spiritScore,
+                    pulseRequest: animator.pulseRequest
+                )
+                .padding(.bottom, 2)
+
+                if let upNext = connectivity.upNextTask {
+                    inlineNextRow(upNext)
+                } else {
+                    emptyTaskHint
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.top, 4)
+        }
+        .coordinateSpace(name: watchTodayCoordinateSpace)
+        .onPreferenceChange(WatchDimensionPositionKey.self) { positions in
+            dimensionPositions = positions
+        }
+        .onPreferenceChange(WatchCheckboxPositionKey.self) { pos in
+            if let pos { checkboxPosition = pos }
+        }
+        .overlay(
+            WatchParticleLayer(animator: animator)
+        )
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            WatchAIPill {
+                WatchVoiceChatView(connectivity: connectivity)
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
+    }
+
+    // MARK: - Inline next row (Concept 3)
+    //
+    // Small dimension-tinted checkbox + arrow + title + time. Two sibling
+    // tap targets: checkbox toggles completion (fires particle), the rest
+    // of the row navigates to task detail. No nested Button-in-Link.
+
+    private func inlineNextRow(_ task: WatchScheduleData.WatchTask) -> some View {
+        // Tint the row with the dimension the particle will actually travel to.
+        // If the task has its own dim, use that; otherwise fall back to the
+        // lowest-scoring dim — the same fallback `fireCompletionAnimation`
+        // uses — so the row color and the particle target stay consistent.
+        let dim = primaryDimension(for: task) ?? lowestScoringDimension()
+        let accentColor = dim?.color ?? Color.accentColor
+
+        return HStack(spacing: 6) {
+            inlineCheckbox(for: task, color: accentColor)
+                .accessibilityLabel(task.done ? "Mark \(task.title) incomplete" : "Mark \(task.title) complete")
+
+            NavigationLink(value: task) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(accentColor.opacity(0.85))
+                    Text(task.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    if task.hasTime {
+                        Text(task.timeString)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 2)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(navLabel(task))
+            .accessibilityHint("Opens task details")
+        }
+        .padding(.horizontal, 6)
+        .frame(maxWidth: .infinity)
+        .background(
+            Capsule()
+                .fill(accentColor.opacity(0.10))
+        )
+        .overlay(
+            Capsule()
+                .stroke(accentColor.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private func inlineCheckbox(for task: WatchScheduleData.WatchTask, color: Color) -> some View {
+        Button {
+            handleCompletionTap(task)
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(task.done ? color : color.opacity(0.55), lineWidth: 1.5)
+                    .frame(width: 18, height: 18)
+                if task.done {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(color)
+                }
+            }
+            .frame(width: 44, height: 44) // 44pt tap target
+            .contentShape(Rectangle())
+            .background(
+                GeometryReader { geo in
+                    let f = geo.frame(in: .named(watchTodayCoordinateSpace))
+                    Color.clear.preference(
+                        key: WatchCheckboxPositionKey.self,
+                        value: CGPoint(x: f.midX, y: f.midY)
+                    )
+                }
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Completion handling
+    //
+    // Tap-to-complete is the source of truth for the particle. We fire
+    // before sending the toggle to connectivity so the visual is immediate
+    // (the data layer's done-state flip arrives milliseconds later).
+
+    private func handleCompletionTap(_ task: WatchScheduleData.WatchTask) {
+        let willBeDone = !task.done
+        // Forward to the data layer either way.
+        connectivity.toggleTaskCompletion(task.id)
+        // Animate only on incomplete → complete (spec: "does not fire on undo").
+        guard willBeDone else { return }
+        fireCompletionAnimation(for: task)
+    }
+
+    /// Diff handler for sync-driven completion updates (e.g. iPhone toggled
+    /// the task and pushed a new schedule). Catches off-watch completions.
+    private func handleScheduleUpdate() {
+        guard let tasks = connectivity.scheduleData?.tasks else { return }
+        for task in tasks {
+            let prev = lastDoneSnapshot[task.id]
+            if prev == false && task.done == true {
+                fireCompletionAnimation(for: task)
+            }
+        }
+        lastDoneSnapshot = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0.done) })
+    }
+
+    private func fireCompletionAnimation(for task: WatchScheduleData.WatchTask) {
+        let dim = primaryDimension(for: task) ?? lowestScoringDimension() ?? .body
+
+        // Reduce Motion or unknown source position: skip flight, in-place pulse.
+        if reduceMotion || checkboxPosition == .zero || dimensionPositions[dim] == nil {
+            animator.pulseInPlace(dimension: dim)
+            return
+        }
+
+        animator.fire(
+            dimension: dim,
+            from: checkboxPosition,
+            to: dimensionPositions[dim] ?? checkboxPosition
+        )
+    }
+
+    private func primaryDimension(for task: WatchScheduleData.WatchTask) -> WatchDimension? {
+        guard let raw = task.dimensionsRaw else { return nil }
+        return raw
+            .split(separator: ",")
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+            .compactMap(WatchDimension.from(rawValue:))
+            .first
+    }
+
+    /// Fallback target when the task has no dimensions tagged. Picks the
+    /// dimension that needs the most help — narratively "your action just
+    /// helped where you most needed it."
+    private func lowestScoringDimension() -> WatchDimension? {
+        guard let data = connectivity.scheduleData else { return nil }
+        let scored: [(WatchDimension, Double)] = [
+            (.body,   data.bodyScore   ?? 5.0),
+            (.mind,   data.mindScore   ?? 5.0),
+            (.heart,  data.heartScore  ?? 5.0),
+            (.spirit, data.spiritScore ?? 5.0)
+        ]
+        return scored.min(by: { $0.1 < $1.1 })?.0
+    }
+
+    private func navLabel(_ task: WatchScheduleData.WatchTask) -> String {
+        var s = "Up next: \(task.title)"
+        if task.hasTime { s += " at \(task.timeString)" }
+        if task.done { s += ", completed" }
+        return s
+    }
+
+    // MARK: - Empty / loading / unreachable
+
+    private var emptyTaskHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sun.max")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.orange)
+            Text("Nothing scheduled — tap below to add")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+    }
 
     private var loadingState: some View {
         VStack(spacing: 12) {
@@ -39,288 +286,55 @@ struct WatchTodayView: View {
         .padding()
     }
 
-    // MARK: - Schedule Content
-
-    private func scheduleContent(_ data: WatchScheduleData) -> some View {
-        List {
-            // Progress + streak header
-            Section {
-                progressHeader(data)
-                    .listRowBackground(Color.clear)
-            }
-
-            // Up Next
-            if let upNext = connectivity.upNextTask {
-                Section {
-                    NavigationLink(value: upNext) {
-                        upNextCard(upNext)
-                    }
-                    .listRowBackground(Color.accentColor.opacity(0.15))
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        Button {
-                            WKInterfaceDevice.current().play(.success)
-                            connectivity.toggleTaskCompletion(upNext.id)
-                        } label: {
-                            Label("Done", systemImage: "checkmark")
-                        }
-                        .tint(.green)
-                    }
-                }
-            }
-
-            // Remaining active tasks
-            let remaining = connectivity.activeTasks.filter { $0.id != connectivity.upNextTask?.id }
-            if !remaining.isEmpty {
-                Section {
-                    ForEach(remaining) { task in
-                        NavigationLink(value: task) {
-                            taskRow(task)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                WKInterfaceDevice.current().play(.success)
-                                connectivity.deleteTask(task.id)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            Button {
-                                WKInterfaceDevice.current().play(.success)
-                                connectivity.toggleTaskCompletion(task.id)
-                            } label: {
-                                Label("Done", systemImage: "checkmark")
-                            }
-                            .tint(.green)
-                        }
-                    }
-                }
-            }
-
-            // Completed + streak
-            if data.completedToday > 0 || data.streakDays > 0 {
-                Section {
-                    if data.completedToday > 0 {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                                .font(.footnote)
-                            Text("\(data.completedToday) completed")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    if data.streakDays > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: "flame.fill")
-                                .foregroundColor(.orange)
-                                .font(.footnote)
-                            Text("\(data.streakDays)-day streak")
-                                .font(.footnote.weight(.medium))
-                                .foregroundColor(.orange)
-                        }
-                    }
-                }
-            }
-
-            // Wisdom
-            if let quote = data.quoteText {
-                Section {
-                    wisdomCard(quote: quote, author: data.quoteAuthor)
-                        .listRowBackground(Color.clear)
-                }
-            }
-        }
-        .listStyle(.carousel)
-    }
-
-    // MARK: - Progress Header
-
-    private func progressHeader(_ data: WatchScheduleData) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 4)
-                    .frame(width: 36, height: 36)
-                Circle()
-                    .trim(from: 0, to: connectivity.completionFraction)
-                    .stroke(Color.green, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
-                Text("\(data.completedToday)/\(data.totalToday)")
-                    .font(.system(size: 9, weight: .bold))
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(data.totalToday - data.completedToday) remaining")
-                    .font(.subheadline.weight(.semibold))
-                if let nextCheckIn = data.nextCheckIn {
-                    Text("\(nextCheckIn) check-in")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(data.completedToday) of \(data.totalToday) tasks done. \(data.totalToday - data.completedToday) remaining.")
-    }
-
-    // MARK: - Up Next Card
-
-    private func upNextCard(_ task: WatchScheduleData.WatchTask) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 6, height: 6)
-                Text("UP NEXT")
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(.accentColor)
-            }
-
-            HStack(spacing: 8) {
-                Button {
-                    WKInterfaceDevice.current().play(.success)
-                    connectivity.toggleTaskCompletion(task.id)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .stroke(task.done ? Color.green : Color.accentColor, lineWidth: 2)
-                            .frame(width: 22, height: 22)
-                        if task.done {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 22, height: 22)
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(task.done ? "Mark incomplete" : "Mark complete")
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(task.title)
-                        .font(.headline)
-                        .lineLimit(2)
-                        .strikethrough(task.done)
-
-                    if task.hasTime {
-                        Text(task.timeString)
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Task Row
-
-    private func taskRow(_ task: WatchScheduleData.WatchTask) -> some View {
-        HStack(spacing: 8) {
-            Button {
-                WKInterfaceDevice.current().play(.success)
-                connectivity.toggleTaskCompletion(task.id)
-            } label: {
-                ZStack {
-                    Circle()
-                        .stroke(task.done ? Color.green : priorityColor(task.priorityRaw), lineWidth: 2)
-                        .frame(width: 20, height: 20)
-                    if task.done {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 20, height: 20)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                }
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(task.done ? "Mark incomplete" : "Mark complete")
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(task.title)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .strikethrough(task.done)
-                    .foregroundColor(task.done ? .secondary : .primary)
-
-                if task.hasTime {
-                    Text(task.timeString)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-
-            if task.isCalendarEvent {
-                Image(systemName: "calendar")
-                    .font(.caption2)
-                    .foregroundColor(.blue)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    // MARK: - Wisdom Card
-
-    private func wisdomCard(quote: String, author: String?) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(quote)
-                .font(.caption.italic())
-                .foregroundColor(.secondary)
-                .lineLimit(3)
-            if let author {
-                Text("— \(author)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.secondary.opacity(0.1))
-        )
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "sun.max")
+    private var unreachableState: some View {
+        VStack(spacing: 14) {
+            Spacer(minLength: 0)
+            Image(systemName: "iphone.slash")
                 .font(.largeTitle)
-                .foregroundColor(.orange)
-            Text("No tasks today")
+                .foregroundColor(.secondary)
+            Text("Can't reach iPhone")
                 .font(.headline)
-            Text("Tap + to add a task")
+            Text("Open the iPhone app to sync today's data")
                 .font(.footnote)
                 .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                WKInterfaceDevice.current().play(.click)
+                connectivity.requestUpdate()
+            } label: {
+                Text("Try again")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 36)
+            }
+            .buttonStyle(.bordered)
+            .tint(.accentColor)
+            .padding(.horizontal, 8)
+            Spacer(minLength: 0)
         }
         .padding()
-    }
-
-    // MARK: - Helpers
-
-    private func priorityColor(_ raw: String) -> Color {
-        switch raw {
-        case "High": return .red
-        case "Medium": return .orange
-        default: return .blue
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            WatchAIPill {
+                WatchVoiceChatView(connectivity: connectivity)
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
         }
+    }
+}
+
+// MARK: - Source-position PreferenceKey
+//
+// Single optional CGPoint — the inline-row checkbox publishes its center.
+// Reduce(_:_:) takes the most recent non-nil so a re-render of the same
+// row doesn't keep zeroing it out.
+
+struct WatchCheckboxPositionKey: PreferenceKey {
+    static var defaultValue: CGPoint? = nil
+    static func reduce(value: inout CGPoint?, nextValue: () -> CGPoint?) {
+        if let n = nextValue() { value = n }
     }
 }
 

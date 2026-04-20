@@ -40,6 +40,32 @@ struct WatchScheduleData: Codable {
         let done: Bool
         let isCalendarEvent: Bool
         let recurrenceRaw: String?
+        /// Comma-separated LifeDimension raw values, e.g. "physical,emotional".
+        /// Optional + last (Codable backward-compat): Watch payloads from
+        /// older builds decode with `nil` and fall back to lowest-scoring dim.
+        let dimensionsRaw: String?
+
+        init(
+            id: String,
+            title: String,
+            date: Date,
+            priorityRaw: String,
+            categoryRaw: String,
+            done: Bool,
+            isCalendarEvent: Bool,
+            recurrenceRaw: String?,
+            dimensionsRaw: String? = nil
+        ) {
+            self.id = id
+            self.title = title
+            self.date = date
+            self.priorityRaw = priorityRaw
+            self.categoryRaw = categoryRaw
+            self.done = done
+            self.isCalendarEvent = isCalendarEvent
+            self.recurrenceRaw = recurrenceRaw
+            self.dimensionsRaw = dimensionsRaw
+        }
 
         var hasTime: Bool {
             let cal = Calendar.current

@@ -54,21 +54,12 @@ struct MyAIssistantWatchApp: App {
                 }
                 .tag(WatchTab.compass)
 
-                // Tab 2: Today's Tasks
+                // Tab 2: Today
+                // No toolbar add button — the AI pill ("Tell me what to add")
+                // inside WatchTodayView is the sole add path on this tab.
+                // showAddTask navigation kept for the Compass tab pattern.
                 NavigationStack {
                     WatchTodayView(connectivity: connectivityManager)
-                        .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button {
-                                    showAddTask = true
-                                } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.green)
-                                }
-                                .accessibilityLabel("Add Task")
-                            }
-                        }
                         .navigationDestination(isPresented: $showAddTask) {
                             WatchAddTaskView(connectivity: connectivityManager)
                         }

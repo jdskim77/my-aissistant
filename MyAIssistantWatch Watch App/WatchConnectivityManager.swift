@@ -145,7 +145,8 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                 categoryRaw: "Personal",
                 done: false,
                 isCalendarEvent: false,
-                recurrenceRaw: nil
+                recurrenceRaw: nil,
+                dimensionsRaw: dimensions
             )
             let updated = WatchScheduleData(
                 tasks: (data.tasks + [newTask]).sorted { $0.date < $1.date },
@@ -210,7 +211,8 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                     categoryRaw: task.categoryRaw,
                     done: !task.done,
                     isCalendarEvent: task.isCalendarEvent,
-                    recurrenceRaw: task.recurrenceRaw
+                    recurrenceRaw: task.recurrenceRaw,
+                    dimensionsRaw: task.dimensionsRaw
                 )
             }
             let toggled = updatedTasks.first { $0.id == taskID }
@@ -315,7 +317,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let context = session.receivedApplicationContext
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.extractAPIKey(from: context)
             if let data = WatchScheduleData.from(context: context) {
                 self.persistAndUpdate(data)
@@ -324,7 +326,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.extractAPIKey(from: applicationContext)
             if let data = WatchScheduleData.from(context: applicationContext) {
                 self.persistAndUpdate(data)
@@ -333,7 +335,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.extractAPIKey(from: message)
             if let data = WatchScheduleData.from(context: message) {
                 self.persistAndUpdate(data)

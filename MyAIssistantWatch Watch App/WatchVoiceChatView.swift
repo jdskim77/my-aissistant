@@ -5,6 +5,12 @@ import WatchKit
 
 struct WatchVoiceChatView: View {
     var connectivity: WatchConnectivityManager
+    /// Optional preloaded prompt — used when the Today tab's COACH chip
+    /// opens this view. The suggestion is dropped into the input field so
+    /// the user can edit, send, or just tap the mic to refine. Empty/nil
+    /// means a normal cold open with no draft.
+    var seedQuery: String? = nil
+
     @State private var isProcessing = false
     @State private var lastQuery = ""
     @State private var aiResponse = ""
@@ -15,6 +21,7 @@ struct WatchVoiceChatView: View {
 
     // Text input (inline — user taps TextField to trigger watchOS dictation picker)
     @State private var textInputValue = ""
+    @State private var didApplySeed = false
     @FocusState private var isInputFocused: Bool
 
     private let claudeService = WatchClaudeService()
@@ -41,6 +48,17 @@ struct WatchVoiceChatView: View {
         }
         .navigationTitle("AI Assistant")
         // Sheet removed — input is inline
+        .onAppear {
+            // Pre-fill the input with the COACH suggestion if one was passed.
+            // Guarded by `didApplySeed` so re-appears (sheet dismiss, scroll
+            // refresh) don't overwrite user edits with the original seed.
+            if !didApplySeed,
+               let seed = seedQuery?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !seed.isEmpty {
+                textInputValue = seed
+                didApplySeed = true
+            }
+        }
         .onDisappear {
             synthesizer.stopSpeaking(at: .immediate)
             apiTask?.cancel()

@@ -110,7 +110,8 @@ final class WatchSyncManager: NSObject {
                 categoryRaw: task.categoryRaw,
                 done: task.done,
                 isCalendarEvent: task.externalCalendarID != nil,
-                recurrenceRaw: task.recurrenceRaw
+                recurrenceRaw: task.recurrenceRaw,
+                dimensionsRaw: task.dimensionRaw
             )
         }
 
@@ -226,4 +227,9 @@ extension Notification.Name {
     static let watchAddedTask = Notification.Name("watchAddedTask")
     static let watchDeletedTask = Notification.Name("watchDeletedTask")
     static let watchQuickCheckIn = Notification.Name("watchQuickCheckIn")
+    /// Fired after a habit has been toggled completed OUTSIDE HabitManager
+    /// (Siri intent, widget, notification action). The main app observer
+    /// routes it back through `HabitManager.announceCompletion(habitID:)`
+    /// so the Compass pulse + cache invalidation still happen.
+    static let habitToggledExternally = Notification.Name("habitToggledExternally")
 }
