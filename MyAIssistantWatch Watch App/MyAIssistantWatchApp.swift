@@ -34,17 +34,12 @@ struct MyAIssistantWatchApp: App {
                                 }
                                 .accessibilityLabel("Add Task")
                             }
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button {
-                                    showVoiceChat = true
-                                } label: {
-                                    Image(systemName: "mic.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.accentColor)
-                                }
-                                .accessibilityLabel("AI Assistant")
-                            }
                         }
+                        // Voice-chat is reachable two ways: the WatchAIPill at
+                        // the bottom of WatchCompassView (NavigationLink), and
+                        // the AskAIIntent / Action Button which flips
+                        // shouldOpenVoiceChat → showVoiceChat. Keep this
+                        // destination wired so the intent path still works.
                         .navigationDestination(isPresented: $showVoiceChat) {
                             WatchVoiceChatView(connectivity: connectivityManager)
                         }

@@ -4,7 +4,6 @@ import WatchKit
 
 struct WatchTodayView: View {
     var connectivity: WatchConnectivityManager
-    @State private var hasLoaded = false
 
     // Particle animation: lives across re-renders. Holds in-flight particles
     // and the latest pulseRequest that WatchBalancePulse watches.
@@ -20,6 +19,9 @@ struct WatchTodayView: View {
     // snapshot. Tasks that were active before and are now done fire one
     // particle each, queued via the animator.
     @State private var lastDoneSnapshot: [String: Bool] = [:]
+    /// Guards the first arrival from firing particles for tasks the user
+    /// completed off-watch before the view ever subscribed.
+    @State private var hasSeededSnapshot = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -27,10 +29,12 @@ struct WatchTodayView: View {
         Group {
             if let data = connectivity.scheduleData {
                 content(data)
-            } else if !hasLoaded {
-                loadingState
-            } else {
+            } else if connectivity.hasAttemptedSync {
+                // Sync attempted, no payload → iPhone genuinely unreachable
+                // OR app not installed. Honest signal, not a 2-second guess.
                 unreachableState
+            } else {
+                loadingState
             }
         }
         .navigationTitle("Today")
@@ -40,14 +44,13 @@ struct WatchTodayView: View {
             // tasks that were already done before the view appeared.
             if let data = connectivity.scheduleData {
                 lastDoneSnapshot = Dictionary(uniqueKeysWithValues: data.tasks.map { ($0.id, $0.done) })
+                hasSeededSnapshot = true
             }
         }
-        .task {
-            try? await Task.sleep(for: .seconds(2))
-            hasLoaded = true
-        }
-        .onChange(of: connectivity.scheduleData != nil) { _, hasData in
-            if hasData { hasLoaded = true }
+        .onDisappear {
+            // Cancel any in-flight particle landing tasks so background
+            // haptics don't fire on an unmounted view.
+            animator.cancelAll()
         }
         .onChange(of: connectivity.scheduleData?.updatedAt) { _, _ in
             handleScheduleUpdate()
@@ -134,7 +137,7 @@ struct WatchTodayView: View {
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(minHeight: 36)
+                .frame(minHeight: 44) // Apple HIG min touch target for primary nav
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -170,17 +173,20 @@ struct WatchTodayView: View {
             }
             .frame(width: 44, height: 44) // 44pt tap target
             .contentShape(Rectangle())
-            .background(
-                GeometryReader { geo in
-                    let f = geo.frame(in: .named(watchTodayCoordinateSpace))
-                    Color.clear.preference(
-                        key: WatchCheckboxPositionKey.self,
-                        value: CGPoint(x: f.midX, y: f.midY)
-                    )
-                }
-            )
         }
         .buttonStyle(.plain)
+        // Position publishing lives OUTSIDE the Button label so SwiftUI's
+        // press-state re-render of the label (highlight/un-highlight) doesn't
+        // re-fire the PreferenceKey reduction every touch.
+        .background(
+            GeometryReader { geo in
+                let f = geo.frame(in: .named(watchTodayCoordinateSpace))
+                Color.clear.preference(
+                    key: WatchCheckboxPositionKey.self,
+                    value: CGPoint(x: f.midX, y: f.midY)
+                )
+            }
+        )
     }
 
     // MARK: - Completion handling
@@ -200,8 +206,17 @@ struct WatchTodayView: View {
 
     /// Diff handler for sync-driven completion updates (e.g. iPhone toggled
     /// the task and pushed a new schedule). Catches off-watch completions.
+    ///
+    /// First arrival is treated as a seed, not a transition: tasks already
+    /// done before the view ever subscribed must NOT fire celebration
+    /// particles, regardless of whether `onAppear` saw cached data.
     private func handleScheduleUpdate() {
         guard let tasks = connectivity.scheduleData?.tasks else { return }
+        guard hasSeededSnapshot else {
+            lastDoneSnapshot = Dictionary(uniqueKeysWithValues: tasks.map { ($0.id, $0.done) })
+            hasSeededSnapshot = true
+            return
+        }
         for task in tasks {
             let prev = lastDoneSnapshot[task.id]
             if prev == false && task.done == true {

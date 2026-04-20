@@ -16,8 +16,8 @@ struct WatchAddTaskView: View {
     @State private var showSuccess = false
 
     private let scoredDimensions: [(label: String, icon: String, color: Color)] = [
-        ("Physical", "figure.run", .green),
-        ("Mental", "brain.head.profile", .blue),
+        ("Physical", "figure.walk", .green),
+        ("Mental", "lightbulb.fill", .blue),
         ("Emotional", "heart.fill", .pink),
         ("Spiritual", "sparkles", .purple),
     ]

@@ -30,12 +30,18 @@ import Security
 
 /// Receives schedule data from iPhone and makes it available to Watch views + complications.
 @Observable
+@MainActor
 class WatchConnectivityManager: NSObject, WCSessionDelegate {
     /// Singleton — used by Action Button intent and passed to views.
     static let shared = WatchConnectivityManager()
 
     var scheduleData: WatchScheduleData?
     var shouldOpenVoiceChat = false
+    /// True once WCSession activation has completed (success or failure) OR
+    /// any payload has been received. Views use this to decide between
+    /// "Syncing…" and "Can't reach iPhone" — without it, we can't tell a
+    /// genuinely-offline first-launch from an in-progress activation.
+    var hasAttemptedSync = false
     private(set) var apiKey: String?
 
     override init() {
@@ -84,29 +90,37 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             WCSession.default.transferUserInfo(message)
         }
 
-        // Optimistically update completed check-ins
-        if let slot = message["timeSlot"] as? String, var data = scheduleData {
-            var completed = data.completedCheckIns ?? []
-            if !completed.contains(slot) { completed.append(slot) }
-            let updated = WatchScheduleData(
-                tasks: data.tasks,
-                streakDays: data.streakDays,
-                completedToday: data.completedToday,
-                totalToday: data.totalToday,
-                quoteText: data.quoteText,
-                quoteAuthor: data.quoteAuthor,
-                nextCheckIn: nextCheckInAfter(slot),
-                updatedAt: Date(),
-                bodyScore: data.bodyScore,
-                mindScore: data.mindScore,
-                heartScore: data.heartScore,
-                spiritScore: data.spiritScore,
-                userName: data.userName,
-                aiInsight: data.aiInsight,
-                completedCheckIns: completed
-            )
-            persistAndUpdate(updated)
-        }
+        // Optimistically update completed check-ins. Synthesize a base
+        // schedule when scheduleData is nil (first-launch user with no sync
+        // yet) so the user gets visible feedback that their tap landed —
+        // previously this dropped silently.
+        guard let slot = message["timeSlot"] as? String else { return }
+        let base = scheduleData ?? WatchScheduleData(
+            tasks: [], streakDays: 0, completedToday: 0, totalToday: 0,
+            quoteText: nil, quoteAuthor: nil, nextCheckIn: nil, updatedAt: Date(),
+            bodyScore: nil, mindScore: nil, heartScore: nil, spiritScore: nil,
+            userName: nil, aiInsight: nil, completedCheckIns: nil
+        )
+        var completed = base.completedCheckIns ?? []
+        if !completed.contains(slot) { completed.append(slot) }
+        let updated = WatchScheduleData(
+            tasks: base.tasks,
+            streakDays: base.streakDays,
+            completedToday: base.completedToday,
+            totalToday: base.totalToday,
+            quoteText: base.quoteText,
+            quoteAuthor: base.quoteAuthor,
+            nextCheckIn: nextCheckInAfter(slot),
+            updatedAt: Date(),
+            bodyScore: base.bodyScore,
+            mindScore: base.mindScore,
+            heartScore: base.heartScore,
+            spiritScore: base.spiritScore,
+            userName: base.userName,
+            aiInsight: base.aiInsight,
+            completedCheckIns: completed
+        )
+        persistAndUpdate(updated)
     }
 
     private func nextCheckInAfter(_ slot: String) -> String? {
@@ -199,8 +213,13 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
 
     /// Send a task completion toggle to the iPhone for processing.
     func toggleTaskCompletion(_ taskID: String) {
-        // Optimistically update local state
-        if var data = scheduleData {
+        // Optimistically update local state — but ONLY if the task exists in
+        // our local view of the schedule. Otherwise the completedToday delta
+        // would be -1 for a phantom task (e.g. replayed userInfo for a task
+        // already deleted on iPhone), drifting the counter below truth.
+        if let data = scheduleData,
+           let original = data.tasks.first(where: { $0.id == taskID }) {
+            let willBeDone = !original.done
             let updatedTasks = data.tasks.map { task -> WatchScheduleData.WatchTask in
                 guard task.id == taskID else { return task }
                 return WatchScheduleData.WatchTask(
@@ -209,14 +228,13 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
                     date: task.date,
                     priorityRaw: task.priorityRaw,
                     categoryRaw: task.categoryRaw,
-                    done: !task.done,
+                    done: willBeDone,
                     isCalendarEvent: task.isCalendarEvent,
                     recurrenceRaw: task.recurrenceRaw,
                     dimensionsRaw: task.dimensionsRaw
                 )
             }
-            let toggled = updatedTasks.first { $0.id == taskID }
-            let completedDelta = (toggled?.done == true) ? 1 : -1
+            let completedDelta = willBeDone ? 1 : -1
             let updated = WatchScheduleData(
                 tasks: updatedTasks,
                 streakDays: data.streakDays,
@@ -234,7 +252,8 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             persistAndUpdate(updated)
         }
 
-        // Send to iPhone
+        // Always forward to iPhone. Even when the local task is missing the
+        // iPhone may still own the canonical record (eventual consistency).
         let message: [String: Any] = ["toggleTask": taskID]
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(message, replyHandler: nil)
@@ -314,10 +333,14 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     }
 
     // MARK: - WCSessionDelegate
+    //
+    // WCSession invokes these on a background queue, so they MUST be
+    // nonisolated. We hop to the main actor to mutate observable state.
 
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let context = session.receivedApplicationContext
         Task { @MainActor in
+            self.hasAttemptedSync = true
             self.extractAPIKey(from: context)
             if let data = WatchScheduleData.from(context: context) {
                 self.persistAndUpdate(data)
@@ -325,8 +348,9 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         }
     }
 
-    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         Task { @MainActor in
+            self.hasAttemptedSync = true
             self.extractAPIKey(from: applicationContext)
             if let data = WatchScheduleData.from(context: applicationContext) {
                 self.persistAndUpdate(data)
@@ -334,8 +358,9 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         }
     }
 
-    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         Task { @MainActor in
+            self.hasAttemptedSync = true
             self.extractAPIKey(from: message)
             if let data = WatchScheduleData.from(context: message) {
                 self.persistAndUpdate(data)

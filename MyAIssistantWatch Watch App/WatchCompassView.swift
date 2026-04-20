@@ -35,6 +35,14 @@ struct WatchCompassView: View {
         .containerBackground(for: .navigation) {
             timeOfDayGradient
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            WatchAIPill {
+                WatchVoiceChatView(connectivity: connectivity)
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
     }
 
     // MARK: - Hero Balance

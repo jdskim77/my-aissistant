@@ -13,8 +13,8 @@ enum WatchDimension: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .body:   return "figure.run"
-        case .mind:   return "brain.head.profile"
+        case .body:   return "figure.walk"    // V3: clearer silhouette
+        case .mind:   return "lightbulb.fill" // V3: clearer than brain.head.profile
         case .heart:  return "heart.fill"
         case .spirit: return "sparkles"
         }
@@ -95,6 +95,11 @@ struct WatchBalancePulse: View {
     @State private var lastHandledToken: UUID?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // Scaled metrics so the bars and icons grow with Dynamic Type instead
+    // of staying as fixed pixel sizes that ignore the user's text setting.
+    @ScaledMetric(relativeTo: .caption2) private var barWidth: CGFloat = 26
+    @ScaledMetric(relativeTo: .caption2) private var barHeight: CGFloat = 50
+    @ScaledMetric(relativeTo: .caption2) private var iconSize: CGFloat = 18
 
     private var hasAnyData: Bool {
         bodyScore != nil || mindScore != nil || heartScore != nil || spiritScore != nil
@@ -114,18 +119,65 @@ struct WatchBalancePulse: View {
     }
 
     private var harmony: Int {
+        // V3 match to iOS — blend arith+geom on raw 0–10, then floor +
+        // power curve to 30–100. Kept inline because LifeDimension and
+        // HarmonyStage live only on the iOS target; the watch ingests the
+        // pre-computed weekly dimension values and reapplies the formula.
         let present = [bodyScore, mindScore, heartScore, spiritScore].compactMap { $0 }
-        guard !present.isEmpty else { return 0 }
+        guard !present.isEmpty else { return 30 }
         let mean = present.reduce(0, +) / Double(present.count)
-        return Int((mean * 10.0).rounded())
+        let product = present.reduce(1.0) { $0 * ($1 + 0.1) }
+        let geom = pow(product, 1.0 / Double(present.count))
+        let raw = max(0, min(10, 0.7 * mean + 0.3 * geom))
+        let display = 30.0 + 70.0 * pow(raw / 10.0, 0.75)
+        return Int(display.rounded())
+    }
+
+    /// Watch-side mirror of HarmonyStage. Enum + label/color duplicated
+    /// because the Watch target doesn't import iOS models.
+    private enum WatchHarmonyStage {
+        case resting, growing, flowing, thriving, radiant
+
+        static func from(display: Int) -> WatchHarmonyStage {
+            switch display {
+            case ...44:      return .resting
+            case 45...59:    return .growing
+            case 60...74:    return .flowing
+            case 75...89:    return .thriving
+            default:         return .radiant
+            }
+        }
+        var label: String {
+            switch self {
+            case .resting:  return "Resting"
+            case .growing:  return "Growing"
+            case .flowing:  return "Flowing"
+            case .thriving: return "Thriving"
+            case .radiant:  return "Radiant"
+            }
+        }
+        var color: Color {
+            switch self {
+            case .resting:  return Color(red: 0.72, green: 0.47, blue: 0.47) // dusty rose
+            case .growing:  return Color(red: 0.78, green: 0.60, blue: 0.41) // sand
+            case .flowing:  return Color(red: 0.37, green: 0.54, blue: 0.53) // teal
+            case .thriving: return Color(red: 0.42, green: 0.56, blue: 0.45) // moss
+            case .radiant:  return Color(red: 0.66, green: 0.57, blue: 0.35) // olive-gold
+            }
+        }
+    }
+    private var currentStage: WatchHarmonyStage {
+        WatchHarmonyStage.from(display: harmony)
     }
 
     private var harmonyColor: Color {
-        switch harmony {
-        case 70...:    return Color(red: 0.30, green: 0.69, blue: 0.31)
-        case 40..<70:  return Color(red: 0.85, green: 0.65, blue: 0.13)
-        default:       return Color(red: 0.90, green: 0.30, blue: 0.25)
+        // V3: derive from the HarmonyStage band (mirrors iOS). With partial
+        // data the score is still reported, but rendered in the muted sand
+        // "Growing" tone until all four dims are present.
+        guard allDimensionsPresent else {
+            return WatchHarmonyStage.growing.color
         }
+        return currentStage.color
     }
 
     var body: some View {
@@ -133,8 +185,9 @@ struct WatchBalancePulse: View {
             header
             bars
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilitySummary)
+        // Header carries the summary; bars are individually focusable
+        // (see `bar(for:)` accessibilityLabel) so VoiceOver users can step
+        // through each dimension instead of hearing one combined blob.
         .onChange(of: pulseRequest?.token) { _, newToken in
             handlePulseRequest(newToken: newToken)
         }
@@ -173,6 +226,8 @@ struct WatchBalancePulse: View {
             }
             Spacer(minLength: 0)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(headerAccessibilityLabel)
     }
 
     // MARK: Bars
@@ -191,16 +246,17 @@ struct WatchBalancePulse: View {
         let clamped = max(0, min(10, raw))
         let fraction = clamped / 10.0
         let isPulsing = activePulse == dim
+        let scoreOpt = scoreOptional(for: dim)
 
         return VStack(spacing: 6) {
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.white.opacity(0.08))
-                    .frame(width: 26, height: 50)
+                    .frame(width: barWidth, height: barHeight)
                 RoundedRectangle(cornerRadius: 4)
                     .fill(dim.color)
                     .saturation(isPulsing ? 1.15 : 1.0)
-                    .frame(width: 26, height: max(3, 50 * fraction))
+                    .frame(width: barWidth, height: max(3, barHeight * fraction))
                     .animation(.spring(response: 0.55, dampingFraction: 0.75), value: fraction)
             }
             .scaleEffect(isPulsing ? pulseScale : 1.0)
@@ -218,10 +274,28 @@ struct WatchBalancePulse: View {
             )
 
             Image(systemName: dim.icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(dim.color)
-                .frame(height: 18)
+                .frame(height: iconSize)
         }
+        // Per-bar accessibility — VoiceOver users can step through each
+        // dimension instead of hearing one combined "Balance" blob.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(barAccessibilityLabel(dim: dim, score: scoreOpt))
+    }
+
+    private func scoreOptional(for dim: WatchDimension) -> Double? {
+        switch dim {
+        case .body:   return bodyScore
+        case .mind:   return mindScore
+        case .heart:  return heartScore
+        case .spirit: return spiritScore
+        }
+    }
+
+    private func barAccessibilityLabel(dim: WatchDimension, score: Double?) -> String {
+        guard let score else { return "\(dim.shortLabel), no data" }
+        return "\(dim.shortLabel), \(Int(score.rounded())) of 10"
     }
 
     // MARK: Pulse animation (spec)
@@ -276,13 +350,12 @@ struct WatchBalancePulse: View {
 
     // MARK: Accessibility
 
-    private var accessibilitySummary: String {
-        guard hasAnyData else { return "Balance, no data yet." }
-        func d(_ s: Double?) -> String {
-            guard let s else { return "no data" }
-            return "\(Int(s.rounded()))"
-        }
-        return "Balance \(harmony) of 100. Body \(d(bodyScore)), Mind \(d(mindScore)), Heart \(d(heartScore)), Spirit \(d(spiritScore))."
+    /// Header summary — terse so VoiceOver doesn't repeat per-bar values
+    /// (which now live on each `bar(for:)` element).
+    private var headerAccessibilityLabel: String {
+        guard hasAnyData else { return "Balance, no data yet" }
+        let suffix = allDimensionsPresent ? "" : ", partial"
+        return "Balance \(harmony) of 100\(suffix)"
     }
 }
 

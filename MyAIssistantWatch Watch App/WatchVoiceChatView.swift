@@ -25,7 +25,11 @@ struct WatchVoiceChatView: View {
     @FocusState private var isInputFocused: Bool
 
     private let claudeService = WatchClaudeService()
-    private let synthesizer = AVSpeechSynthesizer()
+    // @State so SwiftUI preserves a stable instance across struct re-creation —
+    // a `let` here would re-allocate on every view-graph rebuild and the
+    // `.onDisappear` stop call could land on a different instance than the one
+    // currently speaking, leaving audio running.
+    @State private var synthesizer = AVSpeechSynthesizer()
 
     var body: some View {
         ScrollView {
@@ -296,7 +300,7 @@ struct WatchVoiceChatView: View {
             isProcessing = false
             // If we already performed an action, don't show the API key error
             if actionPerformed == nil {
-                errorMessage = "Watch chat needs an Anthropic API key. Open Thrivn on your iPhone → Settings → API Keys."
+                errorMessage = "Watch chat needs an Anthropic API key. Open the app on your iPhone → Settings → API Keys."
             }
             return
         }
@@ -472,9 +476,21 @@ struct WatchVoiceChatView: View {
             let ampm = input[ampmRange].lowercased()
             if ampm == "pm" && hour < 12 { hour += 12 }
             if ampm == "am" && hour == 12 { hour = 0 }
-        } else if hour < 8 {
-            // No am/pm specified and hour < 8 → assume PM (e.g., "at 3" = 3 PM)
-            hour += 12
+        } else if hour >= 1 && hour <= 11 {
+            // Ambiguous (no am/pm). Pick the NEXT occurrence relative to now —
+            // "at 7" said at 6 AM means 7 AM today, said at 9 AM means 7 PM
+            // today, said at 9 PM means 7 AM tomorrow (handled by date layer).
+            let currentHour = Calendar.current.component(.hour, from: Date())
+            let pmHour = hour + 12
+            if currentHour < hour {
+                // AM today is still in the future — keep as-is.
+            } else if currentHour < pmHour {
+                // AM is past, PM still future — bump to PM.
+                hour = pmHour
+            } else {
+                // Both today's AM and PM are past — keep AM (treated as
+                // tomorrow morning in the user's mental model).
+            }
         }
 
         let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: today) ?? today

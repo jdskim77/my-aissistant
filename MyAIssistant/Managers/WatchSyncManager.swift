@@ -96,7 +96,14 @@ final class WatchSyncManager: NSObject {
 
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: Date())
-        let dayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
+        // `safeDate` returns the original date on failure, which would
+        // collapse the [dayStart, dayEnd) filter range to empty and silently
+        // ship an empty payload. Fall back to a literal 24h offset so we
+        // always include today's tasks even on degenerate calendar arithmetic.
+        let calendarDayEnd = calendar.safeDate(byAdding: .day, value: 1, to: dayStart)
+        let dayEnd = calendarDayEnd > dayStart
+            ? calendarDayEnd
+            : dayStart.addingTimeInterval(86400)
 
         let todayTasks = tasks.filter { $0.date >= dayStart && $0.date < dayEnd }
             .sorted { $0.date < $1.date }
@@ -138,13 +145,19 @@ final class WatchSyncManager: NSObject {
             completedCheckIns: completedCheckIns
         )
 
-        var context = data.toDictionary()
-        // Include API key in context so Watch always has it
+        // Read-modify-write so any keys set by `syncAPIKey` (or future
+        // sibling methods) survive this push. Starting from
+        // `data.toDictionary()` would silently drop unrelated keys —
+        // currently safe because we re-add apiKey + textSize below, but
+        // fragile as more keys join the context.
+        var context = session.applicationContext
+        for (key, value) in data.toDictionary() {
+            context[key] = value
+        }
         let keychain = KeychainService()
         if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty {
             context["apiKey"] = apiKey
         }
-        // Include text size preference
         context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
         try? session.updateApplicationContext(context)
     }

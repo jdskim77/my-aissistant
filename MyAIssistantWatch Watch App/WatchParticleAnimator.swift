@@ -47,6 +47,11 @@ final class WatchParticleAnimator {
     private var queue: [QueuedFire] = []
     private var lastLaunchTime: Date = .distantPast
     private var processing = false
+    /// Tracks all in-flight Tasks (drain loop + per-particle landing tasks)
+    /// so the owning view can cancel them on disappear. Without this, a tab
+    /// switch mid-flight leaves background haptics + pulses queued against
+    /// an unmounted view.
+    private var pendingTasks: [Task<Void, Never>] = []
 
     struct InFlight: Identifiable, Equatable {
         let id = UUID()
@@ -78,15 +83,27 @@ final class WatchParticleAnimator {
         triggerLanding(dimension: dimension)
     }
 
+    /// Cancel every pending drain + landing task and drop in-flight particles.
+    /// Call from the owning view's `.onDisappear` to prevent background
+    /// haptics from firing on an unmounted view.
+    func cancelAll() {
+        pendingTasks.forEach { $0.cancel() }
+        pendingTasks.removeAll()
+        queue.removeAll()
+        inFlight.removeAll()
+        processing = false
+    }
+
     // MARK: Queue processing
 
     private func startProcessing() {
         guard !processing else { return }
         processing = true
-        Task { @MainActor in
+        let task = Task { @MainActor in
             await drain()
             processing = false
         }
+        pendingTasks.append(task)
     }
 
     private func drain() async {
@@ -122,11 +139,16 @@ final class WatchParticleAnimator {
         lastLaunchTime = Date()
 
         // Schedule arrival — remove particle, fire haptic + bar pulse.
-        Task { @MainActor in
+        // Stored so cancelAll() can stop pending haptics on view disappear.
+        let task = Task { @MainActor in
             try? await Task.sleep(for: .seconds(particleDuration))
+            guard !Task.isCancelled else { return }
             inFlight.removeAll { $0.id == particle.id }
             triggerLanding(dimension: dimension)
         }
+        pendingTasks.append(task)
+        // Garbage-collect finished tasks so the array doesn't grow unbounded.
+        pendingTasks.removeAll { $0.isCancelled }
     }
 
     private func triggerLanding(dimension: WatchDimension) {
