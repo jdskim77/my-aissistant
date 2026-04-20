@@ -6,55 +6,25 @@ import AppIntents
 @main
 struct MyAIssistantWatchApp: App {
     private var connectivityManager = WatchConnectivityManager.shared
-    @State private var selectedTab: WatchTab = .compass
+    @State private var selectedTab: WatchTab = .tasks
     @State private var showVoiceChat = false
-    @State private var showAddTask = false            // Today tab's quick-add
-    @State private var showAddTaskFromCompass = false // Compass tab's quick-add
-                                                      // (separate state so only the
-                                                      // visible NavigationStack responds)
+    @State private var showAddTask = false
 
     var body: some Scene {
         WindowGroup {
             TabView(selection: $selectedTab) {
-                // Tab 1: Compass Dashboard
+                // Tab 1: Today — vertical progress bars + inline next row +
+                // AI pill at the bottom. This is the primary home screen.
+                // The AI pill inside WatchTodayView is the sole add path.
                 NavigationStack {
-                    WatchCompassView(connectivity: connectivityManager)
-                        .toolbar {
-                            // + for quick task add. Uses its own state
-                            // (showAddTaskFromCompass) — NOT the Today tab's
-                            // showAddTask — so only the visible NavigationStack
-                            // responds. Don't merge these.
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button {
-                                    showAddTaskFromCompass = true
-                                } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.green)
-                                }
-                                .accessibilityLabel("Add Task")
-                            }
-                        }
+                    WatchTodayView(connectivity: connectivityManager)
                         // Voice-chat is reachable two ways: the WatchAIPill at
-                        // the bottom of WatchCompassView (NavigationLink), and
+                        // the bottom of WatchTodayView (NavigationLink), and
                         // the AskAIIntent / Action Button which flips
-                        // shouldOpenVoiceChat → showVoiceChat. Keep this
-                        // destination wired so the intent path still works.
+                        // shouldOpenVoiceChat → showVoiceChat.
                         .navigationDestination(isPresented: $showVoiceChat) {
                             WatchVoiceChatView(connectivity: connectivityManager)
                         }
-                        .navigationDestination(isPresented: $showAddTaskFromCompass) {
-                            WatchAddTaskView(connectivity: connectivityManager)
-                        }
-                }
-                .tag(WatchTab.compass)
-
-                // Tab 2: Today
-                // No toolbar add button — the AI pill ("Tell me what to add")
-                // inside WatchTodayView is the sole add path on this tab.
-                // showAddTask navigation kept for the Compass tab pattern.
-                NavigationStack {
-                    WatchTodayView(connectivity: connectivityManager)
                         .navigationDestination(isPresented: $showAddTask) {
                             WatchAddTaskView(connectivity: connectivityManager)
                         }
@@ -64,21 +34,21 @@ struct MyAIssistantWatchApp: App {
                 }
                 .tag(WatchTab.tasks)
 
-                // Tab 3: Quick Check-In
+                // Tab 2: Quick Check-In
                 WatchQuickCheckInView(connectivity: connectivityManager)
                     .tag(WatchTab.checkIn)
             }
             .tabViewStyle(.page)
             .onChange(of: connectivityManager.shouldOpenVoiceChat) { _, shouldOpen in
                 if shouldOpen {
-                    selectedTab = .compass
+                    selectedTab = .tasks
                     showVoiceChat = true
                     connectivityManager.shouldOpenVoiceChat = false
                 }
             }
             .onOpenURL { url in
                 if url.scheme == "myaissistant" && url.host == "voice" {
-                    selectedTab = .compass
+                    selectedTab = .tasks
                     showVoiceChat = true
                 }
             }
@@ -86,7 +56,7 @@ struct MyAIssistantWatchApp: App {
     }
 
     enum WatchTab {
-        case compass, tasks, checkIn
+        case tasks, checkIn
     }
 }
 

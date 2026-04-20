@@ -278,6 +278,20 @@ struct BalancePulseCard: View {
                     }
                 }
                 .scaleEffect(scale, anchor: .bottom)
+                // Publish this bar's center in the particle coord space so
+                // HomeView can aim the completion particle at it. Without
+                // this, dimensionBarCenters stays empty, flightLaunchHandler
+                // falls through to pulseInPlace for every completion, and no
+                // particle flight is visible.
+                .background(
+                    GeometryReader { proxy in
+                        let f = proxy.frame(in: .named(particleCoordinateSpace))
+                        Color.clear.preference(
+                            key: DimensionBarPositionKey.self,
+                            value: [dim: CGPoint(x: f.midX, y: f.midY)]
+                        )
+                    }
+                )
                 // Tier 4 glow — breathes when above tick; stronger + stacks on overflow
                 .shadow(
                     color: aboveTick ? dim.color.opacity(0.5) : Color.clear,

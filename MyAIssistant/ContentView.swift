@@ -48,7 +48,12 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.bottom, 56)
+            // CustomTabBar content is ~80pt tall (60pt center button + 12pt
+            // top + 8pt bottom padding). 56pt here left the bottom ~24pt of
+            // each tab's content clipped behind the bar — Schedule's
+            // quick-add row in particular was hidden. Match the actual bar
+            // height so tab content never overlaps the tab bar.
+            .padding(.bottom, 80)
 
             CustomTabBar(
                 selectedTab: $selectedTab,

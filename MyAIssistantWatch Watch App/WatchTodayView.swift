@@ -83,10 +83,18 @@ struct WatchTodayView: View {
                 )
                 .padding(.bottom, 2)
 
-                if let upNext = connectivity.upNextTask {
-                    inlineNextRow(upNext)
-                } else {
+                // Active tasks list — previously only the single upNext row
+                // was rendered, which made the watch feel like it had no task
+                // visibility. Show the full list so users can scan + tap any
+                // task, not just the next one.
+                if connectivity.activeTasks.isEmpty {
                     emptyTaskHint
+                } else {
+                    VStack(spacing: 4) {
+                        ForEach(connectivity.activeTasks) { task in
+                            inlineNextRow(task)
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 6)

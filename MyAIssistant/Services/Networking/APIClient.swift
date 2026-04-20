@@ -101,7 +101,18 @@ actor APIClient {
         try await Task.sleep(for: .seconds(refillInterval))
         refillTokens()
         guard tokens > 0 else {
-            throw AIError.rateLimited
+            // Local bucket exhaustion — surface as a network error rather
+            // than `.rateLimited`. Reason: when the user is offline, the
+            // network request never lands; the local throttle still runs
+            // and used to throw `.rateLimited`, which ChatManager rendered
+            // as "Too many requests." That's confusing ("I barely typed!")
+            // and masks the real cause (no connectivity). Use networkError
+            // so the user-facing copy stays "trouble connecting."
+            throw AIError.networkError(NSError(
+                domain: "APIClient",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Local throttle — try again in a few seconds."]
+            ))
         }
         tokens -= 1
     }
