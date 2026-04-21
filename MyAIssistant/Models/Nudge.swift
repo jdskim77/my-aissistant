@@ -115,6 +115,12 @@ enum NudgeCategory: String, Codable, CaseIterable {
     case habitSlip
     case postCheckInAction
     case goalCheckpoint
+    /// Safety-route nudge emitted when the on-device crisis classifier flags
+    /// the most recent check-in / chat text. Copy is hardcoded
+    /// (see `SafeResourceCopy`), never LLM-generated, and never silenceable
+    /// via the Coach Settings category list. Bypasses daily caps and quiet
+    /// hours — respects only the 24h safety pause that follows its delivery.
+    case safetyRoute
 }
 
 enum NudgeAction: String, Codable, CaseIterable {
