@@ -34,9 +34,14 @@ final class NudgeEngine {
     var checkInManager: CheckInManager?
     var checkInBehaviorEngine: CheckInBehaviorEngine?
 
-    /// Registered trigger rules, evaluated in array order. Phase 1 is empty.
-    /// Phase 2 appends `WeakDimensionWithOpenWindowRule()`.
-    private var rules: [NudgeTriggerRule] = []
+    /// Registered trigger rules, evaluated in array order. Phase 2 ships
+    /// `WeakDimensionWithOpenWindowRule` as the sole live rule — additional
+    /// rules land only after the per-rule hit-rate gate passes (spec §11).
+    /// `private var` (not `let`) so tests can swap in a deterministic rule
+    /// set without rebuilding the whole engine.
+    private var rules: [NudgeTriggerRule] = [
+        WeakDimensionWithOpenWindowRule()
+    ]
 
     private let log = AppLogger.app
 
@@ -142,23 +147,63 @@ final class NudgeEngine {
     // from the injected managers.
 
     private func collectContext(trigger: EvaluationTrigger) -> NudgeEvalContext {
-        // Phase 1: rule set is empty, so the context is never read. Return an
-        // empty snapshot. Phase 2 (`WeakDimensionWithOpenWindowRule`) will fill
-        // in `dimensionScores` from `BalanceManager.weeklyScores()`, `streak`
-        // from `PatternEngine.currentStreak()`, `calendarGaps` from
-        // `CalendarSyncManager`, and `openTaskCountByDimension` from
-        // `TaskManager`. Each rule pulls only what it needs, so we avoid a
-        // giant always-on snapshot.
+        let now = Date()
         let streak = patternEngine?.currentStreak() ?? 0
+
+        // Dimension scores. `BalanceManager.weeklyScores()` returns a composite
+        // on a 0-10 scale; rules (and the context API) operate on 0-100 for
+        // readability and thresholding. Multiply + round to Int. Dimensions
+        // with no data are simply absent — rules see an empty dictionary and
+        // short-circuit rather than firing against phantom zeros.
+        let scores = balanceManager?.weeklyScores() ?? [:]
+        let dimensionScores = scores.reduce(into: [LifeDimension: Int]()) { acc, pair in
+            acc[pair.key] = Int(round(pair.value * 10.0))
+        }
+
+        // Open tasks today by dimension. "Open" = not yet done. A
+        // multi-dimension task (e.g., "family walk" = Physical + Emotional)
+        // counts once per tagged dimension — the rule treats any such task
+        // as coverage for both quadrants.
+        let todaysTasks = taskManager?.todayTasks() ?? []
+        let openTasks = todaysTasks.filter { !$0.done }
+        var openByDim: [LifeDimension: Int] = [:]
+        for task in openTasks {
+            for dim in task.dimensions where dim.isScored {
+                openByDim[dim, default: 0] += 1
+            }
+        }
+
+        // Calendar gaps in the next 4 hours. Derived from today's timed
+        // commitments (user tasks + calendar-imported events, both live as
+        // `TaskItem`). Unknown durations default to 30 min — conservative
+        // on purpose: better to understate the open window than to nudge a
+        // user who's actually busy.
+        let windowEnd = now.addingTimeInterval(4 * 3600)
+        let upcoming = todaysTasks
+            .filter { $0.date > now && $0.date < windowEnd }
+            .sorted { $0.date < $1.date }
+
+        var gaps: [CalendarGap] = []
+        var cursor = now
+        for task in upcoming {
+            if task.date > cursor {
+                gaps.append(CalendarGap(start: cursor, end: task.date))
+            }
+            cursor = task.date.addingTimeInterval(30 * 60)
+        }
+        if cursor < windowEnd {
+            gaps.append(CalendarGap(start: cursor, end: windowEnd))
+        }
+
         return NudgeEvalContext(
-            now: Date(),
-            dimensionScores: [:],
+            now: now,
+            dimensionScores: dimensionScores,
             streak: streak,
-            lastCheckIn: nil,
-            currentSlotCheckInComplete: false,
-            calendarGaps: [],
-            openTaskCountByDimension: [:],
-            habitConsecutiveMisses: [:],
+            lastCheckIn: nil,                    // unused by the Phase 2 rule
+            currentSlotCheckInComplete: false,   // unused by the Phase 2 rule
+            calendarGaps: gaps,
+            openTaskCountByDimension: openByDim,
+            habitConsecutiveMisses: [:],         // unused by the Phase 2 rule
             isAppForeground: trigger == .foreground
         )
     }

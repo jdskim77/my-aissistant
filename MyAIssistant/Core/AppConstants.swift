@@ -125,17 +125,33 @@ enum AppConstants {
     static let nudgeEvaluationBGTaskID = "com.myaissistant.nudge-evaluation"
 
     /// Kill switch — when true the engine evaluates nothing and delivers no
-    /// nudges. Default true in Phase 1 (engine disabled by default per rollout).
-    /// Flip to false once Phase 2's first rule is dogfood-ready.
-    static let nudgeEngineKillSwitchEnabled = true
+    /// nudges. Phase 1 defaulted this to true (scaffolding only). Phase 2
+    /// flips it to false so the first live rule (`WeakDimensionWithOpenWindowRule`)
+    /// can fire. Flipping back to true remains the emergency kill for
+    /// bad-behavior regressions between TestFlight builds.
+    static let nudgeEngineKillSwitchEnabled = false
 
     /// Hard frequency caps (spec §7.1).
     static let nudgeMaxPerDay = 2
     static let nudgeMinHoursBetween = 1
     static let nudgeDefaultCooldownHours = 48
     static let nudgeStreakAtRiskCooldownHours = 24
-    static let nudgeWeakDimensionCooldownHours = 72
+    /// Bumped 72 → 96 for Phase 2 so the same dimension doesn't resurface
+    /// within four days — conservative cadence for external testers.
+    static let nudgeWeakDimensionCooldownHours = 96
     static let nudgeMaxPerDimensionHours = 48
+
+    /// Phase 2 weak-dimension rule tunables.
+    ///
+    /// `nudgeBaselineMinDays`: minimum ritual streak before dimension-weakness
+    /// nudges can fire — avoids framing noise as a deficit for brand-new users.
+    /// `nudgeMinOpenWindowMinutes`: minimum calendar gap the rule considers
+    /// "usable" — 30 is generous enough for a real act, not a manufactured break.
+    /// `nudgeWeakDimensionQuintileCeiling`: a dimension must score at or below
+    /// this (0-100 scale) to be considered "quiet." 20 = bottom quintile.
+    static let nudgeBaselineMinDays = 14
+    static let nudgeMinOpenWindowMinutes = 30
+    static let nudgeWeakDimensionQuintileCeiling = 20
 
     /// Quiet-hours defaults (spec §7.2).
     static let nudgeQuietHoursStartHour = 21 // 9 PM
