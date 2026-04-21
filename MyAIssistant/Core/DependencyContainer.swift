@@ -274,3 +274,16 @@ extension EnvironmentValues {
     }
 }
 
+// MARK: - NudgeEngine Environment Key
+
+struct NudgeEngineKey: EnvironmentKey {
+    static let defaultValue: NudgeEngine? = nil
+}
+
+extension EnvironmentValues {
+    var nudgeEngine: NudgeEngine? {
+        get { self[NudgeEngineKey.self] }
+        set { self[NudgeEngineKey.self] = newValue }
+    }
+}
+

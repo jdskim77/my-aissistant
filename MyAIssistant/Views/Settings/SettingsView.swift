@@ -156,6 +156,17 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        CoachSettingsView()
+                    } label: {
+                        settingsRow(
+                            icon: "sparkles",
+                            color: AppColors.accent,
+                            title: "Coach",
+                            subtitle: "Proactive nudges"
+                        )
+                    }
+
+                    NavigationLink {
                         CheckInPreferencesView()
                     } label: {
                         settingsRow(

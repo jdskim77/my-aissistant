@@ -53,6 +53,7 @@ enum SchemaV1: VersionedSchema {
             CheckInPreference.self,
             CheckInBehavior.self,
             CheckInSuggestion.self,
+            Nudge.self,
         ]
     }
 }

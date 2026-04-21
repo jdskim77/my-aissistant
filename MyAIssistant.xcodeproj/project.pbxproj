@@ -17,6 +17,7 @@
 		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
 		16D80D0F8FFA40AA984D64D3 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
+		188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */; };
 		188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45180E1CF55D484DE91629E /* AppLogger.swift */; };
 		1F0559DB5CC542BB5A99E74D /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D874F054AA8C19805C3E250 /* SentryConfig.swift */; };
@@ -24,10 +25,12 @@
 		2A1C75835F7A468537F85DB4 /* SeasonGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */; };
 		2AC6A403A65FA8B949F2FF88 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */; };
 		2D948D37E0E3B492396A188A /* ModelContext+SafeSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */; };
+		3867C40EF9E49F0FA0F83E3C /* Nudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91402BE331DBEA3C2911E012 /* Nudge.swift */; };
 		3E79B721486CAF70EE66A099 /* HabitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE61F904669C1F28F816A9 /* HabitManager.swift */; };
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
+		454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161422F9814E3002A51F9 /* CoachSettingsView.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
@@ -55,6 +58,7 @@
 		6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6169581E8F0F1202E4E6F1FF /* AppRadius.swift */; };
 		712945758B24C67C5737D0B4 /* SeasonGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */; };
 		729BAB7E9B4D2F53BA07F952 /* CheckInBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2902A18176BF58C082BECA96 /* CheckInBehavior.swift */; };
+		72E49B741243654A262DCB0A /* NudgeTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B639629AB4CC9037A38934D /* NudgeTypes.swift */; };
 		7380E175C1303001F22BE2FA /* LifeDimension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB633F86C9577EC419AB596 /* LifeDimension.swift */; };
 		76D6A5FCF892119543F9A3D0 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000014000000 /* Haptics.swift */; };
 		78CC99A8F6F1D3D8B0098D2B /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57CB2D6EA910D159998AA87F /* InsightEngine.swift */; };
@@ -211,11 +215,13 @@
 		B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */; };
 		B105A30692BF31460C987C81 /* CheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005000000 /* CheckIn.swift */; };
 		B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDAF56B7FFCD2ABB9219B7F /* WatchScheduleDataTests.swift */; };
+		B699E1BB1A57189485CCABDD /* KeywordCrisisClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054101A80F10838BAAF59076 /* KeywordCrisisClassifier.swift */; };
 		B6DAFEE3962D481100F25951 /* DailyBalanceCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */; };
 		B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */; };
 		BDBEBBDC00DF8A70EAE56633 /* WeeklyReflectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B081FE087983FAC2B82C47 /* WeeklyReflectionView.swift */; };
 		C1DA15C6A34D01696CB0EB05 /* CheckInPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */; };
 		C56CF1ABB0B973E485415C31 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
+		C64A4B70081C166D7C2C3CDF /* Nudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91402BE331DBEA3C2911E012 /* Nudge.swift */; };
 		C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */; };
 		CE3C774BA2A1C1742E13E453 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */; };
 		D060B2C212668DDA89B9A9B8 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009000000 /* AppColors.swift */; };
@@ -230,7 +236,9 @@
 		E20E774D7E95C6FA21D00AA0 /* StarterTaskPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */; };
 		E3FAADE58A9C755BFE67DA70 /* CheckInRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000006000000 /* CheckInRecord.swift */; };
 		E4A1B2C3D4E5F6A8 /* HabitReminderCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */; };
+		E60B9327BB10814543599778 /* NudgeComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937D7AD26947E833B43D374E /* NudgeComposer.swift */; };
 		E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */; };
+		ECD8B4F293B14EB01D52744A /* CrisisClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9291E4950E52C884AA8C1CB9 /* CrisisClassifier.swift */; };
 		F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */; };
 		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
 		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
@@ -322,6 +330,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		054101A80F10838BAAF59076 /* KeywordCrisisClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeywordCrisisClassifier.swift; sourceTree = "<group>"; };
 		0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleHabitIntent.swift; sourceTree = "<group>"; };
 		0CF67D32613D712EF71D31AB /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		0DC1A024FFBE272ECCD31CD8 /* OnboardingCompassRevealView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCompassRevealView.swift; sourceTree = "<group>"; };
@@ -354,6 +363,7 @@
 		3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityPattern.swift; sourceTree = "<group>"; };
 		406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInSuggestionCard.swift; sourceTree = "<group>"; };
 		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
+		454161422F9814E3002A51F9 /* CoachSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSettingsView.swift; sourceTree = "<group>"; };
 		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -375,7 +385,11 @@
 		6B55648FDB5CA4DA422F9FB9 /* LegalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LegalView.swift; sourceTree = "<group>"; };
 		6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSpacing.swift; sourceTree = "<group>"; };
 		72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DimensionSuggester.swift; sourceTree = "<group>"; };
+		7B639629AB4CC9037A38934D /* NudgeTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeTypes.swift; sourceTree = "<group>"; };
 		7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScaleButtonStyle.swift; sourceTree = "<group>"; };
+		91402BE331DBEA3C2911E012 /* Nudge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Nudge.swift; sourceTree = "<group>"; };
+		9291E4950E52C884AA8C1CB9 /* CrisisClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisClassifier.swift; sourceTree = "<group>"; };
+		937D7AD26947E833B43D374E /* NudgeComposer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeComposer.swift; sourceTree = "<group>"; };
 		976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreferencesView.swift; sourceTree = "<group>"; };
 		9F70D77DA8CDF5533D08F039 /* IntentModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentModelContainer.swift; sourceTree = "<group>"; };
 		9FEE61F904669C1F28F816A9 /* HabitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitManager.swift; sourceTree = "<group>"; };
@@ -509,6 +523,7 @@
 		CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInWithAppleView.swift; sourceTree = "<group>"; };
 		CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
 		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
+		D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeEngine.swift; sourceTree = "<group>"; };
 		D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
 		DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetCheckInWindow.swift; sourceTree = "<group>"; };
 		DB41FCD08DE3A0859D7F8685 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -652,6 +667,15 @@
 			path = Compass;
 			sourceTree = "<group>";
 		};
+		752AEE5CF3D9EA812F6090C6 /* Crisis */ = {
+			isa = PBXGroup;
+			children = (
+				9291E4950E52C884AA8C1CB9 /* CrisisClassifier.swift */,
+				054101A80F10838BAAF59076 /* KeywordCrisisClassifier.swift */,
+			);
+			path = Crisis;
+			sourceTree = "<group>";
+		};
 		AF197A2BC6ECA6A2717B9314 /* Backend */ = {
 			isa = PBXGroup;
 			children = (
@@ -725,6 +749,7 @@
 				F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */,
 				DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */,
 				2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */,
+				91402BE331DBEA3C2911E012 /* Nudge.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -757,6 +782,7 @@
 				AF197A2BC6ECA6A2717B9314 /* Backend */,
 				4CC6B61FF9098C6683B23662 /* Monitoring */,
 				16CC9AF5CEF1F649F39701F1 /* LocationProvider.swift */,
+				752AEE5CF3D9EA812F6090C6 /* Crisis */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -910,6 +936,9 @@
 				16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */,
 				16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */,
 				16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */,
+				7B639629AB4CC9037A38934D /* NudgeTypes.swift */,
+				937D7AD26947E833B43D374E /* NudgeComposer.swift */,
+				D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -990,6 +1019,7 @@
 		D500000002000000 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				454161422F9814E3002A51F9 /* CoachSettingsView.swift */,
 				B600000004000000 /* SettingsView.swift */,
 				B600000005000000 /* SubscriptionView.swift */,
 				B600000006000000 /* APIKeySettingsView.swift */,
@@ -1414,6 +1444,7 @@
 				488DAEC992B7CED2DFA63AAF /* ColorTheme.swift in Sources */,
 				78E346CABDD97D56F7580CCB /* ShareExtensionStubs.swift in Sources */,
 				0F3E8B87E19C3F1C921999DF /* UsageTracker.swift in Sources */,
+				3867C40EF9E49F0FA0F83E3C /* Nudge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1446,6 +1477,7 @@
 				A300000003000000 /* AnthropicProvider.swift in Sources */,
 				A3A200P2000000000001 /* GoalTaskSuggester.swift in Sources */,
 				A3A200P2000000000002 /* GoalSuggestionsSheet.swift in Sources */,
+				454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */,
 				A300000004000000 /* OpenAIProvider.swift in Sources */,
 				A300000005000000 /* AIProviderFactory.swift in Sources */,
 				A300000006000000 /* KeychainService.swift in Sources */,
@@ -1595,6 +1627,12 @@
 				8B670A077CAC4D92CDB098F4 /* WeatherChip.swift in Sources */,
 				8B670A087CAC4D92CDB098F5 /* BalancePulseBus.swift in Sources */,
 				8B670A097CAC4D92CDB098F6 /* ParticleAnimator.swift in Sources */,
+				C64A4B70081C166D7C2C3CDF /* Nudge.swift in Sources */,
+				72E49B741243654A262DCB0A /* NudgeTypes.swift in Sources */,
+				ECD8B4F293B14EB01D52744A /* CrisisClassifier.swift in Sources */,
+				B699E1BB1A57189485CCABDD /* KeywordCrisisClassifier.swift in Sources */,
+				E60B9327BB10814543599778 /* NudgeComposer.swift in Sources */,
+				188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1669,7 +1707,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ThrivnShareExtension/ThrivnShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThrivnShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -1698,7 +1736,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ThrivnShareExtension/ThrivnShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ThrivnShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -1752,7 +1790,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1826,7 +1864,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "MyAIssistantWatch Watch App/MyAIssistantWatch Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1893,7 +1931,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1951,7 +1989,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -2005,7 +2043,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -2062,7 +2100,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -2195,7 +2233,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
@@ -2227,7 +2265,7 @@
 				CODE_SIGN_ENTITLEMENTS = MyAIssistant/MyAIssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = A4M43SQSJZ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistant/Info.plist;
@@ -2257,7 +2295,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.4;
@@ -2275,7 +2313,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.4;
@@ -2295,7 +2333,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;
@@ -2324,7 +2362,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = MyAIssistantWidgets/MyAIssistantWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MyAIssistantWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Thrivn;

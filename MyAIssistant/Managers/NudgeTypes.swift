@@ -1,0 +1,111 @@
+import Foundation
+
+// MARK: - Nudge Candidate
+//
+// A trigger rule's output when it fires. Consumed by `NudgeComposer` to
+// produce the visible body text and by `NudgeEngine` to construct the
+// persisted `Nudge` record. Rules emit candidates; the engine decides
+// whether to deliver them (caps, dedupe, quiet-hours, crisis gate).
+
+/// A proposed nudge from a triggered rule, not yet composed or delivered.
+struct NudgeCandidate: Sendable {
+    let category: NudgeCategory
+    let dimension: LifeDimension?
+    let suggestedAction: NudgeAction
+    let actionPayload: String?
+    /// Values extracted by the rule for template interpolation (Path A) and
+    /// for the LLM volatile block (Path B, Phase 3).
+    let templateParams: [String: String]
+    /// Signal snapshot for audit / eval. Serialized into
+    /// `Nudge.triggerContextJSON` on persistence.
+    let triggerContext: [String: String]
+
+    init(
+        category: NudgeCategory,
+        dimension: LifeDimension? = nil,
+        suggestedAction: NudgeAction = .none,
+        actionPayload: String? = nil,
+        templateParams: [String: String] = [:],
+        triggerContext: [String: String] = [:]
+    ) {
+        self.category = category
+        self.dimension = dimension
+        self.suggestedAction = suggestedAction
+        self.actionPayload = actionPayload
+        self.templateParams = templateParams
+        self.triggerContext = triggerContext
+    }
+}
+
+// MARK: - Nudge Eval Context
+//
+// Snapshot of signal-source state at a single evaluation pass. Rules read
+// this and return at most one `NudgeCandidate`. Deterministic by design —
+// same context → same candidate — so the eval harness can assert fire
+// behavior without mocking every manager.
+
+/// Read-only snapshot of the app's coach-relevant state for one evaluation pass.
+/// Populated by `NudgeEngine.collectContext()`; passed into every rule.
+struct NudgeEvalContext: Sendable {
+    let now: Date
+
+    /// 0–100 rolling score per scored dimension (Physical / Mental / Emotional / Spiritual).
+    let dimensionScores: [LifeDimension: Int]
+
+    /// Current ritual streak count.
+    let streak: Int
+
+    /// Last completed check-in (mood, energy, time), if any.
+    let lastCheckIn: LastCheckInSnapshot?
+
+    /// Count of completed check-ins for the current slot today (0 or 1 typically).
+    let currentSlotCheckInComplete: Bool
+
+    /// Today's open calendar windows — gaps between committed events.
+    let calendarGaps: [CalendarGap]
+
+    /// Today's open task count by dimension (lets rules detect "dimension neglected today").
+    let openTaskCountByDimension: [LifeDimension: Int]
+
+    /// Consecutive missed days by habit id (for habit-slip detection).
+    let habitConsecutiveMisses: [String: Int]
+
+    /// Whether the user is currently in the app (affects channel choice downstream).
+    let isAppForeground: Bool
+}
+
+/// Summary of the most recent completed check-in. `nil` when no check-ins exist.
+struct LastCheckInSnapshot: Sendable {
+    let date: Date
+    let mood: Int?         // 1–5
+    let energyLevel: Int?  // 1–5
+    let notes: String?
+}
+
+/// An open window on the user's calendar today.
+struct CalendarGap: Sendable {
+    let start: Date
+    let end: Date
+    var minutes: Int { max(0, Int(end.timeIntervalSince(start) / 60)) }
+}
+
+// MARK: - Trigger Rule Protocol
+//
+// Every rule is a pure function over `NudgeEvalContext` returning an
+// optional `NudgeCandidate`. Stateless by convention — all per-rule
+// state (cooldowns, last-fire timestamps) is owned by `NudgeEngine`.
+
+/// A single trigger rule. Same context → same candidate. Rules are registered
+/// with `NudgeEngine.rules`; adding a new category = implementing this
+/// protocol and appending to the engine's rule list.
+protocol NudgeTriggerRule: Sendable {
+    /// Identifies both the rule and the resulting `Nudge.category`. One rule
+    /// per category in v1.
+    var id: NudgeCategory { get }
+
+    /// Minimum time between successive firings of this rule.
+    var cooldown: TimeInterval { get }
+
+    /// Evaluate a snapshot; return a candidate if the rule should fire.
+    func evaluate(context: NudgeEvalContext) -> NudgeCandidate?
+}

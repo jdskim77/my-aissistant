@@ -26,7 +26,9 @@ struct MyAIssistantApp: App {
     @State private var dailyRecapGenerator: DailyRecapGenerator?
     @State private var weatherManager: WeatherManager
     @State private var balancePulseBus: BalancePulseBus
+    @State private var nudgeEngine: NudgeEngine
     private var backgroundTaskManager: BackgroundTaskManager?
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // Initialize crash reporting FIRST so we capture any startup crashes.
@@ -122,11 +124,29 @@ struct MyAIssistantApp: App {
         let locationProvider = LocationProvider()
         self._weatherManager = State(initialValue: WeatherManager(locationProvider: locationProvider))
 
+        // Nudge engine — Phase 1 scaffolding. Kill switch defaults to on
+        // (AppConstants.nudgeEngineKillSwitchEnabled = true) so the engine
+        // short-circuits and delivers nothing until Phase 2 flips the flag.
+        let composer = NudgeComposer()
+        let crisisClassifier = KeywordCrisisClassifier()
+        let engine = NudgeEngine(
+            modelContext: context,
+            composer: composer,
+            crisisClassifier: crisisClassifier
+        )
+        engine.patternEngine = pe
+        engine.balanceManager = bm
+        engine.taskManager = tm
+        engine.habitManager = hm
+        engine.checkInBehaviorEngine = cibe
+        self._nudgeEngine = State(initialValue: engine)
+
         self.backgroundTaskManager = BackgroundTaskManager(
             modelContext: context,
             patternEngine: pe,
             calendarSyncManager: csm,
-            checkInBehaviorEngine: cibe
+            checkInBehaviorEngine: cibe,
+            nudgeEngine: engine
         )
 
         // Register background tasks (must happen during init, before app finishes launching)
@@ -169,6 +189,7 @@ struct MyAIssistantApp: App {
                 .environment(\.dailyRecapGenerator, dailyRecapGenerator)
                 .environment(\.weatherManager, weatherManager)
                 .environment(\.balancePulseBus, balancePulseBus)
+                .environment(\.nudgeEngine, nudgeEngine)
                 .environment(\.userName, UserDefaults.standard.string(forKey: "user_name"))
                 .task {
                     await subscriptionManager.updateTier()
@@ -198,6 +219,12 @@ struct MyAIssistantApp: App {
                     backgroundTaskManager?.scheduleDailySnapshot()
                     backgroundTaskManager?.scheduleWeeklyReview()
                     backgroundTaskManager?.scheduleCalendarSync()
+                    backgroundTaskManager?.scheduleNudgeEvaluation()
+
+                    // Nudge engine — Phase 1 short-circuits on kill switch.
+                    // Evaluate once on first foreground so gating constants
+                    // are exercised on every launch (catches drift early).
+                    await nudgeEngine.evaluateOnForeground()
 
                     // Initialize WatchSyncManager early so WCSession can activate
                     _ = WatchSyncManager.shared
@@ -206,6 +233,15 @@ struct MyAIssistantApp: App {
                     // Sync schedule + API key to Watch
                     WatchSyncManager.shared.syncAPIKey()
                     taskManager.updateWidgetData()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    // BUG-05 fix: foreground evaluation must fire on every
+                    // background→active transition, not only on cold launch.
+                    // Kill switch + caps still gate delivery, so extra calls
+                    // are safe.
+                    if newPhase == .active {
+                        Task { await nudgeEngine.evaluateOnForeground() }
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .watchToggledTask)) { notification in
                     guard let taskID = notification.userInfo?["taskID"] as? String else { return }
