@@ -118,6 +118,43 @@ enum AppConstants {
     // MARK: - iCloud
     static let cloudKitContainerID = "iCloud.com.myaissistant"
 
+    // MARK: - Nudge Engine (Phase 1 scaffolding)
+
+    /// BGTask identifier for daily nudge evaluation. Must also be listed in
+    /// Info.plist under `BGTaskSchedulerPermittedIdentifiers`.
+    static let nudgeEvaluationBGTaskID = "com.myaissistant.nudge-evaluation"
+
+    /// Kill switch — when true the engine evaluates nothing and delivers no
+    /// nudges. Default true in Phase 1 (engine disabled by default per rollout).
+    /// Flip to false once Phase 2's first rule is dogfood-ready.
+    static let nudgeEngineKillSwitchEnabled = true
+
+    /// Hard frequency caps (spec §7.1).
+    static let nudgeMaxPerDay = 2
+    static let nudgeMinHoursBetween = 1
+    static let nudgeDefaultCooldownHours = 48
+    static let nudgeStreakAtRiskCooldownHours = 24
+    static let nudgeWeakDimensionCooldownHours = 72
+    static let nudgeMaxPerDimensionHours = 48
+
+    /// Quiet-hours defaults (spec §7.2).
+    static let nudgeQuietHoursStartHour = 21 // 9 PM
+    static let nudgeQuietHoursEndHour = 8    // 8 AM
+
+    /// UserDefaults keys for user-facing tuning (Settings → Coach).
+    static let nudgeEnabledKey = "coach.nudge.enabled"
+    static let nudgeFrequencyKey = "coach.nudge.frequency" // "gentle" / "balanced" / "off"
+    static let nudgeQuietHoursStartKey = "coach.nudge.quietStart"
+    static let nudgeQuietHoursEndKey = "coach.nudge.quietEnd"
+    static let nudgeSilencedCategoriesKey = "coach.nudge.silencedCategories"
+
+    /// Notification category for inline actions.
+    static let nudgeNotificationCategory = "NUDGE_CATEGORY"
+    static let nudgeAcceptActionID = "NUDGE_ACCEPT"
+    static let nudgeDismissActionID = "NUDGE_DISMISS"
+    static let nudgeSnoozeActionID = "NUDGE_SNOOZE"
+    static let nudgeSilenceActionID = "NUDGE_SILENCE"
+
     // MARK: - StoreKit Product IDs
     enum ProductID {
         static let proMonthly = "com.myaissistant.pro.monthly"
