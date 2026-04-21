@@ -42,3 +42,8 @@ playground.xcworkspace
 
 # Design mockups / scratch HTML at repo root
 /*.html
+
+# Claude Fleet
+.claude/logs/
+.claude/settings.local.json
+.claude/settings.json.bak-*

@@ -19,19 +19,20 @@ This file composes additively with the workspace file at `/Users/joekim/Claude/C
 
 ## What It Is
 
-A personal AI assistant iOS app (iOS 17+, SwiftUI, SwiftData) providing:
+Thrivn is a **voice-native AI coach** for iOS (iOS 17+, SwiftUI, SwiftData) that notices what you're neglecting and nudges you to act on it across body, mind, heart, and spirit. Not a tracker. Not a journal. A coach that talks and pushes, with your permission.
 
-- **Daily check-ins** (4×/day: morning 8am, midday 1pm, afternoon 6pm, night 10pm) with AI-generated summaries and mood/energy tracking.
-- **Schedule management** with task creation, completion, and bi-directional calendar sync.
-- **Pattern tracking** — streaks, completion rates, mood trends, category breakdowns, weekly AI reviews.
-- **AI chat** powered by Claude (Sonnet / Haiku) or OpenAI (PowerUser tier) with voice conversation mode.
-- **Calendar integration** — Apple Calendar via EventKit + Google Calendar via REST + OAuth2; AI can create/delete events via action tags.
+Everything else in the app exists to sharpen the coach's nudges:
+
+- **Proactive AI coaching** — the spine. Powered by Claude (Sonnet / Haiku) or OpenAI (PowerUser tier). Reaches out on its own based on dimension weakness, streak breaks, calendar gaps, and stated goals. Voice-first; typing is the fallback.
+- **Check-ins** (up to 4×/day: morning 8am, midday 1pm, afternoon 6pm, night 10pm) — calibration input for the coach. Voice-first capture; AI extracts mood, energy, and context.
+- **Habits + Tasks** — the actionable surface. Every item carries a dimension tag. Completion feeds the coach's model of what the user is and isn't tending.
+- **Dimensions (Body / Mind / Heart / Spirit)** — invisible taxonomy that weights tasks, targets nudges, and drives the progress bars on Today. Not a dashboard.
+- **Calendar integration** — Apple Calendar (EventKit) + Google Calendar (REST + OAuth2). Coach can create/delete events via action tags.
 - **Subscription tiers** (Free / Pro / Student / PowerUser) via StoreKit 2.
 - **5 color themes** (Natural, Ocean, High Contrast, Midnight, Twilight).
-- **Voice mode** (SFSpeechRecognizer STT + AVSpeechSynthesizer TTS) with silence-detection auto-listen loop.
 - **Widgets** — TodayProgress, NextCheckIn, Streak.
-- **Background tasks** — daily snapshot, weekly AI review (Sunday 9pm), hourly calendar sync.
-- **Onboarding** — 5-step flow (welcome → permissions → voice mode → subscription → complete).
+- **Background tasks** — on-device rules engine for nudge triggers, daily snapshot, weekly review (Sunday 9pm), hourly calendar sync.
+- **Watch companion** — check-in, day list, task completion on the wrist.
 
 **Zero external dependencies.** No CocoaPods, no SPM, no third-party libraries.
 
@@ -39,24 +40,30 @@ A personal AI assistant iOS app (iOS 17+, SwiftUI, SwiftData) providing:
 
 ## Product Pillars
 
-Every feature, design decision, and scope call must serve at least one of these three pillars. If a proposed feature doesn't clearly strengthen one, it doesn't ship.
+Thrivn is a coach, not a tracker. One pillar is the spine — the other two are instruments that sharpen it. Every feature must make the coach's next nudge more accurate, better-timed, or more specific. If it doesn't, it doesn't ship.
 
-### 1. Self-awareness through daily ritual
-Four 30-second check-ins per day feed the Compass and Patterns — turning invisible feelings into visible trends across weeks. Without this data loop, the AI has nothing to work with and the user has nothing to reflect on.
+### 1. Proactive coaching *(the spine)*
+The AI notices what the user is neglecting — weak dimensions, broken streaks, calendar gaps, stated goals, shifts in mood or energy — and reaches out on its own with specific, well-timed nudges the user didn't ask for but is glad to receive. Voice-first; typing is the fallback. Acts on the user's behalf with consent, not at distance.
 
-### 2. Adaptive coaching
-The AI reads energy, mood, streaks, and life context to decide when to push and when to give permission to rest. Not an always-positive cheerleader, not an always-demanding drill sergeant — a coach that knows the difference.
+Not a cheerleader. Not a drill sergeant. An **agent with consented reach**.
 
-### 3. Whole-life balance
-The 4-dimension framework (Body, Mind, Heart, Spirit) measures whether life actually felt good — not just whether tasks got done.
+**Make-or-break behavior:** one uncannily-timed nudge per week earns word of mouth. One wrong nudge earns uninstall. Everything else in the product exists to improve the hit rate.
+
+### 2. Ritual as calibration input *(instrument)*
+Up to four brief check-ins per day feed the coach fresh signal about mood, energy, and life context. The check-in is not a destination — it's how the coach knows what to nudge about. Voice-first wherever possible; typing is friction. If a check-in flow doesn't tighten coaching accuracy, simplify or cut it.
+
+### 3. Dimensions as taxonomy *(instrument)*
+Body, Mind, Heart, Spirit are the axes along which tasks get weighted and nudges get targeted. They live as invisible infrastructure — driving progress bars on Today and routing the coach's attention. Not a dashboard. Not a radar chart. The taxonomy stays; the visualization dies.
+
+The user should feel nudged, not audited.
 
 ### Feature Evaluation Filter
 
 Before building any new feature:
 
-1. **Which pillar does this serve?** Name it. "None" or "tangential" = kill it.
-2. **Does it deepen or dilute?** Richer check-ins deepen Pillar 1; social feed dilutes all three.
-3. **Would removing this weaken a pillar?** If the app works just as well without it, defer.
+1. **Does this sharpen the coach's next nudge?** If it makes the nudge more specific, better-timed, or more relevant — build it. If not — kill it, regardless of how polished the concept looks.
+2. **Instrument or destination?** Instruments feed the coach. Destinations compete with it. New screens must earn their tab cost by visibly improving coaching accuracy; otherwise, fold them into the coach.
+3. **Would the coach be worse without it?** If the coach nudges just as well without this feature — defer.
 
 ---
 
@@ -64,13 +71,16 @@ Before building any new feature:
 
 Explicitly OUT of scope:
 
-- **Therapy or clinical claims.** Thrivn supports reflection; it does not diagnose, treat, or prevent any condition (FDA SaMD threshold).
+- **Therapy or clinical claims.** The coach nudges toward action; it does not diagnose, treat, or prevent any condition (FDA SaMD threshold).
+- **Journaling app.** Reflection is an input to coaching, not the product. Check-ins calibrate the coach; they aren't a diary to revisit.
+- **Generic task manager.** Tasks serve the coach's model of what the user is tending, not a standalone productivity system. Completion % is diagnostic, never the goal.
+- **Quantified-self dashboard.** Dimensions route the coach's attention; they are never a radar chart, scorecard, or leaderboard of self. Trend claims also require statistical honesty (see `personal-trend-detection`).
+- **Destination screens for their own sake.** If a screen isn't sharpening the next nudge, it's dead weight. The coach is the destination.
 - **Social features.** No feed, friends, leaderboards, sharing. Privacy is the wedge.
-- **Generic task manager.** Tasks serve the dimensions, not a standalone productivity system.
-- **Cheerleading AI.** No "Great job!" after low-mood entries. No toxic positivity.
+- **Cheerleading AI.** No "Great job!" after low-mood entries. No toxic positivity. Acknowledge, don't celebrate.
 - **Crisis intervention.** Route to 988/Samaritans/findahelpline.com via `crisis-safety-protocols` skill.
-- **Quantified-self dashboard.** Trend claims require statistical honesty (see `personal-trend-detection`).
 - **Cross-user comparison.** "Users like you" is manipulative.
+- **Unsolicited nudges without consent.** Proactivity is always opt-in, always tunable, always silenceable. The coach acts on the user's behalf — not at the user.
 - **Third-party SDKs** unless replacing >50 lines of Foundation code.
 
 ---
