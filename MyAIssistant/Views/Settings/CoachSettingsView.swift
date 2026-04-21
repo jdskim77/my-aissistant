@@ -66,7 +66,11 @@ struct CoachSettingsView: View {
                 }
 
                 Section {
-                    ForEach(NudgeCategory.allCases, id: \.rawValue) { category in
+                    // `.safetyRoute` is intentionally excluded from the
+                    // silenceable list — safety-resource nudges fire only
+                    // when the on-device crisis classifier flags, and must
+                    // not be user-suppressible per `crisis-safety-protocols`.
+                    ForEach(Self.silenceableCategories, id: \.rawValue) { category in
                         Toggle(
                             categoryLabel(category),
                             isOn: Binding(
@@ -79,7 +83,7 @@ struct CoachSettingsView: View {
                 } header: {
                     Text("Categories")
                 } footer: {
-                    Text("Silence a category if it stops feeling useful — the coach will respect your choice.")
+                    Text("Silence a category if it stops feeling useful — the coach will respect your choice. Safety resources are always available and can't be silenced here.")
                 }
             }
         }
@@ -104,6 +108,12 @@ struct CoachSettingsView: View {
         return f
     }()
 
+    /// Categories the user is allowed to silence from this surface.
+    /// `.safetyRoute` is excluded — crisis-triggered safety resources must
+    /// remain reachable regardless of the user's silencing preferences.
+    private static let silenceableCategories: [NudgeCategory] = NudgeCategory.allCases
+        .filter { $0 != .safetyRoute }
+
     private func categoryLabel(_ category: NudgeCategory) -> String {
         switch category {
         case .weakDimension:     return "Weak-area nudges"
@@ -112,6 +122,7 @@ struct CoachSettingsView: View {
         case .habitSlip:         return "Habit slips"
         case .postCheckInAction: return "After a check-in"
         case .goalCheckpoint:    return "Goal checkpoints"
+        case .safetyRoute:       return "Safety resources"  // not shown in UI; kept for exhaustiveness
         }
     }
 

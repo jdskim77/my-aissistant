@@ -17,8 +17,18 @@ import Foundation
 actor NudgeComposer {
 
     /// Produce the visible body for a nudge candidate. Returns the template copy
-    /// in Phase 1; Phase 3 wraps this with LLM enhancement for eligible users.
+    /// in Phase 1/2; Phase 3 wraps non-safety cases with LLM enhancement for
+    /// eligible users.
+    ///
+    /// **Safety exception.** `safetyRoute` candidates bypass both templates
+    /// and LLM paths entirely and return the hardcoded `SafeResourceCopy`
+    /// string directly. Any future change to this function MUST preserve that
+    /// bypass — safety copy is reviewed manually per `crisis-safety-protocols`
+    /// and must never be regenerated, rewritten, or translated by a model.
     func compose(_ candidate: NudgeCandidate) async -> String {
+        if candidate.category == .safetyRoute {
+            return SafeResourceCopy.message()
+        }
         let template = renderTemplate(for: candidate)
         // Phase 3: `if let enhanced = await llmEnhance(template, for: candidate) { return enhanced }`
         return template
@@ -65,6 +75,14 @@ actor NudgeComposer {
             let goal = candidate.templateParams["goal"] ?? "that goal"
             let days = candidate.templateParams["days"] ?? "a while"
             return "You said \(goal) matters. Nothing's moved in \(days) — still current?"
+
+        case .safetyRoute:
+            // Unreachable in practice — compose(_:) short-circuits safetyRoute
+            // candidates to SafeResourceCopy before renderTemplate is called.
+            // Defensive fallback keeps the exhaustive switch honest and
+            // guarantees a non-template path even if a refactor accidentally
+            // routes safety through here.
+            return SafeResourceCopy.message()
         }
     }
 

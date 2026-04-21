@@ -32,6 +32,7 @@
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
 		454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161422F9814E3002A51F9 /* CoachSettingsView.swift */; };
 		4541616A2F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161692F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift */; };
+		4541616C2F982840002A51F9 /* SafeResourceCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4541616B2F982840002A51F9 /* SafeResourceCopy.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
@@ -366,6 +367,7 @@
 		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
 		454161422F9814E3002A51F9 /* CoachSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSettingsView.swift; sourceTree = "<group>"; };
 		454161692F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakDimensionWithOpenWindowRule.swift; sourceTree = "<group>"; };
+		4541616B2F982840002A51F9 /* SafeResourceCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeResourceCopy.swift; sourceTree = "<group>"; };
 		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -774,6 +776,7 @@
 		D100000005000000 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				4541616B2F982840002A51F9 /* SafeResourceCopy.swift */,
 				D300000001000000 /* AI */,
 				D300000002000000 /* Keychain */,
 				D300000003000000 /* Networking */,
@@ -1567,6 +1570,7 @@
 				A95B541D257444769356150C /* StartFocusIntent.swift in Sources */,
 				B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */,
 				C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */,
+				4541616C2F982840002A51F9 /* SafeResourceCopy.swift in Sources */,
 				5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */,
 				6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */,
 				A8A62D0788AB8113AB70DB92 /* HabitsView.swift in Sources */,

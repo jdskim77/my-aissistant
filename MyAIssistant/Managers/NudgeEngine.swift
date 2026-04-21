@@ -78,67 +78,114 @@ final class NudgeEngine {
     // MARK: - Core evaluation
 
     private func evaluate(trigger: EvaluationTrigger) async {
-        // 1. Kill switch
+        // 1. Kill switch — emergency global off.
         guard !AppConstants.nudgeEngineKillSwitchEnabled else { return }
 
-        // 2. User-facing toggle (default off — Phase 1 is opt-in even without kill switch)
+        // 2. Safety pause — blocks everything (including safety re-scan) for
+        //    24h after a crisis flag. Placed before the precheck so we don't
+        //    re-emit safety nudges on every foreground inside the cooldown.
+        guard !isWithinSafetyPause(at: Date()) else { return }
+
+        // 3. Safety precheck — scans the latest check-in note via the
+        //    on-device crisis classifier. Bypasses user toggle and frequency
+        //    caps: when a signal matches, routing to resources is the single
+        //    job the engine has in that moment. Spec §7.4.
+        if await performSafetyPrecheck() { return }
+
+        // 4. User-facing toggle (default off — Phase 1 was opt-in; Phase 2
+        //    keeps the toggle so non-safety coaching stays consent-gated).
         guard UserDefaults.standard.bool(forKey: AppConstants.nudgeEnabledKey) else { return }
 
-        // 3. Safety pause — prior crisis match extends a 24h suppression. Fixed
-        //    the read side: previously `recordSafetyPause` wrote the timestamp
-        //    but nothing consulted it, so the pause was a one-shot guard on the
-        //    current call only. Now the pause persists across evaluations.
-        if isWithinSafetyPause(at: Date()) { return }
-
-        // 4. Off-frequency short-circuit
+        // 5. Off-frequency short-circuit.
         let frequency = NudgeFrequency(
             rawValue: UserDefaults.standard.string(forKey: AppConstants.nudgeFrequencyKey) ?? ""
         ) ?? .balanced
         guard frequency != .off else { return }
 
-        // 5. Quiet hours — same-day suppression
+        // 6. Quiet hours — same-day suppression.
         if isQuietHours(at: Date()) { return }
 
-        // 6. Daily + hourly caps
+        // 7. Daily + hourly caps.
         guard withinFrequencyCaps(frequency: frequency) else { return }
 
-        // 6. Rule loop — first match wins (one nudge per run, hard cap per §7.1)
+        // 8. Rule loop — first match wins (one nudge per run, hard cap per
+        //    §7.1). The old per-candidate crisis gate is gone; safety is
+        //    handled up-front by the precheck so rule authors don't need to
+        //    opt in via `triggerContext["freeTextSafetySample"]`.
         guard !rules.isEmpty else { return }
 
         let context = collectContext(trigger: trigger)
 
         for rule in rules {
-            // Per-rule cooldown
             guard !isRuleInCooldown(rule) else { continue }
 
             guard let candidate = rule.evaluate(context: context) else { continue }
 
-            // Per-dimension cooldown (if the candidate is dimension-specific)
             if let dim = candidate.dimension, isDimensionInCooldown(dim) {
                 continue
             }
 
-            // 7. Crisis gate — run on any free-text signal the rule captured
-            //    (e.g. most recent check-in notes). Conservative: if anything
-            //    flags, suppress for 24h.
-            let freeTextForSafety = candidate.triggerContext["freeTextSafetySample"] ?? ""
-            if !freeTextForSafety.isEmpty {
-                let evaluation = crisisClassifier.evaluate(freeTextForSafety)
-                if evaluation.isCrisis {
-                    log.notice("Nudge suppressed by crisis classifier (matched terms redacted)")
-                    recordSafetyPause(until: Date().addingTimeInterval(60 * 60 * 24))
-                    return
-                }
-            }
-
-            // 8. Compose copy + persist + deliver
             let bodyText = await composer.compose(candidate)
             let nudge = persist(candidate: candidate, bodyText: bodyText)
             schedule(nudge: nudge)
 
-            // Hard re-entrancy break: one nudge per run (spec §12 question 5).
+            // Hard re-entrancy break: one nudge per run (spec §12 Q5).
             return
         }
+    }
+
+    // MARK: - Safety precheck
+
+    /// Runs the on-device crisis classifier against the most recent check-in
+    /// note. Returns `true` when the classifier flagged — the caller halts
+    /// further evaluation. Side effects on a flag: emits a safety-route
+    /// `Nudge` record and records a 24h pause so subsequent evaluations
+    /// short-circuit at step 2.
+    ///
+    /// Bypasses user toggle, frequency caps, and quiet hours on purpose:
+    /// when someone writes something that matches a safety term, the app's
+    /// single responsibility in that moment is offering human help. Copy is
+    /// hardcoded in `SafeResourceCopy` — never LLM-generated, never silenced
+    /// via the Coach Settings category list.
+    private func performSafetyPrecheck() async -> Bool {
+        guard let text = latestFreeTextSafetySample(), !text.isEmpty else {
+            return false
+        }
+        let evaluation = crisisClassifier.evaluate(text)
+        guard evaluation.isCrisis else { return false }
+
+        log.notice("Crisis classifier flagged — emitting safety-route nudge and suppressing normal nudges for 24h")
+        recordSafetyPause(until: Date().addingTimeInterval(60 * 60 * 24))
+
+        let candidate = NudgeCandidate(
+            category: .safetyRoute,
+            dimension: nil,
+            suggestedAction: .none,
+            actionPayload: SafeResourceCopy.actionURL().absoluteString,
+            templateParams: [:],
+            triggerContext: [
+                SafeResourceCopy.triggerContextKey: "true",
+                "matchCount": String(evaluation.matchedTerms.count)
+            ]
+        )
+        let bodyText = await composer.compose(candidate)
+        let nudge = persist(candidate: candidate, bodyText: bodyText)
+        schedule(nudge: nudge)
+        return true
+    }
+
+    /// Fetches the most recent completed check-in's note text. Returns nil
+    /// when no check-ins exist, none have notes, or all recent notes are
+    /// empty. Phase 2 scope: check-in notes only. Phase 3+ may also sample
+    /// the most recent chat messages per spec §7.4.
+    private func latestFreeTextSafetySample() -> String? {
+        var descriptor = FetchDescriptor<CheckInRecord>(
+            predicate: #Predicate { $0.completed == true },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 5
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        return rows.compactMap(\.notes).first { !$0.isEmpty }
     }
 
     // MARK: - Context collection
