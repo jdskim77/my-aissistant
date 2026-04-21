@@ -44,11 +44,19 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     var hasAttemptedSync = false
     private(set) var apiKey: String?
 
-    /// Slots the user checked in from the Watch that iPhone hasn't yet
-    /// echoed back as authoritative. Preserved across `applyIncoming` so an
-    /// iPhone payload that predates the offline check-in doesn't silently
-    /// erase it. Cleared per-slot as iPhone catches up.
-    private var pendingCheckIns: Set<String> = []
+    /// Slots the user checked in from the Watch, keyed by slot → the instant
+    /// we sent it. Merged into `applyIncoming` so an iPhone payload that
+    /// predates the offline check-in doesn't silently erase it. An entry is
+    /// dropped the moment either:
+    ///   (a) iPhone echoes the slot back in `completedCheckIns`, or
+    ///   (b) an iPhone payload arrives with `updatedAt > insertedAt` and
+    ///       the slot NOT in its list — meaning iPhone has authoritatively
+    ///       said "no," either because the user un-checked it there or
+    ///       because the day rolled over and this slot belongs to yesterday.
+    /// Without (b), a stale pending entry zombies the slot across days /
+    /// over-rides user intent. With timestamps, iPhone always wins once
+    /// it's had a chance to respond.
+    private var pendingCheckIns: [String: Date] = [:]
 
     /// Safety net: if `activationDidCompleteWith` never fires (entitlement
     /// misconfig, WC subsystem stuck), we'd spin on "Syncing…" forever. A
@@ -112,9 +120,11 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         // yet) so the user gets visible feedback that their tap landed —
         // previously this dropped silently.
         guard let slot = message["timeSlot"] as? String else { return }
-        // Track the slot as pending so a subsequent iPhone sync with a
-        // newer timestamp but older check-in list won't quietly erase it.
-        pendingCheckIns.insert(slot)
+        // Track the slot as pending (with insertion time) so a subsequent
+        // iPhone sync that PREDATES this tap doesn't quietly erase it,
+        // while a sync that POSTDATES it (user un-checked, or day rolled
+        // over) is honored as authoritative — see `applyIncoming` merge.
+        pendingCheckIns[slot] = Date()
         let base = scheduleData ?? WatchScheduleData(
             tasks: [], streakDays: 0, completedToday: 0, totalToday: 0,
             quoteText: nil, quoteAuthor: nil, nextCheckIn: nil, updatedAt: Date(),
@@ -372,20 +382,25 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
         }
         // Merge pending (offline-tapped) check-ins into the authoritative
         // list so the user never sees their slot "disappear" after sync.
-        // Clear a pending slot once iPhone has echoed it back — then we
-        // trust iPhone as the source of truth.
+        // Drop a pending slot when:
+        //   (a) iPhone echoed it back → confirmed, no need to preserve, or
+        //   (b) iPhone payload is newer than the pending insertion AND
+        //       does NOT contain the slot → iPhone has spoken (user
+        //       unchecked, or day rolled over). Trust iPhone.
         let incomingSlots = Set(incoming.completedCheckIns ?? [])
-        pendingCheckIns.subtract(incomingSlots)
+        pendingCheckIns = pendingCheckIns.filter { slot, insertedAt in
+            if incomingSlots.contains(slot) { return false }
+            if incoming.updatedAt > insertedAt { return false }
+            return true
+        }
         let merged: [String]?
         if pendingCheckIns.isEmpty {
             merged = incoming.completedCheckIns
         } else {
-            var union = incomingSlots
-            union.formUnion(pendingCheckIns)
             // Preserve iPhone's ordering, append any pending that aren't
             // already present. Order matters for `nextCheckInAfter`.
             var ordered = incoming.completedCheckIns ?? []
-            for slot in pendingCheckIns where !incomingSlots.contains(slot) {
+            for slot in pendingCheckIns.keys where !incomingSlots.contains(slot) {
                 ordered.append(slot)
             }
             merged = ordered
@@ -425,6 +440,12 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let context = session.receivedApplicationContext
         Task { @MainActor in
+            // Cancel the 12s safety-net timer; activation completed (success
+            // or otherwise), no need to fire the fallback. Without this the
+            // timer races into `unreachableState` for a few seconds before
+            // the legitimate payload arrives.
+            self.activationTimeoutTask?.cancel()
+            self.activationTimeoutTask = nil
             self.hasAttemptedSync = true
             self.extractAPIKey(from: context)
             if let data = WatchScheduleData.from(context: context) {

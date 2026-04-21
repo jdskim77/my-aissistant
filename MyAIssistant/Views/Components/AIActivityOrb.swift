@@ -54,37 +54,21 @@ struct AIActivityOrb: View {
                     )
             }
 
-            // Layer 1: Core — quatrefoil (4-petal flower from overlapping circles,
-            // mirroring the Thrivn venn mark's silhouette)
-            QuatrefoilShape()
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.accent, AppColors.accentWarm],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: size, height: size)
+            // Layer 1: Core AI presence mark (theme-adaptive puck + petals + sparkle).
+            // Shadow is applied OUTSIDE the scaleEffect so it stays anchored
+            // while the puck pulses — scaling the shadow looks jittery.
+            AIPresenceIcon(size: size)
                 .scaleEffect(reduceMotion ? 1.0 : (isActive ? (animationPhase ? 1.06 : 0.96) : 1.0))
                 .animation(
-                    reduceMotion ? .none : (isActive
-                        ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                        : .easeOut(duration: 0.3)),
+                    reduceMotion
+                        ? nil
+                        : (isActive
+                            ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                            : .easeOut(duration: 0.3)),
                     value: animationPhase
                 )
-                .animation(reduceMotion ? .none : .easeOut(duration: 0.3), value: isActive)
-
-            // Center symbol
-            Text("✦")
-                .font(AppFonts.icon(size * 0.45))
-                .foregroundColor(.white)
-                .opacity(reduceMotion ? (isActive ? 1.0 : 0.9) : (isActive ? (animationPhase ? 1.0 : 0.7) : 0.9))
-                .animation(
-                    reduceMotion ? .none : (isActive
-                        ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true)
-                        : .default),
-                    value: animationPhase
-                )
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: isActive)
+                .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
         }
         .onChange(of: isActive) { _, active in
             if !reduceMotion {

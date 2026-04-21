@@ -292,9 +292,11 @@ struct HomeView: View {
                 }
                 var todayFill: [LifeDimension: Double] = [:]
                 var yesterdayTick: [LifeDimension: Double?] = [:]
+                var todayPoints: [LifeDimension: Double] = [:]
                 for dim in LifeDimension.scored {
                     todayFill[dim] = bm.todayFill(for: dim)
                     yesterdayTick[dim] = bm.yesterdayTickValue(for: dim)
+                    todayPoints[dim] = bm.todayPoints(for: dim)
                 }
                 // Representative daily target for the caption — scored dims
                 // share the same default; if the user later customizes per-dim
@@ -307,6 +309,7 @@ struct HomeView: View {
                     hasData: bm.hasRealData(),
                     todayFill: todayFill,
                     yesterdayTick: yesterdayTick,
+                    todayPoints: todayPoints,
                     dailyTarget: Int(bm.dailyTarget(for: targetDim))
                 )
             }()
@@ -364,6 +367,7 @@ struct HomeView: View {
                     Section {
                         BalancePulseCard(
                             todayFill: snapshot.todayFill,
+                            todayPoints: snapshot.todayPoints,
                             yesterdayTick: snapshot.yesterdayTick,
                             dailyTarget: snapshot.dailyTarget,
                             harmonyScore: snapshot.harmony,
@@ -1788,6 +1792,7 @@ struct HomeView: View {
         let hasData: Bool
         let todayFill: [LifeDimension: Double]
         let yesterdayTick: [LifeDimension: Double?]
+        let todayPoints: [LifeDimension: Double]
         let dailyTarget: Int
 
         static let empty = HomeBalanceSnapshot(
@@ -1797,6 +1802,7 @@ struct HomeView: View {
             hasData: false,
             todayFill: [:],
             yesterdayTick: [:],
+            todayPoints: [:],
             dailyTarget: 4
         )
     }

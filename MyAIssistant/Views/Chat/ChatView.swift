@@ -590,24 +590,36 @@ struct ChatView: View {
                                 .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false), value: micPulse)
                         }
 
-                        // Filled circular background — coral when recording, accent otherwise
-                        Circle()
-                            .fill(actionButtonColor)
-                            .frame(width: 44, height: 44)
-
-                        // Foreground glyph: compass mark for idle/recording, arrow for send
+                        // All three states share the same 44pt frame + drop
+                        // shadow so the button reads as one control morphing
+                        // between fills, not three different controls.
                         if hasText && !speechRecognizer.isRecording {
+                            // Send state — accent-filled circle with white arrow
+                            Circle()
+                                .fill(AppColors.accent)
+                                .frame(width: 44, height: 44)
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 22, weight: .semibold))
                                 .foregroundColor(.white)
-                        } else {
+                        } else if speechRecognizer.isRecording {
+                            // Recording state — coral-filled circle with white compass mark
+                            Circle()
+                                .fill(AppColors.coral)
+                                .frame(width: 44, height: 44)
                             ThrivnCompassMark(
                                 color: .white,
                                 size: 33,
-                                isAnimating: speechRecognizer.isRecording
+                                isAnimating: true
                             )
+                        } else {
+                            // Idle state — Thrivn AI presence mark.
+                            AIPresenceIcon(size: 44)
+                                .frame(width: 44, height: 44)
                         }
                     }
+                    .frame(width: 44, height: 44)
+                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    .contentShape(Rectangle())
                 }
                 .accessibilityLabel(actionButtonAccessibilityLabel)
             }

@@ -197,6 +197,7 @@
 		AD00000002000000 /* VariedGreetingBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000002000000 /* VariedGreetingBuilder.swift */; };
 		AD00000003000000 /* GreetingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000003000000 /* GreetingManager.swift */; };
 		AD00000004000000 /* AIGreetingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD00000004000000 /* AIGreetingCard.swift */; };
+		ADBEEFCAFE000001 /* AIPresenceIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDBEEFCAFE000001 /* AIPresenceIcon.swift */; };
 		AE00000001000000 /* ActivityEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000001000000 /* ActivityEntry.swift */; };
 		AE00000002000000 /* ActivityTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000002000000 /* ActivityTimelineView.swift */; };
 		AF00000001000000 /* AlarmEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000001000000 /* AlarmEntry.swift */; };
@@ -483,6 +484,7 @@
 		BD00000002000000 /* VariedGreetingBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilder.swift; sourceTree = "<group>"; };
 		BD00000003000000 /* GreetingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GreetingManager.swift; sourceTree = "<group>"; };
 		BD00000004000000 /* AIGreetingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGreetingCard.swift; sourceTree = "<group>"; };
+		BDBEEFCAFE000001 /* AIPresenceIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPresenceIcon.swift; sourceTree = "<group>"; };
 		BE00000001000000 /* ActivityEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEntry.swift; sourceTree = "<group>"; };
 		BE00000002000000 /* ActivityTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityTimelineView.swift; sourceTree = "<group>"; };
 		BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingQuickRateView.swift; sourceTree = "<group>"; };
@@ -788,6 +790,7 @@
 				B800000003000000 /* LoadingView.swift */,
 				BC00000002000000 /* CustomTabBar.swift */,
 				BD00000001000000 /* AIActivityOrb.swift */,
+				BDBEEFCAFE000001 /* AIPresenceIcon.swift */,
 				406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */,
 				C97ACE583981903B7525F883 /* CelebrationView.swift */,
 				1A38DAD2F694CB7BFFC1FB7A /* ThrivnCompassMark.swift */,
@@ -1505,6 +1508,7 @@
 				AC00000010000000 /* ThemePickerView.swift in Sources */,
 				AC00000011000000 /* TextSizeSettingsView.swift in Sources */,
 				AD00000001000000 /* AIActivityOrb.swift in Sources */,
+				ADBEEFCAFE000001 /* AIPresenceIcon.swift in Sources */,
 				AD00000002000000 /* VariedGreetingBuilder.swift in Sources */,
 				AD00000003000000 /* GreetingManager.swift in Sources */,
 				AD00000004000000 /* AIGreetingCard.swift in Sources */,

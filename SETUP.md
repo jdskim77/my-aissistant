@@ -42,9 +42,8 @@ modern `containerBackground` and vertical TabView APIs.)
 | Capability               | Why                                                       |
 |--------------------------|-----------------------------------------------------------|
 | iCloud (CloudKit)        | SwiftData CloudKit sync for user data                     |
-| Push Notifications       | `aps-environment = development`                           |
 | Sign in with Apple       | The only auth method (no email collection)                |
-| Background Modes         | `fetch`, `processing`, `remote-notification`              |
+| Background Modes         | `fetch`, `processing`                                     |
 | App Groups               | `group.com.myaissistant.shared` (Watch + Widgets share)   |
 
 ### Watch app target

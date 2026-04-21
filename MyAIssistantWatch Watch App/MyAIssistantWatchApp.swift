@@ -12,8 +12,19 @@ struct MyAIssistantWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
+            // Page order: taskList ← tasks (Today) → checkIn. Today remains
+            // the default landing; swipe left for the full list, right for
+            // the check-in (preserves existing muscle memory for check-in).
             TabView(selection: $selectedTab) {
-                // Tab 1: Today — vertical progress bars + inline next row +
+                NavigationStack {
+                    WatchTasksListView(connectivity: connectivityManager)
+                        .navigationDestination(for: WatchScheduleData.WatchTask.self) { task in
+                            WatchTaskDetailView(task: task, connectivity: connectivityManager)
+                        }
+                }
+                .tag(WatchTab.taskList)
+
+                // Today — vertical progress bars + inline next row +
                 // AI pill at the bottom. This is the primary home screen.
                 // The AI pill inside WatchTodayView is the sole add path.
                 NavigationStack {
@@ -34,29 +45,45 @@ struct MyAIssistantWatchApp: App {
                 }
                 .tag(WatchTab.tasks)
 
-                // Tab 2: Quick Check-In
+                // Quick Check-In
                 WatchQuickCheckInView(connectivity: connectivityManager)
                     .tag(WatchTab.checkIn)
             }
             .tabViewStyle(.page)
             .onChange(of: connectivityManager.shouldOpenVoiceChat) { _, shouldOpen in
                 if shouldOpen {
-                    selectedTab = .tasks
-                    showVoiceChat = true
+                    presentVoiceChat()
                     connectivityManager.shouldOpenVoiceChat = false
                 }
             }
             .onOpenURL { url in
                 if url.scheme == "myaissistant" && url.host == "voice" {
-                    selectedTab = .tasks
-                    showVoiceChat = true
+                    presentVoiceChat()
                 }
             }
         }
     }
 
+    /// `showVoiceChat`'s `navigationDestination` is wired onto the `.tasks`
+    /// tab's NavigationStack. If the user is on any other page when the Ask
+    /// AI intent fires, setting the binding before SwiftUI has switched tabs
+    /// races the destination mount and the push can silently no-op. Switch
+    /// tab first, let one run-loop tick pass, then trigger the push.
+    private func presentVoiceChat() {
+        let wasOnTasksTab = (selectedTab == .tasks)
+        selectedTab = .tasks
+        if wasOnTasksTab {
+            showVoiceChat = true
+        } else {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(120))
+                showVoiceChat = true
+            }
+        }
+    }
+
     enum WatchTab {
-        case tasks, checkIn
+        case taskList, tasks, checkIn
     }
 }
 

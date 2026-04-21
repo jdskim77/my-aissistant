@@ -3,6 +3,7 @@ build/
 DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/
 *.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 
 # macOS
@@ -38,3 +39,6 @@ playground.xcworkspace
 
 # Claude Code local settings
 .claude/
+
+# Design mockups / scratch HTML at repo root
+/*.html

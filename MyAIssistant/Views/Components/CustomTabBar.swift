@@ -40,6 +40,10 @@ struct CustomTabBar: View {
     var scheduleBadge: Int = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Scales up to ~75pt at AX5 Dynamic Type, capped so it can't eat the tab
+    /// bar. Icon stays a comfortable tap target on large-text users.
+    @ScaledMetric(relativeTo: .title) private var aiIconBaseSize: CGFloat = 60
+
     var body: some View {
         HStack {
             tabButton(for: .home)
@@ -100,29 +104,22 @@ struct CustomTabBar: View {
     }
 
     private var aiCenterButton: some View {
-        Button {
+        let iconSize = min(aiIconBaseSize, 75)
+        return Button {
             Haptics.medium()
             onAITap()
         } label: {
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.accent, AppColors.accentWarm],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 60, height: 60)
-                    .shadow(color: AppColors.accent.opacity(0.35), radius: 10, x: 0, y: 4)
-
-                Text("✦")
-                    .font(AppFonts.display(26))
-                    .foregroundColor(.white)
-            }
-            .offset(y: -20)
+            AIPresenceIcon(size: iconSize)
+                // Larger, softer shadow so the lift is visible past the
+                // opaque tab-bar surface (a tight y:2 shadow gets absorbed).
+                // Applied on the static puck — the tab bar doesn't animate
+                // scale, so shadow stays anchored.
+                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .frame(width: iconSize, height: iconSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .offset(y: -20)
         .accessibilityLabel("AI Assistant")
     }
 }

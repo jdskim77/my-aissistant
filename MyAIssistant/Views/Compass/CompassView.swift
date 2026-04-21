@@ -7,6 +7,11 @@ struct CompassView: View {
     let balanceScoreValue: Double
     let balanceStreak: Int
     let hasRealData: Bool
+    /// Completed-task counts per dimension for the current week. Rendered
+    /// as a small "N tasks" chip under each ring card so the data that
+    /// used to live in the separate "This Week" horizontal-bar section
+    /// still has a home.
+    var taskCounts: [LifeDimension: Int] = [:]
 
     /// Single source of truth for which sheet (if any) is presented.
     /// Replaces the previous two stacked `.sheet` modifiers, which crashed
@@ -253,6 +258,15 @@ struct CompassView: View {
                             .font(AppFonts.caption(11))
                             .foregroundColor(AppColors.textSecondary)
                             .lineLimit(1)
+
+                        // Zero-state reads as an em-dash rather than
+                        // "0 tasks" so a fresh week doesn't render four
+                        // punishing zero chips across the row.
+                        let count = taskCounts[dim] ?? 0
+                        Text(count == 0 ? "—" : "\(count) task\(count == 1 ? "" : "s")")
+                            .font(AppFonts.caption(10))
+                            .foregroundColor(AppColors.textMuted)
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -264,7 +278,13 @@ struct CompassView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(dim.label), score \(String(format: "%.1f", score)) out of 10. Tap for details.")
+                .accessibilityLabel({
+                    let c = taskCounts[dim] ?? 0
+                    let tasksPhrase = c == 0
+                        ? "no tasks completed this week"
+                        : "\(c) task\(c == 1 ? "" : "s") completed this week"
+                    return "\(dim.label), score \(String(format: "%.1f", score)) out of 10, \(tasksPhrase). Tap for details."
+                }())
             }
         }
     }

@@ -21,6 +21,10 @@ struct BalancePulseCard: View {
     /// Today's fill per dimension on a 0.0–1.0+ scale (>1.0 = overflow).
     /// Comes from `BalanceManager.todayFill(for:)`.
     let todayFill: [LifeDimension: Double]
+    /// Today's raw effort points per dimension. Rendered under each bar as
+    /// "X/target" so the user can read the value, not just the fill height.
+    /// Optional for existing callers / previews — falls back to fill × target.
+    var todayPoints: [LifeDimension: Double] = [:]
     /// Yesterday's tick position per dimension (0.0–1.0), nil when the user
     /// had no activity in the past 7 days (tick is hidden). Sourced from
     /// `BalanceManager.yesterdayTickValue(for:)`.
@@ -113,7 +117,6 @@ struct BalancePulseCard: View {
             if isExpanded {
                 if hasData {
                     bars
-                    captionRow
                 } else {
                     emptyBars
                 }
@@ -180,8 +183,8 @@ struct BalancePulseCard: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(hasData
-            ? "Life balance, \(stage.label) \(harmonyScore) out of 100"
-            : "Life balance, no data yet")
+            ? "Today's momentum, harmony \(stage.label) \(harmonyScore) out of 100"
+            : "Today's momentum, no data yet")
         .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
         .accessibilityHint("Double tap to \(isExpanded ? "collapse" : "expand")")
         .accessibilityAddTraits(.isHeader)
@@ -193,7 +196,7 @@ struct BalancePulseCard: View {
                 Image(systemName: "circle.grid.cross")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(hasData ? stage.color : AppColors.textMuted)
-                Text("LIFE BALANCE")
+                Text("TODAY'S MOMENTUM")
                     .font(AppFonts.label(11))
                     .tracking(0.8)
                     .foregroundColor(AppColors.textMuted)
@@ -328,6 +331,17 @@ struct BalancePulseCard: View {
                 .foregroundColor(AppColors.textMuted)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+            // Per-bar value — exposes the number so the bar height isn't
+            // the only signal. Hidden when the caller didn't supply
+            // explicit point values (prevents fill×target fabrication).
+            if let label = pointsLabel(for: dim) {
+                Text(label)
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(dim.color)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -382,6 +396,21 @@ struct BalancePulseCard: View {
             .font(AppFonts.caption(11))
             .foregroundColor(AppColors.textMuted)
             .accessibilityHidden(true)
+    }
+
+    /// Per-bar "X/N" label. When raw points exceed target we cap the
+    /// numerator at target and append `+` (e.g. `4/4+`) so the text never
+    /// reads as a missed goal ("6/4"). Returns nil when the caller didn't
+    /// supply `todayPoints` — callers without that data shouldn't fabricate
+    /// a numerator from fill×target since it disagrees with the user's
+    /// real point total surfaced elsewhere.
+    private func pointsLabel(for dim: LifeDimension) -> String? {
+        guard let raw = todayPoints[dim] else { return nil }
+        let rounded = Int(raw.rounded())
+        if rounded > dailyTarget {
+            return "\(dailyTarget)/\(dailyTarget)+"
+        }
+        return "\(rounded)/\(dailyTarget)"
     }
 
     // MARK: - Tagline (optional wisdom)

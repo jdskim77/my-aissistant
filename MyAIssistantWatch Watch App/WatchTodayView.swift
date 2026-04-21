@@ -66,6 +66,18 @@ struct WatchTodayView: View {
         .onChange(of: connectivity.scheduleData?.updatedAt) { _, _ in
             handleScheduleUpdate()
         }
+        // When scheduleData clears (e.g. transition into unreachableState
+        // after data was loaded), drop captured PreferenceKey positions so
+        // a subsequent reload doesn't fire particles to stale coordinates
+        // from a prior layout pass.
+        .onChange(of: connectivity.scheduleData == nil) { _, isNil in
+            if isNil {
+                dimensionPositions.removeAll()
+                checkboxPosition = .zero
+                hasSeededSnapshot = false
+                lastDoneSnapshot.removeAll()
+            }
+        }
     }
 
     // MARK: - Loaded content
@@ -73,7 +85,13 @@ struct WatchTodayView: View {
     @ViewBuilder
     private func content(_ data: WatchScheduleData) -> some View {
         ScrollView {
-            VStack(spacing: 12) {
+            // The particle overlay must live INSIDE the ScrollView (attached
+            // to the scrolling content, not the viewport) — otherwise the
+            // checkbox/dimension positions reported in `watchTodayCoordinateSpace`
+            // (content-space) don't match the overlay's viewport-space frame
+            // once the user scrolls. Putting overlay on the inner VStack
+            // keeps source/target/overlay all in the same coordinate system.
+            LazyVStack(spacing: 12) {
                 WatchBalancePulse(
                     bodyScore: data.bodyScore,
                     mindScore: data.mindScore,
@@ -83,42 +101,73 @@ struct WatchTodayView: View {
                 )
                 .padding(.bottom, 2)
 
-                // Active tasks list — previously only the single upNext row
-                // was rendered, which made the watch feel like it had no task
-                // visibility. Show the full list so users can scan + tap any
-                // task, not just the next one.
-                if connectivity.activeTasks.isEmpty {
+                // Today's full task list. Renders all tasks (active +
+                // completed) so tapping a row to complete shows the
+                // strike-through state instead of the row vanishing —
+                // and gives the user a way to un-tap a mistaken complete.
+                if connectivity.todayTasks.isEmpty {
                     emptyTaskHint
                 } else {
-                    VStack(spacing: 4) {
-                        ForEach(connectivity.activeTasks) { task in
+                    LazyVStack(spacing: 4) {
+                        ForEach(connectivity.todayTasks) { task in
                             inlineNextRow(task)
                         }
                     }
                 }
+
             }
             .padding(.horizontal, 6)
             .padding(.top, 4)
+            .padding(.bottom, 4)
+            .overlay(WatchParticleLayer(animator: animator))
         }
         .coordinateSpace(name: watchTodayCoordinateSpace)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            pinnedAIPill
+        }
         .onPreferenceChange(WatchDimensionPositionKey.self) { positions in
             dimensionPositions = positions
         }
         .onPreferenceChange(WatchCheckboxPositionKey.self) { pos in
             if let pos { checkboxPosition = pos }
         }
-        .overlay(
-            WatchParticleLayer(animator: animator)
-        )
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+    }
+
+    // MARK: - Pinned AI pill
+    //
+    // Lives in `.safeAreaInset(edge: .bottom)` on the ScrollView — the
+    // watchOS-native way to keep a primary action glanceable without
+    // stealing vertical space from the scrollable content or breaking
+    // Digital Crown scrolling. A thin Material background plus a short
+    // gradient fade on top visually connects the pill to the scrolling
+    // content beneath it, matching the pattern Apple uses in Mail and
+    // Messages for pinned toolbars.
+    private var pinnedAIPill: some View {
+        // Vertical padding scales with Dynamic Type but is capped so the pill
+        // can't eat more than ~30% of the screen at AX sizes on a 41mm watch.
+        // The gradient is taller (16pt) atop a dark backing fill — the bare
+        // ultraThinMaterial reads nearly transparent on watchOS's always-dark
+        // surface, which caused a visible content seam.
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [Color.black.opacity(0), Color.black.opacity(0.55)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 16)
+            .allowsHitTesting(false)
+
             WatchAIPill {
                 WatchVoiceChatView(connectivity: connectivity)
             }
-            .padding(.horizontal, 4)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 6)
+            .padding(.vertical, max(4, min(8, pillVerticalPadding)))
         }
+        .background(Color.black.opacity(0.6))
+        .background(.ultraThinMaterial)
     }
+
+    @ScaledMetric(relativeTo: .body) private var pillVerticalPadding: CGFloat = 8
 
     // MARK: - Inline next row (Concept 3)
     //
@@ -135,18 +184,23 @@ struct WatchTodayView: View {
         let accentColor = dim?.color ?? Color.accentColor
 
         return HStack(spacing: 6) {
+            // Checkbox is hidden from VoiceOver — the row-level custom
+            // action below ("Mark complete/incomplete") replaces it so
+            // VoiceOver users get one focusable element per task instead
+            // of two adjacent buttons that double traversal cost.
             inlineCheckbox(for: task, color: accentColor)
-                .accessibilityLabel(task.done ? "Mark \(task.title) incomplete" : "Mark \(task.title) complete")
+                .accessibilityHidden(true)
 
             NavigationLink(value: task) {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.right")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(accentColor.opacity(0.85))
+                        .foregroundStyle(accentColor.opacity(task.done ? 0.5 : 0.85))
                     Text(task.title)
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(task.done ? .secondary : .primary)
+                        .strikethrough(task.done)
                     if task.hasTime {
                         Text(task.timeString)
                             .font(.system(size: 11))
@@ -160,20 +214,23 @@ struct WatchTodayView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(navLabel(task))
-            .accessibilityHint("Opens task details")
         }
         .padding(.horizontal, 6)
         .frame(maxWidth: .infinity)
         .background(
             Capsule()
-                .fill(accentColor.opacity(0.10))
+                .fill(accentColor.opacity(task.done ? 0.05 : 0.10))
         )
         .overlay(
             Capsule()
-                .stroke(accentColor.opacity(0.18), lineWidth: 1)
+                .stroke(accentColor.opacity(task.done ? 0.10 : 0.18), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(navLabel(task))
+        .accessibilityHint("Opens task details")
+        .accessibilityAction(named: Text(task.done ? "Mark incomplete" : "Mark complete")) {
+            handleCompletionTap(task)
+        }
     }
 
     private func inlineCheckbox(for task: WatchScheduleData.WatchTask, color: Color) -> some View {
@@ -328,48 +385,65 @@ struct WatchTodayView: View {
     }
 
     private var unreachableState: some View {
-        VStack(spacing: 14) {
-            Spacer(minLength: 0)
-            Image(systemName: "iphone.slash")
-                .font(.largeTitle)
-                .foregroundColor(.secondary)
-            Text("Can't reach iPhone")
-                .font(.headline)
-            Text("Open the iPhone app to sync today's data")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            Button {
-                WKInterfaceDevice.current().play(.click)
-                connectivity.requestUpdate()
-                // `requestUpdate` silently no-ops when the iPhone is
-                // unreachable — without surfacing that, the user taps
-                // and nothing visibly happens. Surface a brief "Still
-                // offline" subtitle so the tap is acknowledged.
-                if !WCSession.default.isReachable {
-                    WKInterfaceDevice.current().play(.failure)
-                    retryFailedAt = Date()
+        // GeometryReader + minHeight is the canonical way to vertically
+        // center inside a ScrollView — pure Spacers don't expand because
+        // ScrollView gives its content unbounded height. The min-height
+        // anchor pins the content to at least the viewport, so the centered
+        // VStack lands in the middle until taller content forces a scroll.
+        ScrollView {
+            GeometryReader { geo in
+                VStack(spacing: 14) {
+                    Spacer(minLength: 0)
+                    Image(systemName: "iphone.slash")
+                        .font(.largeTitle)
+                        .foregroundColor(.secondary)
+                    Text("Can't reach iPhone")
+                        .font(.headline)
+                    Text("Open the iPhone app to sync today's data")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        WKInterfaceDevice.current().play(.click)
+                        connectivity.requestUpdate()
+                        // `requestUpdate` silently no-ops when the iPhone is
+                        // unreachable — without surfacing that, the user taps
+                        // and nothing visibly happens. Surface a brief "Still
+                        // offline" subtitle so the tap is acknowledged.
+                        if !WCSession.default.isReachable {
+                            WKInterfaceDevice.current().play(.failure)
+                            retryFailedAt = Date()
+                            // Schedule a re-render so the label flips back
+                            // to "Try again" after the 3-sec window without
+                            // requiring another user interaction (the
+                            // `retryFeedback` computed property reads Date()
+                            // and otherwise wouldn't re-evaluate on its own).
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .seconds(3))
+                                if let stamp = retryFailedAt,
+                                   Date().timeIntervalSince(stamp) >= 3 {
+                                    retryFailedAt = nil
+                                }
+                            }
+                        }
+                    } label: {
+                        Text(retryFeedback)
+                            .font(.system(size: 12, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 36)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.accentColor)
+                    .padding(.horizontal, 8)
+                    Spacer(minLength: 0)
                 }
-            } label: {
-                Text(retryFeedback)
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 36)
+                .padding()
+                .padding(.bottom, 4)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
             }
-            .buttonStyle(.bordered)
-            .tint(.accentColor)
-            .padding(.horizontal, 8)
-            Spacer(minLength: 0)
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            WatchAIPill {
-                WatchVoiceChatView(connectivity: connectivity)
-            }
-            .padding(.horizontal, 4)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            pinnedAIPill
         }
     }
 }

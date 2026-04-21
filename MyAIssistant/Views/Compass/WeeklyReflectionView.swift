@@ -28,7 +28,8 @@ struct WeeklyReflectionView: View {
                         breakdowns: breakdowns,
                         balanceScoreValue: balanceScoreValue,
                         balanceStreak: balanceManager.balanceStreak(),
-                        hasRealData: breakdowns.values.contains(where: { $0.composite > 0 })
+                        hasRealData: breakdowns.values.contains(where: { $0.composite > 0 }),
+                        taskCounts: balanceManager.thisWeekTaskCounts()
                     )
 
                     // Reflection question

@@ -75,7 +75,8 @@ struct CompassTabView: View {
                         breakdowns: breakdowns,
                         balanceScoreValue: bm.balanceScore(),
                         balanceStreak: bm.balanceStreak(),
-                        hasRealData: hasData
+                        hasRealData: hasData,
+                        taskCounts: bm.thisWeekTaskCounts()
                     )
 
                     if let goal = bm.activeSeasonGoal() {
@@ -83,8 +84,6 @@ struct CompassTabView: View {
                     } else {
                         newSeasonGoalPrompt
                     }
-
-                    dimensionBreakdown(breakdowns: breakdowns, bm: bm)
 
                     // Energy insights (Phase 3 — shows after 3+ weeks of data)
                     if let insight = bm.energyInsights() {
@@ -203,70 +202,6 @@ struct CompassTabView: View {
         }
         .buttonStyle(.scale)
         .accessibilityLabel("Set a Season Goal")
-    }
-
-    // MARK: - Dimension Breakdown (BUG-16 fix: clamped score)
-
-    private func dimensionBreakdown(breakdowns: [LifeDimension: BalanceManager.DimensionBreakdown], bm: BalanceManager) -> some View {
-        let counts = bm.thisWeekTaskCounts()
-
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("This Week")
-                .font(AppFonts.heading(15))
-                .foregroundColor(AppColors.textPrimary)
-
-            ForEach(LifeDimension.scored) { dim in
-                let score = breakdowns[dim]?.composite ?? 0
-                let clampedScore = max(0.0, min(10.0, score))
-                let displayScore = String(format: "%.1f", clampedScore)
-                let count = counts[dim] ?? 0
-
-                HStack(spacing: 12) {
-                    Image(systemName: dim.icon)
-                        .font(AppFonts.body(16).weight(.medium))
-                        .foregroundColor(dim.color)
-                        .frame(width: 32)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(dim.label)
-                                .font(AppFonts.bodyMedium(14))
-                                .foregroundColor(AppColors.textPrimary)
-                            Spacer()
-                            Text("\(displayScore)/10")
-                                .font(AppFonts.heading(14))
-                                .foregroundColor(dim.color)
-                        }
-
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(AppColors.border)
-                                    .frame(height: 6)
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(dim.color)
-                                    .frame(width: geo.size.width * (clampedScore / 10.0), height: 6)
-                            }
-                        }
-                        .frame(height: 6)
-
-                        Text("\(count) task\(count == 1 ? "" : "s") completed")
-                            .font(AppFonts.caption(11))
-                            .foregroundColor(AppColors.textMuted)
-                    }
-                }
-                .padding(.vertical, 4)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(dim.label): \(displayScore) out of 10, \(count) tasks completed")
-            }
-        }
-        .padding(16)
-        .background(AppColors.card)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(AppColors.border, lineWidth: 1)
-        )
     }
 
     // MARK: - Actions (BUG-15 fix: padding 16 for 44pt targets)
