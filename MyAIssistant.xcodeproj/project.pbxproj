@@ -17,6 +17,7 @@
 		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
 		16D80D0F8FFA40AA984D64D3 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
+		188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */; };
 		188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45180E1CF55D484DE91629E /* AppLogger.swift */; };
 		1F0559DB5CC542BB5A99E74D /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		20EC5B21EA3FDF38C2105851 /* SentryConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D874F054AA8C19805C3E250 /* SentryConfig.swift */; };
@@ -520,6 +521,7 @@
 		CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInWithAppleView.swift; sourceTree = "<group>"; };
 		CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
 		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
+		D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeEngine.swift; sourceTree = "<group>"; };
 		D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehaviorEngine.swift; sourceTree = "<group>"; };
 		DAA5DBA461099157B1E3DB0A /* WidgetCheckInWindow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetCheckInWindow.swift; sourceTree = "<group>"; };
 		DB41FCD08DE3A0859D7F8685 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -965,6 +967,7 @@
 				16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */,
 				7B639629AB4CC9037A38934D /* NudgeTypes.swift */,
 				937D7AD26947E833B43D374E /* NudgeComposer.swift */,
+				D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1656,6 +1659,7 @@
 				ECD8B4F293B14EB01D52744A /* CrisisClassifier.swift in Sources */,
 				B699E1BB1A57189485CCABDD /* KeywordCrisisClassifier.swift in Sources */,
 				E60B9327BB10814543599778 /* NudgeComposer.swift in Sources */,
+				188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
