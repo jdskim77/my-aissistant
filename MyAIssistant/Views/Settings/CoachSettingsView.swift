@@ -27,22 +27,27 @@ struct CoachSettingsView: View {
     @AppStorage(AppConstants.nudgeQuietHoursEndKey)
     private var quietEndHour: Int = AppConstants.nudgeQuietHoursEndHour
 
-    /// Last 5 delivered/responded nudges, most recent first. Safety-route
-    /// nudges appear in this list too — they render differently but share
-    /// the same history stream. Pending nudges (rule fired but delivery
-    /// failed) are excluded: the user only sees what actually reached them.
-    @Query(
-        filter: #Predicate<Nudge> {
-            $0.statusRaw == "delivered" || $0.statusRaw == "responded"
-        },
-        sort: [SortDescriptor(\Nudge.createdAt, order: .reverse)]
-    )
-    private var deliveredNudges: [Nudge]
+    /// All nudges sorted most-recent first. Filtering for delivered/responded
+    /// status happens in `recentNudges` below.
+    ///
+    /// The `@Query` predicate was originally a `#Predicate<Nudge>` against
+    /// `statusRaw`, but the combination of the or-clause + the sort descriptor
+    /// tripped Swift's type-check budget ("compiler unable to type-check this
+    /// expression in reasonable time"), which in turn made the synthesized
+    /// initializer incompatible with the `#Preview`. Simpler @Query + in-Swift
+    /// filter keeps the view compileable at zero cost — there are at most a
+    /// few dozen Nudge rows ever, so filtering in-memory is trivial.
+    @Query(sort: [SortDescriptor(\Nudge.createdAt, order: .reverse)])
+    private var allNudges: [Nudge]
 
     @Environment(\.nudgeEngine) private var nudgeEngine: NudgeEngine?
 
     private var recentNudges: [Nudge] {
-        Array(deliveredNudges.prefix(5))
+        Array(
+            allNudges
+                .filter { $0.statusRaw == "delivered" || $0.statusRaw == "responded" }
+                .prefix(5)
+        )
     }
 
     var body: some View {
