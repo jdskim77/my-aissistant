@@ -50,6 +50,7 @@
 		<string>com.myaissistant.daily-snapshot</string>
 		<string>com.myaissistant.weekly-review</string>
 		<string>com.myaissistant.calendar-sync</string>
+		<string>com.myaissistant.nudge-evaluation</string>
 	</array>
 
 	<!-- Background Modes -->

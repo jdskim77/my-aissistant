@@ -22,22 +22,26 @@ final class BackgroundTaskManager {
     static let dailySnapshotID = "com.myaissistant.daily-snapshot"
     static let weeklyReviewID = "com.myaissistant.weekly-review"
     static let calendarSyncID = "com.myaissistant.calendar-sync"
+    static let nudgeEvaluationID = AppConstants.nudgeEvaluationBGTaskID
 
     private let modelContext: ModelContext
     private let patternEngine: PatternEngine
     private let calendarSyncManager: CalendarSyncManager
     private let checkInBehaviorEngine: CheckInBehaviorEngine?
+    private let nudgeEngine: NudgeEngine?
 
     init(
         modelContext: ModelContext,
         patternEngine: PatternEngine,
         calendarSyncManager: CalendarSyncManager,
-        checkInBehaviorEngine: CheckInBehaviorEngine? = nil
+        checkInBehaviorEngine: CheckInBehaviorEngine? = nil,
+        nudgeEngine: NudgeEngine? = nil
     ) {
         self.modelContext = modelContext
         self.patternEngine = patternEngine
         self.calendarSyncManager = calendarSyncManager
         self.checkInBehaviorEngine = checkInBehaviorEngine
+        self.nudgeEngine = nudgeEngine
     }
 
     // MARK: - Registration
@@ -70,6 +74,16 @@ final class BackgroundTaskManager {
             Task { @MainActor in
                 guard let bgTask = task as? BGAppRefreshTask else { task.setTaskCompleted(success: false); return }
                 await self.handleCalendarSync(bgTask)
+            }
+        }
+
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.nudgeEvaluationID,
+            using: nil
+        ) { task in
+            Task { @MainActor in
+                guard let bgTask = task as? BGAppRefreshTask else { task.setTaskCompleted(success: false); return }
+                await self.handleNudgeEvaluation(bgTask)
             }
         }
     }
@@ -109,6 +123,24 @@ final class BackgroundTaskManager {
         try? BGTaskScheduler.shared.submit(request)
     }
 
+    /// Early-morning evaluation (~6 AM) that pre-composes up to one nudge for
+    /// the day. Phase 1 is a no-op because the engine's kill switch is on and
+    /// the rule set is empty — but the BGTask still registers and reschedules
+    /// so Phase 2 flips a flag instead of adding plumbing.
+    func scheduleNudgeEvaluation() {
+        let request = BGAppRefreshTaskRequest(identifier: Self.nudgeEvaluationID)
+        // Target 6 AM tomorrow; iOS treats this as "not before" and may run later.
+        let calendar = Calendar.current
+        var target = calendar.startOfDay(for: Date())
+        target = calendar.safeDate(byAdding: .day, value: 1, to: target)
+        if let at6 = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: target) {
+            request.earliestBeginDate = at6
+        } else {
+            request.earliestBeginDate = Date(timeIntervalSinceNow: 60 * 60 * 6)
+        }
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
     // MARK: - Handlers
 
     private func handleDailySnapshot(_ task: BGProcessingTask) async {
@@ -136,6 +168,16 @@ final class BackgroundTaskManager {
         await calendarSyncManager.syncReminders()
         scheduleCalendarSync() // Reschedule
         task.setTaskCompleted(success: true)
+    }
+
+    private func handleNudgeEvaluation(_ task: BGAppRefreshTask) async {
+        task.expirationHandler = { task.setTaskCompleted(success: false) }
+
+        // Phase 1: kill switch is on by default, so the engine short-circuits
+        // and no nudge is composed or delivered. BGTask still reschedules.
+        let ok = await nudgeEngine?.runScheduledEvaluation() ?? true
+        scheduleNudgeEvaluation()
+        task.setTaskCompleted(success: ok)
     }
 
     // MARK: - Daily Snapshot Creation
