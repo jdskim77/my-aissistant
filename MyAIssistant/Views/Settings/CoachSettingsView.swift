@@ -1,15 +1,15 @@
 import SwiftUI
+import SwiftData
 
 /// Coach settings — user-facing tuning for proactive nudges.
 ///
-/// Phase 1: reads/writes UserDefaults keys defined in `AppConstants`. The
-/// `NudgeEngine` consults these on every evaluation, so changes take effect
-/// on the next foreground or BGTask run — no restart required.
+/// Phase 1 shipped the toggles; Phase 2 Part C adds the **Recent nudges**
+/// receipt drawer so the user can see what the coach has been doing and
+/// react to it. Every reaction feeds back into the dogfood hit-rate metric
+/// that gates adding further trigger rules.
 ///
 /// Transparency is load-bearing here: the user must always be able to see
-/// what the coach decides, why, and silence it. This screen is intentionally
-/// quiet — the receipt drawer for a product whose primary interaction is
-/// invisible.
+/// what the coach decides, why, and silence it.
 struct CoachSettingsView: View {
 
     @AppStorage(AppConstants.nudgeEnabledKey)
@@ -26,6 +26,24 @@ struct CoachSettingsView: View {
 
     @AppStorage(AppConstants.nudgeQuietHoursEndKey)
     private var quietEndHour: Int = AppConstants.nudgeQuietHoursEndHour
+
+    /// Last 5 delivered/responded nudges, most recent first. Safety-route
+    /// nudges appear in this list too — they render differently but share
+    /// the same history stream. Pending nudges (rule fired but delivery
+    /// failed) are excluded: the user only sees what actually reached them.
+    @Query(
+        filter: #Predicate<Nudge> {
+            $0.statusRaw == "delivered" || $0.statusRaw == "responded"
+        },
+        sort: [SortDescriptor(\Nudge.createdAt, order: .reverse)]
+    )
+    private var deliveredNudges: [Nudge]
+
+    @Environment(\.nudgeEngine) private var nudgeEngine: NudgeEngine?
+
+    private var recentNudges: [Nudge] {
+        Array(deliveredNudges.prefix(5))
+    }
 
     var body: some View {
         Form {
@@ -85,6 +103,25 @@ struct CoachSettingsView: View {
                 } footer: {
                     Text("Silence a category if it stops feeling useful — the coach will respect your choice. Safety resources are always available and can't be silenced here.")
                 }
+
+                Section {
+                    if recentNudges.isEmpty {
+                        Text("No nudges yet. Check back after a few days of use — the coach needs a week of signal before it starts reaching out.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 4)
+                    } else {
+                        ForEach(recentNudges) { nudge in
+                            RecentNudgeRow(nudge: nudge) { response in
+                                nudgeEngine?.recordResponse(nudgeID: nudge.id, response: response)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Recent from your coach")
+                } footer: {
+                    Text("Last 5 nudges delivered. Your reactions help the coach tune future ones — this is the dogfood signal that gates new rule types.")
+                }
             }
         }
         .navigationTitle("Coach")
@@ -143,6 +180,123 @@ struct CoachSettingsView: View {
             set.remove(category.rawValue)
         }
         silencedCategoriesRaw = set.sorted().joined(separator: ",")
+    }
+}
+
+// MARK: - Recent nudge row
+
+/// One row in the "Recent from your coach" list. Renders the nudge body,
+/// category, relative timestamp, and either a thumbs-up/down reaction pair
+/// (unresponded) or a past-tense summary of the prior reaction.
+///
+/// Safety-route nudges render with an amber tint and a "Get support" link
+/// instead of reaction buttons — asking "was that helpful?" after a
+/// safety intervention is tone-deaf. Tapping the link opens the
+/// `SafeResourceCopy.actionURL` in the system browser.
+private struct RecentNudgeRow: View {
+    let nudge: Nudge
+    let onReact: (UserNudgeResponse) -> Void
+
+    private var isSafety: Bool { nudge.category == .safetyRoute }
+
+    private var existingResponse: UserNudgeResponse? {
+        guard let raw = nudge.userResponseRaw else { return nil }
+        return UserNudgeResponse(rawValue: raw)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(categoryBadge(nudge.category))
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isSafety ? Color.orange : AppColors.accent)
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                Text(nudge.createdAt, style: .relative)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+            }
+
+            Text(nudge.bodyText)
+                .font(.callout)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+
+            if isSafety {
+                Link(destination: SafeResourceCopy.actionURL()) {
+                    Label(SafeResourceCopy.actionTitle, systemImage: "arrow.up.right.square")
+                        .font(.caption)
+                }
+                .foregroundStyle(Color.orange)
+            } else if let response = existingResponse {
+                HStack(spacing: 6) {
+                    Image(systemName: responseIcon(response))
+                        .font(.caption)
+                    Text(responseSummary(response))
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 10) {
+                    Button {
+                        onReact(.accepted)
+                    } label: {
+                        Label("Helpful", systemImage: "hand.thumbsup")
+                            .font(.caption)
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(AppColors.accent)
+
+                    Button {
+                        onReact(.dismissed)
+                    } label: {
+                        Label("Not helpful", systemImage: "hand.thumbsdown")
+                            .font(.caption)
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Formatting
+
+    private func categoryBadge(_ category: NudgeCategory) -> String {
+        switch category {
+        case .weakDimension:     return "WEAK AREA"
+        case .streakAtRisk:      return "STREAK"
+        case .calendarGap:       return "RESET"
+        case .habitSlip:         return "HABIT"
+        case .postCheckInAction: return "CHECK-IN"
+        case .goalCheckpoint:    return "GOAL"
+        case .safetyRoute:       return "SUPPORT"
+        }
+    }
+
+    private func responseSummary(_ response: UserNudgeResponse) -> String {
+        switch response {
+        case .accepted:  return "You found this helpful"
+        case .dismissed: return "You didn't find this helpful"
+        case .snoozed:   return "Snoozed"
+        case .ignored:   return "No response"
+        case .silenced:  return "Silenced"
+        }
+    }
+
+    private func responseIcon(_ response: UserNudgeResponse) -> String {
+        switch response {
+        case .accepted:  return "hand.thumbsup.fill"
+        case .dismissed: return "hand.thumbsdown.fill"
+        case .snoozed:   return "clock"
+        case .ignored:   return "questionmark.circle"
+        case .silenced:  return "speaker.slash"
+        }
     }
 }
 
