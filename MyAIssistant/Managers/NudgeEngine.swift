@@ -79,16 +79,22 @@ final class NudgeEngine {
         // 2. User-facing toggle (default off — Phase 1 is opt-in even without kill switch)
         guard UserDefaults.standard.bool(forKey: AppConstants.nudgeEnabledKey) else { return }
 
-        // 3. Off-frequency short-circuit
+        // 3. Safety pause — prior crisis match extends a 24h suppression. Fixed
+        //    the read side: previously `recordSafetyPause` wrote the timestamp
+        //    but nothing consulted it, so the pause was a one-shot guard on the
+        //    current call only. Now the pause persists across evaluations.
+        if isWithinSafetyPause(at: Date()) { return }
+
+        // 4. Off-frequency short-circuit
         let frequency = NudgeFrequency(
             rawValue: UserDefaults.standard.string(forKey: AppConstants.nudgeFrequencyKey) ?? ""
         ) ?? .balanced
         guard frequency != .off else { return }
 
-        // 4. Quiet hours — same-day suppression
+        // 5. Quiet hours — same-day suppression
         if isQuietHours(at: Date()) { return }
 
-        // 5. Daily + hourly caps
+        // 6. Daily + hourly caps
         guard withinFrequencyCaps(frequency: frequency) else { return }
 
         // 6. Rule loop — first match wins (one nudge per run, hard cap per §7.1)
@@ -159,12 +165,29 @@ final class NudgeEngine {
 
     // MARK: - Gating helpers
 
+    /// Returns true if the current time falls inside the user's configured
+    /// quiet-hours window. Hours are read via `object(forKey:) as? Int` so that
+    /// "set to 0" (midnight) is distinguishable from "never set" — the previous
+    /// `UserDefaults.integer(forKey:)` path collapsed both to 0 and silently
+    /// substituted the default.
+    ///
+    /// Hours are clamped to `0...23`. When `startHour == endHour` the window is
+    /// treated as "no quiet hours" (current default behavior) — users who want
+    /// to stop all nudges should use the master toggle in Coach Settings.
     private func isQuietHours(at date: Date) -> Bool {
         let hour = Calendar.current.component(.hour, from: date)
-        let start = UserDefaults.standard.integer(forKey: AppConstants.nudgeQuietHoursStartKey)
-        let end = UserDefaults.standard.integer(forKey: AppConstants.nudgeQuietHoursEndKey)
-        let startHour = start > 0 ? start : AppConstants.nudgeQuietHoursStartHour
-        let endHour = end > 0 ? end : AppConstants.nudgeQuietHoursEndHour
+        let startHour = readHourSetting(
+            key: AppConstants.nudgeQuietHoursStartKey,
+            default: AppConstants.nudgeQuietHoursStartHour
+        )
+        let endHour = readHourSetting(
+            key: AppConstants.nudgeQuietHoursEndKey,
+            default: AppConstants.nudgeQuietHoursEndHour
+        )
+
+        // startHour == endHour → no quiet hours. (BUG-06)
+        if startHour == endHour { return false }
+
         // Quiet window wraps midnight (e.g. 21..23 + 0..8).
         if startHour > endHour {
             return hour >= startHour || hour < endHour
@@ -173,34 +196,57 @@ final class NudgeEngine {
         }
     }
 
+    private func readHourSetting(key: String, default fallback: Int) -> Int {
+        let defaults = UserDefaults.standard
+        let raw = defaults.object(forKey: key) as? Int ?? fallback
+        return max(0, min(23, raw))
+    }
+
+    /// Enforces the per-day cap and the minimum-gap-between-nudges window. The
+    /// previous implementation hard-coded a 1-hour window while comparing count
+    /// against `max(1, minHours)` — if `nudgeMinHoursBetween` was raised above 1,
+    /// the enforcement silently inverted. Now the window itself scales with
+    /// the configured minimum gap. (BUG-03)
     private func withinFrequencyCaps(frequency: NudgeFrequency) -> Bool {
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
-        let hourAgo = now.addingTimeInterval(-60 * 60)
 
-        // Count delivered nudges today
+        // Daily cap.
         let deliveredToday = fetchDeliveredCount(since: startOfDay)
-        let cap = frequency.dailyCap
-        guard deliveredToday < cap else { return false }
+        guard deliveredToday < frequency.dailyCap else { return false }
 
-        // Count delivered within the last hour
-        let deliveredInHour = fetchDeliveredCount(since: hourAgo)
-        let minHours = AppConstants.nudgeMinHoursBetween
-        guard deliveredInHour < max(1, minHours) else { return false }
+        // Minimum gap: no deliveries inside the last `minHours` window.
+        let minHours = max(1, AppConstants.nudgeMinHoursBetween)
+        let windowStart = now.addingTimeInterval(-Double(minHours) * 60 * 60)
+        let deliveredInWindow = fetchDeliveredCount(since: windowStart)
+        guard deliveredInWindow < 1 else { return false }
 
         return true
     }
 
+    /// Counts delivered/responded nudges whose *delivery* timestamp falls at or
+    /// after `since`. Previously counted on `createdAt`, which would include
+    /// pending nudges that never actually reached the user (e.g. Phase 2
+    /// scheduling failures) — inflating the cap and silently starving future
+    /// runs. (BUG-08)
+    ///
+    /// `#Predicate` can't express optional-aware comparisons cleanly, so we
+    /// filter by status in the query (status is always set when `deliveredAt`
+    /// is) and do the timestamp filter in Swift. Counts are bounded by the
+    /// daily cap (≤ 2), so the in-memory pass is trivial.
     private func fetchDeliveredCount(since: Date) -> Int {
         let deliveredRaw = NudgeStatus.delivered.rawValue
         let respondedRaw = NudgeStatus.responded.rawValue
         let descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
-                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw)
-                    && nudge.createdAt >= since
+                nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw
             }
         )
-        return (try? modelContext.fetchCount(descriptor)) ?? 0
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        return rows.reduce(0) { acc, nudge in
+            guard let delivered = nudge.deliveredAt, delivered >= since else { return acc }
+            return acc + 1
+        }
     }
 
     private func isRuleInCooldown(_ rule: NudgeTriggerRule) -> Bool {
@@ -272,6 +318,16 @@ final class NudgeEngine {
         UserDefaults.standard.set(until.timeIntervalSince1970, forKey: safetyPauseUntilKey)
     }
 
+    /// True while an active safety pause is in effect (set when the crisis
+    /// classifier flagged free-text input). Reads the timestamp written by
+    /// `recordSafetyPause`; returns false once the pause has elapsed.
+    /// Paired fix for BUG-02.
+    private func isWithinSafetyPause(at date: Date) -> Bool {
+        let ts = UserDefaults.standard.double(forKey: safetyPauseUntilKey)
+        guard ts > 0 else { return false }
+        return date.timeIntervalSince1970 < ts
+    }
+
     // MARK: - Response recording
     //
     // Phase 2 wires `NotificationDelegate` to call this when the user taps an
@@ -282,11 +338,19 @@ final class NudgeEngine {
         let descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { $0.id == nudgeID }
         )
-        guard let nudge = try? modelContext.fetch(descriptor).first else { return }
-        nudge.userResponseRaw = response.rawValue
-        nudge.respondedAt = Date()
-        nudge.statusRaw = NudgeStatus.responded.rawValue
-        modelContext.safeSave()
+        do {
+            let rows = try modelContext.fetch(descriptor)
+            guard let nudge = rows.first else {
+                log.warning("recordResponse: no Nudge found for id=\(nudgeID, privacy: .public)")
+                return
+            }
+            nudge.userResponseRaw = response.rawValue
+            nudge.respondedAt = Date()
+            nudge.statusRaw = NudgeStatus.responded.rawValue
+            modelContext.safeSave()
+        } catch {
+            log.error("recordResponse: fetch failed for id=\(nudgeID, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+        }
     }
 }
 
