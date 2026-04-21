@@ -28,6 +28,7 @@ struct MyAIssistantApp: App {
     @State private var balancePulseBus: BalancePulseBus
     @State private var nudgeEngine: NudgeEngine
     private var backgroundTaskManager: BackgroundTaskManager?
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // Initialize crash reporting FIRST so we capture any startup crashes.
@@ -232,6 +233,15 @@ struct MyAIssistantApp: App {
                     // Sync schedule + API key to Watch
                     WatchSyncManager.shared.syncAPIKey()
                     taskManager.updateWidgetData()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    // BUG-05 fix: foreground evaluation must fire on every
+                    // background→active transition, not only on cold launch.
+                    // Kill switch + caps still gate delivery, so extra calls
+                    // are safe.
+                    if newPhase == .active {
+                        Task { await nudgeEngine.evaluateOnForeground() }
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .watchToggledTask)) { notification in
                     guard let taskID = notification.userInfo?["taskID"] as? String else { return }

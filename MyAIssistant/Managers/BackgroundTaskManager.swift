@@ -1,4 +1,5 @@
 import BackgroundTasks
+import Foundation
 import SwiftData
 
 // MARK: - Engine / Reusable (with Thrivn-specific task IDs)
@@ -171,13 +172,19 @@ final class BackgroundTaskManager {
     }
 
     private func handleNudgeEvaluation(_ task: BGAppRefreshTask) async {
-        task.expirationHandler = { task.setTaskCompleted(success: false) }
+        // BUG-07 fix: guard against double-completion. If `expirationHandler`
+        // fires (system starved the task) AND the async body later resumes,
+        // both paths previously called `setTaskCompleted` — Apple considers
+        // double-completion a programming error. `TaskCompletionBarrier`
+        // enforces once-only delivery under concurrent access.
+        let barrier = TaskCompletionBarrier()
+        task.expirationHandler = { barrier.complete(task: task, success: false) }
 
         // Phase 1: kill switch is on by default, so the engine short-circuits
         // and no nudge is composed or delivered. BGTask still reschedules.
         let ok = await nudgeEngine?.runScheduledEvaluation() ?? true
         scheduleNudgeEvaluation()
-        task.setTaskCompleted(success: ok)
+        barrier.complete(task: task, success: ok)
     }
 
     // MARK: - Daily Snapshot Creation
@@ -221,5 +228,29 @@ final class BackgroundTaskManager {
 
         modelContext.insert(snapshot)
         modelContext.safeSave()
+    }
+}
+
+// MARK: - Task completion barrier
+
+/// Ensures `BGTask.setTaskCompleted(success:)` is called at most once across
+/// the expiration path and the async body. `expirationHandler` may fire on an
+/// internal queue concurrently with the `@MainActor` body resuming, so the
+/// guard is synchronized with `NSLock`. Once completed, further calls no-op.
+///
+/// Scoped to the Phase 1 nudge-evaluation handler per QA finding BUG-07. The
+/// three legacy handlers (daily snapshot, weekly review, calendar sync) share
+/// the same double-completion risk but are intentionally left untouched in
+/// this patch — they're out of scope for the Phase 1 Nudge Engine review.
+final class TaskCompletionBarrier: @unchecked Sendable {
+    private let lock = NSLock()
+    private var isCompleted = false
+
+    func complete(task: BGTask, success: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !isCompleted else { return }
+        isCompleted = true
+        task.setTaskCompleted(success: success)
     }
 }
