@@ -30,6 +30,7 @@
 		3F5545E2736CA25B602A3768 /* ActivityPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */; };
 		40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */; };
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
+		454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161422F9814E3002A51F9 /* CoachSettingsView.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
 		4583C2E72F7A14F400603B08 /* WatchScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E62F7A14F400603B08 /* WatchScheduleData.swift */; };
@@ -362,6 +363,7 @@
 		3F4982EE020292CEAEE2E7FB /* ActivityPattern.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityPattern.swift; sourceTree = "<group>"; };
 		406269C7C7A9EAEADDDB70E9 /* CheckInSuggestionCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInSuggestionCard.swift; sourceTree = "<group>"; };
 		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
+		454161422F9814E3002A51F9 /* CoachSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSettingsView.swift; sourceTree = "<group>"; };
 		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2C22F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -544,39 +546,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch App";
-			sourceTree = "<group>";
-		};
-		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppTests";
-			sourceTree = "<group>";
-		};
-		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = "MyAIssistantWatch Watch AppUITests";
-			sourceTree = "<group>";
-		};
+		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch App"; sourceTree = "<group>"; };
+		4583C2BB2F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppTests"; sourceTree = "<group>"; };
+		4583C2C52F79D1BE00603B08 /* MyAIssistantWatch Watch AppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "MyAIssistantWatch Watch AppUITests"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -701,7 +673,6 @@
 				9291E4950E52C884AA8C1CB9 /* CrisisClassifier.swift */,
 				054101A80F10838BAAF59076 /* KeywordCrisisClassifier.swift */,
 			);
-			name = Crisis;
 			path = Crisis;
 			sourceTree = "<group>";
 		};
@@ -1048,6 +1019,7 @@
 		D500000002000000 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				454161422F9814E3002A51F9 /* CoachSettingsView.swift */,
 				B600000004000000 /* SettingsView.swift */,
 				B600000005000000 /* SubscriptionView.swift */,
 				B600000006000000 /* APIKeySettingsView.swift */,
@@ -1505,6 +1477,7 @@
 				A300000003000000 /* AnthropicProvider.swift in Sources */,
 				A3A200P2000000000001 /* GoalTaskSuggester.swift in Sources */,
 				A3A200P2000000000002 /* GoalSuggestionsSheet.swift in Sources */,
+				454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */,
 				A300000004000000 /* OpenAIProvider.swift in Sources */,
 				A300000005000000 /* AIProviderFactory.swift in Sources */,
 				A300000006000000 /* KeychainService.swift in Sources */,

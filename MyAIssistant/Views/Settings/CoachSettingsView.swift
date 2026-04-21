@@ -1,0 +1,142 @@
+import SwiftUI
+
+/// Coach settings — user-facing tuning for proactive nudges.
+///
+/// Phase 1: reads/writes UserDefaults keys defined in `AppConstants`. The
+/// `NudgeEngine` consults these on every evaluation, so changes take effect
+/// on the next foreground or BGTask run — no restart required.
+///
+/// Transparency is load-bearing here: the user must always be able to see
+/// what the coach decides, why, and silence it. This screen is intentionally
+/// quiet — the receipt drawer for a product whose primary interaction is
+/// invisible.
+struct CoachSettingsView: View {
+
+    @AppStorage(AppConstants.nudgeEnabledKey)
+    private var nudgesEnabled: Bool = false
+
+    @AppStorage(AppConstants.nudgeFrequencyKey)
+    private var frequencyRaw: String = NudgeFrequency.balanced.rawValue
+
+    @AppStorage(AppConstants.nudgeSilencedCategoriesKey)
+    private var silencedCategoriesRaw: String = ""
+
+    @AppStorage(AppConstants.nudgeQuietHoursStartKey)
+    private var quietStartHour: Int = AppConstants.nudgeQuietHoursStartHour
+
+    @AppStorage(AppConstants.nudgeQuietHoursEndKey)
+    private var quietEndHour: Int = AppConstants.nudgeQuietHoursEndHour
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Proactive nudges", isOn: $nudgesEnabled)
+                    .tint(AppColors.accent)
+
+                if nudgesEnabled {
+                    Picker("Frequency", selection: $frequencyRaw) {
+                        Text("Gentle · 1/day").tag(NudgeFrequency.gentle.rawValue)
+                        Text("Balanced · 2/day").tag(NudgeFrequency.balanced.rawValue)
+                        Text("Off").tag(NudgeFrequency.off.rawValue)
+                    }
+                    .pickerStyle(.menu)
+                }
+            } header: {
+                Text("Coach")
+            } footer: {
+                Text("Specific, well-timed suggestions from your coach across body, mind, heart, and spirit. Always with consent; silenceable any time.")
+            }
+
+            if nudgesEnabled {
+                Section {
+                    Stepper(
+                        "Start · \(hourLabel(quietStartHour))",
+                        value: $quietStartHour,
+                        in: 0...23
+                    )
+                    Stepper(
+                        "End · \(hourLabel(quietEndHour))",
+                        value: $quietEndHour,
+                        in: 0...23
+                    )
+                } header: {
+                    Text("Quiet hours")
+                } footer: {
+                    Text("No nudges delivered during these hours. Nudges that would have fired in quiet hours are deferred or expired. Setting start and end to the same hour disables quiet hours entirely.")
+                }
+
+                Section {
+                    ForEach(NudgeCategory.allCases, id: \.rawValue) { category in
+                        Toggle(
+                            categoryLabel(category),
+                            isOn: Binding(
+                                get: { !isSilenced(category) },
+                                set: { newValue in setSilenced(category, !newValue) }
+                            )
+                        )
+                        .tint(AppColors.accent)
+                    }
+                } header: {
+                    Text("Categories")
+                } footer: {
+                    Text("Silence a category if it stops feeling useful — the coach will respect your choice.")
+                }
+            }
+        }
+        .navigationTitle("Coach")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Helpers
+
+    private func hourLabel(_ hour: Int) -> String {
+        let normalized = max(0, min(23, hour))
+        var comps = DateComponents()
+        comps.hour = normalized
+        let date = Calendar.current.date(from: comps) ?? Date()
+        return Self.hourFormatter.string(from: date)
+    }
+
+    private static let hourFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h a"
+        f.locale = Locale.current
+        return f
+    }()
+
+    private func categoryLabel(_ category: NudgeCategory) -> String {
+        switch category {
+        case .weakDimension:     return "Weak-area nudges"
+        case .streakAtRisk:      return "Streak at risk"
+        case .calendarGap:       return "Calendar resets"
+        case .habitSlip:         return "Habit slips"
+        case .postCheckInAction: return "After a check-in"
+        case .goalCheckpoint:    return "Goal checkpoints"
+        }
+    }
+
+    private func silencedCategories() -> Set<String> {
+        guard !silencedCategoriesRaw.isEmpty else { return [] }
+        return Set(silencedCategoriesRaw.split(separator: ",").map(String.init))
+    }
+
+    private func isSilenced(_ category: NudgeCategory) -> Bool {
+        silencedCategories().contains(category.rawValue)
+    }
+
+    private func setSilenced(_ category: NudgeCategory, _ silenced: Bool) {
+        var set = silencedCategories()
+        if silenced {
+            set.insert(category.rawValue)
+        } else {
+            set.remove(category.rawValue)
+        }
+        silencedCategoriesRaw = set.sorted().joined(separator: ",")
+    }
+}
+
+#Preview {
+    NavigationStack {
+        CoachSettingsView()
+    }
+}
