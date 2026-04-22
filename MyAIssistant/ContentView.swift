@@ -27,11 +27,22 @@ struct ContentView: View {
         profiles.first?.onboardingCompleted ?? false
     }
 
-    /// Count of delivered nudges the user hasn't reacted to yet. Drives
-    /// the Coach tab badge so the receipt is visible without a push.
-    @Query(filter: #Predicate<Nudge> { nudge in
-        nudge.statusRaw == "delivered" && nudge.userResponseRaw == nil
-    }) private var unreactedNudges: [Nudge]
+    /// All nudges sorted newest first; filtering to delivered-unreacted
+    /// happens in `unreactedCount` below. Plain-closure filter (not
+    /// a `#Predicate` literal) so we can reference the enum raw value
+    /// and catch any future rename at compile time — fix for BUG-02.
+    /// The query is unbounded here because the Nudge table is expected
+    /// to stay small (≤ ~dozens over a dogfood month); revisit with a
+    /// date-bounded FetchDescriptor if a power user ever crosses ~1k.
+    @Query(sort: [SortDescriptor(\Nudge.createdAt, order: .reverse)])
+    private var allNudges: [Nudge]
+
+    private var unreactedCount: Int {
+        let deliveredRaw = NudgeStatus.delivered.rawValue
+        return allNudges.reduce(0) { acc, nudge in
+            acc + ((nudge.statusRaw == deliveredRaw && nudge.userResponseRaw == nil) ? 1 : 0)
+        }
+    }
 
     var body: some View {
         Group {
@@ -70,10 +81,19 @@ struct ContentView: View {
         }
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
+            // `.ignoresSafeArea(.keyboard)` keeps the CustomTabBar
+            // pinned to the physical window bottom when the keyboard
+            // rises — matching Messages / WhatsApp / Slack behavior.
+            // Without this, the tab bar stays visible above the
+            // keyboard while ChatView's input bar gets pushed off
+            // screen (the task-builder inputBar regression the user
+            // caught on iPhone, plus BUG-09 variants for HabitForm /
+            // Schedule add-task sheets).
             CustomTabBar(
                 selectedTab: selectedTabBinding,
-                coachBadge: unreactedNudges.count
+                coachBadge: unreactedCount
             )
+            .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .tint(AppColors.accent)
         .sheet(isPresented: $showingFocusTimer) {

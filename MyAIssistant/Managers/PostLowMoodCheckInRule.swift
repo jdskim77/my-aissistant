@@ -41,37 +41,50 @@ struct PostLowMoodCheckInRule: NudgeTriggerRule {
             return nil
         }
 
-        // 2. Must have a check-in to react to.
-        guard let checkIn = context.lastCheckIn else { return nil }
-
-        // 3. Streak baseline — don't nudge on a brand-new user's first
+        // 2. Streak baseline — don't nudge on a brand-new user's first
         //    few check-ins. Their baseline hasn't formed; framing noise
         //    as a concern erodes trust.
         guard context.streak >= AppConstants.nudgePostLowMoodStreakMin else { return nil }
 
-        // 4. Freshness window. Upper bound keeps the nudge tied to the
-        //    user's current state (don't react to yesterday's mood).
-        //    Lower bound gives the user space after logging before the
-        //    coach speaks.
-        let elapsedMin = Int(context.now.timeIntervalSince(checkIn.date) / 60)
+        // 3. Find the newest *qualifying* check-in: inside the freshness
+        //    window AND matching a mood bucket AND not already nudged.
+        //    Fix for BUG-14 — previously the rule only looked at
+        //    `context.lastCheckIn` (single most recent), so a newer
+        //    neutral/happy check-in hid an older low one that was still
+        //    in its action window. Scanning recent records in
+        //    newest-first order lets the rule still react to the last
+        //    emotionally-meaningful state the user logged, as long as
+        //    nothing more recent supersedes it.
         let minMin = AppConstants.nudgePostLowMoodMinMinutesSinceCheckIn
         let maxMin = AppConstants.nudgePostLowMoodMaxMinutesSinceCheckIn
-        guard elapsedMin >= minMin, elapsedMin <= maxMin else { return nil }
 
-        // 5. Record-scoped dedupe. If we already fired on this specific
-        //    check-in record, skip — even if the category cooldown has
-        //    elapsed. Prevents re-nudging the SAME record after dismiss.
-        guard !context.nudgedCheckInIDs.contains(checkIn.id) else { return nil }
-
-        // 6. Bucket selection (MVP cut — two buckets only).
-        guard let bucket = Self.bucket(mood: checkIn.mood, energy: checkIn.energyLevel) else {
+        let match: (snapshot: LastCheckInSnapshot, bucket: Bucket)? = {
+            for candidate in context.recentCheckIns {
+                let elapsedMin = Int(context.now.timeIntervalSince(candidate.date) / 60)
+                // Outside the freshness window entirely → stop scanning
+                // (list is sorted newest first, so older records are
+                // guaranteed further out of window).
+                if elapsedMin > maxMin { return nil }
+                // Too recent (give the user breathing room after logging).
+                if elapsedMin < minMin { continue }
+                // Already acted on this specific record.
+                if context.nudgedCheckInIDs.contains(candidate.id) { continue }
+                // Must match a mood bucket.
+                guard let bucket = Self.bucket(mood: candidate.mood, energy: candidate.energyLevel) else {
+                    continue
+                }
+                return (candidate, bucket)
+            }
             return nil
-        }
+        }()
 
-        // 7. Compose template params + trigger context. Note that
+        guard let (checkIn, bucket) = match else { return nil }
+
+        // 4. Compose template params + trigger context. Note that
         //    `checkInID` is stamped into the trigger context so the
         //    engine's `fetchNudgedCheckInIDs` helper can see it on
         //    subsequent evaluation passes.
+        let elapsedMin = Int(context.now.timeIntervalSince(checkIn.date) / 60)
         let templateParams: [String: String] = [
             "bucketRaw": bucket.rawValue,
             "moodLabel": bucket.moodLabel,
@@ -86,7 +99,13 @@ struct PostLowMoodCheckInRule: NudgeTriggerRule {
 
         return NudgeCandidate(
             category: .postCheckInAction,
-            dimension: .physical, // walk action is primarily Body
+            // Intentionally nil — the engine's per-dimension cooldown
+            // would otherwise block this rule whenever a Physical
+            // weak-dimension nudge fired in the last 48h, even though
+            // the two rules are unrelated. The post-check-in action is
+            // triggered by mood state, not by neglect of a specific
+            // dimension. Fix for BUG-23.
+            dimension: nil,
             suggestedAction: .createTask,
             actionPayload: "walk-10min",
             templateParams: templateParams,
@@ -122,7 +141,17 @@ struct PostLowMoodCheckInRule: NudgeTriggerRule {
     static func bucket(mood: Int?, energy: Int?) -> Bucket? {
         guard let mood else { return nil }
         if mood <= 2 { return .low }
-        if mood == 3, let energy, energy <= 2 { return .flat }
+        // Flat bucket: mood == 3 with low OR missing energy.
+        // Before BUG-13, this required `energy ≤ 2`, silently skipping
+        // check-ins where energyLevel wasn't captured. Treat missing
+        // energy as ambiguous-neutral — if mood itself is 3, that's
+        // enough signal to suggest a small shift.
+        if mood == 3 {
+            if let energy {
+                return energy <= 2 ? .flat : nil
+            }
+            return .flat
+        }
         return nil
     }
 }

@@ -34,14 +34,19 @@ final class NudgeEngine {
     var checkInManager: CheckInManager?
     var checkInBehaviorEngine: CheckInBehaviorEngine?
 
-    /// Registered trigger rules, evaluated in array order. Phase 2 ships
-    /// `WeakDimensionWithOpenWindowRule` as the sole live rule — additional
-    /// rules land only after the per-rule hit-rate gate passes (spec §11).
-    /// `private var` (not `let`) so tests can swap in a deterministic rule
-    /// set without rebuilding the whole engine.
+    /// Registered trigger rules, evaluated in array order.
+    /// **Order matters**: the first rule whose preconditions match wins
+    /// (one nudge per run, spec §12 Q5), so time-sensitive rules come
+    /// FIRST. `PostLowMoodCheckInRule` only fires within a 90-minute
+    /// window after a fresh check-in; `WeakDimensionWithOpenWindowRule`
+    /// can fire any day. If weak-dim were listed first it would always
+    /// preempt the post-check-in action, even when the check-in signal
+    /// is still fresh and more relevant. Fix for BUG-16.
+    /// `private var` (not `let`) so tests can swap in a deterministic
+    /// rule set without rebuilding the whole engine.
     private var rules: [NudgeTriggerRule] = [
-        WeakDimensionWithOpenWindowRule(),
-        PostLowMoodCheckInRule()
+        PostLowMoodCheckInRule(),
+        WeakDimensionWithOpenWindowRule()
     ]
 
     private let log = AppLogger.app
@@ -244,11 +249,15 @@ final class NudgeEngine {
         }
 
         // Populate the latest completed check-in so post-check-in rules
-        // can read mood/energy state. Fetch-limit 1; in-memory from here
-        // forward. Rules MUST NOT re-query SwiftData themselves — all
-        // signal reads go through the context to keep determinism for
-        // the eval harness.
-        let snapshot = fetchLatestCompletedCheckIn().map { record in
+        // can read mood/energy state. Also populate a short list of
+        // recent check-ins so rules that want to react to a specific
+        // state (e.g. PostLowMoodCheckInRule) can find the newest
+        // qualifying record — not just the absolute latest. Fix for
+        // BUG-14. Rules MUST NOT re-query SwiftData themselves — all
+        // signal reads go through the context for eval-harness
+        // determinism.
+        let recentRecords = fetchRecentCompletedCheckIns(limit: 5)
+        let recentSnapshots = recentRecords.map { record in
             LastCheckInSnapshot(
                 id: record.id,
                 date: record.date,
@@ -257,6 +266,7 @@ final class NudgeEngine {
                 notes: record.notes
             )
         }
+        let snapshot = recentSnapshots.first
 
         // Set of check-in IDs that have already been nudged. Populated
         // by scanning triggerContextJSON for the `checkInID` key on any
@@ -274,36 +284,49 @@ final class NudgeEngine {
             openTaskCountByDimension: openByDim,
             habitConsecutiveMisses: [:],         // unused by current rules
             nudgedCheckInIDs: nudgedIDs,
+            recentCheckIns: recentSnapshots,
             isAppForeground: trigger == .foreground
         )
     }
 
-    /// Latest completed `CheckInRecord` by date. Small fetch (limit 1) —
-    /// safe to do on every evaluation pass. Same predicate as the safety
-    /// precheck fetcher; kept separate for clarity + fetch-limit 1.
-    private func fetchLatestCompletedCheckIn() -> CheckInRecord? {
+    /// Recent completed `CheckInRecord` rows, newest first. Bounded by
+    /// `limit` (typically 5) — cost is trivial. Rules that only care
+    /// about the single most recent can read `recentSnapshots.first`;
+    /// rules that need to scan a window (e.g.
+    /// `PostLowMoodCheckInRule` looking for the newest check-in
+    /// inside the 90-min freshness window that also matches a mood
+    /// bucket) iterate. Fix for BUG-14.
+    private func fetchRecentCompletedCheckIns(limit: Int) -> [CheckInRecord] {
         var descriptor = FetchDescriptor<CheckInRecord>(
             predicate: #Predicate { $0.completed == true },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        descriptor.fetchLimit = 1
-        return (try? modelContext.fetch(descriptor))?.first
+        descriptor.fetchLimit = limit
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     /// Returns the set of `CheckInRecord.id` values referenced by any
     /// delivered or responded `Nudge`'s `triggerContextJSON.checkInID`.
     /// Record-scoped dedupe for `PostLowMoodCheckInRule`. Parsing is
     /// bounded by the daily cap × history window — trivial cost.
+    ///
+    /// Date-bounded to the last 7 days since the post-check-in
+    /// freshness window is 90 min. Any check-in older than a week is
+    /// already outside the rule's reach; including those rows would be
+    /// a growing-over-time linear scan with no benefit. Fix for BUG-15.
     private func fetchNudgedCheckInIDs() -> Set<String> {
         let deliveredRaw = NudgeStatus.delivered.rawValue
         let respondedRaw = NudgeStatus.responded.rawValue
         let categoryRaw = NudgeCategory.postCheckInAction.rawValue
-        let descriptor = FetchDescriptor<Nudge>(
+        let since = Date().addingTimeInterval(-7 * 24 * 3600)
+        var descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
                 nudge.categoryRaw == categoryRaw &&
-                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw)
+                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw) &&
+                nudge.createdAt >= since
             }
         )
+        descriptor.fetchLimit = 200
         let rows = (try? modelContext.fetch(descriptor)) ?? []
         var ids = Set<String>()
         for nudge in rows {
@@ -389,11 +412,18 @@ final class NudgeEngine {
     private func fetchDeliveredCount(since: Date) -> Int {
         let deliveredRaw = NudgeStatus.delivered.rawValue
         let respondedRaw = NudgeStatus.responded.rawValue
-        let descriptor = FetchDescriptor<Nudge>(
+        // Predicate pre-filters by createdAt as an index-friendly lower
+        // bound — deliveredAt is always ≥ createdAt, so rows with
+        // createdAt < since can never pass the in-memory deliveredAt
+        // check. Without this pre-filter we'd scan the full nudge table
+        // to count a window bounded by the daily cap. Fix for BUG-17.
+        var descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
-                nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw
+                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw) &&
+                nudge.createdAt >= since
             }
         )
+        descriptor.fetchLimit = 100
         let rows = (try? modelContext.fetch(descriptor)) ?? []
         return rows.reduce(0) { acc, nudge in
             guard let delivered = nudge.deliveredAt, delivered >= since else { return acc }

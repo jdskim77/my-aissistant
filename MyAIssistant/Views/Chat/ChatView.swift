@@ -26,7 +26,29 @@ struct ChatView: View {
     private var allRecentNudges: [Nudge]
 
     private var pinnedNudge: Nudge? {
-        allRecentNudges.first { $0.statusRaw == "delivered" && $0.userResponseRaw == nil }
+        // Plain-closure filter (not #Predicate) so we can reference the
+        // enum's raw value directly — catches enum renames at compile
+        // time. Fix for BUG-03.
+        let deliveredRaw = NudgeStatus.delivered.rawValue
+        return allRecentNudges.first { $0.statusRaw == deliveredRaw && $0.userResponseRaw == nil }
+    }
+
+    /// Records a reaction on a nudge, with a fallback direct-write to
+    /// the model context if the NudgeEngine environment isn't wired.
+    /// Without this fallback, tapping 👍/👎 silently did nothing when
+    /// `nudgeEngine` was nil (BUG-04): the @Query filter would stay
+    /// matched, the card would stay pinned, and no hit-rate signal
+    /// would be captured — corrupting dogfood data. Fallback mirrors
+    /// NudgeEngine.recordResponse so the behavior stays consistent.
+    private func recordNudgeResponse(nudge: Nudge, response: UserNudgeResponse) {
+        if let engine = nudgeEngine {
+            engine.recordResponse(nudgeID: nudge.id, response: response)
+            return
+        }
+        nudge.userResponseRaw = response.rawValue
+        nudge.respondedAt = Date()
+        nudge.statusRaw = NudgeStatus.responded.rawValue
+        modelContext.safeSave()
     }
     @State private var conversationID = "main"
     @State private var inputText = ""
@@ -94,7 +116,7 @@ struct ChatView: View {
             // waiting.
             if let nudge = pinnedNudge {
                 PinnedNudgeCard(nudge: nudge) { response in
-                    nudgeEngine?.recordResponse(nudgeID: nudge.id, response: response)
+                    recordNudgeResponse(nudge: nudge, response: response)
                 }
             }
 
