@@ -15,6 +15,19 @@ struct ChatView: View {
     @Environment(\.chatManager) private var chatManager
     @Environment(\.networkMonitor) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.nudgeEngine) private var nudgeEngine
+
+    /// Delivered-but-unreacted nudges sorted most-recent first. The
+    /// Coach tab pins the single most-recent one above the transcript
+    /// so the user's reaction is one tap away. Filter is in-memory
+    /// rather than a #Predicate to dodge the same Swift type-check
+    /// timeout that bit CoachSettingsView — the row count is tiny.
+    @Query(sort: [SortDescriptor(\Nudge.createdAt, order: .reverse)])
+    private var allRecentNudges: [Nudge]
+
+    private var pinnedNudge: Nudge? {
+        allRecentNudges.first { $0.statusRaw == "delivered" && $0.userResponseRaw == nil }
+    }
     @State private var conversationID = "main"
     @State private var inputText = ""
     @State private var isAITyping = false
@@ -71,6 +84,19 @@ struct ChatView: View {
         VStack(spacing: 0) {
             // Header
             chatHeader
+
+            // Pinned nudge — the Coach tab's primary receipt surface.
+            // Renders only when there's a delivered nudge the user
+            // hasn't reacted to. Once they tap 👍/👎 the card drops
+            // because userResponseRaw changes and the @Query filter
+            // stops matching. Conditional rendering keeps the
+            // transcript flush to the header when there's nothing
+            // waiting.
+            if let nudge = pinnedNudge {
+                PinnedNudgeCard(nudge: nudge) { response in
+                    nudgeEngine?.recordResponse(nudgeID: nudge.id, response: response)
+                }
+            }
 
             // Messages — tap to stop AI speech
             ConversationMessages(
@@ -248,11 +274,6 @@ struct ChatView: View {
             inputBar
         }
         .background(AppColors.background.ignoresSafeArea())
-        // ChatView is presented in a fullScreenCover, which renders in its own
-        // scene — the global offline banner pinned at ContentView level does
-        // NOT propagate into a cover. Apply it locally so the user always sees
-        // ambient connectivity state in the most network-heavy screen.
-        .offlineBanner()
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
                 appeared = true
@@ -1469,5 +1490,99 @@ private enum AlarmTimeFormatters {
         f.dateFormat = $0
         f.locale = Locale(identifier: "en_US_POSIX")
         return f
+    }
+}
+
+// MARK: - Pinned nudge card
+
+/// Compact version of `RecentNudgeRow` (defined in CoachSettingsView)
+/// sized for the Coach tab's persistent position above the transcript.
+/// Kept private + inline for commit-2 scope — if a third caller needs
+/// it, extract to Views/Components then. Behavior mirrors the Settings
+/// receipt: thumbs-up/down for normal nudges, amber tint + Link to
+/// SafeResourceCopy.actionURL for safetyRoute (asking "was that helpful"
+/// after a safety intervention is tone-deaf; see crisis-safety-protocols).
+private struct PinnedNudgeCard: View {
+    let nudge: Nudge
+    let onReact: (UserNudgeResponse) -> Void
+
+    private var isSafety: Bool { nudge.category == .safetyRoute }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(categoryBadge(nudge.category))
+                    .font(AppFonts.label(11))
+                    .foregroundColor(isSafety ? Color.orange : AppColors.accent)
+                Text("·")
+                    .foregroundColor(AppColors.textMuted)
+                Text(nudge.createdAt, style: .relative)
+                    .font(AppFonts.caption(11))
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+            }
+
+            Text(nudge.bodyText)
+                .font(AppFonts.body(15))
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if isSafety {
+                Link(destination: SafeResourceCopy.actionURL()) {
+                    Label(SafeResourceCopy.actionTitle, systemImage: "arrow.up.right.square")
+                        .font(AppFonts.bodyMedium(13))
+                }
+                .foregroundColor(Color.orange)
+            } else {
+                HStack(spacing: 10) {
+                    Button {
+                        Haptics.selection()
+                        onReact(.accepted)
+                    } label: {
+                        Label("Helpful", systemImage: "hand.thumbsup")
+                            .font(AppFonts.bodyMedium(13))
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(AppColors.accent)
+
+                    Button {
+                        Haptics.selection()
+                        onReact(.dismissed)
+                    } label: {
+                        Label("Not helpful", systemImage: "hand.thumbsdown")
+                            .font(AppFonts.bodyMedium(13))
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(AppColors.textMuted)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isSafety ? Color.orange.opacity(0.08) : AppColors.accentLight.opacity(0.25))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isSafety ? Color.orange.opacity(0.35) : AppColors.border, lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+
+    private func categoryBadge(_ category: NudgeCategory) -> String {
+        switch category {
+        case .weakDimension:     return "WEAK AREA"
+        case .streakAtRisk:      return "STREAK"
+        case .calendarGap:       return "RESET"
+        case .habitSlip:         return "HABIT"
+        case .postCheckInAction: return "CHECK-IN"
+        case .goalCheckpoint:    return "GOAL"
+        case .safetyRoute:       return "SUPPORT"
+        }
     }
 }
