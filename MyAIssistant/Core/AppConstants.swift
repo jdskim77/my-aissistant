@@ -153,6 +153,20 @@ enum AppConstants {
     static let nudgeMinOpenWindowMinutes = 30
     static let nudgeWeakDimensionQuintileCeiling = 20
 
+    /// Phase 2b post-check-in rule tunables (MVP cut, see POST_LOW_MOOD_RULE_SPEC.md).
+    ///
+    /// The rule converts a *just-collected* low-mood check-in into an
+    /// action prompt 10-90 min later. The freshness upper bound keeps the
+    /// nudge tied to the current state; the lower bound gives the user
+    /// space to breathe after logging before the coach speaks. 20h
+    /// per-rule cooldown prevents back-to-back firing across adjacent
+    /// check-in slots. Default-OFF toggle reflects the expert-panel
+    /// guidance that mood-triggered nudges need explicit consent.
+    static let nudgePostLowMoodCooldownHours = 20
+    static let nudgePostLowMoodMaxMinutesSinceCheckIn = 90
+    static let nudgePostLowMoodMinMinutesSinceCheckIn = 10
+    static let nudgePostLowMoodStreakMin = 3
+
     /// Quiet-hours defaults (spec §7.2).
     static let nudgeQuietHoursStartHour = 21 // 9 PM
     static let nudgeQuietHoursEndHour = 8    // 8 AM
@@ -163,6 +177,10 @@ enum AppConstants {
     static let nudgeQuietHoursStartKey = "coach.nudge.quietStart"
     static let nudgeQuietHoursEndKey = "coach.nudge.quietEnd"
     static let nudgeSilencedCategoriesKey = "coach.nudge.silencedCategories"
+    /// Explicit opt-in for the post-check-in action-suggestion rule.
+    /// Default `false` — users consent to mood-triggered nudges before
+    /// the rule fires. Toggled via Coach Settings.
+    static let nudgePostLowMoodEnabledKey = "coach.nudge.postLowMood.enabled"
 
     /// Notification category for inline actions.
     static let nudgeNotificationCategory = "NUDGE_CATEGORY"

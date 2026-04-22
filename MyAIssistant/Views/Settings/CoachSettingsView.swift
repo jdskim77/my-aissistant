@@ -27,6 +27,14 @@ struct CoachSettingsView: View {
     @AppStorage(AppConstants.nudgeQuietHoursEndKey)
     private var quietEndHour: Int = AppConstants.nudgeQuietHoursEndHour
 
+    /// Opt-in for the post-check-in action-suggestion rule. Default OFF
+    /// — mood-triggered nudges need explicit consent per the expert
+    /// panel's guidance. Toggle label intentionally describes the
+    /// behavior ("suggestions after check-ins"), not the mechanism
+    /// ("PostLowMoodCheckInRule").
+    @AppStorage(AppConstants.nudgePostLowMoodEnabledKey)
+    private var postLowMoodEnabled: Bool = false
+
     /// All nudges sorted most-recent first. Filtering for delivered/responded
     /// status happens in `recentNudges` below.
     ///
@@ -63,11 +71,18 @@ struct CoachSettingsView: View {
                         Text("Off").tag(NudgeFrequency.off.rawValue)
                     }
                     .pickerStyle(.menu)
+
+                    Toggle("Action suggestions after check-ins", isOn: $postLowMoodEnabled)
+                        .tint(AppColors.accent)
                 }
             } header: {
                 Text("Coach")
             } footer: {
-                Text("Specific, well-timed suggestions from your coach across body, mind, heart, and spirit. Always with consent; silenceable any time.")
+                if nudgesEnabled && postLowMoodEnabled {
+                    Text("Specific, well-timed suggestions from your coach across body, mind, heart, and spirit. When you log a low mood, the coach may suggest a small concrete action — you can silence this any time.")
+                } else {
+                    Text("Specific, well-timed suggestions from your coach across body, mind, heart, and spirit. Always with consent; silenceable any time.")
+                }
             }
 
             if nudgesEnabled {
