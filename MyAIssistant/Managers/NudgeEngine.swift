@@ -40,7 +40,8 @@ final class NudgeEngine {
     /// `private var` (not `let`) so tests can swap in a deterministic rule
     /// set without rebuilding the whole engine.
     private var rules: [NudgeTriggerRule] = [
-        WeakDimensionWithOpenWindowRule()
+        WeakDimensionWithOpenWindowRule(),
+        PostLowMoodCheckInRule()
     ]
 
     private let log = AppLogger.app
@@ -242,17 +243,76 @@ final class NudgeEngine {
             gaps.append(CalendarGap(start: cursor, end: windowEnd))
         }
 
+        // Populate the latest completed check-in so post-check-in rules
+        // can read mood/energy state. Fetch-limit 1; in-memory from here
+        // forward. Rules MUST NOT re-query SwiftData themselves — all
+        // signal reads go through the context to keep determinism for
+        // the eval harness.
+        let snapshot = fetchLatestCompletedCheckIn().map { record in
+            LastCheckInSnapshot(
+                id: record.id,
+                date: record.date,
+                mood: record.mood,
+                energyLevel: record.energyLevel,
+                notes: record.notes
+            )
+        }
+
+        // Set of check-in IDs that have already been nudged. Populated
+        // by scanning triggerContextJSON for the `checkInID` key on any
+        // non-pending Nudge — record-scoped dedupe for
+        // PostLowMoodCheckInRule (spec §2).
+        let nudgedIDs = fetchNudgedCheckInIDs()
+
         return NudgeEvalContext(
             now: now,
             dimensionScores: dimensionScores,
             streak: streak,
-            lastCheckIn: nil,                    // unused by the Phase 2 rule
-            currentSlotCheckInComplete: false,   // unused by the Phase 2 rule
+            lastCheckIn: snapshot,
+            currentSlotCheckInComplete: false,   // unused by current rules
             calendarGaps: gaps,
             openTaskCountByDimension: openByDim,
-            habitConsecutiveMisses: [:],         // unused by the Phase 2 rule
+            habitConsecutiveMisses: [:],         // unused by current rules
+            nudgedCheckInIDs: nudgedIDs,
             isAppForeground: trigger == .foreground
         )
+    }
+
+    /// Latest completed `CheckInRecord` by date. Small fetch (limit 1) —
+    /// safe to do on every evaluation pass. Same predicate as the safety
+    /// precheck fetcher; kept separate for clarity + fetch-limit 1.
+    private func fetchLatestCompletedCheckIn() -> CheckInRecord? {
+        var descriptor = FetchDescriptor<CheckInRecord>(
+            predicate: #Predicate { $0.completed == true },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    /// Returns the set of `CheckInRecord.id` values referenced by any
+    /// delivered or responded `Nudge`'s `triggerContextJSON.checkInID`.
+    /// Record-scoped dedupe for `PostLowMoodCheckInRule`. Parsing is
+    /// bounded by the daily cap × history window — trivial cost.
+    private func fetchNudgedCheckInIDs() -> Set<String> {
+        let deliveredRaw = NudgeStatus.delivered.rawValue
+        let respondedRaw = NudgeStatus.responded.rawValue
+        let categoryRaw = NudgeCategory.postCheckInAction.rawValue
+        let descriptor = FetchDescriptor<Nudge>(
+            predicate: #Predicate { nudge in
+                nudge.categoryRaw == categoryRaw &&
+                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw)
+            }
+        )
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        var ids = Set<String>()
+        for nudge in rows {
+            guard let data = nudge.triggerContextJSON.data(using: .utf8),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let checkInID = dict["checkInID"] as? String else { continue }
+            ids.insert(checkInID)
+        }
+        return ids
     }
 
     // MARK: - Gating helpers

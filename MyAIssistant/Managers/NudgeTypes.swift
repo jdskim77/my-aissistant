@@ -70,12 +70,22 @@ struct NudgeEvalContext: Sendable {
     /// Consecutive missed days by habit id (for habit-slip detection).
     let habitConsecutiveMisses: [String: Int]
 
+    /// Check-in record IDs for which a nudge has already been emitted.
+    /// Used by `PostLowMoodCheckInRule` for record-scoped dedupe so the
+    /// SAME check-in doesn't fire a second nudge after a user dismiss.
+    /// Populated once per `collectContext` pass — keeps rules pure.
+    let nudgedCheckInIDs: Set<String>
+
     /// Whether the user is currently in the app (affects channel choice downstream).
     let isAppForeground: Bool
 }
 
 /// Summary of the most recent completed check-in. `nil` when no check-ins exist.
+/// `id` is the `CheckInRecord.id` — rules that want per-record dedupe (e.g.
+/// `PostLowMoodCheckInRule`) stamp it into `triggerContext` so the engine
+/// can skip re-firing against the same record after a dismiss.
 struct LastCheckInSnapshot: Sendable {
+    let id: String
     let date: Date
     let mood: Int?         // 1–5
     let energyLevel: Int?  // 1–5

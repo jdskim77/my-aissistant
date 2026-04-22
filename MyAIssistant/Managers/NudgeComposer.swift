@@ -66,10 +66,18 @@ actor NudgeComposer {
             return "You usually do \(habit) around now. Skip today or \(duration)?"
 
         case .postCheckInAction:
+            // Bucket-switched copy for PostLowMoodCheckInRule (spec §4).
+            // MVP ships two buckets; the default branch handles an
+            // unknown/missing bucket gracefully so older Nudge records
+            // (or non-bucket callers) still render sensibly.
+            //
+            // Suggestions carry their own punctuation — no trailing "?"
+            // on the template, or buckets whose suggestion ends in "?"
+            // would double-punctuate.
             let mood = candidate.templateParams["moodLabel"] ?? "what you logged"
             let suggestion = candidate.templateParams["suggestion"]
-                ?? "a small shift"
-            return "You said \(mood). \(suggestion)?"
+                ?? "A small shift worth trying."
+            return "You said \(mood). \(suggestion)"
 
         case .goalCheckpoint:
             let goal = candidate.templateParams["goal"] ?? "that goal"

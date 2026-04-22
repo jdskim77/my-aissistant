@@ -32,6 +32,7 @@
 		44F135C6969BF6E6E9A6579B /* SignInWithAppleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */; };
 		454161432F9814E3002A51F9 /* CoachSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161422F9814E3002A51F9 /* CoachSettingsView.swift */; };
 		4541616A2F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454161692F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift */; };
+		82A7739B9B64C2BD67D38A52 /* PostLowMoodCheckInRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A5349F9DD8A46E7B6DD31 /* PostLowMoodCheckInRule.swift */; };
 		4541616C2F982840002A51F9 /* SafeResourceCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4541616B2F982840002A51F9 /* SafeResourceCopy.swift */; };
 		4583C2CC2F79D1BE00603B08 /* MyAIssistantWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4583C2E52F7A137800603B08 /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4583C2E42F7A137700603B08 /* WatchSyncManager.swift */; };
@@ -367,6 +368,7 @@
 		40918E7E964CE5CEC38F191B /* VoiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceProvider.swift; sourceTree = "<group>"; };
 		454161422F9814E3002A51F9 /* CoachSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSettingsView.swift; sourceTree = "<group>"; };
 		454161692F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeakDimensionWithOpenWindowRule.swift; sourceTree = "<group>"; };
+		0C0A5349F9DD8A46E7B6DD31 /* PostLowMoodCheckInRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostLowMoodCheckInRule.swift; sourceTree = "<group>"; };
 		4541616B2F982840002A51F9 /* SafeResourceCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeResourceCopy.swift; sourceTree = "<group>"; };
 		4583C2AC2F79D1BB00603B08 /* MyAIssistantWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MyAIssistantWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4583C2B82F79D1BE00603B08 /* MyAIssistantWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MyAIssistantWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -923,6 +925,7 @@
 			isa = PBXGroup;
 			children = (
 				454161692F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift */,
+				0C0A5349F9DD8A46E7B6DD31 /* PostLowMoodCheckInRule.swift */,
 				4583C2E42F7A137700603B08 /* WatchSyncManager.swift */,
 				B200000009000000 /* TaskManager.swift */,
 				B200000010000000 /* PatternEngine.swift */,
@@ -1628,6 +1631,7 @@
 				8B670A017CAC4D92CDB098DF /* BalancePulseCard.swift in Sources */,
 				8B670A027CAC4D92CDB098E1 /* BalancePulse.swift in Sources */,
 				4541616A2F982177002A51F9 /* WeakDimensionWithOpenWindowRule.swift in Sources */,
+				82A7739B9B64C2BD67D38A52 /* PostLowMoodCheckInRule.swift in Sources */,
 				8B670A037CAC4D92CDB098E2 /* PatternInsightBanner.swift in Sources */,
 				8B670A047CAC4D92CDB098F1 /* LocationProvider.swift in Sources */,
 				8B670A057CAC4D92CDB098F2 /* WeatherManager.swift in Sources */,
