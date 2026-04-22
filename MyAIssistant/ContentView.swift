@@ -5,12 +5,12 @@ struct ContentView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.networkMonitor) private var networkMonitor
     @Query private var profiles: [UserProfile]
-    @Query(filter: #Predicate<TaskItem> { item in
-        item.done == false
-    }) private var incompleteTasks: [TaskItem]
-    @State private var selectedTab: Tab = .home
+    // Default to Coach tab. The IA promise is coach-first — landing
+    // returning users on Coach (with the last nudge pinned) reinforces
+    // it immediately. Revisit after dogfood Week 1 if the pattern feels
+    // wrong for mornings.
+    @State private var selectedTab: Tab = .coach
     @State private var onboardingComplete = false
-    @State private var showingChat = false
     @State private var showingFocusTimer = false
     @State private var focusDuration = 25
 
@@ -18,9 +18,11 @@ struct ContentView: View {
         profiles.first?.onboardingCompleted ?? false
     }
 
-    private var todayIncompleteCount: Int {
-        incompleteTasks.filter { Calendar.current.isDateInToday($0.date) }.count
-    }
+    /// Count of delivered nudges the user hasn't reacted to yet. Drives
+    /// the Coach tab badge so the receipt is visible without a push.
+    @Query(filter: #Predicate<Nudge> { nudge in
+        nudge.statusRaw == "delivered" && nudge.userResponseRaw == nil
+    }) private var unreactedNudges: [Nudge]
 
     var body: some View {
         Group {
@@ -37,10 +39,14 @@ struct ContentView: View {
         ZStack(alignment: .bottom) {
             Group {
                 switch selectedTab {
+                case .coach:
+                    // Coach is now a first-class tab surface, not a sheet.
+                    // Passing no onDismiss tells ChatView to hide the
+                    // chevron-down close button — there's nothing to
+                    // dismiss when the chat is the destination.
+                    ChatView()
                 case .home:
                     HomeView(selectedTab: $selectedTab)
-                case .schedule:
-                    ScheduleView()
                 case .compass:
                     CompassTabView()
                 case .settings:
@@ -48,23 +54,17 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // CustomTabBar content is ~80pt tall (60pt center button + 12pt
-            // top + 8pt bottom padding). 56pt here left the bottom ~24pt of
-            // each tab's content clipped behind the bar — Schedule's
-            // quick-add row in particular was hidden. Match the actual bar
-            // height so tab content never overlaps the tab bar.
+            // CustomTabBar is ~70pt tall (no more center-button lift).
+            // Keep 80pt of bottom padding so content never clips behind
+            // the bar on devices with a home indicator.
             .padding(.bottom, 80)
 
             CustomTabBar(
                 selectedTab: $selectedTab,
-                onAITap: { showingChat = true },
-                scheduleBadge: todayIncompleteCount
+                coachBadge: unreactedNudges.count
             )
         }
         .tint(AppColors.accent)
-        .fullScreenCover(isPresented: $showingChat) {
-            ChatView(onDismiss: { showingChat = false })
-        }
         .sheet(isPresented: $showingFocusTimer) {
             FocusTimerView(workMinutes: focusDuration)
         }
@@ -121,10 +121,17 @@ struct ContentView: View {
 
     private func navigateToDestination(_ destination: String) {
         switch destination {
-        case "assistant", "chat":
-            showingChat = true
+        case "assistant", "chat", "coach", "nudge":
+            // Nudge taps deep-link straight to Coach. The specific
+            // nudge will be pinned at the top of the Coach surface
+            // via the Recent Nudges section (commit 2 wires the
+            // pinned-item highlight).
+            selectedTab = .coach
         case "schedule":
-            selectedTab = .schedule
+            // Schedule is now a sheet on Today. Route users there
+            // and let them tap the calendar icon if they want the
+            // full week/month view.
+            selectedTab = .home
         case "compass", "patterns":
             selectedTab = .compass
         case "settings":
