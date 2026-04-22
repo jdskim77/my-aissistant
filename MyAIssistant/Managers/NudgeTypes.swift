@@ -76,6 +76,15 @@ struct NudgeEvalContext: Sendable {
     /// Populated once per `collectContext` pass — keeps rules pure.
     let nudgedCheckInIDs: Set<String>
 
+    /// Last few completed check-ins, most-recent first. Rules that want
+    /// to react to a specific state (e.g., `PostLowMoodCheckInRule`
+    /// looking for a low mood inside a 90-min freshness window) scan
+    /// this list to find the newest record that matches their bucket
+    /// criteria. Fix for BUG-14 — previously the single `lastCheckIn`
+    /// would hide an older qualifying record behind a more-recent
+    /// neutral one. Capped at 5 entries by NudgeEngine.collectContext.
+    let recentCheckIns: [LastCheckInSnapshot]
+
     /// Whether the user is currently in the app (affects channel choice downstream).
     let isAppForeground: Bool
 }

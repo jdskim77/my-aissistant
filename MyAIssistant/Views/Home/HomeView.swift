@@ -908,7 +908,23 @@ struct HomeView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openScheduleSheet)) { _ in
-            activeSheet = .schedule
+            // If another sheet is already on screen (CheckIn, Habits,
+            // Reschedule, etc.), setting activeSheet = .schedule
+            // silently drops the request because SwiftUI only
+            // presents one `.sheet(item:)` at a time. Close the
+            // current sheet first, then open Schedule on the next
+            // runloop — this keeps TASK-notification deep-links
+            // reliable regardless of what sheet is already up.
+            // Fix for BUG-19.
+            if activeSheet != nil && activeSheet?.id != HomeSheet.schedule.id {
+                activeSheet = nil
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(400))
+                    activeSheet = .schedule
+                }
+            } else {
+                activeSheet = .schedule
+            }
         }
         .alert("Delete Task", isPresented: Binding(
             get: { taskToDelete != nil },
