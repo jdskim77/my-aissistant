@@ -11,6 +11,12 @@ enum HomeSheet: Identifiable {
     case habits
     case addHabit
     case reschedule(TaskItem)
+    /// Full Schedule view (week/month navigation + add-task form) as a
+    /// sheet. Replaces the old Schedule tab that was removed when
+    /// Coach took its place in the bottom bar. Accessible via the
+    /// calendar icon in the Today header or deep-link from TASK
+    /// notifications.
+    case schedule
 
     var id: String {
         switch self {
@@ -19,8 +25,16 @@ enum HomeSheet: Identifiable {
         case .habits: return "habits"
         case .addHabit: return "addHabit"
         case .reschedule(let task): return "reschedule-\(task.id)"
+        case .schedule: return "schedule"
         }
     }
+}
+
+extension Notification.Name {
+    /// Posted by ContentView when a TASK-category notification is
+    /// tapped and we want Today to auto-open the Schedule sheet.
+    /// HomeView subscribes and sets `activeSheet = .schedule`.
+    static let openScheduleSheet = Notification.Name("openScheduleSheet")
 }
 
 struct HomeView: View {
@@ -878,7 +892,23 @@ struct HomeView: View {
                 HabitFormView(mode: .create)
             case .reschedule(let task):
                 rescheduleSheet(for: task)
+            case .schedule:
+                NavigationStack {
+                    ScheduleView()
+                        .navigationTitle("Schedule")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") {
+                                    activeSheet = nil
+                                }
+                            }
+                        }
+                }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openScheduleSheet)) { _ in
+            activeSheet = .schedule
         }
         .alert("Delete Task", isPresented: Binding(
             get: { taskToDelete != nil },
@@ -1356,6 +1386,24 @@ struct HomeView: View {
 
             Spacer()
 
+            // Calendar icon opens the full Schedule view as a sheet.
+            // Replaces the old Schedule tab (removed when Coach took
+            // slot 1 in the bottom bar). Tap-target is 44pt via the
+            // explicit frame.
+            Button {
+                Haptics.selection()
+                activeSheet = .schedule
+            } label: {
+                Image(systemName: "calendar")
+                    .font(AppFonts.heading(18))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open schedule")
+            .accessibilityHint("Week and month view with task add")
+
             // Weather chip — aligns with the date line via bottom alignment.
             WeatherChip(
                 snapshot: weatherManager?.latest,
@@ -1414,7 +1462,7 @@ struct HomeView: View {
             Text("No tasks today")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
-            Text("Head to Schedule to add tasks")
+            Text("Tap the calendar icon above to add a task")
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textMuted)
         }

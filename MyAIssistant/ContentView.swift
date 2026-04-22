@@ -139,10 +139,15 @@ struct ContentView: View {
             // pinned-item highlight).
             selectedTabRaw = Tab.coach.rawValue
         case "schedule":
-            // Schedule is now a sheet on Today. Route users there
-            // and let them tap the calendar icon if they want the
-            // full week/month view.
+            // Schedule is now a sheet on Today. Route the user to
+            // Today first, then post an event HomeView listens for
+            // that auto-opens the Schedule sheet. Preserves the
+            // original intent of the deep-link so TASK-category
+            // notifications land in the task's schedule context,
+            // not just on the Today list (fixes BUG-03 from the QA
+            // audit on the IA-foundation commit).
             selectedTabRaw = Tab.home.rawValue
+            NotificationCenter.default.post(name: .openScheduleSheet, object: nil)
         case "compass", "patterns":
             selectedTabRaw = Tab.compass.rawValue
         case "settings":
