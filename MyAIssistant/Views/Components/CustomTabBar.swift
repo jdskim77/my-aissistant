@@ -82,14 +82,17 @@ struct CustomTabBar: View {
                         .font(AppFonts.heading(22))
 
                     if badge > 0 {
-                        Text("\(badge)")
+                        // On-accent token (theme-aware) instead of
+                        // hardcoded white: High Contrast / Twilight
+                        // themes pair coral with a different foreground.
+                        // Fixes BUG-07.
+                        Text(badge > 99 ? "99+" : "\(badge)")
                             .font(AppFonts.label(11))
-                            .foregroundColor(.white)
-                            .frame(width: 16, height: 16)
-                            .background(AppColors.coral)
-                            .cornerRadius(8)
+                            .foregroundColor(AppColors.surface)
+                            .frame(minWidth: 16, minHeight: 16)
+                            .padding(.horizontal, 3)
+                            .background(Capsule().fill(AppColors.coral))
                             .offset(x: 8, y: -6)
-                            .accessibilityLabel("\(badge) unreacted nudges")
                     }
                 }
 
@@ -101,7 +104,17 @@ struct CustomTabBar: View {
             .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.label)
+        // Composite label so the badge count is announced alongside the
+        // tab name. The prior `accessibilityLabel(tab.label)` on the
+        // Button overrode the badge's inner label, hiding the count
+        // from VoiceOver. Fixes BUG-13.
+        .accessibilityLabel(accessibilityLabel(for: tab, badge: badge))
         .accessibilityAddTraits(selectedTab == tab ? [.isSelected] : [])
+    }
+
+    private func accessibilityLabel(for tab: Tab, badge: Int) -> String {
+        guard badge > 0 else { return tab.label }
+        let suffix = badge == 1 ? "1 unread nudge" : "\(badge) unread nudges"
+        return "\(tab.label), \(suffix)"
     }
 }

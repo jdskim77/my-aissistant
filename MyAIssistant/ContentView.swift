@@ -5,14 +5,23 @@ struct ContentView: View {
     @Environment(\.taskManager) private var taskManager
     @Environment(\.networkMonitor) private var networkMonitor
     @Query private var profiles: [UserProfile]
-    // Default to Coach tab. The IA promise is coach-first — landing
-    // returning users on Coach (with the last nudge pinned) reinforces
-    // it immediately. Revisit after dogfood Week 1 if the pattern feels
-    // wrong for mornings.
-    @State private var selectedTab: Tab = .coach
+    /// Persisted tab selection so returning users land where they left
+    /// off across relaunches. Default `.coach` only on very first launch.
+    /// Stored as Int raw because @SceneStorage accepts that directly;
+    /// `selectedTabBinding` exposes the enum form to views that need it.
+    /// Fixes BUG-04 (always-lands-on-Coach) from the QA pass.
+    @SceneStorage("selectedTabRaw") private var selectedTabRaw: Int = Tab.coach.rawValue
     @State private var onboardingComplete = false
     @State private var showingFocusTimer = false
     @State private var focusDuration = 25
+
+    private var selectedTabBinding: Binding<Tab> {
+        Binding(
+            get: { Tab(rawValue: selectedTabRaw) ?? .coach },
+            set: { selectedTabRaw = $0.rawValue }
+        )
+    }
+    private var selectedTab: Tab { Tab(rawValue: selectedTabRaw) ?? .coach }
 
     private var hasCompletedOnboarding: Bool {
         profiles.first?.onboardingCompleted ?? false
@@ -36,31 +45,33 @@ struct ContentView: View {
     }
 
     private var mainView: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                switch selectedTab {
-                case .coach:
-                    // Coach is now a first-class tab surface, not a sheet.
-                    // Passing no onDismiss tells ChatView to hide the
-                    // chevron-down close button — there's nothing to
-                    // dismiss when the chat is the destination.
-                    ChatView()
-                case .home:
-                    HomeView(selectedTab: $selectedTab)
-                case .compass:
-                    CompassTabView()
-                case .settings:
-                    SettingsView()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // CustomTabBar is ~70pt tall (no more center-button lift).
-            // Keep 80pt of bottom padding so content never clips behind
-            // the bar on devices with a home indicator.
-            .padding(.bottom, 80)
-
+        // TabView (with its own chrome hidden) caches each tab's view
+        // state across switches, so ChatView's sendTask isn't cancelled,
+        // voiceModeEnabled survives, and the orb doesn't re-animate from
+        // cold on every return. The previous `Group { switch }` pattern
+        // tore down the non-selected subtree, which the QA audit flagged
+        // as BUG-01/02/15.
+        //
+        // `.safeAreaInset(edge: .bottom)` places CustomTabBar as an
+        // actual safe-area participant instead of an overlay — so the
+        // keyboard-avoidance stack, ScrollView content inset, and
+        // ChatView's input bar all honor the tab-bar height
+        // automatically. Fixes BUG-11 + SMOKE-B (input bar overlapping
+        // tabs) without per-child bottom-padding math.
+        TabView(selection: selectedTabBinding) {
+            ChatView()
+                .tag(Tab.coach)
+            HomeView(selectedTab: selectedTabBinding)
+                .tag(Tab.home)
+            CompassTabView()
+                .tag(Tab.compass)
+            SettingsView()
+                .tag(Tab.settings)
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             CustomTabBar(
-                selectedTab: $selectedTab,
+                selectedTab: selectedTabBinding,
                 coachBadge: unreactedNudges.count
             )
         }
@@ -126,18 +137,18 @@ struct ContentView: View {
             // nudge will be pinned at the top of the Coach surface
             // via the Recent Nudges section (commit 2 wires the
             // pinned-item highlight).
-            selectedTab = .coach
+            selectedTabRaw = Tab.coach.rawValue
         case "schedule":
             // Schedule is now a sheet on Today. Route users there
             // and let them tap the calendar icon if they want the
             // full week/month view.
-            selectedTab = .home
+            selectedTabRaw = Tab.home.rawValue
         case "compass", "patterns":
-            selectedTab = .compass
+            selectedTabRaw = Tab.compass.rawValue
         case "settings":
-            selectedTab = .settings
+            selectedTabRaw = Tab.settings.rawValue
         default:
-            selectedTab = .home
+            selectedTabRaw = Tab.home.rawValue
         }
     }
 }

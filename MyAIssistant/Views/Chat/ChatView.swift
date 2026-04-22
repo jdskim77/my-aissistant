@@ -248,11 +248,6 @@ struct ChatView: View {
             inputBar
         }
         .background(AppColors.background.ignoresSafeArea())
-        // ChatView is presented in a fullScreenCover, which renders in its own
-        // scene — the global offline banner pinned at ContentView level does
-        // NOT propagate into a cover. Apply it locally so the user always sees
-        // ambient connectivity state in the most network-heavy screen.
-        .offlineBanner()
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
                 appeared = true
