@@ -558,8 +558,11 @@ struct ChatView: View {
                     Circle()
                         .fill(AppColors.coral)
                         .frame(width: 8, height: 8)
-                        .scaleEffect(micPulse ? 1.3 : 0.8)
-                        .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: micPulse)
+                        .scaleEffect(reduceMotion ? 1.0 : (micPulse ? 1.3 : 0.8))
+                        .animation(
+                            reduceMotion ? nil : .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                            value: micPulse
+                        )
                     Text("Listening...")
                         .font(AppFonts.bodyMedium(13))
                         .foregroundColor(AppColors.coral)
@@ -601,6 +604,15 @@ struct ChatView: View {
                                 lineWidth: speechRecognizer.isRecording ? 2.5 : 1
                             )
                     )
+                    // Keyboard toolbar Done button — required by the
+                    // project's text-input rules for every TextField.
+                    // Fix for Q2-BUG-13.
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { isInputFocused = false }
+                        }
+                    }
 
                 // Single context-aware action button.
                 // States:
@@ -628,9 +640,12 @@ struct ChatView: View {
                             Circle()
                                 .stroke(AppColors.coral.opacity(0.3), lineWidth: 3)
                                 .frame(width: 52, height: 52)
-                                .scaleEffect(micPulse ? 1.2 : 1.0)
-                                .opacity(micPulse ? 0.0 : 0.6)
-                                .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false), value: micPulse)
+                                .scaleEffect(reduceMotion ? 1.0 : (micPulse ? 1.2 : 1.0))
+                                .opacity(reduceMotion ? 0.6 : (micPulse ? 0.0 : 0.6))
+                                .animation(
+                                    reduceMotion ? nil : .easeOut(duration: 1.0).repeatForever(autoreverses: false),
+                                    value: micPulse
+                                )
                         }
 
                         // All three states share the same 44pt frame + drop
@@ -1535,7 +1550,7 @@ private struct PinnedNudgeCard: View {
             HStack(spacing: 6) {
                 Text(categoryBadge(nudge.category))
                     .font(AppFonts.label(11))
-                    .foregroundColor(isSafety ? Color.orange : AppColors.accent)
+                    .foregroundColor(isSafety ? AppColors.warning : AppColors.accent)
                 Text("·")
                     .foregroundColor(AppColors.textMuted)
                 Text(nudge.createdAt, style: .relative)
@@ -1555,7 +1570,7 @@ private struct PinnedNudgeCard: View {
                     Label(SafeResourceCopy.actionTitle, systemImage: "arrow.up.right.square")
                         .font(AppFonts.bodyMedium(13))
                 }
-                .foregroundColor(Color.orange)
+                .foregroundColor(AppColors.warning)
             } else {
                 HStack(spacing: 10) {
                     Button {
@@ -1585,11 +1600,11 @@ private struct PinnedNudgeCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(isSafety ? Color.orange.opacity(0.08) : AppColors.accentLight.opacity(0.25))
+                .fill(isSafety ? AppColors.warningBg : AppColors.accentLight.opacity(0.25))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isSafety ? Color.orange.opacity(0.35) : AppColors.border, lineWidth: 1)
+                .stroke(isSafety ? AppColors.warning.opacity(0.35) : AppColors.border, lineWidth: 1)
         )
         .padding(.horizontal, 16)
         .padding(.top, 8)

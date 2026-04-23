@@ -51,6 +51,14 @@ final class NudgeEngine {
 
     private let log = AppLogger.app
 
+    /// Re-entrancy guard. `evaluate()` `await`s the composer, which
+    /// suspends the MainActor — a second call (e.g. scheduled BGTask
+    /// firing while a foreground evaluate is in-flight) can slip in
+    /// during that suspension and persist a concurrent nudge, busting
+    /// the min-gap + daily caps. Guard flag keeps only one evaluation
+    /// in flight at a time. Fix for Q1-BUG-27.
+    private var isEvaluating = false
+
     init(
         modelContext: ModelContext,
         composer: NudgeComposer,
@@ -84,6 +92,17 @@ final class NudgeEngine {
     // MARK: - Core evaluation
 
     private func evaluate(trigger: EvaluationTrigger) async {
+        // 0. Re-entrancy guard (Q1-BUG-27). Without this, a BGTask-
+        //    triggered evaluate() firing while a foreground evaluate()
+        //    is mid-await-composer can slip past caps and persist a
+        //    second nudge.
+        guard !isEvaluating else {
+            log.notice("NudgeEngine.evaluate: skipping re-entrant call (trigger=\(String(describing: trigger), privacy: .public))")
+            return
+        }
+        isEvaluating = true
+        defer { isEvaluating = false }
+
         // 1. Kill switch — emergency global off.
         guard !AppConstants.nudgeEngineKillSwitchEnabled else { return }
 
@@ -114,15 +133,21 @@ final class NudgeEngine {
         // 7. Daily + hourly caps.
         guard withinFrequencyCaps(frequency: frequency) else { return }
 
-        // 8. Rule loop — first match wins (one nudge per run, hard cap per
-        //    §7.1). The old per-candidate crisis gate is gone; safety is
-        //    handled up-front by the precheck so rule authors don't need to
-        //    opt in via `triggerContext["freeTextSafetySample"]`.
+        // 8. Rule loop — first match wins (one nudge per run, hard cap
+        //    per §7.1). Skips rules whose category is on the user's
+        //    silenced list (Q1-BUG-29 — previously the UI toggle set
+        //    the key but the engine never consulted it).
         guard !rules.isEmpty else { return }
 
+        let silencedCategories = readSilencedCategories()
         let context = collectContext(trigger: trigger)
 
         for rule in rules {
+            // Silenced category → user explicitly opted out of this
+            // rule's output. Skip before rule.evaluate so we don't
+            // even build a candidate.
+            if silencedCategories.contains(rule.id.rawValue) { continue }
+
             guard !isRuleInCooldown(rule) else { continue }
 
             guard let candidate = rule.evaluate(context: context) else { continue }
@@ -140,6 +165,16 @@ final class NudgeEngine {
         }
     }
 
+    /// Parses the comma-separated silenced-categories string stored in
+    /// UserDefaults by CoachSettingsView into a raw-value set. The UI
+    /// lets the user toggle categories off; the engine must honor it.
+    /// Fix for Q1-BUG-29.
+    private func readSilencedCategories() -> Set<String> {
+        let raw = UserDefaults.standard.string(forKey: AppConstants.nudgeSilencedCategoriesKey) ?? ""
+        guard !raw.isEmpty else { return [] }
+        return Set(raw.split(separator: ",").map(String.init))
+    }
+
     // MARK: - Safety precheck
 
     /// Runs the on-device crisis classifier against the most recent check-in
@@ -154,14 +189,24 @@ final class NudgeEngine {
     /// hardcoded in `SafeResourceCopy` — never LLM-generated, never silenced
     /// via the Coach Settings category list.
     private func performSafetyPrecheck() async -> Bool {
-        guard let text = latestFreeTextSafetySample(), !text.isEmpty else {
+        guard let sample = latestFreeTextSafetySample(), !sample.text.isEmpty else {
             return false
         }
+        let text = sample.text
+        // Per-note dedupe (Q1-BUG-26). Without this, after the 24h
+        // safety pause lifts, the same historical flagged note would
+        // re-trigger the classifier, emit a second safety nudge, and
+        // start another 24h pause — infinite loop for any user whose
+        // latest check-in has ever matched.
+        let fingerprint = Self.safetyNoteFingerprint(recordID: sample.recordID, text: text)
+        if hasEmittedSafetyForFingerprint(fingerprint) { return false }
+
         let evaluation = crisisClassifier.evaluate(text)
         guard evaluation.isCrisis else { return false }
 
         log.notice("Crisis classifier flagged — emitting safety-route nudge and suppressing normal nudges for 24h")
         recordSafetyPause(until: Date().addingTimeInterval(60 * 60 * 24))
+        recordSafetyFingerprint(fingerprint)
 
         let candidate = NudgeCandidate(
             category: .safetyRoute,
@@ -171,7 +216,8 @@ final class NudgeEngine {
             templateParams: [:],
             triggerContext: [
                 SafeResourceCopy.triggerContextKey: "true",
-                "matchCount": String(evaluation.matchedTerms.count)
+                "matchCount": String(evaluation.matchedTerms.count),
+                "safetyFingerprint": fingerprint
             ]
         )
         let bodyText = await composer.compose(candidate)
@@ -180,18 +226,56 @@ final class NudgeEngine {
         return true
     }
 
-    /// Fetches the most recent completed check-in's note text. Returns nil
-    /// when no check-ins exist, none have notes, or all recent notes are
-    /// empty. Phase 2 scope: check-in notes only. Phase 3+ may also sample
-    /// the most recent chat messages per spec §7.4.
-    private func latestFreeTextSafetySample() -> String? {
+    /// Fetches the most recent completed check-in with a meaningful
+    /// (non-whitespace) note. Returns record ID alongside the text so
+    /// the precheck can dedupe per-record. Phase 2 scope: check-in
+    /// notes only. Phase 3+ may also sample chat messages per §7.4.
+    /// Fix for Q1-BUG-32 (prior implementation returned whitespace-only
+    /// notes which passed `!isEmpty` but meant nothing).
+    private func latestFreeTextSafetySample() -> (recordID: String, text: String)? {
         var descriptor = FetchDescriptor<CheckInRecord>(
             predicate: #Predicate { $0.completed == true },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         descriptor.fetchLimit = 5
         let rows = (try? modelContext.fetch(descriptor)) ?? []
-        return rows.compactMap(\.notes).first { !$0.isEmpty }
+        for row in rows {
+            guard let raw = row.notes else { continue }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            return (row.id, trimmed)
+        }
+        return nil
+    }
+
+    // MARK: - Safety-note fingerprint (dedupe)
+
+    private var safetyFingerprintsKey: String { "coach.nudge.safetyFingerprints" }
+
+    /// A stable fingerprint per (checkInRecord, note) pair so the
+    /// precheck doesn't re-fire on the same historical note after
+    /// the 24h pause lifts. Using record-id + a hash of the trimmed
+    /// text means an edit to the note (different fingerprint) is
+    /// treated as a fresh scan — which is the correct behavior, not
+    /// a bug.
+    static func safetyNoteFingerprint(recordID: String, text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return "\(recordID):\(trimmed.hashValue)"
+    }
+
+    private func hasEmittedSafetyForFingerprint(_ fp: String) -> Bool {
+        let raw = UserDefaults.standard.string(forKey: safetyFingerprintsKey) ?? ""
+        return raw.split(separator: "|").contains(Substring(fp))
+    }
+
+    private func recordSafetyFingerprint(_ fp: String) {
+        var fps = (UserDefaults.standard.string(forKey: safetyFingerprintsKey) ?? "")
+            .split(separator: "|").map(String.init)
+        fps.append(fp)
+        // Cap the list to the last ~200 fingerprints so the key doesn't
+        // grow without bound across months of use.
+        if fps.count > 200 { fps = Array(fps.suffix(200)) }
+        UserDefaults.standard.set(fps.joined(separator: "|"), forKey: safetyFingerprintsKey)
     }
 
     // MARK: - Context collection
@@ -315,14 +399,16 @@ final class NudgeEngine {
     /// already outside the rule's reach; including those rows would be
     /// a growing-over-time linear scan with no benefit. Fix for BUG-15.
     private func fetchNudgedCheckInIDs() -> Set<String> {
-        let deliveredRaw = NudgeStatus.delivered.rawValue
-        let respondedRaw = NudgeStatus.responded.rawValue
         let categoryRaw = NudgeCategory.postCheckInAction.rawValue
         let since = Date().addingTimeInterval(-7 * 24 * 3600)
+        // Include pending + delivered + responded — any nudge row for
+        // the post-check-in category consumes the record. Status
+        // filtering would let a `pending` row (scheduling failure)
+        // slip through and allow a second fire on the same check-in.
+        // Fix for Q1-BUG-35.
         var descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
                 nudge.categoryRaw == categoryRaw &&
-                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw) &&
                 nudge.createdAt >= since
             }
         )
@@ -412,14 +498,20 @@ final class NudgeEngine {
     private func fetchDeliveredCount(since: Date) -> Int {
         let deliveredRaw = NudgeStatus.delivered.rawValue
         let respondedRaw = NudgeStatus.responded.rawValue
+        let safetyRaw = NudgeCategory.safetyRoute.rawValue
         // Predicate pre-filters by createdAt as an index-friendly lower
         // bound — deliveredAt is always ≥ createdAt, so rows with
         // createdAt < since can never pass the in-memory deliveredAt
         // check. Without this pre-filter we'd scan the full nudge table
         // to count a window bounded by the daily cap. Fix for BUG-17.
+        //
+        // Excludes safetyRoute nudges per §7.4 — safety deliveries
+        // bypass caps so they don't count against the user's daily
+        // allotment. Fix for Q1-BUG-33.
         var descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
                 (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw) &&
+                nudge.categoryRaw != safetyRaw &&
                 nudge.createdAt >= since
             }
         )
@@ -433,10 +525,18 @@ final class NudgeEngine {
 
     private func isRuleInCooldown(_ rule: NudgeTriggerRule) -> Bool {
         let categoryRaw = rule.id.rawValue
+        let deliveredRaw = NudgeStatus.delivered.rawValue
+        let respondedRaw = NudgeStatus.responded.rawValue
         let cutoff = Date().addingTimeInterval(-rule.cooldown)
+        // Only delivered/responded nudges consume a cooldown slot —
+        // a `pending` nudge that never actually reached the user
+        // (e.g. a scheduling failure) should not permanently block
+        // the rule from firing again. Fix for Q1-BUG-28.
         let descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
-                nudge.categoryRaw == categoryRaw && nudge.createdAt >= cutoff
+                nudge.categoryRaw == categoryRaw &&
+                (nudge.statusRaw == deliveredRaw || nudge.statusRaw == respondedRaw) &&
+                nudge.createdAt >= cutoff
             }
         )
         let count = (try? modelContext.fetchCount(descriptor)) ?? 0

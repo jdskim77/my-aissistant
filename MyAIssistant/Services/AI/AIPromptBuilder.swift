@@ -555,10 +555,22 @@ enum AIPromptBuilder {
             "The user has said they want help primarily with: \($0). Weight your observations toward this."
         } ?? ""
 
+        // PII-minimized summary (Q3-BUG-43). Raw check-in notes can
+        // contain names, relationships, medical references, and other
+        // sensitive content that should not leave the device by default.
+        // We send the structured mood/energy fields (state signal,
+        // already quantized) and a *length indicator* for notes rather
+        // than the text itself. The coach's recap should rely on
+        // patterns across slots, not on quoting raw user journaling —
+        // per `llm-data-boundary` skill, raw state-text must not
+        // crystallize as trait-signal in downstream prompts.
         let checkInSummary = todaysCheckIns.map { ci in
             var line = "\(ci.slot): mood \(ci.mood)/5, energy \(ci.energy)/5"
-            if let notes = ci.notes, !notes.isEmpty {
-                line += " — notes: \"\(notes.prefix(200))\""
+            if let notes = ci.notes {
+                let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    line += " — notes logged (\(trimmed.count) chars, not included in prompt)"
+                }
             }
             return line
         }.joined(separator: "\n")
