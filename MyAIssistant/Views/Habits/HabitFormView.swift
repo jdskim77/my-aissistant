@@ -21,6 +21,10 @@ struct HabitFormView: View {
     let mode: Mode
 
     @State private var title: String
+    /// Focus tracker for the title TextField. Enables the keyboard
+    /// toolbar Done button, which the project's text-input rules
+    /// require on every TextField. Fix for Q2-BUG-12.
+    @FocusState private var titleFocused: Bool
     @State private var icon: String
     @State private var colorHex: String
     @State private var frequency: HabitFrequency
@@ -107,10 +111,17 @@ struct HabitFormView: View {
                             .foregroundColor(AppColors.textMuted)
                         TextField("e.g. Morning run", text: $title)
                             .font(AppFonts.body(16))
+                            .focused($titleFocused)
                             .padding(14)
                             .background(AppColors.surface)
                             .cornerRadius(12)
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.border, lineWidth: 1))
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Done") { titleFocused = false }
+                                }
+                            }
                     }
 
                     // Life dimension — ties the habit to a Compass quadrant.

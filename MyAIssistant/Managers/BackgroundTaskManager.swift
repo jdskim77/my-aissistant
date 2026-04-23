@@ -145,30 +145,63 @@ final class BackgroundTaskManager {
     // MARK: - Handlers
 
     private func handleDailySnapshot(_ task: BGProcessingTask) async {
-        task.expirationHandler = { task.setTaskCompleted(success: false) }
+        // Barrier guards against double-completion when expiration
+        // fires mid-await. Apple treats setTaskCompleted called twice
+        // as a programmer error. Q3-BUG-36.
+        let barrier = TaskCompletionBarrier()
+        task.expirationHandler = { barrier.complete(task: task, success: false) }
 
         await createDailySnapshot()
         checkInBehaviorEngine?.recalculateIfNeeded()
         scheduleDailySnapshot() // Reschedule for tomorrow
-        task.setTaskCompleted(success: true)
+        barrier.complete(task: task, success: true)
     }
 
     private func handleWeeklyReview(_ task: BGProcessingTask) async {
-        task.expirationHandler = { task.setTaskCompleted(success: false) }
+        // Barrier — see handleDailySnapshot. Q3-BUG-36.
+        let barrier = TaskCompletionBarrier()
+        task.expirationHandler = { barrier.complete(task: task, success: false) }
 
         // Use free tier for background review (conservative); Pro users get better model
         await patternEngine.generateWeeklyReview(tier: .free)
         scheduleWeeklyReview() // Reschedule for next Sunday
-        task.setTaskCompleted(success: true)
+        barrier.complete(task: task, success: true)
     }
 
     private func handleCalendarSync(_ task: BGAppRefreshTask) async {
-        task.expirationHandler = { task.setTaskCompleted(success: false) }
+        // Barrier + per-leg timeouts. BGAppRefreshTask has ~30s wall-
+        // clock budget; EventKit or Google REST calls can hang on a
+        // slow network and blow past it, triggering the watchdog and
+        // losing writes. Wrap each sync leg in a 12s timeout so even
+        // if both time out we still have budget to reschedule +
+        // complete. Q3-BUG-36 + Q3-BUG-37.
+        let barrier = TaskCompletionBarrier()
+        task.expirationHandler = { barrier.complete(task: task, success: false) }
 
-        await calendarSyncManager.syncAppleCalendar()
-        await calendarSyncManager.syncReminders()
+        await withTimeout(seconds: 12) {
+            await self.calendarSyncManager.syncAppleCalendar()
+        }
+        await withTimeout(seconds: 12) {
+            await self.calendarSyncManager.syncReminders()
+        }
         scheduleCalendarSync() // Reschedule
-        task.setTaskCompleted(success: true)
+        barrier.complete(task: task, success: true)
+    }
+
+    /// Runs an async operation with a soft wall-clock timeout. Returns
+    /// (and lets the caller continue) once either the operation
+    /// finishes or the timeout elapses; the underlying work is left
+    /// to complete in the background. Used by BGTask handlers to keep
+    /// the 30s watchdog window safe.
+    private func withTimeout(seconds: TimeInterval, _ op: @Sendable @escaping () async -> Void) async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await op() }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(seconds))
+            }
+            _ = await group.next()
+            group.cancelAll()
+        }
     }
 
     private func handleNudgeEvaluation(_ task: BGAppRefreshTask) async {

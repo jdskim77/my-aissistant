@@ -28,12 +28,26 @@ struct KeywordCrisisClassifier: CrisisClassifier {
 
     func evaluate(_ text: String) -> CrisisEvaluation {
         guard !text.isEmpty else { return .safe }
-        let normalized = text
-            .lowercased()
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        let matched = patterns.filter { normalized.contains($0) }
+        let lowered = text.lowercased()
+        // Multi-word patterns carry inherent boundary protection via
+        // their spaces ("kill myself" can't match inside "skill
+        // myselfmotivated"), so substring-match is fine for them.
+        // Single-word patterns match via regex with \b word boundaries
+        // to avoid matching "suicide" inside "suicideprevention" or
+        // similar compound tokens. Fix for Q1-BUG-36.
+        let matched = patterns.filter { pattern in
+            if pattern.contains(" ") {
+                return lowered.contains(pattern)
+            }
+            // Single-word: word-boundary regex match.
+            let escaped = NSRegularExpression.escapedPattern(for: pattern)
+            let regexPattern = "\\b\(escaped)\\b"
+            guard let regex = try? NSRegularExpression(pattern: regexPattern) else {
+                return lowered.contains(pattern) // fallback on regex failure
+            }
+            let range = NSRange(lowered.startIndex..<lowered.endIndex, in: lowered)
+            return regex.firstMatch(in: lowered, range: range) != nil
+        }
         return CrisisEvaluation(isCrisis: !matched.isEmpty, matchedTerms: matched)
     }
 

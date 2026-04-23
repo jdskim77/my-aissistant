@@ -60,13 +60,17 @@ struct PostLowMoodCheckInRule: NudgeTriggerRule {
 
         let match: (snapshot: LastCheckInSnapshot, bucket: Bucket)? = {
             for candidate in context.recentCheckIns {
-                let elapsedMin = Int(context.now.timeIntervalSince(candidate.date) / 60)
+                let elapsedSec = context.now.timeIntervalSince(candidate.date)
+                let elapsedMin = elapsedSec / 60.0
                 // Outside the freshness window entirely → stop scanning
                 // (list is sorted newest first, so older records are
-                // guaranteed further out of window).
-                if elapsedMin > maxMin { return nil }
+                // guaranteed further out of window). Compare in Double
+                // so 90.5 minutes correctly fails the `> maxMin` gate
+                // instead of truncating to 90 and sneaking through —
+                // fix for Q1-BUG-31.
+                if elapsedMin > Double(maxMin) { return nil }
                 // Too recent (give the user breathing room after logging).
-                if elapsedMin < minMin { continue }
+                if elapsedMin < Double(minMin) { continue }
                 // Already acted on this specific record.
                 if context.nudgedCheckInIDs.contains(candidate.id) { continue }
                 // Must match a mood bucket.
