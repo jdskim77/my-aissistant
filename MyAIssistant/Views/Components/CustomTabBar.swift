@@ -59,8 +59,14 @@ struct CustomTabBar: View {
             tabButton(for: .settings)
         }
         .padding(.horizontal, 16)
+        // Tight padding so icons sit ~4pt above the home indicator
+        // region — matches Apple's native UITabBar proportions. User
+        // report 2026-04-23 (2nd pass): "buttons have a lot of space
+        // at the bottom, they should be very slightly lowered." The
+        // prior 18/8 values left a visible gap between the labels
+        // and the home indicator.
         .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.bottom, 4)
         .background(
             AppColors.surface
                 .shadow(color: AppColors.textPrimary.opacity(0.06), radius: 12, x: 0, y: -4)
@@ -79,7 +85,14 @@ struct CustomTabBar: View {
             VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: selectedTab == tab ? tab.selectedIcon : tab.icon)
-                        .font(AppFonts.heading(22))
+                        // Fixed system size, not Dynamic Type scaled.
+                        // Apple's own UITabBar keeps icons at a fixed
+                        // optical size regardless of AX text settings;
+                        // using AppFonts.heading(22) let the icon grow
+                        // to 40pt+ at AX5 and overflow the ZStack frame,
+                        // clipping the glyph (QA BUG-07).
+                        .font(.system(size: 22, weight: .regular))
+                        .frame(width: 28, height: 28)
 
                     if badge > 0 {
                         // On-accent token (theme-aware) instead of
@@ -98,6 +111,13 @@ struct CustomTabBar: View {
 
                 Text(tab.label)
                     .font(AppFonts.caption(11))
+                    // Single line with truncation — shrinking below
+                    // ~11pt breaks HIG tab-label floor / WCAG
+                    // readability. At AX sizes labels tail-truncate
+                    // rather than scaling sub-minimum; users who
+                    // need larger type get the system modal tab bar.
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
             .foregroundColor(selectedTab == tab ? AppColors.accent : AppColors.textMuted)
             .frame(maxWidth: .infinity)

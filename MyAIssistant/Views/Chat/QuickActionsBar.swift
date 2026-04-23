@@ -25,7 +25,7 @@ struct QuickActionsBar: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 10)
+            .padding(.vertical, 4)
         }
     }
 }
@@ -145,7 +145,7 @@ struct TaskBuilderChipsBar: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 10)
+            .padding(.vertical, 4)
         }
     }
 }

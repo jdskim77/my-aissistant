@@ -37,7 +37,7 @@ struct AIPresenceIcon: View {
                 .frame(width: puckRadius * 2, height: puckRadius * 2)
                 .overlay(
                     Circle()
-                        .stroke(puckStroke, lineWidth: puckStrokeWidth)
+                        .stroke(puckGradientStroke, lineWidth: puckStrokeWidth)
                 )
 
             Circle().fill(BrandColors.petalTop.opacity(BrandColors.petalAlpha))
@@ -70,19 +70,31 @@ struct AIPresenceIcon: View {
             : Color.white
     }
 
-    private var puckStroke: Color {
-        if contrast == .increased {
-            return colorScheme == .dark
-                ? Color.white.opacity(0.55)
-                : Color.black.opacity(0.35)
+    /// Increased-contrast fallback: solid colour as before.
+    private var puckStrokeFallback: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(contrast == .increased ? 0.55 : 0.14)
         }
-        return colorScheme == .dark
-            ? Color.white.opacity(0.14)
-            : BrandColors.puckBorder
+        return contrast == .increased ? Color.black.opacity(0.35) : BrandColors.puckBorder
+    }
+
+    /// Normal contrast in light mode: vertical gradient, white-top to
+    /// cream-bottom (iteration 6 from the design review). Dark mode and
+    /// increased contrast fall back to the solid colour so legibility
+    /// targets are always met.
+    private var puckGradientStroke: AnyShapeStyle {
+        if colorScheme == .light && contrast != .increased {
+            return AnyShapeStyle(LinearGradient(
+                colors: [.white.opacity(0.9), BrandColors.puckBorder.opacity(0.5)],
+                startPoint: .top,
+                endPoint: .bottom
+            ))
+        }
+        return AnyShapeStyle(puckStrokeFallback)
     }
 
     private var puckStrokeWidth: CGFloat {
-        contrast == .increased ? 2 : 1
+        contrast == .increased ? 2 : 0.75
     }
 }
 
@@ -94,7 +106,7 @@ private enum BrandColors {
     static let petalRight  = Color(red: 0.910, green: 0.365, blue: 0.365) // #E85D5D
     static let petalBottom = Color(red: 0.722, green: 0.608, blue: 0.910) // #B89BE8
     static let petalLeft   = Color(red: 0.961, green: 0.784, blue: 0.259) // #F5C842
-    static let puckBorder  = Color(red: 0.910, green: 0.890, blue: 0.855) // #E8E3DA
+    static let puckBorder  = Color(red: 0.941, green: 0.929, blue: 0.910) // #F0EDE8
     static let petalAlpha: CGFloat = 0.78
 }
 

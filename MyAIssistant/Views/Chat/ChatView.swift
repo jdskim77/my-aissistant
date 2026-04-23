@@ -120,10 +120,22 @@ struct ChatView: View {
                 }
             }
 
-            // Messages — tap to stop AI speech
+            // Messages — tap to stop AI speech. `suppressJumpButton`
+            // hides the floating scroll-to-bottom affordance while any
+            // transient banner (re-sign-in, error, clock prompt,
+            // calendar chip / confirmation, Google connect) or the
+            // task-builder chip bar is visible — otherwise the button
+            // lands atop the banner's top edge and looks broken.
             ConversationMessages(
                 conversationID: conversationID,
-                isAITyping: isAITyping
+                isAITyping: isAITyping,
+                suppressJumpButton: showReSignIn
+                    || errorMessage != nil
+                    || showClockAppPrompt
+                    || lastCalendarTarget != nil
+                    || showGoogleConnectBanner
+                    || !pendingCalendarActions.isEmpty
+                    || (taskBuilder.isActive && !taskBuilder.chips.isEmpty)
             )
             .onTapGesture {
                 if speechSynthesizer.isSpeaking {
@@ -375,8 +387,8 @@ struct ChatView: View {
         // the current chip is done).
         .task(id: lastCalendarTarget) {
             guard lastCalendarTarget != nil else { return }
-            try? await Task.sleep(for: .seconds(5))
-            guard !Task.isCancelled else { return }
+            do { try await Task.sleep(for: .seconds(5)) }
+            catch { return } // CancellationError = new target set; exit cleanly
             withAnimation(.easeInOut(duration: 0.3)) {
                 lastCalendarTarget = nil
             }
@@ -604,15 +616,13 @@ struct ChatView: View {
                                 lineWidth: speechRecognizer.isRecording ? 2.5 : 1
                             )
                     )
-                    // Keyboard toolbar Done button — required by the
-                    // project's text-input rules for every TextField.
-                    // Fix for Q2-BUG-13.
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done") { isInputFocused = false }
-                        }
-                    }
+                    // Keyboard dismiss: drag-to-dismiss via
+                    // .scrollDismissesKeyboard on the ConversationMessages
+                    // ScrollView (above), plus focus is cleared on send.
+                    // The Done toolbar button was removed because it
+                    // rendered in the keyboard accessory bar at the same
+                    // visual height as the orb button, creating a
+                    // confusing double-button appearance.
 
                 // Single context-aware action button.
                 // States:
@@ -682,7 +692,7 @@ struct ChatView: View {
                 .accessibilityLabel(actionButtonAccessibilityLabel)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
         }
         .background(AppColors.surface)
     }
@@ -1085,7 +1095,7 @@ struct ChatView: View {
             }
             .foregroundColor(AppColors.accent)
 
-            ForEach(Array(pendingCalendarActions.enumerated()), id: \.offset) { _, action in
+            ForEach(pendingCalendarActions, id: \.stableID) { action in
                 HStack(spacing: 6) {
                     switch action {
                     case .create(let title, let start, _, _, _, _):
@@ -1152,6 +1162,18 @@ struct ChatView: View {
     private enum CalendarAction {
         case create(title: String, start: Date, end: Date, description: String?, recurrence: TaskRecurrence, dimension: LifeDimension?)
         case delete(eventID: String)
+
+        /// Stable string key for ForEach identity. Using `id: \.offset`
+        /// on an enumerated mutable array is prohibited because index
+        /// shifts on insert/delete destroy row identity (QA BUG-05).
+        var stableID: String {
+            switch self {
+            case .create(let title, let start, _, _, _, _):
+                return "create_\(title)_\(start.timeIntervalSince1970)"
+            case .delete(let eventID):
+                return "delete_\(eventID)"
+            }
+        }
     }
 
     private struct ParsedAlarm {
@@ -1379,13 +1401,15 @@ struct ChatView: View {
 private struct ConversationMessages: View {
     let conversationID: String
     let isAITyping: Bool
+    let suppressJumpButton: Bool
 
     @Query private var messages: [ChatMessage]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(conversationID: String, isAITyping: Bool) {
+    init(conversationID: String, isAITyping: Bool, suppressJumpButton: Bool = false) {
         self.conversationID = conversationID
         self.isAITyping = isAITyping
+        self.suppressJumpButton = suppressJumpButton
         let convoID = conversationID
         self._messages = Query(
             filter: #Predicate<ChatMessage> { $0.conversationID == convoID },
@@ -1408,6 +1432,16 @@ private struct ConversationMessages: View {
     private var hasHiddenHistory: Bool {
         messages.count > renderedWindow
     }
+
+    /// True when the bottom-anchor sentinel is on-screen.
+    /// Defaults true because `.defaultScrollAnchor(.bottom)` on the
+    /// ScrollView positions us at the bottom on first render, so the
+    /// anchor is visible immediately. `didInitialScroll` is latched
+    /// by the anchor's own `onAppear` (meaning "the anchor really has
+    /// been visible"), which gates the jump button so it never flashes
+    /// on cold-launch before position is confirmed.
+    @State private var isNearBottom: Bool = true
+    @State private var didInitialScroll: Bool = false
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -1438,22 +1472,157 @@ private struct ConversationMessages: View {
                         typingIndicator
                             .id("typing")
                     }
+
+                    // Bottom anchor sentinel: LazyVStack only renders
+                    // this when it's in the viewport, so
+                    // onAppear/onDisappear cleanly track "is the user at
+                    // the bottom of the transcript?" without scroll-
+                    // offset plumbing.
+                    Color.clear
+                        .frame(height: 1)
+                        .id("bottom-anchor")
+                        .onAppear {
+                            isNearBottom = true
+                            // First time the anchor is visible: initial
+                            // scroll position is confirmed. Unlocks the
+                            // jump button (gated on didInitialScroll) so
+                            // it never flashes before we know scroll state.
+                            didInitialScroll = true
+                        }
+                        .onDisappear { isNearBottom = false }
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                .padding(.top, 16)
+                // Reserve extra space only when the jump-to-bottom
+                // button will actually appear. At the bottom of the
+                // transcript, or while any banner is suppressing the
+                // button, the 12pt baseline matches the chip-bar
+                // breathing room. `.animation(nil, value:)` cancels
+                // the inherited animation on the overlay-fade modifier
+                // below so the padding changes discretely — without
+                // this, the last message slides 60pt whenever the
+                // anchor crosses the viewport edge (QA BUG-01).
+                // Collapsing when `suppressJumpButton` is true closes
+                // the gap a banner would otherwise leave beneath the
+                // reserved space (QA BUG-03).
+                .padding(.bottom, (isNearBottom || suppressJumpButton) ? 12 : 72)
+                .animation(nil, value: isNearBottom)
+                .animation(nil, value: suppressJumpButton)
+            }
+            // Pin the scroll view's resting position to the bottom of
+            // content. This handles two problems in one:
+            // (a) keyboard show/hide resizes the viewport — iOS keeps
+            //     the bottom content visible instead of jumping; and
+            // (b) new messages that push content down stay in view
+            //     without requiring a manual scrollTo call.
+            // scrollDismissesKeyboard provides the interactive-drag
+            // dismiss in lieu of the Done toolbar button, matching the
+            // Messages/Slack pattern the user expects.
+            .defaultScrollAnchor(.bottom)
+            .scrollDismissesKeyboard(.interactively)
+            .overlay(alignment: .bottomTrailing) {
+                if !isNearBottom && !messages.isEmpty && !suppressJumpButton && didInitialScroll {
+                    Button {
+                        // Selection-style haptic matches the rest of the
+                        // app's navigation affordances (tab switches,
+                        // conversation switches) — reserving `.light()`
+                        // for confirmation-style feedback (BUG-08).
+                        Haptics.selection()
+                        if let last = messages.last {
+                            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(AppColors.accent)
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.surface)
+                                    .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(AppColors.border, lineWidth: 1)
+                            )
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 12)
+                    .accessibilityLabel("Scroll to latest message")
+                    .accessibilityHint("Jumps to the most recent message")
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .opacity.combined(with: .scale(scale: 0.85))
+                    )
+                }
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: isNearBottom)
+            .task {
+                // Fallback for the race where .defaultScrollAnchor
+                // renders before @Query populates (empty messages on
+                // first frame). If messages arrive before the anchor
+                // fires onAppear, scroll explicitly. didInitialScroll
+                // is set by the anchor itself; the task only scrolls.
+                guard !didInitialScroll, let last = messages.last else { return }
+                proxy.scrollTo(last.id, anchor: .bottom)
+                isNearBottom = true
+            }
+            // Re-fires whenever conversationID changes so that switching
+            // conversations always lands at the new transcript's bottom.
+            // Using .task(id:) is safer than onChange because it cancels
+            // the previous task automatically and yields one run-loop
+            // turn — enough for the new @Query results to populate before
+            // we scroll, eliminating the stale-scroll race (QA BUG-01/02)
+            // where onChange(conversationID) fired with the old messages
+            // list and scrolled to the wrong conversation's last message.
+            .task(id: conversationID) {
+                didInitialScroll = false
+                isNearBottom = true
+                // Yield so the @Query result for the new conversationID
+                // replaces the old list before we attempt to scroll.
+                do { try await Task.sleep(for: .milliseconds(32)) }
+                catch { return }
+                guard !Task.isCancelled else { return }
+                guard let last = messages.last,
+                      last.conversationID == conversationID else { return }
+                proxy.scrollTo(last.id, anchor: .bottom)
+                isNearBottom = true
             }
             .onChange(of: messages.count) { _, _ in
-                withAnimation {
-                    if let last = messages.last {
+                // Fallback for the @Query race. Guard ensures we only
+                // scroll when the messages in scope actually belong to
+                // the current conversation — prevents the stale-data
+                // jump when @Query briefly holds the old list.
+                if !didInitialScroll,
+                   let last = messages.last,
+                   last.conversationID == conversationID {
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                    isNearBottom = true
+                    return
+                }
+                // Only auto-follow new messages if the user is already
+                // near the bottom. When they've scrolled up to re-read
+                // earlier messages, respect their reading position —
+                // the floating jump button is the explicit way back
+                // down.
+                if isNearBottom, let last = messages.last {
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
+                    isNearBottom = true
                 }
             }
             .onChange(of: isAITyping) { _, typing in
-                if typing {
-                    withAnimation {
+                // Same gate as messages.count — don't yank the scroll
+                // position when the user is reading history.
+                if typing && isNearBottom {
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                         proxy.scrollTo("typing", anchor: .bottom)
                     }
+                    isNearBottom = true
                 }
             }
         }
