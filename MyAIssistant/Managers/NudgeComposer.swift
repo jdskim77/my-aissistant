@@ -70,9 +70,11 @@ actor NudgeComposer {
             // still open past the window's midpoint. `habitTitle` is the only
             // required param; a missing value falls back to a generic line
             // rather than crashing — same grace pattern as every other
-            // category here.
+            // category here. No hardcoded duration — the rule doesn't know
+            // how long this habit takes, and "5 min" would undersell a
+            // 20-min meditation or oversell a 1-min stretch.
             let habit = candidate.templateParams["habitTitle"] ?? "that habit"
-            return "Still open: \(habit). 5 min now, or skip for today?"
+            return "Still open: \(habit). Want to take it on now, or set it down for today?"
 
         case .postCheckInAction:
             // Bucket-switched copy for PostLowMoodCheckInRule (spec §4).

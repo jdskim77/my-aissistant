@@ -374,6 +374,11 @@ final class NudgeEngine {
         // same habit CAN be nudged again tomorrow if still open.
         let nudgedHabitIDsToday = fetchNudgedHabitIDsToday(now: now)
 
+        // HabitIDs nudged in the last 7 days. Separate window from the
+        // today-only set so the rule's starvation guard can prefer
+        // habits that haven't seen a nudge in a week.
+        let nudgedHabitIDsRecent = fetchNudgedHabitIDsRecent(now: now, days: 7)
+
         return NudgeEvalContext(
             now: now,
             dimensionScores: dimensionScores,
@@ -385,6 +390,7 @@ final class NudgeEngine {
             habitConsecutiveMisses: [:],         // unused by current rules
             activeWindowedHabits: activeWindowedHabits,
             nudgedHabitIDsToday: nudgedHabitIDsToday,
+            nudgedHabitIDsRecent: nudgedHabitIDsRecent,
             nudgedCheckInIDs: nudgedIDs,
             recentCheckIns: recentSnapshots,
             isAppForeground: trigger == .foreground
@@ -398,8 +404,12 @@ final class NudgeEngine {
     /// references) so the context stays `Sendable` and rule code can
     /// never mutate the store.
     private func fetchActiveWindowedHabits(now: Date) -> [WindowedHabitSnapshot] {
+        // Explicit sort so a tie on (streak, title, id) — e.g. a seed
+        // import that duplicated a habit — resolves deterministically.
+        // Cost is negligible for typical habit counts.
         let descriptor = FetchDescriptor<HabitItem>(
-            predicate: #Predicate { $0.archivedAt == nil && $0.timeWindowRaw != nil }
+            predicate: #Predicate { $0.archivedAt == nil && $0.timeWindowRaw != nil },
+            sortBy: [SortDescriptor(\.title), SortDescriptor(\.id)]
         )
         let habits = (try? modelContext.fetch(descriptor)) ?? []
         let calendar = Calendar.current
@@ -465,6 +475,36 @@ final class NudgeEngine {
         )
         // Daily cap is 2 — 50 is comfortably over-provisioned.
         descriptor.fetchLimit = 50
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        var ids = Set<String>()
+        for nudge in rows {
+            guard let data = nudge.triggerContextJSON.data(using: .utf8),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let habitID = dict["habitID"] as? String else { continue }
+            ids.insert(habitID)
+        }
+        return ids
+    }
+
+    /// Returns `HabitItem.id` values nudged via `windowedHabit` in the
+    /// last `days` rolling window (default 7 upstream). Used by
+    /// `WindowedHabitRule`'s starvation guard so a zero-streak habit
+    /// that's never been nudged gets surfaced ahead of a long-streak
+    /// habit that's been nudged three times this week (UX audit §4).
+    /// Window is rolling-from-`now`, not calendar-day, because the
+    /// semantic is "recently" not "today" — a nudge fired 23 hours ago
+    /// should still count even if we've crossed midnight.
+    private func fetchNudgedHabitIDsRecent(now: Date, days: Int) -> Set<String> {
+        let categoryRaw = NudgeCategory.windowedHabit.rawValue
+        let since = now.addingTimeInterval(-Double(days) * 24 * 3600)
+        var descriptor = FetchDescriptor<Nudge>(
+            predicate: #Predicate { nudge in
+                nudge.categoryRaw == categoryRaw &&
+                nudge.createdAt >= since
+            }
+        )
+        // Over-provisioned: daily cap × days = 14 entries typical.
+        descriptor.fetchLimit = 200
         let rows = (try? modelContext.fetch(descriptor)) ?? []
         var ids = Set<String>()
         for nudge in rows {

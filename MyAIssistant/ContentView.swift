@@ -14,6 +14,14 @@ struct ContentView: View {
     @State private var onboardingComplete = false
     @State private var showingFocusTimer = false
     @State private var focusDuration = 25
+    /// Habit id to focus in HomeView's Habits sheet after a
+    /// `windowedHabit` "Do now" action. Owned by ContentView because
+    /// HomeView may not yet be materialized when the request arrives
+    /// (first-launch user on Coach tab has never visited Home, so
+    /// `.onReceive` subscribers on HomeView haven't registered). State
+    /// here persists across the tab switch and HomeView consumes it
+    /// on first appear.
+    @State private var pendingFocusedHabitID: String?
     /// True while a software keyboard is actually occluding the
     /// bottom of the window. Updated from `keyboardWillChangeFrame`
     /// so hardware/Bluetooth/undocked iPad keyboards (which fire
@@ -99,7 +107,10 @@ struct ContentView: View {
         VStack(spacing: 0) {
             TabView(selection: selectedTabBinding) {
                 ChatView().tag(Tab.coach)
-                HomeView(selectedTab: selectedTabBinding).tag(Tab.home)
+                HomeView(
+                    selectedTab: selectedTabBinding,
+                    pendingFocusedHabitID: $pendingFocusedHabitID
+                ).tag(Tab.home)
                 CompassTabView().tag(Tab.compass)
                 SettingsView().tag(Tab.settings)
             }
@@ -127,13 +138,17 @@ struct ContentView: View {
             guard let destination = notification.userInfo?["destination"] as? String else { return }
             navigateToDestination(destination)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openHabitsFocused)) { _ in
-            // "Do now" on a windowed-habit nudge lives on the Coach tab;
-            // route the user to Home so the focused Habits sheet
-            // (subscribed on HomeView) has a presenter. Resign first
-            // responder so the ChatView composer doesn't trail a dangling
-            // keyboard into Today — mirrors navigateToDestination.
+        .onReceive(NotificationCenter.default.publisher(for: .openHabitsFocused)) { note in
+            // "Do now" on a windowed-habit nudge. ContentView owns both
+            // the tab switch AND the pending focus id — storing the id
+            // here (not in HomeView's .onReceive) closes the cold-launch
+            // gap where HomeView hadn't mounted yet and dropped the
+            // post. HomeView reads the binding on appear + via
+            // .onChange, then nils it back out to consume.
+            guard let habitID = note.userInfo?["habitID"] as? String,
+                  !habitID.isEmpty else { return }
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            pendingFocusedHabitID = habitID
             if selectedTabRaw != Tab.home.rawValue {
                 selectedTabRaw = Tab.home.rawValue
             }

@@ -50,6 +50,12 @@ extension Notification.Name {
 
 struct HomeView: View {
     @Binding var selectedTab: Tab
+    /// ContentView holds the pending habit-focus id so a "Do now" tap
+    /// from Coach survives the tab switch even when HomeView hadn't
+    /// yet materialized (cold-launch Coach-only sessions would
+    /// otherwise drop the NotificationCenter post). Consumed and
+    /// nil'd out inside `consumePendingFocus(_:)`.
+    @Binding var pendingFocusedHabitID: String?
     @Environment(\.taskManager) private var taskManager
     @Environment(\.habitManager) private var habitManager
     @Environment(\.insightEngine) private var insightEngine
@@ -869,6 +875,13 @@ struct HomeView: View {
                 appeared = true
             }
 
+            // Cold-launch case: ContentView set pendingFocusedHabitID
+            // BEFORE this view materialized, so our `.onChange` never
+            // fired. Check on first appear and consume if present.
+            if let id = pendingFocusedHabitID {
+                consumePendingFocus(habitID: id)
+            }
+
             // Re-check insight dismissal — the UserDefaults key rolls daily.
             insightBannerDismissed = PatternInsightBanner.isDismissedToday()
 
@@ -961,8 +974,9 @@ struct HomeView: View {
                 activeSheet = .schedule
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openHabitsFocused)) { note in
-            handleOpenHabitsFocused(note: note)
+        .onChange(of: pendingFocusedHabitID) { _, newID in
+            guard let id = newID else { return }
+            consumePendingFocus(habitID: id)
         }
         .alert("Delete Task", isPresented: Binding(
             get: { taskToDelete != nil },
@@ -1870,29 +1884,31 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Notification handlers
+    // MARK: - Pending focus handoff
 
-    /// Extracted from `.onReceive(.openHabitsFocused)` to keep the
-    /// `body` closure within the Swift type-checker's sanity budget
-    /// (the inline version tripped "unable to type-check in reasonable
-    /// time" after adding a second sheet-coordination handler).
+    /// Consume a pending "focus this habit" request set by ContentView
+    /// when the user tapped "Do now" on a windowedHabit nudge. Opens
+    /// the Habits sheet focused on the row; nils the binding out so a
+    /// subsequent focus request can replay cleanly (SwiftUI's
+    /// `.onChange` only fires on actual changes — setting the same id
+    /// a second time without clearing wouldn't re-trigger).
     ///
-    /// If any sheet is already up, close it first and defer the focused
-    /// open by ~400ms — same dance as `.openScheduleSheet` — so the
-    /// single-slot `.sheet(item:)` limitation doesn't silently drop
-    /// the new presentation.
-    private func handleOpenHabitsFocused(note: Notification) {
-        guard let habitID = note.userInfo?["habitID"] as? String,
-              !habitID.isEmpty else { return }
+    /// Mirrors the `.openScheduleSheet` dance: if any sheet is
+    /// already up, close it first and defer the focused reopen ~400ms
+    /// so the single-slot `.sheet(item:)` limitation doesn't silently
+    /// drop the new presentation.
+    private func consumePendingFocus(habitID: String) {
         let targetID = HomeSheet.habitsFocused(habitID: habitID).id
         if activeSheet != nil && activeSheet?.id != targetID {
             activeSheet = nil
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(400))
                 activeSheet = .habitsFocused(habitID: habitID)
+                pendingFocusedHabitID = nil
             }
         } else {
             activeSheet = .habitsFocused(habitID: habitID)
+            pendingFocusedHabitID = nil
         }
     }
 

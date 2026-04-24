@@ -37,7 +37,10 @@ struct WindowedHabitRule: NudgeTriggerRule {
             !context.nudgedHabitIDsToday.contains($0.habitID)
         }
 
-        guard let pick = Self.selectHabit(from: eligible) else { return nil }
+        guard let pick = Self.selectHabit(
+            from: eligible,
+            recentlyNudged: context.nudgedHabitIDsRecent
+        ) else { return nil }
 
         // 2. Compose params + trigger context. `habitID` goes into
         //    triggerContext so the engine's `fetchNudgedHabitIDsToday`
@@ -69,21 +72,35 @@ struct WindowedHabitRule: NudgeTriggerRule {
 
     // MARK: - Selection
 
-    /// Pick the highest-streak-at-risk habit from the eligible set, with
-    /// alphabetical title as the deterministic tie-break. Pure function
-    /// of the input; exposed for unit tests.
-    static func selectHabit(from eligible: [WindowedHabitSnapshot]) -> WindowedHabitSnapshot? {
+    /// Pick the habit to nudge about. Two-tier selection:
+    ///
+    /// 1. **Starvation guard.** If any eligible habit has NOT been
+    ///    nudged in the last 7 days (`recentlyNudged`), restrict the
+    ///    pool to those habits — a never-nudged zero-streak habit
+    ///    beats a frequently-nudged long-streak habit. Prevents a
+    ///    single long-streak habit from monopolizing the nudge slot
+    ///    and starving Hesse-never-gets-picked zero-streak habits
+    ///    (UX audit §4).
+    /// 2. **Within the chosen pool.** Highest `currentStreak` wins
+    ///    (loss aversion), alphabetical title breaks ties
+    ///    deterministically.
+    ///
+    /// `recentlyNudged` is the full 7-day set including *today's*
+    /// nudges. The `evaluate(context:)` filter has already removed
+    /// today's habits, so the pool here is always "eligible for a
+    /// fresh nudge" — the recent set is only consulted to decide
+    /// tier 1 vs tier 2. Pure function; exposed for unit tests.
+    static func selectHabit(
+        from eligible: [WindowedHabitSnapshot],
+        recentlyNudged: Set<String>
+    ) -> WindowedHabitSnapshot? {
         guard !eligible.isEmpty else { return nil }
-        // Sort descending by streak, then ascending by title for ties.
-        // `sorted` is stable in Swift, but the compound comparator keeps
-        // the intent explicit and survives future reorderings.
-        return eligible.max { a, b in
+        let starved = eligible.filter { !recentlyNudged.contains($0.habitID) }
+        let pool = starved.isEmpty ? eligible : starved
+        return pool.max { a, b in
             if a.currentStreak != b.currentStreak {
                 return a.currentStreak < b.currentStreak
             }
-            // Reversed so lower title wins the tie (we return `true`
-            // when `a < b`, then `max` picks the one where `a < b` is
-            // false — i.e. the alphabetically-earlier title).
             return a.title > b.title
         }
     }

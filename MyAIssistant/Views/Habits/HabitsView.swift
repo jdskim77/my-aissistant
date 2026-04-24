@@ -120,6 +120,7 @@ struct HabitsView: View {
             }
             .onDisappear {
                 cancelUndoTimer()
+                cancelFocusPulse()
             }
             .onAppear {
                 if lastMissed != nil, undoDismissTask == nil {
@@ -253,19 +254,37 @@ struct HabitsView: View {
             // measuring zero-height during first paint and the
             // scrollTo is a no-op.
             try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.35)) {
-                proxy.scrollTo(id, anchor: .center)
+                // Anchor at 30% from top (above-center) so the habit
+                // lands with the header visible above it. `.center`
+                // shoved the focused row into the middle of the screen
+                // and left the page chrome orphaned above (UX audit §8).
+                proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.3))
             }
             // Give the scroll a moment to land, then fade the ring in.
             try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
             focusPulseActive = true
             // Hold the ring visible long enough to register, then fade.
             try? await Task.sleep(for: .milliseconds(1_200))
+            guard !Task.isCancelled else { return }
             focusPulseActive = false
             // Clear the task handle so a re-appear (e.g. dismissed-and-
             // reopened sheet with a different habit) can run again.
             focusPulseTask = nil
         }
+    }
+
+    /// Cancel the in-flight focus pulse when the view disappears. A
+    /// quick dismiss-mid-pulse was otherwise leaving the task running
+    /// for up to 1.7s after the view was gone, and if the sheet was
+    /// re-opened inside that window the `focusPulseTask == nil` guard
+    /// would block the fresh dance from starting (Correctness audit §3).
+    private func cancelFocusPulse() {
+        focusPulseTask?.cancel()
+        focusPulseTask = nil
+        focusPulseActive = false
     }
 
     /// 1. In-window / all-day habits first

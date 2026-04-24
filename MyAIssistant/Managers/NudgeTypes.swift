@@ -82,6 +82,15 @@ struct NudgeEvalContext: Sendable {
     /// category cooldown expires. Populated once per evaluation pass.
     let nudgedHabitIDsToday: Set<String>
 
+    /// `HabitItem.id` values nudged via `windowedHabit` in the last 7
+    /// days. Consumed by `WindowedHabitRule` as a starvation guard:
+    /// when any eligible habit is NOT in this set (i.e. hasn't been
+    /// nudged recently), prefer it over high-streak habits that have
+    /// been. Prevents a long-streak habit from monopolizing the
+    /// nudge slot and starving zero-streak habits that never get
+    /// picked (UX audit §4). Populated once per evaluation pass.
+    let nudgedHabitIDsRecent: Set<String>
+
     /// Check-in record IDs for which a nudge has already been emitted.
     /// Used by `PostLowMoodCheckInRule` for record-scoped dedupe so the
     /// SAME check-in doesn't fire a second nudge after a user dismiss.

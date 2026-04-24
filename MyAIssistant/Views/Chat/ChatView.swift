@@ -52,12 +52,13 @@ struct ChatView: View {
     }
 
     /// Handler for "Do now" on a windowedHabit nudge. Marks the nudge
-    /// accepted, then posts `.openHabitsFocused` so ContentView routes to
-    /// Home and HomeView opens the Habits sheet focused on the habit.
-    /// Split out so the notification payload stays a single source of
-    /// truth (habitID) and the accepted-response side-effect is
-    /// reversible if the notification delivery ever changes.
+    /// accepted and posts `.openHabitsFocused` so ContentView can route
+    /// to Home with the focus id. Guards against double-taps — once a
+    /// response is recorded, further taps are no-ops (the card stays
+    /// pinned only until it's responded to, but SwiftUI can fire the
+    /// button closure twice across a render boundary).
     private func handleWindowedHabitDoNow(nudge: Nudge, habitID: String) {
+        guard nudge.userResponseRaw == nil else { return }
         recordNudgeResponse(nudge: nudge, response: .accepted)
         NotificationCenter.default.post(
             name: .openHabitsFocused,
@@ -66,12 +67,13 @@ struct ChatView: View {
         )
     }
 
-    /// Handler for "Skip today" on a windowedHabit nudge. Looks up the
-    /// habit by id, marks today missed (invariant: clears any prior
-    /// completion for the same day), and records `.dismissed` on the
-    /// nudge. Fails quietly if the habit record is gone — the dismiss
-    /// still lands so the user's tap isn't a no-op.
+    /// Handler for "Not today" on a windowedHabit nudge. Marks the
+    /// habit missed for today and records the nudge dismissed. Guards
+    /// against double-taps the same way `handleWindowedHabitDoNow` does.
+    /// Fails quietly if the habit record is gone — the dismiss still
+    /// lands so the user's tap isn't a no-op.
     private func handleWindowedHabitSkipToday(nudge: Nudge, habitID: String) {
+        guard nudge.userResponseRaw == nil else { return }
         let descriptor = FetchDescriptor<HabitItem>(
             predicate: #Predicate { $0.id == habitID }
         )
@@ -1927,14 +1929,17 @@ private struct PinnedNudgeCard: View {
                 }
                 .foregroundColor(AppColors.warning)
             } else if isWindowedHabit, let id = habitID {
-                // Windowed-habit action row. "Do now" routes to the
-                // Habits sheet focused on this habit; "Skip today"
-                // marks the habit missed and dismisses the nudge.
+                // Windowed-habit action row. Visual hierarchy follows
+                // ui-ux.md §12 "one primary action per screen": Do now
+                // is the coach's recommendation and gets the filled
+                // primary button; Not today is the escape hatch and
+                // reads as a plain text button.
+                //
                 // Fallback to the thumbs row if we somehow got a
                 // windowedHabit nudge without a valid habitID — the
                 // user should still be able to react instead of
                 // facing a useless-looking card.
-                HStack(spacing: 10) {
+                HStack(spacing: 14) {
                     Button {
                         Haptics.selection()
                         onDoHabitNow?(id)
@@ -1943,7 +1948,7 @@ private struct PinnedNudgeCard: View {
                             .font(AppFonts.bodyMedium(13))
                             .labelStyle(.titleAndIcon)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
                     .tint(AppColors.accent)
                     .accessibilityLabel("Do now — open this habit")
 
@@ -1951,13 +1956,12 @@ private struct PinnedNudgeCard: View {
                         Haptics.selection()
                         onSkipHabitToday?(id)
                     } label: {
-                        Label("Skip today", systemImage: "calendar.badge.minus")
+                        Text("Not today")
                             .font(AppFonts.bodyMedium(13))
-                            .labelStyle(.titleAndIcon)
+                            .foregroundColor(AppColors.textMuted)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(AppColors.textMuted)
-                    .accessibilityLabel("Skip today — mark this habit missed for today")
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Not today — set this habit down for today")
                 }
             } else {
                 HStack(spacing: 10) {
@@ -2007,7 +2011,7 @@ private struct PinnedNudgeCard: View {
         case .habitSlip:         return "HABIT"
         case .postCheckInAction: return "CHECK-IN"
         case .goalCheckpoint:    return "GOAL"
-        case .windowedHabit:     return "HABIT"
+        case .windowedHabit:     return "WINDOW"
         case .safetyRoute:       return "SUPPORT"
         }
     }
