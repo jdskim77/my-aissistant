@@ -20,12 +20,19 @@ struct ContentView: View {
     /// willShow with zero-height frames) don't falsely trigger the
     /// tab-bar hide.
     @State private var isKeyboardVisible = false
-    /// Baseline tab bar height that scales with Dynamic Type. Tied
-    /// to `.body` because the tab bar's dominant metric is the
-    /// 22pt icon (`AppFonts.heading(22)`), which scales with body-
-    /// class types — caption-relative under-reserved at AX sizes
-    /// and re-opened the composer occlusion bug.
-    @ScaledMetric(relativeTo: .body) private var tabBarBaseHeight: CGFloat = 64
+    /// Height reservation matching the CustomTabBar's actual intrinsic
+    /// height above the bottom safe area. Bar content = 12pt top
+    /// padding + 28pt icon frame + 4pt spacing + ~13pt caption label +
+    /// 4pt bottom padding = 61pt at default Dynamic Type. The icon is
+    /// pinned via `.font(.system(size: 22))`, so only the label scales.
+    /// `AppFonts.caption(11)` resolves to `UIFontMetrics.default`
+    /// which is body-relative — matching the reservation's scaling
+    /// basis to `.body` keeps the two curves aligned. Baseline 60pt
+    /// (down from the prior 64pt) removes the constant over-reservation
+    /// that was showing up as dead space between the input bar and the
+    /// tab bar top; a 1pt under-reservation at default is absorbed by
+    /// the bar's shadow halo.
+    @ScaledMetric(relativeTo: .body) private var tabBarBaseHeight: CGFloat = 60
 
     /// Only hide the tab bar for keyboard when the user is on the
     /// Coach tab — that's the only tab whose input bar sits flush
@@ -170,8 +177,14 @@ struct ContentView: View {
                 .compactMap { $0 as? UIWindowScene }
                 .first?.screen.bounds.height ?? UIScreen.main.bounds.height
             let overlap = max(0, screenHeight - endFrame.origin.y)
+            // Threshold at 60pt catches short-screen + predictive-bar
+            // cases (iPhone SE, 16e with Bluetooth keyboard + predictive
+            // row ~80pt) where the keyboard partially occludes the
+            // composer but didn't trip the old 100pt gate. Still
+            // rejects iPad's floating assistive bar (~44pt) and pure
+            // hardware-keyboard cases (0pt). (BUG-04)
             withAnimation(.easeOut(duration: 0.2)) {
-                isKeyboardVisible = overlap > 100
+                isKeyboardVisible = overlap > 60
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in

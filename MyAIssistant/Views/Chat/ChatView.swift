@@ -86,6 +86,14 @@ struct ChatView: View {
     // double-tap, short enough that deliberate consecutive dimension
     // picks still pass through (BUG-01 from the Skip/Done QA pass).
     @State private var lastChipTapAt: Date = .distantPast
+    /// Increments every time the user advances the task-builder wizard
+    /// (chip tap, title submit, wizard start). Observed by
+    /// `ConversationMessages` to perform an unconditional scroll-to-
+    /// bottom AFTER the chip-bar's safe-area inset has finished
+    /// animating — bypasses the `isNearBottom` gate used for AI-driven
+    /// inserts. Fixes BUG-01 where the new wizard reply flashed behind
+    /// the chip bar because the scrollTo ran on the old inset height.
+    @State private var wizardScrollTick: Int = 0
     /// Handle for the in-flight send so `.onDisappear` can cancel it.
     /// Without this, closing the chat while a response was streaming left
     /// the network request running and the state-mutation tail would fire
@@ -109,15 +117,24 @@ struct ChatView: View {
 
             // Pinned nudge — the Coach tab's primary receipt surface.
             // Renders only when there's a delivered nudge the user
-            // hasn't reacted to. Once they tap 👍/👎 the card drops
-            // because userResponseRaw changes and the @Query filter
-            // stops matching. Conditional rendering keeps the
-            // transcript flush to the header when there's nothing
-            // waiting.
+            // hasn't reacted to. Kept as a VStack sibling above the
+            // transcript (not a `.safeAreaInset(.top)` on the scroll
+            // view) because the conditional-nil-inset pattern reserved
+            // unpredictable default space on empty state, creating a
+            // visible gap below the chips bar.
+            //
+            // When a nudge arrives mid-conversation while the user is
+            // scrolled up, the ScrollView shrinks from above and
+            // `.defaultScrollAnchor(.bottom)` may re-pin the bottom
+            // silently. The slide+fade transition makes the card's
+            // arrival visually explicit so any concurrent scroll
+            // movement is attributable to the user, not a ghost.
+            // (BUG-05 mitigation.)
             if let nudge = pinnedNudge {
                 PinnedNudgeCard(nudge: nudge) { response in
                     recordNudgeResponse(nudge: nudge, response: response)
                 }
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             // Messages — tap to stop AI speech. `suppressJumpButton`
@@ -135,7 +152,8 @@ struct ChatView: View {
                     || lastCalendarTarget != nil
                     || showGoogleConnectBanner
                     || !pendingCalendarActions.isEmpty
-                    || (taskBuilder.isActive && !taskBuilder.chips.isEmpty)
+                    || (taskBuilder.isActive && !taskBuilder.chips.isEmpty),
+                wizardScrollTick: wizardScrollTick
             )
             .onTapGesture {
                 if speechSynthesizer.isSpeaking {
@@ -144,168 +162,17 @@ struct ChatView: View {
                 }
             }
 
-            Divider()
-                .background(AppColors.border)
-
-            // Session expired banner — re-sign-in with Apple
-            if showReSignIn {
-                VStack(spacing: 8) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "person.crop.circle.badge.exclamationmark")
-                            .font(AppFonts.bodyMedium(14))
-                        Text("Your session has expired.")
-                            .font(AppFonts.bodyMedium(13))
-                        Spacer()
-                        Button {
-                            showReSignIn = false
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .accessibilityLabel("Dismiss")
-                    }
-
-                    SignInWithAppleButton(.signIn) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        handleReSignIn(result)
-                    }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 44)
-                    .cornerRadius(10)
-                    .disabled(isReSigningIn)
-                    .opacity(isReSigningIn ? 0.5 : 1)
-                }
-                .foregroundColor(AppColors.accent)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(AppColors.accent.opacity(0.06))
-            }
-
-            // Error banner
-            if let errorMessage, !showReSignIn {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 12))
-                    Text(errorMessage)
-                        .font(AppFonts.caption(12))
-                    Spacer()
-                    Button {
-                        self.errorMessage = nil
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel("Dismiss error")
-                }
-                .foregroundColor(AppColors.coral)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(AppColors.coral.opacity(0.08))
-            }
-
-            // Clock app prompt after alarm is set
-            if showClockAppPrompt {
-                HStack(spacing: 8) {
-                    Image(systemName: "alarm.fill")
-                        .font(.system(size: 14))
-                    Text("Notification alarm set.")
-                        .font(AppFonts.bodyMedium(13))
-                    Spacer()
-                    Button {
-                        // Open the built-in Clock app's alarm tab
-                        if let url = URL(string: "clock-sleep-alarm://") {
-                            UIApplication.shared.open(url)
-                        }
-                        showClockAppPrompt = false
-                    } label: {
-                        Text("Open Clock App")
-                            .font(AppFonts.bodyMedium(12))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(AppColors.accent)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                    Button {
-                        showClockAppPrompt = false
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel("Dismiss")
-                }
-                .foregroundColor(AppColors.accent)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(AppColors.accentLight)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-
-            // Calendar routing chip — names the destination of the last successful
-            // AI-created event so the user knows Apple vs Google.
-            if let target = lastCalendarTarget, target != .none {
-                CalendarResultChip(target: target)
-            }
-
-            // One-time Google connect nudge — only fires after an Apple fallback
-            // when no Google link exists. hasSeenGoogleConnectNudge ensures once.
-            if showGoogleConnectBanner {
-                GoogleConnectBanner(
-                    onConnect: {
-                        hasSeenGoogleConnectNudge = true
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showGoogleConnectBanner = false
-                        }
-                        showingCalendarSettings = true
-                    },
-                    onDismiss: {
-                        hasSeenGoogleConnectNudge = true
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showGoogleConnectBanner = false
-                        }
-                    }
-                )
-            }
-
-            // Pending calendar action confirmation
-            if !pendingCalendarActions.isEmpty {
-                calendarConfirmationBanner
-            }
-
-            // Quick actions or Task Builder chips
-            if taskBuilder.isActive && !taskBuilder.chips.isEmpty {
-                TaskBuilderChipsBar(
-                    chips: taskBuilder.chips,
-                    step: taskBuilder.step,
-                    selectedDimensions: taskBuilder.selectedDimensions,
-                    onSelect: { chip in
-                        handleTaskBuilderChip(chip)
-                    },
-                    onCancel: {
-                        insertLocalMessage(role: .assistant, text: "Task creation cancelled.")
-                        taskBuilder.reset()
-                    }
-                )
-            } else if !taskBuilder.isActive {
-                QuickActionsBar(actions: quickActions) { action in
-                    if action == "Create a Task" {
-                        taskBuilder.start()
-                        insertLocalMessage(role: .assistant, text: taskBuilder.promptMessage)
-                    } else {
-                        sendMessage(action)
-                    }
-                }
-            }
-
-            // Input bar
-            inputBar
+            // Bottom chrome as a VStack sibling (not a
+            // `.safeAreaInset(.bottom)` on the scroll view). The inset
+            // approach was introducing ~60pt of unexplained vertical
+            // space on iPhone Pro Max, likely through nested
+            // safeAreaInset interactions with the tab-bar spacer in
+            // ContentView and default keyboard-avoidance insets. Chip-
+            // bar growth during the task-builder wizard is still
+            // handled without the bubble flashing behind chips via
+            // `wizardScrollTick`, which bumps ~50ms after insertion to
+            // let the VStack re-layout before the scroll-to fires.
+            bottomChrome
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
@@ -426,6 +293,211 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - Bottom Chrome
+
+    /// Banners, chip/quick-actions bar, and input bar, rendered as the
+    /// scroll view's bottom safe-area inset so their height changes
+    /// cooperate with `.defaultScrollAnchor(.bottom)` instead of
+    /// shrinking the scroll viewport and hiding the last bubble.
+    @ViewBuilder
+    private var bottomChrome: some View {
+        VStack(spacing: 0) {
+            Divider()
+                .background(AppColors.border)
+
+            // Free-tier remaining-messages indicator (BUG-06 fix —
+            // moved out of inputBar so it reads as a chat-level
+            // notice consistent with the other banners below, rather
+            // than a coral-on-coral inline error stacked on the
+            // composer's border).
+            remainingMessagesBanner
+
+            // Session expired banner — re-sign-in with Apple
+            if showReSignIn {
+                VStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.crop.circle.badge.exclamationmark")
+                            .font(AppFonts.bodyMedium(14))
+                        Text("Your session has expired.")
+                            .font(AppFonts.bodyMedium(13))
+                        Spacer()
+                        Button {
+                            showReSignIn = false
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel("Dismiss")
+                    }
+
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        handleReSignIn(result)
+                    }
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                    .frame(height: 44)
+                    .cornerRadius(10)
+                    .disabled(isReSigningIn)
+                    .opacity(isReSigningIn ? 0.5 : 1)
+                }
+                .foregroundColor(AppColors.accent)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AppColors.accent.opacity(0.06))
+            }
+
+            // Error banner
+            if let errorMessage, !showReSignIn {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 12))
+                    Text(errorMessage)
+                        .font(AppFonts.caption(12))
+                    Spacer()
+                    Button {
+                        self.errorMessage = nil
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Dismiss error")
+                }
+                .foregroundColor(AppColors.coral)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppColors.coral.opacity(0.08))
+            }
+
+            // Clock app prompt after alarm is set
+            if showClockAppPrompt {
+                HStack(spacing: 8) {
+                    Image(systemName: "alarm.fill")
+                        .font(.system(size: 14))
+                    Text("Notification alarm set.")
+                        .font(AppFonts.bodyMedium(13))
+                    Spacer()
+                    Button {
+                        // Open the built-in Clock app's alarm tab
+                        if let url = URL(string: "clock-sleep-alarm://") {
+                            UIApplication.shared.open(url)
+                        }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showClockAppPrompt = false
+                        }
+                    } label: {
+                        Text("Open Clock App")
+                            .font(AppFonts.bodyMedium(12))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(AppColors.accent)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showClockAppPrompt = false
+                        }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Dismiss")
+                }
+                .foregroundColor(AppColors.accent)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(AppColors.accentLight)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Calendar routing chip — names the destination of the last successful
+            // AI-created event so the user knows Apple vs Google.
+            if let target = lastCalendarTarget, target != .none {
+                CalendarResultChip(target: target)
+            }
+
+            // One-time Google connect nudge — only fires after an Apple fallback
+            // when no Google link exists. hasSeenGoogleConnectNudge ensures once.
+            if showGoogleConnectBanner {
+                GoogleConnectBanner(
+                    onConnect: {
+                        hasSeenGoogleConnectNudge = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGoogleConnectBanner = false
+                        }
+                        showingCalendarSettings = true
+                    },
+                    onDismiss: {
+                        hasSeenGoogleConnectNudge = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showGoogleConnectBanner = false
+                        }
+                    }
+                )
+            }
+
+            // Pending calendar action confirmation
+            if !pendingCalendarActions.isEmpty {
+                calendarConfirmationBanner
+            }
+
+            // Quick actions or Task Builder chips.
+            //
+            // Critically, we render TaskBuilderChipsBar even when
+            // `chips.isEmpty` — on the `.title` step the wizard has no
+            // chip choices (user types a title), but without the bar
+            // visible the composer gets silently re-interpreted as the
+            // task title (BUG-01). The Cancel chip alone gives the
+            // user an explicit escape hatch and a visible cue that
+            // typed input will become the task title, not a chat send.
+            if taskBuilder.isActive {
+                TaskBuilderChipsBar(
+                    chips: taskBuilder.chips,
+                    step: taskBuilder.step,
+                    selectedDimensions: taskBuilder.selectedDimensions,
+                    onSelect: { chip in
+                        handleTaskBuilderChip(chip)
+                    },
+                    onCancel: {
+                        insertLocalMessage(role: .assistant, text: "Task creation cancelled.")
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            taskBuilder.reset()
+                        }
+                        scrollAfterWizardStep()
+                    }
+                )
+            } else {
+                QuickActionsBar(actions: quickActions) { action in
+                    if action == "Create a Task" {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            taskBuilder.start()
+                        }
+                        insertLocalMessage(role: .assistant, text: taskBuilder.promptMessage)
+                        scrollAfterWizardStep()
+                    } else {
+                        sendMessage(action)
+                    }
+                }
+            }
+
+            // Input bar
+            inputBar
+        }
+        // Surface-token background matches the inputBar's own background
+        // so the boundary between them is seamless when banners collapse
+        // and removes the visible color seam at the input-bar top edge
+        // (BUG-03). Banners paint their own tinted backgrounds on top,
+        // so their composition is unchanged (still tint-on-surface).
+        .background(AppColors.surface)
+    }
+
     // MARK: - Header
 
     private var chatHeader: some View {
@@ -542,28 +614,35 @@ struct ChatView: View {
         return "Start voice input"
     }
 
+    /// Free-tier remaining-messages banner. Lives in `bottomChrome`
+    /// alongside the other chat-level banners rather than inside
+    /// `inputBar` — avoids stacking a coral-tinted row directly atop
+    /// the coral-bordered TextField, which read as an inline error
+    /// (BUG-06). Returns `nil` when the banner shouldn't render.
+    @ViewBuilder
+    private var remainingMessagesBanner: some View {
+        if tier == .free, let gate = usageGateManager {
+            let remaining = gate.remainingChatMessages
+            if remaining <= 5 {
+                HStack(spacing: 6) {
+                    Image(systemName: remaining == 0 ? "exclamationmark.circle.fill" : "info.circle.fill")
+                        .font(.system(size: 12))
+                    Text(remaining == 0
+                        ? "No messages remaining this month"
+                        : "\(remaining) message\(remaining == 1 ? "" : "s") remaining this month")
+                        .font(AppFonts.caption(11))
+                }
+                .foregroundColor(remaining <= 2 ? AppColors.coral : AppColors.textMuted)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+                .background(remaining <= 2 ? AppColors.coral.opacity(0.06) : AppColors.surface.opacity(0.5))
+            }
+        }
+    }
+
     private var inputBar: some View {
         VStack(spacing: 0) {
-            // Free tier remaining messages indicator
-            if tier == .free, let gate = usageGateManager {
-                let remaining = gate.remainingChatMessages
-                if remaining <= 5 {
-                    HStack(spacing: 6) {
-                        Image(systemName: remaining == 0 ? "exclamationmark.circle.fill" : "info.circle.fill")
-                            .font(.system(size: 12))
-                        Text(remaining == 0
-                            ? "No messages remaining this month"
-                            : "\(remaining) message\(remaining == 1 ? "" : "s") remaining this month")
-                            .font(AppFonts.caption(11))
-                    }
-                    .foregroundColor(remaining <= 2 ? AppColors.coral : AppColors.textMuted)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity)
-                    .background(remaining <= 2 ? AppColors.coral.opacity(0.06) : AppColors.surface.opacity(0.5))
-                }
-            }
-
             // Recording indicator banner
             if speechRecognizer.isRecording {
                 HStack(spacing: 8) {
@@ -933,6 +1012,21 @@ struct ChatView: View {
 
     // MARK: - Task Builder Helpers
 
+    /// Yields past the 250ms `withAnimation` duration used on chip-bar
+    /// growth (`taskBuilder.start()` / `.reset()`) so the VStack has
+    /// finished its re-layout before we bump `wizardScrollTick` — which
+    /// drives an unconditional scroll-to-bottom in
+    /// `ConversationMessages`. At 50ms the scroll fired against a
+    /// still-animating inset and the new bubble briefly flashed under
+    /// the chip bar (BUG-02). 300ms covers the animation + one frame.
+    @MainActor
+    private func scrollAfterWizardStep() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            wizardScrollTick += 1
+        }
+    }
+
     private func handleTaskBuilderTitleInput(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -942,6 +1036,7 @@ struct ChatView: View {
         inputText = ""
         speechRecognizer.transcript = ""
         isInputFocused = false
+        scrollAfterWizardStep()
     }
 
     private func handleTaskBuilderChip(_ chip: TaskBuilderChip) {
@@ -960,13 +1055,19 @@ struct ChatView: View {
             taskManager?.addTask(task)
             insertLocalMessage(role: .assistant, text: "✅ Task created: \"\(task.title)\"")
             Haptics.success()
-            taskBuilder.reset()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                taskBuilder.reset()
+            }
+            scrollAfterWizardStep()
             return
         }
 
         if taskBuilder.step == .confirm && chip.value == "cancel" {
             insertLocalMessage(role: .assistant, text: "Task creation cancelled.")
-            taskBuilder.reset()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                taskBuilder.reset()
+            }
+            scrollAfterWizardStep()
             return
         }
 
@@ -976,6 +1077,7 @@ struct ChatView: View {
         if taskBuilder.isActive {
             insertLocalMessage(role: .assistant, text: taskBuilder.promptMessage)
         }
+        scrollAfterWizardStep()
     }
 
     private func insertLocalMessage(role: MessageRole, text: String) {
@@ -1402,14 +1504,25 @@ private struct ConversationMessages: View {
     let conversationID: String
     let isAITyping: Bool
     let suppressJumpButton: Bool
+    /// Monotonic counter bumped by the parent after a wizard-initiated
+    /// insert (chip tap, title submit, wizard start/reset). Drives an
+    /// unconditional scroll-to-bottom so user-driven wizard replies are
+    /// always visible, regardless of where `isNearBottom` currently is.
+    var wizardScrollTick: Int = 0
 
     @Query private var messages: [ChatMessage]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(conversationID: String, isAITyping: Bool, suppressJumpButton: Bool = false) {
+    init(
+        conversationID: String,
+        isAITyping: Bool,
+        suppressJumpButton: Bool = false,
+        wizardScrollTick: Int = 0
+    ) {
         self.conversationID = conversationID
         self.isAITyping = isAITyping
         self.suppressJumpButton = suppressJumpButton
+        self.wizardScrollTick = wizardScrollTick
         let convoID = conversationID
         self._messages = Query(
             filter: #Predicate<ChatMessage> { $0.conversationID == convoID },
@@ -1493,21 +1606,17 @@ private struct ConversationMessages: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
-                // Reserve extra space only when the jump-to-bottom
-                // button will actually appear. At the bottom of the
-                // transcript, or while any banner is suppressing the
-                // button, the 12pt baseline matches the chip-bar
-                // breathing room. `.animation(nil, value:)` cancels
-                // the inherited animation on the overlay-fade modifier
-                // below so the padding changes discretely — without
-                // this, the last message slides 60pt whenever the
-                // anchor crosses the viewport edge (QA BUG-01).
-                // Collapsing when `suppressJumpButton` is true closes
-                // the gap a banner would otherwise leave beneath the
-                // reserved space (QA BUG-03).
-                .padding(.bottom, (isNearBottom || suppressJumpButton) ? 12 : 72)
-                .animation(nil, value: isNearBottom)
-                .animation(nil, value: suppressJumpButton)
+                // Constant 72pt bottom padding — always reserves room
+                // for the jump-to-bottom button's 44pt target + 28pt
+                // breathing room, regardless of whether the button is
+                // currently shown. The prior `isNearBottom ? 12 : 72`
+                // toggle produced a 60pt content jump the moment the
+                // 1pt sentinel crossed the viewport edge (BUG-07 in the
+                // current round; BUG-02 of the previous round). The
+                // cost is ~60pt of empty space below the last message
+                // while at bottom — visually similar to Messages.app's
+                // composer breathing room and not read as dead space.
+                .padding(.bottom, 72)
             }
             // Pin the scroll view's resting position to the bottom of
             // content. This handles two problems in one:
@@ -1624,6 +1733,22 @@ private struct ConversationMessages: View {
                     }
                     isNearBottom = true
                 }
+            }
+            // Wizard-driven scroll. The parent bumps `wizardScrollTick`
+            // ~50ms after inserting a wizard reply — long enough for
+            // the bottom safe-area inset to have grown (chip-bar swap
+            // or taskBuilder activation) — so `scrollTo` runs against
+            // the settled inset height and the newest bubble never
+            // flashes behind the chip bar (BUG-01). Unconditional: the
+            // user just tapped a chip; show them the result regardless
+            // of their prior reading position.
+            .onChange(of: wizardScrollTick) { _, _ in
+                guard let last = messages.last,
+                      last.conversationID == conversationID else { return }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                }
+                isNearBottom = true
             }
         }
     }
