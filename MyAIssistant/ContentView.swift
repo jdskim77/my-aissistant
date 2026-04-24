@@ -43,34 +43,6 @@ struct ContentView: View {
     }
     private var selectedTab: Tab { Tab(rawValue: selectedTabRaw) ?? .coach }
 
-    /// Single tab-bar inset: CustomTabBar is the `.safeAreaInset(.bottom)`
-    /// content of the TabView itself. No overlay, no per-tab spacer.
-    /// The bar self-sizes, so its rendered height and the reservation
-    /// can't drift. When `shouldHideTabBarForKeyboard` is true the
-    /// view builder emits nothing — the inset collapses to 0pt and
-    /// default keyboard avoidance lifts the composer flush with the
-    /// keyboard top.
-    ///
-    /// Do NOT reintroduce a separate spacer or `.overlay` alongside
-    /// this. The prior "overlay + per-tab `.safeAreaInset { Color
-    /// .clear(60pt) }`" pattern created a 34pt dead band (visible on
-    /// iPhone 16 Pro): the overlay's foreground rendered above the
-    /// home-indicator safe area while the spacer reserved 60pt above
-    /// that same safe area — double-counting. This unified inset
-    /// eliminates the mismatch.
-    @ViewBuilder
-    private var tabBarInset: some View {
-        if !shouldHideTabBarForKeyboard {
-            CustomTabBar(
-                selectedTab: selectedTabBinding,
-                coachBadge: unreactedCount
-            )
-            .transition(.opacity)
-        } else {
-            EmptyView()
-        }
-    }
-
     private var hasCompletedOnboarding: Bool {
         profiles.first?.onboardingCompleted ?? false
     }
@@ -111,21 +83,36 @@ struct ContentView: View {
         // tore down the non-selected subtree, which the QA audit flagged
         // as BUG-01/02/15.
         //
-        // CustomTabBar is the `.safeAreaInset(.bottom)` of the TabView
-        // itself. Children inherit the inset via SwiftUI's safe-area
-        // propagation, so each tab's content sits flush above the bar.
-        // This replaces the previous "overlay + per-tab spacer" pattern,
-        // which dead-banded 34pt on iPhone 16 Pro because the overlay
-        // covered the home-indicator safe area while the per-tab spacer
-        // reserved 60pt above it — double-counting (see tabBarInset).
-        TabView(selection: selectedTabBinding) {
-            ChatView().tag(Tab.coach)
-            HomeView(selectedTab: selectedTabBinding).tag(Tab.home)
-            CompassTabView().tag(Tab.compass)
-            SettingsView().tag(Tab.settings)
+        // `VStack { TabView; CustomTabBar }` is the correct bottom-
+        // chrome pattern on iOS 17: TabView with `.toolbar(.hidden,
+        // for: .tabBar)` does NOT propagate its own `.safeAreaInset`
+        // or `.overlay` down to the child tabs' safe-area stacks —
+        // they still see the window safe area. Any overlay-plus-
+        // spacer attempt ends in either a dead band above the bar
+        // (spacer out of sync with overlay coordinate space) or
+        // children rendering behind the bar (spacer missing). Making
+        // CustomTabBar a VStack sibling means each tab's natural
+        // layout ends at the TabView's bottom edge — flush with the
+        // tab bar's top — with no cross-tab coordination. The bar's
+        // background still carries `.ignoresSafeArea(edges: .bottom)`
+        // so the surface fill covers the home indicator.
+        VStack(spacing: 0) {
+            TabView(selection: selectedTabBinding) {
+                ChatView().tag(Tab.coach)
+                HomeView(selectedTab: selectedTabBinding).tag(Tab.home)
+                CompassTabView().tag(Tab.compass)
+                SettingsView().tag(Tab.settings)
+            }
+            .toolbar(.hidden, for: .tabBar)
+
+            if !shouldHideTabBarForKeyboard {
+                CustomTabBar(
+                    selectedTab: selectedTabBinding,
+                    coachBadge: unreactedCount
+                )
+                .transition(.opacity)
+            }
         }
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) { tabBarInset }
         .tint(AppColors.accent)
         .sheet(isPresented: $showingFocusTimer) {
             FocusTimerView(workMinutes: focusDuration)
