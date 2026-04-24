@@ -162,6 +162,20 @@ protocol NudgeTriggerRule: Sendable {
     /// Minimum time between successive firings of this rule.
     var cooldown: TimeInterval { get }
 
+    /// Whether this rule may fire during the user's configured quiet
+    /// hours when the evaluation is triggered by foreground (i.e. the
+    /// user is already in the app and the nudge surfaces as an in-app
+    /// pinned card, not a push notification). Default `false` —
+    /// quiet hours are respected. Override to `true` for rules whose
+    /// semantic overlaps the quiet-hour window by design (e.g.
+    /// `WindowedHabitRule` with a user's explicit `.night` habit —
+    /// QA BUG-QA-02 would otherwise silently drop every night nudge).
+    var bypassesQuietHoursWhenForeground: Bool { get }
+
     /// Evaluate a snapshot; return a candidate if the rule should fire.
     func evaluate(context: NudgeEvalContext) -> NudgeCandidate?
+}
+
+extension NudgeTriggerRule {
+    var bypassesQuietHoursWhenForeground: Bool { false }
 }

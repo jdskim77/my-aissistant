@@ -29,6 +29,16 @@ struct WindowedHabitRule: NudgeTriggerRule {
         Double(AppConstants.nudgeWindowedHabitCooldownHours) * 3600
     }
 
+    /// A user's `.night` habit overlaps the default quiet-hours window
+    /// (21..8) almost entirely. Respecting quiet hours for this rule
+    /// would silently dead-class every night nudge — the user
+    /// explicitly set a night window, so surfacing an in-app pinned
+    /// card during those hours is consistent with their intent. We
+    /// still respect quiet hours for scheduled (BGTask) triggers so we
+    /// don't wake the device at midnight; only foreground in-app
+    /// delivery bypasses. QA BUG-QA-02.
+    var bypassesQuietHoursWhenForeground: Bool { true }
+
     func evaluate(context: NudgeEvalContext) -> NudgeCandidate? {
         // 1. Filter out habits already nudged today. Per-habit-per-day
         //    dedupe — the engine's category cooldown is belt-and-

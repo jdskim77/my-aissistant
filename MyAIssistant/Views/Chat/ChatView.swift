@@ -30,7 +30,35 @@ struct ChatView: View {
         // enum's raw value directly — catches enum renames at compile
         // time. Fix for BUG-03.
         let deliveredRaw = NudgeStatus.delivered.rawValue
-        return allRecentNudges.first { $0.statusRaw == deliveredRaw && $0.userResponseRaw == nil }
+        return allRecentNudges.first { candidate in
+            guard candidate.statusRaw == deliveredRaw,
+                  candidate.userResponseRaw == nil else { return false }
+            // Drop a windowedHabit nudge whose target habit has been
+            // archived or deleted between firing and rendering — the
+            // "Do now" action would otherwise dead-end on a Habits list
+            // that no longer contains the habit (QA BUG-QA-05). The
+            // dropped nudge stays in storage (unchanged responseRaw) so
+            // eval harness can still see it, but the pinned card path
+            // no longer surfaces it to the user.
+            if candidate.category == .windowedHabit,
+               let habitID = candidate.suggestedActionPayload,
+               !habitID.isEmpty {
+                return windowedHabitIsActive(id: habitID)
+            }
+            return true
+        }
+    }
+
+    /// Returns true iff a non-archived `HabitItem` with this id exists.
+    /// Point-read via a 1-row fetch — cheap, and scoped to the single
+    /// habit the pinned nudge references.
+    private func windowedHabitIsActive(id: String) -> Bool {
+        var descriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.id == id && $0.archivedAt == nil }
+        )
+        descriptor.fetchLimit = 1
+        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+        return count > 0
     }
 
     /// Records a reaction on a nudge, with a fallback direct-write to
@@ -67,20 +95,18 @@ struct ChatView: View {
         )
     }
 
-    /// Handler for "Not today" on a windowedHabit nudge. Marks the
-    /// habit missed for today and records the nudge dismissed. Guards
-    /// against double-taps the same way `handleWindowedHabitDoNow` does.
-    /// Fails quietly if the habit record is gone — the dismiss still
-    /// lands so the user's tap isn't a no-op.
+    /// Handler for "Not today" on a windowedHabit nudge. Dismisses the
+    /// nudge without touching the habit's `missedDates`. Early versions
+    /// called `markMissed` here, but that meant "Not today" (a soft
+    /// defer) wrote data that the streak math interprets as a hard miss
+    /// — copy/behavior mismatch flagged in QA BUG-QA-03. Users can
+    /// still mark the habit missed explicitly from HabitsView if they
+    /// want; absent that, today's non-completion doesn't retroactively
+    /// break yesterday's streak, and the habit rolls off at midnight
+    /// with a clean slate.
     private func handleWindowedHabitSkipToday(nudge: Nudge, habitID: String) {
         guard nudge.userResponseRaw == nil else { return }
-        let descriptor = FetchDescriptor<HabitItem>(
-            predicate: #Predicate { $0.id == habitID }
-        )
-        if let habit = try? modelContext.fetch(descriptor).first {
-            habit.markMissed(for: Date())
-            modelContext.safeSave()
-        }
+        _ = habitID  // kept for symmetry with Do now; no habit-side writes.
         recordNudgeResponse(nudge: nudge, response: .dismissed)
     }
     @State private var conversationID = "main"
@@ -1935,33 +1961,19 @@ private struct PinnedNudgeCard: View {
                 // primary button; Not today is the escape hatch and
                 // reads as a plain text button.
                 //
-                // Fallback to the thumbs row if we somehow got a
-                // windowedHabit nudge without a valid habitID — the
-                // user should still be able to react instead of
-                // facing a useless-looking card.
-                HStack(spacing: 14) {
-                    Button {
-                        Haptics.selection()
-                        onDoHabitNow?(id)
-                    } label: {
-                        Label("Do now", systemImage: "checkmark.circle.fill")
-                            .font(AppFonts.bodyMedium(13))
-                            .labelStyle(.titleAndIcon)
+                // `ViewThatFits` stacks vertically at XXL Dynamic Type
+                // on narrow devices (iPhone SE) where the HStack would
+                // otherwise clip the Not-today button off-screen. QA
+                // BUG-QA-04.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 14) {
+                        windowedHabitPrimary(habitID: id)
+                        windowedHabitSecondary(habitID: id)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppColors.accent)
-                    .accessibilityLabel("Do now — open this habit")
-
-                    Button {
-                        Haptics.selection()
-                        onSkipHabitToday?(id)
-                    } label: {
-                        Text("Not today")
-                            .font(AppFonts.bodyMedium(13))
-                            .foregroundColor(AppColors.textMuted)
+                    VStack(alignment: .leading, spacing: 8) {
+                        windowedHabitPrimary(habitID: id)
+                        windowedHabitSecondary(habitID: id)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Not today — set this habit down for today")
                 }
             } else {
                 HStack(spacing: 10) {
@@ -2014,5 +2026,34 @@ private struct PinnedNudgeCard: View {
         case .windowedHabit:     return "WINDOW"
         case .safetyRoute:       return "SUPPORT"
         }
+    }
+
+    @ViewBuilder
+    private func windowedHabitPrimary(habitID: String) -> some View {
+        Button {
+            Haptics.selection()
+            onDoHabitNow?(habitID)
+        } label: {
+            Label("Do now", systemImage: "checkmark.circle.fill")
+                .font(AppFonts.bodyMedium(13))
+                .labelStyle(.titleAndIcon)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(AppColors.accent)
+        .accessibilityLabel("Do now — open this habit")
+    }
+
+    @ViewBuilder
+    private func windowedHabitSecondary(habitID: String) -> some View {
+        Button {
+            Haptics.selection()
+            onSkipHabitToday?(habitID)
+        } label: {
+            Text("Not today")
+                .font(AppFonts.bodyMedium(13))
+                .foregroundColor(AppColors.textMuted)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Not today — set this habit down for today")
     }
 }

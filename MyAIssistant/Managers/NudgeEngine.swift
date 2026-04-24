@@ -128,8 +128,14 @@ final class NudgeEngine {
         ) ?? .balanced
         guard frequency != .off else { return }
 
-        // 6. Quiet hours — same-day suppression.
-        if isQuietHours(at: Date()) { return }
+        // 6. Quiet hours — captured here but applied per-rule so
+        //    rules that explicitly opt in to foreground bypass
+        //    (WindowedHabitRule with a user's .night window) can still
+        //    fire an in-app pinned card during quiet hours. Scheduled
+        //    (BGTask) triggers always respect quiet hours regardless of
+        //    the bypass flag — we never wake the device at midnight.
+        //    QA BUG-QA-02.
+        let quietNow = isQuietHours(at: Date())
 
         // 7. Daily + hourly caps.
         guard withinFrequencyCaps(frequency: frequency) else { return }
@@ -148,6 +154,16 @@ final class NudgeEngine {
             // rule's output. Skip before rule.evaluate so we don't
             // even build a candidate.
             if silencedCategories.contains(rule.id.rawValue) { continue }
+
+            // Per-rule quiet-hours gate. Default: respect. Override
+            // `bypassesQuietHoursWhenForeground` on a rule returns
+            // true to allow foreground-only bypass (in-app card,
+            // not push). BGTask-triggered evaluations always respect
+            // quiet hours.
+            if quietNow {
+                let bypass = rule.bypassesQuietHoursWhenForeground && trigger == .foreground
+                if !bypass { continue }
+            }
 
             guard !isRuleInCooldown(rule) else { continue }
 
@@ -417,6 +433,11 @@ final class NudgeEngine {
 
         return habits.compactMap { habit -> WindowedHabitSnapshot? in
             guard let window = habit.timeWindow else { return nil }
+            // Non-target days filter (QA BUG-QA-01): a M/W/F habit must
+            // not nudge on a Tuesday just because the morning window is
+            // open. Without this gate the rule fires on every day of
+            // the week regardless of the habit's targetDays setting.
+            guard habit.targetDays.appliesTo(date: now) else { return nil }
             guard habit.windowState(at: now, calendar: calendar) == .inWindow else { return nil }
             guard window.isPastMidpoint(hour: hour) else { return nil }
             guard !habit.isCompletedOn(now) else { return nil }
