@@ -247,9 +247,12 @@ struct HomeView: View {
 
     /// Habits not yet completed today — the "needs attention" set. Sorted by
     /// active streak so a 12-day streak at risk sits above a brand-new habit.
+    /// Excludes habits the user explicitly marked missed today — those live
+    /// in the HabitsView missed section and should NOT take up a Home slot
+    /// where they'd compete with still-actionable habits (BUG-09).
     private var habitsToDoToday: [HabitItem] {
         let today = Calendar.current.startOfDay(for: Date())
-        return activeHabits.filter { !$0.isCompletedOn(today) }
+        return activeHabits.filter { !$0.isCompletedOn(today) && !$0.isMissedOn(today) }
             .sorted { $0.currentStreak() > $1.currentStreak() }
     }
 
@@ -258,6 +261,39 @@ struct HomeView: View {
     private var habitsDoneToday: [HabitItem] {
         let today = Calendar.current.startOfDay(for: Date())
         return activeHabits.filter { $0.isCompletedOn(today) }
+    }
+
+    /// Boundary hours the habits TimelineView should fire on: window
+    /// transitions (2, 6, 11, 16, 20) across the next ~48 hours. Keeps
+    /// the expensive sort + streak-walk work to ~10×/day instead of
+    /// 1440× with `.periodic(by: 60)` (BUG-03).
+    fileprivate static func habitWindowBoundaryDates(from reference: Date,
+                                                      calendar: Calendar = .current) -> [Date] {
+        let start = calendar.startOfDay(for: reference)
+        let hours = [2, 6, 11, 16, 20]
+        var dates: [Date] = []
+        for dayOffset in 0...1 {
+            guard let dayStart = calendar.date(byAdding: .day, value: dayOffset, to: start) else { continue }
+            for hour in hours {
+                if let d = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: dayStart),
+                   d > reference {
+                    dates.append(d)
+                }
+            }
+        }
+        return dates.sorted()
+    }
+
+    /// VoiceOver label matching HabitsView's pattern — announces the
+    /// window state so screen-reader users don't miss the opacity cue
+    /// (ui-ux.md §2.5: color alone never carries meaning). (BUG-06.)
+    fileprivate static func habitAccessibilityLabel(for habit: HabitItem,
+                                                     state: HabitWindowState) -> String {
+        var label = habit.title
+        if state == .outOfWindow, let window = habit.timeWindow {
+            label += ", \(window.label) habit, outside its window"
+        }
+        return label
     }
 
     private var tomorrowTasks: [TaskItem] {
@@ -1677,8 +1713,37 @@ struct HomeView: View {
             // "Needs attention" — incomplete habits, capped at 3. Cap keeps
             // Home's visual weight stable regardless of how many habits the
             // user has defined; overflow spills into the HabitsView sheet.
-            ForEach(Array(todo.prefix(3)), id: \.id) { habit in
-                HabitRow(habit: habit, isDone: false, today: today, onFlightLaunch: flightLaunchHandler)
+            //
+            // `TimelineView(.explicit(...))` fires only at window-boundary
+            // hours (2/6/11/16/20) plus day boundaries — at most ~10×/day
+            // vs 1440× with `.periodic(by: 60)`. `today` is recomputed
+            // inside the closure from `timeline.date` so a midnight
+            // crossing while Home is open correctly advances the day
+            // (BUG-15 fix for the stale-today edge).
+            TimelineView(.explicit(Self.habitWindowBoundaryDates(from: Date()))) { timeline in
+                let now = timeline.date
+                let today = Calendar.current.startOfDay(for: now)
+                // Unified sort with HabitsView (BUG-08): window bucket →
+                // streak desc → `createdAt` for stable tiebreak (BUG-07).
+                let sorted = todo.sorted { lhs, rhs in
+                    let lDim = lhs.windowState(at: now) == .outOfWindow ? 1 : 0
+                    let rDim = rhs.windowState(at: now) == .outOfWindow ? 1 : 0
+                    if lDim != rDim { return lDim < rDim }
+                    let lStreak = lhs.currentStreak()
+                    let rStreak = rhs.currentStreak()
+                    if lStreak != rStreak { return lStreak > rStreak }
+                    return lhs.createdAt < rhs.createdAt
+                }
+                VStack(spacing: 10) {
+                    ForEach(Array(sorted.prefix(3)), id: \.id) { habit in
+                        let state = habit.windowState(at: now)
+                        HabitRow(habit: habit, isDone: false, today: today, onFlightLaunch: flightLaunchHandler)
+                            // 0.6 (up from 0.5) clears WCAG 2.2 AA 3:1
+                            // UI-component contrast (BUG-06).
+                            .opacity(state == .outOfWindow ? 0.6 : 1.0)
+                            .accessibilityLabel(Self.habitAccessibilityLabel(for: habit, state: state))
+                    }
+                }
             }
 
             if todo.count > 3 {

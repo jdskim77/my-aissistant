@@ -17,6 +17,7 @@ struct HabitFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.habitManager) private var habitManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let mode: Mode
 
@@ -30,6 +31,7 @@ struct HabitFormView: View {
     @State private var frequency: HabitFrequency
     @State private var selectedDays: Set<Int>
     @State private var dimension: LifeDimension?
+    @State private var timeWindow: HabitTimeWindow?
     @State private var showDeleteConfirm = false
 
     private let colorOptions = ["#2D5016", "#1A5276", "#B8860B", "#C94B2B", "#5856D6", "#34C759", "#FF9500", "#007AFF"]
@@ -63,6 +65,7 @@ struct HabitFormView: View {
             _frequency = State(initialValue: .daily)
             _selectedDays = State(initialValue: Set(1...7))
             _dimension = State(initialValue: nil)
+            _timeWindow = State(initialValue: nil)
         case .edit(let habit):
             _title = State(initialValue: habit.title)
             _icon = State(initialValue: habit.icon)
@@ -74,6 +77,7 @@ struct HabitFormView: View {
                 _selectedDays = State(initialValue: Set(1...7))
             }
             _dimension = State(initialValue: habit.dimension)
+            _timeWindow = State(initialValue: habit.timeWindow)
         }
     }
 
@@ -227,6 +231,25 @@ struct HabitFormView: View {
                         }
                     }
 
+                    // Time of day window — picks the fuzzy 4-hour band
+                    // this habit belongs to. Controls visual emphasis
+                    // (dim outside window) and coach nudge targeting.
+                    // Streak credit is intentionally independent of
+                    // this setting — completing a morning habit at 2pm
+                    // still earns today's streak.
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Time of day")
+                            .font(AppFonts.label(12))
+                            .foregroundColor(AppColors.textMuted)
+
+                        timeWindowPicker
+
+                        Text("Shown prominently during this window. Counts toward your streak any time you complete it.")
+                            .font(AppFonts.caption(11))
+                            .foregroundColor(AppColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
                     // Delete / Archive (edit mode only)
                     if isEditing {
                         Button(role: .destructive) {
@@ -276,6 +299,68 @@ struct HabitFormView: View {
                 Text("This will permanently delete this habit and all its history.")
             }
         }
+    }
+
+    /// 5-option picker: Any time + 4 windows. SF Symbols + labels.
+    /// Adapts to Dynamic Type — LazyVGrid (2-column) at accessibility
+    /// sizes so long labels like "Afternoon" don't get truncated off
+    /// the right edge of a horizontal ScrollView (BUG-05). Below AX
+    /// sizes, horizontal scroll with visible indicators so users at
+    /// L/XL text know there's more to swipe to.
+    @ViewBuilder
+    private var timeWindowPicker: some View {
+        let options: [(label: String, symbol: String, value: HabitTimeWindow?)] = [
+            ("Any time", "clock", nil),
+            ("Morning", HabitTimeWindow.morning.sfSymbol, .morning),
+            ("Midday", HabitTimeWindow.midday.sfSymbol, .midday),
+            ("Afternoon", HabitTimeWindow.afternoon.sfSymbol, .afternoon),
+            ("Night", HabitTimeWindow.night.sfSymbol, .night)
+        ]
+        if dynamicTypeSize.isAccessibilitySize {
+            LazyVGrid(columns: Array(repeating: .init(.flexible()), count: 2), spacing: 8) {
+                ForEach(options, id: \.label) { option in
+                    timeWindowChip(option: option)
+                }
+            }
+        } else {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(options, id: \.label) { option in
+                        timeWindowChip(option: option)
+                    }
+                }
+            }
+            .scrollIndicators(.visible)
+        }
+    }
+
+    @ViewBuilder
+    private func timeWindowChip(option: (label: String, symbol: String, value: HabitTimeWindow?)) -> some View {
+        let isSelected = timeWindow == option.value
+        Button {
+            Haptics.selection()
+            timeWindow = option.value
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: option.symbol)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(option.label)
+                    .font(AppFonts.bodyMedium(13))
+                    .lineLimit(1)
+            }
+            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.horizontal, 14)
+            .background(isSelected ? Color(hex: effectiveColorHex) : AppColors.surface)
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(option.label) time window")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func dimensionPill(_ dim: LifeDimension) -> some View {
@@ -360,6 +445,7 @@ struct HabitFormView: View {
             habit.icon = icon
             habit.colorHex = colorHex
             habit.targetDays = frequency
+            habit.timeWindow = timeWindow
             // Guard: only overwrite dimensions if the user's selection
             // actually differs from the habit's current primary dimension.
             // A Save with no changes should not destroy any secondary
@@ -376,6 +462,7 @@ struct HabitFormView: View {
                 targetDays: frequency,
                 dimension: dimension
             )
+            habit.timeWindow = timeWindow
             habitManager?.save(habit)
         }
 

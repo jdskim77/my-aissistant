@@ -163,20 +163,90 @@ struct HabitsView: View {
             }
             .padding(.horizontal, 20)
 
-            ForEach(todayVisibleHabits) { habit in
-                let isDone = habit.isCompletedOn(today)
-                let appliesToday = habit.targetDays.appliesTo(date: today)
-                let canMiss = !isDone && appliesToday
-                SwipeToMissRow(
-                    enabled: canMiss,
-                    reduceMotion: reduceMotion,
-                    onCommit: { commitMiss(habit) }
-                ) {
-                    habitRowWithActions(habit, canMiss: canMiss)
+            // `TimelineView(.explicit(...))` fires only at window
+            // boundary crossings (hours 2, 6, 11, 16, 20 relative to
+            // local midnight). Unlike `.periodic(by: 60)`, it doesn't
+            // re-run the streak-by-sort comparator every minute —
+            // that was O(n·90) work per tick for a 15-habit user
+            // (BUG-03 fix).
+            TimelineView(.explicit(Self.windowBoundaryDates(from: Date()))) { timeline in
+                let now = timeline.date
+                VStack(spacing: 0) {
+                    ForEach(sortedForDisplay(todayVisibleHabits, at: now)) { habit in
+                        let isDone = habit.isCompletedOn(today)
+                        let appliesToday = habit.targetDays.appliesTo(date: today)
+                        let canMiss = !isDone && appliesToday
+                        let state = habit.windowState(at: now)
+                        SwipeToMissRow(
+                            enabled: canMiss,
+                            reduceMotion: reduceMotion,
+                            onCommit: { commitMiss(habit) }
+                        ) {
+                            habitRowWithActions(habit, canMiss: canMiss)
+                        }
+                        // `.opacity` applied on the wrapping SwipeToMissRow
+                        // so the coral "Miss" reveal layer dims too — not
+                        // just the habit row foreground (BUG-10 fix).
+                        // 0.6 (up from 0.5) clears WCAG 2.2 AA 3:1 UI-
+                        // component contrast against cream (BUG-06 part).
+                        .opacity(state == .outOfWindow ? 0.6 : 1.0)
+                        .accessibilityLabel(accessibilityLabel(for: habit, state: state))
+                    }
                 }
             }
         }
         .padding(.top, 8)
+    }
+
+    /// Unified sort with time-window awareness, matching HomeView's
+    /// policy so the two surfaces show habits in the same order:
+    /// 1. In-window / all-day habits first
+    /// 2. Out-of-window habits last
+    /// Tiebreak inside each band: streak desc (long-streak habits
+    /// surface first), then `createdAt` ascending for stable ordering
+    /// across TimelineView ticks (BUG-07, BUG-08 fix).
+    private func sortedForDisplay(_ habits: [HabitItem], at now: Date) -> [HabitItem] {
+        habits.sorted { lhs, rhs in
+            let lDim = lhs.windowState(at: now) == .outOfWindow ? 1 : 0
+            let rDim = rhs.windowState(at: now) == .outOfWindow ? 1 : 0
+            if lDim != rDim { return lDim < rDim }
+            let lStreak = lhs.currentStreak()
+            let rStreak = rhs.currentStreak()
+            if lStreak != rStreak { return lStreak > rStreak }
+            return lhs.createdAt < rhs.createdAt
+        }
+    }
+
+    /// VoiceOver label composed from the habit's state so screen-reader
+    /// users get the window info that sighted users see via opacity
+    /// (BUG-06 a11y part — opacity alone is color-only per ui-ux.md §2.5).
+    private func accessibilityLabel(for habit: HabitItem, state: HabitWindowState) -> String {
+        var label = habit.title
+        if state == .outOfWindow, let window = habit.timeWindow {
+            label += ", \(window.label) habit, outside its window"
+        }
+        return label
+    }
+
+    /// Boundary dates for the next ~48 hours that TimelineView should
+    /// fire on. Hours 2, 6, 11, 16, 20 — one per window transition +
+    /// the post-midnight night-window edge. Fires at most 10 times per
+    /// day instead of 1440 with `.periodic(by: 60)`.
+    private static func windowBoundaryDates(from reference: Date,
+                                             calendar: Calendar = .current) -> [Date] {
+        let start = calendar.startOfDay(for: reference)
+        let hours = [2, 6, 11, 16, 20]
+        var dates: [Date] = []
+        for dayOffset in 0...1 {
+            guard let dayStart = calendar.date(byAdding: .day, value: dayOffset, to: start) else { continue }
+            for hour in hours {
+                if let d = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: dayStart),
+                   d > reference {
+                    dates.append(d)
+                }
+            }
+        }
+        return dates.sorted()
     }
 
     /// Wraps `habitRow` with a VoiceOver custom action so the swipe-to-miss

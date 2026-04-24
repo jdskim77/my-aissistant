@@ -14,6 +14,14 @@ final class HabitItem {
     var reminderHour: Int?
     var reminderMinute: Int?
 
+    /// `HabitTimeWindow.rawValue` or nil for all-day. Used for nudge
+    /// targeting and visual emphasis only — **never** gates streak
+    /// credit (see `currentStreak()` invariant comment). nil preserves
+    /// legacy behavior for every habit created before this field
+    /// existed; lightweight SwiftData migration handles the additive
+    /// change without a new schema version.
+    var timeWindowRaw: String?
+
     /// Comma-separated `LifeDimension` raw values. Nil = untagged (existing
     /// habits before this field was introduced). Tagged habits feed their
     /// Compass quadrant when completed; untagged habits don't pulse.
@@ -92,6 +100,35 @@ final class HabitItem {
         set {
             missedDatesRaw = newValue.sorted().joined(separator: ",")
         }
+    }
+
+    /// Time-of-day window this habit belongs to, or nil for all-day.
+    /// Affects visual emphasis (dim outside window) and nudge targeting;
+    /// never affects streak credit.
+    @Transient
+    var timeWindow: HabitTimeWindow? {
+        get { timeWindowRaw.flatMap(HabitTimeWindow.init(rawValue:)) }
+        set { timeWindowRaw = newValue?.rawValue }
+    }
+
+    /// Computes the habit's window state at a given instant. `now` is a
+    /// parameter (not captured via `Date()` inside the body) so views can
+    /// drive the value from `TimelineView.date` for auto-re-render at
+    /// window boundaries, and tests can inject a deterministic clock.
+    /// Returns `.allDay` when the habit has no time-window set — the
+    /// legacy state for every habit created before windowing shipped.
+    ///
+    /// **Timezone is intentionally the device's current timezone, not
+    /// the one at creation time.** "Morning stretches" means mornings
+    /// where the user physically is, not mornings back home. A traveler
+    /// in Tokyo doing stretches at 7am JST sees full opacity; the same
+    /// user in PST earlier that day saw full opacity at 7am PST. This
+    /// is the behavior Thrivn's users consistently prefer over pinning
+    /// the tz to the record. (BUG-01.)
+    func windowState(at now: Date = Date(), calendar: Calendar = .current) -> HabitWindowState {
+        guard let window = timeWindow else { return .allDay }
+        let hour = calendar.component(.hour, from: now)
+        return window.contains(hour: hour) ? .inWindow : .outOfWindow
     }
 
     init(
@@ -186,6 +223,13 @@ final class HabitItem {
 
     /// Current streak counting back from today.
     /// Skips non-target days for specific-day habits (e.g., Mon/Wed/Fri).
+    ///
+    /// **Invariant — streak credit is independent of `timeWindow`.**
+    /// Completing a "morning stretches" habit at 2pm still earns today's
+    /// streak credit. The time-window is for nudge targeting and visual
+    /// emphasis only. Entangling streak math with window membership
+    /// produced goal-gradient disillusionment in the behavioral-science
+    /// review and was explicitly rejected.
     func currentStreak() -> Int {
         let cal = Calendar.current
         var streak = 0
@@ -253,6 +297,83 @@ final class HabitItem {
         }
 
         return applicable > 0 ? Double(completed) / Double(applicable) : 0
+    }
+}
+
+// MARK: - Habit Time Window
+
+/// Fuzzy 4-hour band a habit belongs to. Window membership controls
+/// visual emphasis (in-window = full opacity, out-of-window = dimmed)
+/// and nudge targeting. Streak credit is always day-scoped, never
+/// window-scoped.
+///
+/// Hour ranges are centered on the corresponding `CheckInTime.hour` so
+/// the window taxonomy aligns with the check-in slots users already
+/// know. Night is `20...23` with no post-midnight wrap in v1 — learned
+/// from dogfood before adding complexity.
+enum HabitTimeWindow: String, CaseIterable, Identifiable {
+    case morning
+    case midday
+    case afternoon
+    case night
+
+    var id: String { rawValue }
+
+    /// True when the given hour-of-day (0-23) is inside this window.
+    /// Morning/midday/afternoon are contiguous inclusive bands anchored
+    /// to the matching `CheckInTime.hour`. **Night wraps past midnight**
+    /// (20-23 + 0-1) so a bedtime habit done at 00:30 still reads as
+    /// in-window — matches the user's mental model of "late night"
+    /// (BUG-02 fix). Hours 2-5 remain outside any window: those are
+    /// sleep hours when the user is not interacting with the app.
+    func contains(hour: Int) -> Bool {
+        switch self {
+        case .morning:   return (6...10).contains(hour)
+        case .midday:    return (11...15).contains(hour)
+        case .afternoon: return (16...19).contains(hour)
+        case .night:     return hour >= 20 || hour <= 1
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .morning:   return "Morning"
+        case .midday:    return "Midday"
+        case .afternoon: return "Afternoon"
+        case .night:     return "Night"
+        }
+    }
+
+    /// SF Symbol, matching `CheckInTime.sfSymbol` so the two taxonomies
+    /// read as one unified set when displayed side by side.
+    var sfSymbol: String {
+        switch self {
+        case .morning:   return "sunrise.fill"
+        case .midday:    return "sun.max.fill"
+        case .afternoon: return "sunset.fill"
+        case .night:     return "moon.stars.fill"
+        }
+    }
+}
+
+/// Rendering state derived from a habit's `timeWindow` and the current
+/// instant. Two visual bands in v1 (per expert-review simplification);
+/// can split further in v2 if dogfood shows a need.
+enum HabitWindowState {
+    /// No time-window set; legacy behavior. Full opacity.
+    case allDay
+    /// Time-window set and current hour is inside it. Full opacity.
+    case inWindow
+    /// Time-window set and current hour is outside it. Dim (0.5 opacity).
+    case outOfWindow
+
+    /// Opacity for row rendering. Kept as a single source of truth so
+    /// the value matches everywhere a windowed habit is drawn.
+    var opacity: Double {
+        switch self {
+        case .inWindow, .allDay: return 1.0
+        case .outOfWindow:       return 0.5
+        }
     }
 }
 
