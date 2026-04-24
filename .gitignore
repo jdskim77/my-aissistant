@@ -47,3 +47,6 @@ playground.xcworkspace
 .claude/logs/
 .claude/settings.local.json
 .claude/settings.json.bak-*
+
+# Local project status scratchpad (not shipped)
+STATUS.md
