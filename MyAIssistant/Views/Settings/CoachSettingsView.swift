@@ -144,6 +144,7 @@ struct CoachSettingsView: View {
         case .habitSlip:         return "Habit slips"
         case .postCheckInAction: return "After a check-in"
         case .goalCheckpoint:    return "Goal checkpoints"
+        case .windowedHabit:     return "Mid-window reminders"
         case .safetyRoute:       return "Safety resources"  // not shown in UI; kept for exhaustiveness
         }
     }

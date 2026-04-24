@@ -358,6 +358,15 @@ final class NudgeEngine {
         // PostLowMoodCheckInRule (spec §2).
         let nudgedIDs = fetchNudgedCheckInIDs()
 
+        // Windowed habits that are currently open for a "still open"
+        // nudge: timeWindow set, non-archived, in-window right now AND
+        // past the window's midpoint AND not completed today. Filter in
+        // two stages — `#Predicate` narrows to non-archived + windowed
+        // at the DB layer, then in-memory does the clock-dependent
+        // checks (which can't live in a predicate and would be invalid
+        // to cache at the DB level anyway).
+        let activeWindowedHabits = fetchActiveWindowedHabits(now: now)
+
         return NudgeEvalContext(
             now: now,
             dimensionScores: dimensionScores,
@@ -367,10 +376,39 @@ final class NudgeEngine {
             calendarGaps: gaps,
             openTaskCountByDimension: openByDim,
             habitConsecutiveMisses: [:],         // unused by current rules
+            activeWindowedHabits: activeWindowedHabits,
             nudgedCheckInIDs: nudgedIDs,
             recentCheckIns: recentSnapshots,
             isAppForeground: trigger == .foreground
         )
+    }
+
+    /// Fetch non-archived, windowed habits and filter them down to the
+    /// subset that's currently eligible for a windowed-habit nudge:
+    /// in-window right now, past the window's midpoint, not completed
+    /// today. Returned as `WindowedHabitSnapshot` values (no live model
+    /// references) so the context stays `Sendable` and rule code can
+    /// never mutate the store.
+    private func fetchActiveWindowedHabits(now: Date) -> [WindowedHabitSnapshot] {
+        let descriptor = FetchDescriptor<HabitItem>(
+            predicate: #Predicate { $0.archivedAt == nil && $0.timeWindowRaw != nil }
+        )
+        let habits = (try? modelContext.fetch(descriptor)) ?? []
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: now)
+
+        return habits.compactMap { habit -> WindowedHabitSnapshot? in
+            guard let window = habit.timeWindow else { return nil }
+            guard habit.windowState(at: now, calendar: calendar) == .inWindow else { return nil }
+            guard window.isPastMidpoint(hour: hour) else { return nil }
+            guard !habit.isCompletedOn(now) else { return nil }
+            return WindowedHabitSnapshot(
+                habitID: habit.id,
+                title: habit.title,
+                window: window,
+                currentStreak: habit.currentStreak()
+            )
+        }
     }
 
     /// Recent completed `CheckInRecord` rows, newest first. Bounded by

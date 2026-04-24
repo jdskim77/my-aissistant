@@ -65,6 +65,15 @@ actor NudgeComposer {
             let duration = candidate.templateParams["duration"] ?? "a few minutes"
             return "You usually do \(habit) around now. Skip today or \(duration)?"
 
+        case .windowedHabit:
+            // Fired mid-window by `WindowedHabitRule` when a timed habit is
+            // still open past the window's midpoint. `habitTitle` is the only
+            // required param; a missing value falls back to a generic line
+            // rather than crashing — same grace pattern as every other
+            // category here.
+            let habit = candidate.templateParams["habitTitle"] ?? "that habit"
+            return "Still open: \(habit). 5 min now, or skip for today?"
+
         case .postCheckInAction:
             // Bucket-switched copy for PostLowMoodCheckInRule (spec §4).
             // MVP ships two buckets; the default branch handles an

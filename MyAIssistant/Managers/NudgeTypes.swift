@@ -70,6 +70,13 @@ struct NudgeEvalContext: Sendable {
     /// Consecutive missed days by habit id (for habit-slip detection).
     let habitConsecutiveMisses: [String: Int]
 
+    /// Uncompleted habits currently inside their time window AND past the
+    /// window's midpoint — i.e. ready for a "still open" nudge. Populated
+    /// once per evaluation pass so rules stay deterministic (no `Date()`
+    /// calls in rule code). Consumed by `WindowedHabitRule` (Phase 2
+    /// Step 2); present in Step 1 as pure context plumbing.
+    let activeWindowedHabits: [WindowedHabitSnapshot]
+
     /// Check-in record IDs for which a nudge has already been emitted.
     /// Used by `PostLowMoodCheckInRule` for record-scoped dedupe so the
     /// SAME check-in doesn't fire a second nudge after a user dismiss.
@@ -106,6 +113,22 @@ struct CalendarGap: Sendable {
     let start: Date
     let end: Date
     var minutes: Int { max(0, Int(end.timeIntervalSince(start) / 60)) }
+}
+
+/// A habit that's currently in its time-window, past the window's
+/// midpoint, and not yet completed today. Passed by reference to
+/// rules via `NudgeEvalContext.activeWindowedHabits`; stamped into
+/// `Nudge.suggestedActionPayload` so the "Do now" / "Skip today"
+/// actions can resolve back to the habit record.
+struct WindowedHabitSnapshot: Sendable {
+    let habitID: String
+    let title: String
+    let window: HabitTimeWindow
+    /// Current streak length — used by the rule's tie-break when
+    /// multiple windowed habits are active simultaneously (highest
+    /// streak-at-risk wins). Snapshot at evaluation time; not a
+    /// live reference.
+    let currentStreak: Int
 }
 
 // MARK: - Trigger Rule Protocol

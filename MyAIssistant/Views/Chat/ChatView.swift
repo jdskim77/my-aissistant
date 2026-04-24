@@ -1920,6 +1920,7 @@ private struct PinnedNudgeCard: View {
         case .habitSlip:         return "HABIT"
         case .postCheckInAction: return "CHECK-IN"
         case .goalCheckpoint:    return "GOAL"
+        case .windowedHabit:     return "HABIT"
         case .safetyRoute:       return "SUPPORT"
         }
     }

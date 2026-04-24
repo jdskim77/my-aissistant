@@ -115,6 +115,10 @@ enum NudgeCategory: String, Codable, CaseIterable {
     case habitSlip
     case postCheckInAction
     case goalCheckpoint
+    /// Uncompleted habit currently in its time-window and past the window's
+    /// midpoint. Distinct from `habitSlip` (multi-day miss streak) — this
+    /// fires *within* the window, before the day is lost.
+    case windowedHabit
     /// Safety-route nudge emitted when the on-device crisis classifier flags
     /// the most recent check-in / chat text. Copy is hardcoded
     /// (see `SafeResourceCopy`), never LLM-generated, and never silenceable

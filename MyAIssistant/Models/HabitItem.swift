@@ -344,6 +344,31 @@ enum HabitTimeWindow: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The hour that divides this window's first half from its second
+    /// half. Consumed by the nudge engine to decide "the window is half
+    /// gone and the habit is still open" — earlier firing would be
+    /// impatient, later firing wouldn't leave room to act.
+    var midpointHour: Int {
+        switch self {
+        case .morning:   return 8    // 6-10, midpoint 8
+        case .midday:    return 13   // 11-15, midpoint 13
+        case .afternoon: return 18   // 16-19, midpoint 17.5 → 18
+        case .night:     return 23   // 20-1, midpoint 22.5 → 23
+        }
+    }
+
+    /// True when the given hour-of-day is at-or-past this window's
+    /// midpoint. Wrap-aware for `.night`: past-midpoint covers `23` and
+    /// the post-midnight tail `0...1`.
+    func isPastMidpoint(hour: Int) -> Bool {
+        switch self {
+        case .morning, .midday, .afternoon:
+            return hour >= midpointHour
+        case .night:
+            return hour >= 23 || hour <= 1
+        }
+    }
+
     /// SF Symbol, matching `CheckInTime.sfSymbol` so the two taxonomies
     /// read as one unified set when displayed side by side.
     var sfSymbol: String {
