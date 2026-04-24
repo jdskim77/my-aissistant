@@ -132,6 +132,13 @@ enum NudgeAction: String, Codable, CaseIterable {
     case startFocusTimer
     case openCheckIn
     case openChat
+    /// Navigate to the Habits screen focused on a specific habit (habit
+    /// id in `suggestedActionPayload`). Used by `WindowedHabitRule`'s
+    /// "Do now" action.
+    case openHabit
+    /// Mark the habit (id in `suggestedActionPayload`) as missed for
+    /// today. Used by `WindowedHabitRule`'s "Skip today" action.
+    case skipHabitToday
     case none
 }
 

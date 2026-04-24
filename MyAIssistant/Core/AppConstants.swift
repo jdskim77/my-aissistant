@@ -167,6 +167,16 @@ enum AppConstants {
     static let nudgePostLowMoodMinMinutesSinceCheckIn = 10
     static let nudgePostLowMoodStreakMin = 3
 
+    /// Phase 2 Step 2 — windowed-habit rule tunables (TIME_WINDOW_HABITS_PLAN §2).
+    ///
+    /// The rule fires mid-window for a habit that's open and in-window.
+    /// Category cooldown is short (2h) so a different habit in a later
+    /// window can still fire the same day; *per-habit-per-day* dedupe is
+    /// enforced separately by scanning today's windowedHabit nudges for
+    /// the habitID — the category cooldown is just belt-and-suspenders
+    /// against rapid back-to-back same-category firing.
+    static let nudgeWindowedHabitCooldownHours = 2
+
     /// Quiet-hours defaults (spec §7.2).
     static let nudgeQuietHoursStartHour = 21 // 9 PM
     static let nudgeQuietHoursEndHour = 8    // 8 AM

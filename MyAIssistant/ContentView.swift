@@ -127,6 +127,17 @@ struct ContentView: View {
             guard let destination = notification.userInfo?["destination"] as? String else { return }
             navigateToDestination(destination)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openHabitsFocused)) { _ in
+            // "Do now" on a windowed-habit nudge lives on the Coach tab;
+            // route the user to Home so the focused Habits sheet
+            // (subscribed on HomeView) has a presenter. Resign first
+            // responder so the ChatView composer doesn't trail a dangling
+            // keyboard into Today — mirrors navigateToDestination.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            if selectedTabRaw != Tab.home.rawValue {
+                selectedTabRaw = Tab.home.rawValue
+            }
+        }
         // `keyboardWillChangeFrame` instead of `willShow`/`willHide`
         // so hardware/Bluetooth keyboards and undocked/floating iPad
         // keyboards (which report a zero- or off-screen frame) don't

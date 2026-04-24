@@ -73,9 +73,14 @@ struct NudgeEvalContext: Sendable {
     /// Uncompleted habits currently inside their time window AND past the
     /// window's midpoint — i.e. ready for a "still open" nudge. Populated
     /// once per evaluation pass so rules stay deterministic (no `Date()`
-    /// calls in rule code). Consumed by `WindowedHabitRule` (Phase 2
-    /// Step 2); present in Step 1 as pure context plumbing.
+    /// calls in rule code). Consumed by `WindowedHabitRule`.
     let activeWindowedHabits: [WindowedHabitSnapshot]
+
+    /// `HabitItem.id` values that have already been nudged today via a
+    /// `windowedHabit` nudge. Enforces per-habit-per-day dedupe so the
+    /// same habit is never nudged twice the same day, even after the
+    /// category cooldown expires. Populated once per evaluation pass.
+    let nudgedHabitIDsToday: Set<String>
 
     /// Check-in record IDs for which a nudge has already been emitted.
     /// Used by `PostLowMoodCheckInRule` for record-scoped dedupe so the

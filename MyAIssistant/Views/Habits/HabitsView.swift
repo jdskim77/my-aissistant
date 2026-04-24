@@ -12,6 +12,21 @@ struct HabitsView: View {
     @State private var undoDismissTask: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// When non-nil, the view scrolls to this habit on first appear and
+    /// briefly pulses a highlight ring around its row. Set when the
+    /// sheet is opened by a windowed-habit "Do now" action so the user
+    /// lands on the checkbox for the right habit. Consumed once — the
+    /// onAppear logic runs the focus dance and then `focusPulseActive`
+    /// auto-resets when the pulse completes.
+    let focusedHabitID: String?
+
+    @State private var focusPulseActive: Bool = false
+    @State private var focusPulseTask: Task<Void, Never>?
+
+    init(focusedHabitID: String? = nil) {
+        self.focusedHabitID = focusedHabitID
+    }
+
     private let calendar = Calendar.current
 
     private var activeHabits: [HabitItem] {
@@ -43,24 +58,27 @@ struct HabitsView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        if activeHabits.isEmpty {
-                            emptyState
-                        } else {
-                            todaySection
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            if activeHabits.isEmpty {
+                                emptyState
+                            } else {
+                                todaySection
 
-                            if !missedTodayHabits.isEmpty {
-                                missedSection
+                                if !missedTodayHabits.isEmpty {
+                                    missedSection
+                                }
+
+                                weeklyGrid
+                                statsSection
                             }
-
-                            weeklyGrid
-                            statsSection
                         }
+                        .padding(.bottom, 100)
                     }
-                    .padding(.bottom, 100)
+                    .background(AppColors.background.ignoresSafeArea())
+                    .onAppear { runFocusDanceIfNeeded(proxy: proxy) }
                 }
-                .background(AppColors.background.ignoresSafeArea())
 
                 if let last = lastMissed {
                     undoToast(for: last)
@@ -190,6 +208,22 @@ struct HabitsView: View {
                         // 0.6 (up from 0.5) clears WCAG 2.2 AA 3:1 UI-
                         // component contrast against cream (BUG-06 part).
                         .opacity(state == .outOfWindow ? 0.6 : 1.0)
+                        .overlay(
+                            // Brief accent-colored ring when this row is the
+                            // focused habit (from a windowedHabit "Do now"
+                            // action). Painted as an overlay so opacity and
+                            // swipe gestures on the underlying row aren't
+                            // affected. Reduce Motion users still get the
+                            // ring — it just doesn't animate in/out.
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(AppColors.accent, lineWidth: 2)
+                                .opacity(focusPulseActive && habit.id == focusedHabitID ? 1.0 : 0.0)
+                                .padding(.horizontal, 12)
+                                .allowsHitTesting(false)
+                                .animation(reduceMotion ? nil : .easeOut(duration: 0.35),
+                                           value: focusPulseActive)
+                        )
+                        .id(habit.id)
                         .accessibilityLabel(accessibilityLabel(for: habit, state: state))
                     }
                 }
@@ -200,6 +234,40 @@ struct HabitsView: View {
 
     /// Unified sort with time-window awareness, matching HomeView's
     /// policy so the two surfaces show habits in the same order:
+    /// Scroll to the focused habit row (if any) and run a brief accent-
+    /// ring pulse so the user can spot it. Called from `.onAppear` on
+    /// the ScrollView. No-op when `focusedHabitID` is nil, the id
+    /// doesn't match any visible habit, or a prior pulse is still
+    /// running (the task guard prevents overlap if the view disappears
+    /// and re-appears quickly).
+    private func runFocusDanceIfNeeded(proxy: ScrollViewProxy) {
+        guard let id = focusedHabitID,
+              !id.isEmpty,
+              activeHabits.contains(where: { $0.id == id }),
+              focusPulseTask == nil else { return }
+
+        focusPulseTask = Task { @MainActor in
+            // Small settle delay so the initial layout + any sheet
+            // presentation animation has finished before we scroll.
+            // Without this the ScrollViewProxy's target can still be
+            // measuring zero-height during first paint and the
+            // scrollTo is a no-op.
+            try? await Task.sleep(for: .milliseconds(150))
+            withAnimation(.easeOut(duration: 0.35)) {
+                proxy.scrollTo(id, anchor: .center)
+            }
+            // Give the scroll a moment to land, then fade the ring in.
+            try? await Task.sleep(for: .milliseconds(300))
+            focusPulseActive = true
+            // Hold the ring visible long enough to register, then fade.
+            try? await Task.sleep(for: .milliseconds(1_200))
+            focusPulseActive = false
+            // Clear the task handle so a re-appear (e.g. dismissed-and-
+            // reopened sheet with a different habit) can run again.
+            focusPulseTask = nil
+        }
+    }
+
     /// 1. In-window / all-day habits first
     /// 2. Out-of-window habits last
     /// Tiebreak inside each band: streak desc (long-streak habits

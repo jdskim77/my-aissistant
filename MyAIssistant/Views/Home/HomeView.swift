@@ -17,6 +17,10 @@ enum HomeSheet: Identifiable {
     /// calendar icon in the Today header or deep-link from TASK
     /// notifications.
     case schedule
+    /// Habits sheet opened with a focus target — scroll to and briefly
+    /// pulse a specific habit row. Used by the windowed-habit "Do now"
+    /// action so the user lands on the checkbox for the right habit.
+    case habitsFocused(habitID: String)
 
     var id: String {
         switch self {
@@ -26,6 +30,7 @@ enum HomeSheet: Identifiable {
         case .addHabit: return "addHabit"
         case .reschedule(let task): return "reschedule-\(task.id)"
         case .schedule: return "schedule"
+        case .habitsFocused(let habitID): return "habitsFocused-\(habitID)"
         }
     }
 }
@@ -35,6 +40,12 @@ extension Notification.Name {
     /// tapped and we want Today to auto-open the Schedule sheet.
     /// HomeView subscribes and sets `activeSheet = .schedule`.
     static let openScheduleSheet = Notification.Name("openScheduleSheet")
+
+    /// Posted by ChatView (Coach tab) when the user taps "Do now" on a
+    /// windowedHabit nudge. Carries `["habitID": String]`. ContentView
+    /// switches to Home; HomeView opens the Habits sheet focused on
+    /// the habit so the checkbox is one tap away.
+    static let openHabitsFocused = Notification.Name("openHabitsFocused")
 }
 
 struct HomeView: View {
@@ -865,25 +876,11 @@ struct HomeView: View {
             // data arrived while another tab was active.
             promoteFromDay0IfNeeded()
 
-            // Generate contextual AI greeting
-            let todayTasks = taskManager?.todayTasks() ?? []
-            let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
-            // Habits 2+ target-days overdue
-            let slippingHabits = activeHabits
-                .compactMap { habit -> (title: String, days: Int)? in
-                    guard let days = habit.daysSinceLastCompletion(), days >= 2 else { return nil }
-                    return (habit.title, days)
-                }
-                .sorted { $0.days > $1.days }
-                .map(\.title)
-            let isNew = greetingManager.generateGreetingIfNeeded(
-                todayTaskCount: todayTasks.count,
-                completedTodayCount: todayTasks.filter(\.done).count,
-                highPriorityTitles: highPriority.map(\.title),
-                completionRate: patternEngine?.completionRate() ?? 0,
-                streak: patternEngine?.currentStreak() ?? 0,
-                slippingHabitTitles: slippingHabits
-            )
+            // Generate contextual AI greeting — extracted into a helper so the
+            // sprawling `.onAppear` closure stays inside Swift's type-check
+            // budget (the inline form tripped "unable to type-check in
+            // reasonable time" after the HomeSheet enum grew another case).
+            let isNew = runGreetingGeneration()
 
             // Pulse the orb briefly on fresh greetings
             if isNew {
@@ -926,6 +923,8 @@ struct HomeView: View {
                 HabitsView()
             case .addHabit:
                 HabitFormView(mode: .create)
+            case .habitsFocused(let habitID):
+                HabitsView(focusedHabitID: habitID)
             case .reschedule(let task):
                 rescheduleSheet(for: task)
             case .schedule:
@@ -961,6 +960,9 @@ struct HomeView: View {
             } else {
                 activeSheet = .schedule
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openHabitsFocused)) { note in
+            handleOpenHabitsFocused(note: note)
         }
         .alert("Delete Task", isPresented: Binding(
             get: { taskToDelete != nil },
@@ -1842,6 +1844,57 @@ struct HomeView: View {
         )
     }
 
+
+    // MARK: - Greeting generation
+
+    /// Pulls the inputs for `GreetingManager` and returns whether a new
+    /// greeting was produced. Extracted from `.onAppear` purely to keep
+    /// that closure's type-check cost below Swift's per-closure budget.
+    private func runGreetingGeneration() -> Bool {
+        let todayTasks = taskManager?.todayTasks() ?? []
+        let highPriority = taskManager?.highPriorityUpcoming(limit: 1) ?? []
+        let slippingPairs: [(title: String, days: Int)] = activeHabits.compactMap { habit in
+            guard let days = habit.daysSinceLastCompletion(), days >= 2 else { return nil }
+            return (habit.title, days)
+        }
+        let slippingHabits: [String] = slippingPairs
+            .sorted { $0.days > $1.days }
+            .map { $0.title }
+        return greetingManager.generateGreetingIfNeeded(
+            todayTaskCount: todayTasks.count,
+            completedTodayCount: todayTasks.filter(\.done).count,
+            highPriorityTitles: highPriority.map(\.title),
+            completionRate: patternEngine?.completionRate() ?? 0,
+            streak: patternEngine?.currentStreak() ?? 0,
+            slippingHabitTitles: slippingHabits
+        )
+    }
+
+    // MARK: - Notification handlers
+
+    /// Extracted from `.onReceive(.openHabitsFocused)` to keep the
+    /// `body` closure within the Swift type-checker's sanity budget
+    /// (the inline version tripped "unable to type-check in reasonable
+    /// time" after adding a second sheet-coordination handler).
+    ///
+    /// If any sheet is already up, close it first and defer the focused
+    /// open by ~400ms — same dance as `.openScheduleSheet` — so the
+    /// single-slot `.sheet(item:)` limitation doesn't silently drop
+    /// the new presentation.
+    private func handleOpenHabitsFocused(note: Notification) {
+        guard let habitID = note.userInfo?["habitID"] as? String,
+              !habitID.isEmpty else { return }
+        let targetID = HomeSheet.habitsFocused(habitID: habitID).id
+        if activeSheet != nil && activeSheet?.id != targetID {
+            activeSheet = nil
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                activeSheet = .habitsFocused(habitID: habitID)
+            }
+        } else {
+            activeSheet = .habitsFocused(habitID: habitID)
+        }
+    }
 
     // MARK: - Reschedule Sheet
 

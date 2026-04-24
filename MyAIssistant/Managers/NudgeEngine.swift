@@ -46,6 +46,7 @@ final class NudgeEngine {
     /// rule set without rebuilding the whole engine.
     private var rules: [NudgeTriggerRule] = [
         PostLowMoodCheckInRule(),
+        WindowedHabitRule(),
         WeakDimensionWithOpenWindowRule()
     ]
 
@@ -367,6 +368,12 @@ final class NudgeEngine {
         // to cache at the DB level anyway).
         let activeWindowedHabits = fetchActiveWindowedHabits(now: now)
 
+        // HabitIDs already nudged today via `windowedHabit`. Record-scoped
+        // dedupe so the same habit isn't nudged twice the same day even
+        // after the category cooldown expires. Scoped to today only — the
+        // same habit CAN be nudged again tomorrow if still open.
+        let nudgedHabitIDsToday = fetchNudgedHabitIDsToday(now: now)
+
         return NudgeEvalContext(
             now: now,
             dimensionScores: dimensionScores,
@@ -377,6 +384,7 @@ final class NudgeEngine {
             openTaskCountByDimension: openByDim,
             habitConsecutiveMisses: [:],         // unused by current rules
             activeWindowedHabits: activeWindowedHabits,
+            nudgedHabitIDsToday: nudgedHabitIDsToday,
             nudgedCheckInIDs: nudgedIDs,
             recentCheckIns: recentSnapshots,
             isAppForeground: trigger == .foreground
@@ -436,6 +444,38 @@ final class NudgeEngine {
     /// freshness window is 90 min. Any check-in older than a week is
     /// already outside the rule's reach; including those rows would be
     /// a growing-over-time linear scan with no benefit. Fix for BUG-15.
+    /// Returns the set of `HabitItem.id` values referenced by any
+    /// `windowedHabit` nudge created today (user's current calendar day,
+    /// in the device timezone). Populated once per evaluation pass so
+    /// `WindowedHabitRule` stays deterministic.
+    ///
+    /// Scoped to calendar day (not a rolling 24h) because "one per day"
+    /// is the user-facing promise — a habit nudged at 11pm yesterday
+    /// shouldn't block a legitimate morning nudge 8 hours later.
+    /// Includes pending/delivered/responded alike; a failed-to-deliver
+    /// pending nudge still counts because the rule fired on it.
+    private func fetchNudgedHabitIDsToday(now: Date) -> Set<String> {
+        let categoryRaw = NudgeCategory.windowedHabit.rawValue
+        let startOfToday = Calendar.current.startOfDay(for: now)
+        var descriptor = FetchDescriptor<Nudge>(
+            predicate: #Predicate { nudge in
+                nudge.categoryRaw == categoryRaw &&
+                nudge.createdAt >= startOfToday
+            }
+        )
+        // Daily cap is 2 — 50 is comfortably over-provisioned.
+        descriptor.fetchLimit = 50
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        var ids = Set<String>()
+        for nudge in rows {
+            guard let data = nudge.triggerContextJSON.data(using: .utf8),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let habitID = dict["habitID"] as? String else { continue }
+            ids.insert(habitID)
+        }
+        return ids
+    }
+
     private func fetchNudgedCheckInIDs() -> Set<String> {
         let categoryRaw = NudgeCategory.postCheckInAction.rawValue
         let since = Date().addingTimeInterval(-7 * 24 * 3600)
