@@ -769,6 +769,13 @@ struct ChatView: View {
                     .contentShape(Rectangle())
                 }
                 .accessibilityLabel(actionButtonAccessibilityLabel)
+                // Cmd+Return sends when there's text — Return alone
+                // inserts a newline (TextField has axis: .vertical for
+                // multi-line dictation). Gives hardware-keyboard users
+                // a discoverable send path; soft-keyboard users are
+                // unaffected because `.keyboardShortcut` only surfaces
+                // on external keyboards. QA BUG-08.
+                .keyboardShortcut(.return, modifiers: .command)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)

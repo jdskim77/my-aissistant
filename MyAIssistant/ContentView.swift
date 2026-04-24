@@ -34,13 +34,18 @@ struct ContentView: View {
     /// the bar's shadow halo.
     @ScaledMetric(relativeTo: .body) private var tabBarBaseHeight: CGFloat = 60
 
-    /// Only hide the tab bar for keyboard when the user is on the
-    /// Coach tab — that's the only tab whose input bar sits flush
-    /// against the tab bar. On Home/Compass/Settings the keyboard
-    /// rises over unrelated content; hiding global navigation there
-    /// just removes an affordance users still need. QA BUG-01.
+    /// Hide the tab bar on every tab while the keyboard is up.
+    /// Matches iOS convention (Messages, Mail, Slack all hide their
+    /// tab bar / bottom chrome during keyboard) and is required to
+    /// avoid a 60pt dead strip above the keyboard: the tab-bar
+    /// overlay rises with the keyboard via default avoidance while
+    /// the per-tab `tabBarSpacer` inset also reserves 60pt, so a
+    /// keyboard-up state on Home/Compass/Settings would otherwise
+    /// show the tab bar floating above a visible empty band. Keyboard
+    /// is dismissed on tab switch (see `.onChange` below) so the bar
+    /// is back by the time the user lands. QA BUG-02/03.
     private var shouldHideTabBarForKeyboard: Bool {
-        isKeyboardVisible && selectedTab == .coach
+        isKeyboardVisible
     }
 
     private var selectedTabBinding: Binding<Tab> {
@@ -58,10 +63,18 @@ struct ContentView: View {
     /// to 0 when the keyboard is visible so the input bar sits flush
     /// with the keyboard top — the overlay bar also hides behind the
     /// keyboard so no chrome is lost.
+    ///
+    /// Do NOT add `.ignoresSafeArea(.keyboard, edges: .bottom)` here.
+    /// That modifier pins the spacer to the window's physical bottom
+    /// (below the keyboard), which pushes the tab content's safe-area-
+    /// inset boundary below the keyboard — the composer TextField
+    /// ends up clipped behind the keyboard. Default SwiftUI keyboard
+    /// avoidance correctly rides the inset above the keyboard; the
+    /// `shouldHideTabBarForKeyboard` collapse handles the "no dead
+    /// space" case without needing to opt out of keyboard safe-area.
     private var tabBarSpacer: some View {
         Color.clear
             .frame(height: shouldHideTabBarForKeyboard ? 0 : tabBarBaseHeight)
-            .ignoresSafeArea(.keyboard, edges: .bottom)
             .animation(.easeOut(duration: 0.2), value: shouldHideTabBarForKeyboard)
     }
 
@@ -191,6 +204,16 @@ struct ContentView: View {
             withAnimation(.easeOut(duration: 0.2)) {
                 isKeyboardVisible = false
             }
+        }
+        .onChange(of: selectedTabRaw) { _, _ in
+            // Dismiss keyboard on tab switch so the destination tab
+            // renders with its chrome in the normal state. Without
+            // this, a Coach-tab composition followed by a fast tap
+            // on Home could leave the keyboard up briefly, tab bar
+            // hidden on the new tab, then a flicker when the
+            // keyboard finally resigned. QA BUG-04.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                            to: nil, from: nil, for: nil)
         }
         .onAppear {
             // Handle cold-launch: app was opened by tapping a notification while not running
