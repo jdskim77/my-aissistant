@@ -20,19 +20,6 @@ struct ContentView: View {
     /// willShow with zero-height frames) don't falsely trigger the
     /// tab-bar hide.
     @State private var isKeyboardVisible = false
-    /// Height reservation matching the CustomTabBar's actual intrinsic
-    /// height above the bottom safe area. Bar content = 12pt top
-    /// padding + 28pt icon frame + 4pt spacing + ~13pt caption label +
-    /// 4pt bottom padding = 61pt at default Dynamic Type. The icon is
-    /// pinned via `.font(.system(size: 22))`, so only the label scales.
-    /// `AppFonts.caption(11)` resolves to `UIFontMetrics.default`
-    /// which is body-relative — matching the reservation's scaling
-    /// basis to `.body` keeps the two curves aligned. Baseline 60pt
-    /// (down from the prior 64pt) removes the constant over-reservation
-    /// that was showing up as dead space between the input bar and the
-    /// tab bar top; a 1pt under-reservation at default is absorbed by
-    /// the bar's shadow halo.
-    @ScaledMetric(relativeTo: .body) private var tabBarBaseHeight: CGFloat = 60
 
     /// Hide the tab bar on every tab while the keyboard is up.
     /// Matches iOS convention (Messages, Mail, Slack all hide their
@@ -56,26 +43,32 @@ struct ContentView: View {
     }
     private var selectedTab: Tab { Tab(rawValue: selectedTabRaw) ?? .coach }
 
-    /// Height reservation for the CustomTabBar inside each tab's
-    /// content. Scales with Dynamic Type via `tabBarBaseHeight`
-    /// (@ScaledMetric) so Larger Accessibility Sizes don't
-    /// reintroduce the composer occlusion this fix closed. Collapses
-    /// to 0 when the keyboard is visible so the input bar sits flush
-    /// with the keyboard top — the overlay bar also hides behind the
-    /// keyboard so no chrome is lost.
+    /// Single tab-bar inset: CustomTabBar is the `.safeAreaInset(.bottom)`
+    /// content of the TabView itself. No overlay, no per-tab spacer.
+    /// The bar self-sizes, so its rendered height and the reservation
+    /// can't drift. When `shouldHideTabBarForKeyboard` is true the
+    /// view builder emits nothing — the inset collapses to 0pt and
+    /// default keyboard avoidance lifts the composer flush with the
+    /// keyboard top.
     ///
-    /// Do NOT add `.ignoresSafeArea(.keyboard, edges: .bottom)` here.
-    /// That modifier pins the spacer to the window's physical bottom
-    /// (below the keyboard), which pushes the tab content's safe-area-
-    /// inset boundary below the keyboard — the composer TextField
-    /// ends up clipped behind the keyboard. Default SwiftUI keyboard
-    /// avoidance correctly rides the inset above the keyboard; the
-    /// `shouldHideTabBarForKeyboard` collapse handles the "no dead
-    /// space" case without needing to opt out of keyboard safe-area.
-    private var tabBarSpacer: some View {
-        Color.clear
-            .frame(height: shouldHideTabBarForKeyboard ? 0 : tabBarBaseHeight)
-            .animation(.easeOut(duration: 0.2), value: shouldHideTabBarForKeyboard)
+    /// Do NOT reintroduce a separate spacer or `.overlay` alongside
+    /// this. The prior "overlay + per-tab `.safeAreaInset { Color
+    /// .clear(60pt) }`" pattern created a 34pt dead band (visible on
+    /// iPhone 16 Pro): the overlay's foreground rendered above the
+    /// home-indicator safe area while the spacer reserved 60pt above
+    /// that same safe area — double-counting. This unified inset
+    /// eliminates the mismatch.
+    @ViewBuilder
+    private var tabBarInset: some View {
+        if !shouldHideTabBarForKeyboard {
+            CustomTabBar(
+                selectedTab: selectedTabBinding,
+                coachBadge: unreactedCount
+            )
+            .transition(.opacity)
+        } else {
+            EmptyView()
+        }
     }
 
     private var hasCompletedOnboarding: Bool {
@@ -118,44 +111,21 @@ struct ContentView: View {
         // tore down the non-selected subtree, which the QA audit flagged
         // as BUG-01/02/15.
         //
-        // CustomTabBar is an overlay + per-tab `safeAreaInset` spacer
-        // (not `safeAreaInset` on the TabView) because on iOS 17
-        // TabView does NOT propagate its own bottom inset into each
-        // tab's safe-area stack — children still see the original
-        // window safe area, so ChatView's input bar was rendering
-        // underneath the tab bar (user report 2026-04-23, second
-        // occurrence). The per-tab spacer reserves real layout space
-        // inside each child; the overlay draws the actual chrome.
+        // CustomTabBar is the `.safeAreaInset(.bottom)` of the TabView
+        // itself. Children inherit the inset via SwiftUI's safe-area
+        // propagation, so each tab's content sits flush above the bar.
+        // This replaces the previous "overlay + per-tab spacer" pattern,
+        // which dead-banded 34pt on iPhone 16 Pro because the overlay
+        // covered the home-indicator safe area while the per-tab spacer
+        // reserved 60pt above it — double-counting (see tabBarInset).
         TabView(selection: selectedTabBinding) {
-            ChatView()
-                .safeAreaInset(edge: .bottom, spacing: 0) { tabBarSpacer }
-                .tag(Tab.coach)
-            HomeView(selectedTab: selectedTabBinding)
-                .safeAreaInset(edge: .bottom, spacing: 0) { tabBarSpacer }
-                .tag(Tab.home)
-            CompassTabView()
-                .safeAreaInset(edge: .bottom, spacing: 0) { tabBarSpacer }
-                .tag(Tab.compass)
-            SettingsView()
-                .safeAreaInset(edge: .bottom, spacing: 0) { tabBarSpacer }
-                .tag(Tab.settings)
+            ChatView().tag(Tab.coach)
+            HomeView(selectedTab: selectedTabBinding).tag(Tab.home)
+            CompassTabView().tag(Tab.compass)
+            SettingsView().tag(Tab.settings)
         }
         .toolbar(.hidden, for: .tabBar)
-        .overlay(alignment: .bottom) {
-            // Hide the tab bar entirely while the keyboard is up. iOS
-            // keyboard avoidance lifts the overlay above the keyboard,
-            // which ends up occluding ChatView's composer (user report
-            // 2026-04-23, 3rd pass). Matches Messages/Mail — the tab
-            // bar is gone while typing and returns on dismiss.
-            if !shouldHideTabBarForKeyboard {
-                CustomTabBar(
-                    selectedTab: selectedTabBinding,
-                    coachBadge: unreactedCount
-                )
-                .transition(.opacity)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: shouldHideTabBarForKeyboard)
+        .safeAreaInset(edge: .bottom, spacing: 0) { tabBarInset }
         .tint(AppColors.accent)
         .sheet(isPresented: $showingFocusTimer) {
             FocusTimerView(workMinutes: focusDuration)
@@ -196,12 +166,20 @@ struct ContentView: View {
             // composer but didn't trip the old 100pt gate. Still
             // rejects iPad's floating assistive bar (~44pt) and pure
             // hardware-keyboard cases (0pt). (BUG-04)
-            withAnimation(.easeOut(duration: 0.2)) {
+            //
+            // Animate in lockstep with the system keyboard: pull the
+            // duration the keyboard is actually using out of userInfo
+            // rather than hardcoding 0.2s. Matches the keyboard curve
+            // closely enough that the tab-bar inset and the keyboard
+            // slide as one.
+            let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+            withAnimation(.easeInOut(duration: duration)) {
                 isKeyboardVisible = overlap > 60
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            withAnimation(.easeOut(duration: 0.2)) {
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { note in
+            let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+            withAnimation(.easeInOut(duration: duration)) {
                 isKeyboardVisible = false
             }
         }
