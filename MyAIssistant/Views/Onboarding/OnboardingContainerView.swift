@@ -27,8 +27,10 @@ struct OnboardingContainerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar with back button (on screens 1-8, not Welcome or Notification)
-            if currentPage > 0 && currentPage < totalPages - 1 {
+            // Top bar with back button (on screens 2-8). Skipped on Welcome (no
+            // back), Sign-in (page 1 — backing here would soft-trap into
+            // Welcome with no chrome), and Notification (final step).
+            if currentPage > 1 && currentPage < totalPages - 1 {
                 topBar
             }
 
@@ -148,6 +150,8 @@ struct OnboardingContainerView: View {
                     .animation(.spring(response: 0.3), value: currentPage)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Onboarding step \(currentPage)")
     }
 
     // MARK: - Navigation

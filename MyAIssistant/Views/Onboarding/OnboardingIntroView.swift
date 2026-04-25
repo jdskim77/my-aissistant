@@ -19,7 +19,7 @@ struct OnboardingIntroView: View {
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
 
-                Text("Rate 4 areas of your life.\nThere are no wrong answers — this is your starting point.")
+                Text("Rate 4 areas of your life.\nYour honest answer is the only useful one.")
                     .font(AppFonts.body(16))
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
@@ -32,7 +32,7 @@ struct OnboardingIntroView: View {
             Spacer()
 
             Button(action: onContinue) {
-                Text("Let's Go")
+                Text("Continue")
                     .font(AppFonts.bodyMedium(17))
                     .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)

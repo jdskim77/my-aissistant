@@ -58,9 +58,12 @@ struct OnboardingCompassRevealView: View {
                         Image(systemName: "lightbulb.fill")
                             .font(AppFonts.body(16))
                             .foregroundColor(AppColors.gold)
-                        Text("Looks like **\(weakestLabel)** could use some attention. Let's start there.")
+                        (Text("Looks like ")
+                            + Text(weakestLabel).fontWeight(.semibold)
+                            + Text(" could use some attention. Let's start there."))
                             .font(AppFonts.body(14))
                             .foregroundColor(AppColors.textSecondary)
+                            .accessibilityLabel("Looks like \(weakestLabel) could use some attention. Let's start there.")
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)

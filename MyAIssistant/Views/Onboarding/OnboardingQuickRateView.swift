@@ -4,6 +4,7 @@ struct OnboardingQuickRateView: View {
     @Binding var ratings: [LifeDimension: Int]
     let onContinue: () -> Void
     @State private var appeared = false
+    @ScaledMetric(relativeTo: .caption) private var ratingLabelHeight: CGFloat = 26
 
     private let dimensions: [(LifeDimension, String, String)] = [
         (.physical,  "How's your body feeling lately?",
@@ -32,19 +33,18 @@ struct OnboardingQuickRateView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    VStack(spacing: 6) {
-                        Text("Rate Your Life")
-                            .font(AppFonts.display(24))
-                            .foregroundColor(AppColors.textPrimary)
+                    Text("Rate Your Life")
+                        .font(AppFonts.display(24))
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.top, 20)
 
-                        Text("No wrong answers — go with your gut.")
-                            .font(AppFonts.body(14))
-                            .foregroundColor(AppColors.textMuted)
-                    }
-                    .padding(.top, 20)
-
-                    ForEach(dimensions, id: \.0) { dim, question, subtitle in
-                        dimensionCard(dim: dim, question: question, subtitle: subtitle)
+                    ForEach(Array(dimensions.enumerated()), id: \.element.0) { index, item in
+                        dimensionCard(
+                            dim: item.0,
+                            question: item.1,
+                            subtitle: item.2,
+                            index: index
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -81,7 +81,7 @@ struct OnboardingQuickRateView: View {
 
     // MARK: - Dimension Card
 
-    private func dimensionCard(dim: LifeDimension, question: String, subtitle: String) -> some View {
+    private func dimensionCard(dim: LifeDimension, question: String, subtitle: String, index: Int) -> some View {
         VStack(spacing: 14) {
             // Header
             HStack(spacing: 10) {
@@ -91,14 +91,17 @@ struct OnboardingQuickRateView: View {
                     .frame(width: 36, height: 36)
                     .background(dim.color.opacity(0.12))
                     .cornerRadius(10)
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(dim.label)
                         .font(AppFonts.heading(16))
                         .foregroundColor(AppColors.textPrimary)
+                        .accessibilityHidden(true)
                     Text(subtitle)
                         .font(AppFonts.caption(12))
                         .foregroundColor(AppColors.textMuted)
+                        .accessibilityHidden(true)
                 }
                 Spacer()
             }
@@ -108,6 +111,7 @@ struct OnboardingQuickRateView: View {
                 .font(AppFonts.body(15))
                 .foregroundColor(AppColors.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(true)
 
             // Rating circles
             HStack(spacing: 0) {
@@ -124,7 +128,7 @@ struct OnboardingQuickRateView: View {
                             ZStack {
                                 Circle()
                                     .fill(isSelected ? dim.color : AppColors.surface)
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: 52, height: 52)
                                     .overlay(
                                         Circle()
                                             .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
@@ -132,7 +136,7 @@ struct OnboardingQuickRateView: View {
                                     .scaleEffect(isSelected ? 1.1 : 1.0)
 
                                 Text("\(option.score)")
-                                    .font(AppFonts.bodyMedium(16))
+                                    .font(AppFonts.bodyMedium(18))
                                     .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                             }
 
@@ -141,7 +145,8 @@ struct OnboardingQuickRateView: View {
                                 .foregroundColor(isSelected ? dim.color : AppColors.textMuted)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
-                                .frame(height: 26)
+                                .minimumScaleFactor(0.85)
+                                .frame(height: ratingLabelHeight)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -161,5 +166,18 @@ struct OnboardingQuickRateView: View {
                     lineWidth: ratings[dim] != nil ? 1.5 : 1
                 )
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(cardAccessibilityLabel(dim: dim, subtitle: subtitle, index: index))
+    }
+
+    private func cardAccessibilityLabel(dim: LifeDimension, subtitle: String, index: Int) -> String {
+        let position = "Rating \(index + 1) of \(dimensions.count)"
+        let current: String
+        if let score = ratings[dim] {
+            current = "Currently rated \(score)"
+        } else {
+            current = "Not yet rated"
+        }
+        return "\(dim.label). \(subtitle). \(position). \(current)."
     }
 }

@@ -14,6 +14,7 @@ struct WelcomeView: View {
                     .foregroundColor(AppColors.accent)
                     .scaleEffect(appeared ? 1 : 0.5)
                     .opacity(appeared ? 1 : 0)
+                    .accessibilityHidden(true)
 
                 VStack(spacing: 12) {
                     Text("Thrivn")
@@ -71,6 +72,7 @@ struct WelcomeView: View {
             Text(icon)
                 .font(AppFonts.icon(28))
                 .frame(width: 44)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -82,5 +84,7 @@ struct WelcomeView: View {
             }
         }
         .padding(.horizontal, 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle)")
     }
 }

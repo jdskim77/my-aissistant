@@ -58,7 +58,7 @@ struct OnboardingSuggestedTasksView: View {
 
             VStack(spacing: 12) {
                 Button(action: onContinue) {
-                    Text(addedIndices.isEmpty ? "Skip for Now" : "Continue")
+                    Text(addedIndices.isEmpty ? "Not now" : "Continue")
                         .font(AppFonts.bodyMedium(17))
                         .foregroundColor(addedIndices.isEmpty ? AppColors.textSecondary : AppColors.onAccent)
                         .frame(maxWidth: .infinity)

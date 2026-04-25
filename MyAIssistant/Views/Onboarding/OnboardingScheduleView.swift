@@ -4,6 +4,8 @@ struct OnboardingScheduleView: View {
     let onFinish: () -> Void
     @State private var appeared = false
     @State private var showConfetti = false
+    @State private var didTriggerConfetti = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let timeSlots: [(CheckInTime, String)] = [
         (.morning,   "Start your day with intention"),
@@ -20,10 +22,13 @@ struct OnboardingScheduleView: View {
                 ZStack {
                     if showConfetti {
                         confettiEffect
+                            .opacity(reduceMotion ? 0 : 1)
+                            .animation(.easeOut(duration: 0.3), value: reduceMotion)
                     }
                     Text("🔔")
                         .font(AppFonts.icon(56))
                         .scaleEffect(appeared ? 1 : 0.5)
+                        .accessibilityHidden(true)
                 }
 
                 Text("I'll check in 4 times a day")
@@ -81,7 +86,7 @@ struct OnboardingScheduleView: View {
             Spacer()
 
             Button(action: onFinish) {
-                Text("Get Started!")
+                Text("Let's begin")
                     .font(AppFonts.bodyMedium(17))
                     .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
@@ -104,9 +109,17 @@ struct OnboardingScheduleView: View {
             withAnimation(.easeOut(duration: 0.6)) {
                 appeared = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                withAnimation { showConfetti = true }
-            }
+        }
+        .task {
+            // One-shot guard — TabView keeps adjacent pages mounted, so .task
+            // can re-fire on revisit. Also bail on reduceMotion before sleeping.
+            guard !reduceMotion, !didTriggerConfetti else { return }
+            didTriggerConfetti = true
+            try? await Task.sleep(for: .milliseconds(400))
+            // If the view was dismissed (or the user navigated away) during
+            // the sleep, don't mutate state on a backgrounded view.
+            guard !Task.isCancelled else { return }
+            withAnimation { showConfetti = true }
         }
     }
 

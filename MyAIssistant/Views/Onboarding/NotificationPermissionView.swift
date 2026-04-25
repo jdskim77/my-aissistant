@@ -172,7 +172,30 @@ struct NotificationPermissionView: View {
         guard !requesting else { return }
         requesting = true
         Task {
-            let granted = (try? await UNUserNotificationCenter.current()
+            // Re-check current status before requesting. The user may have
+            // toggled the permission in Settings and returned faster than the
+            // scenePhase observer could refresh `authStatus`. Calling
+            // `requestAuthorization` on an already-determined status either
+            // no-ops (denied) or returns true (authorized) without showing UI
+            // — we want to honor the real state instead of overwriting it.
+            let center = UNUserNotificationCenter.current()
+            let currentSettings = await center.notificationSettings()
+            if currentSettings.authorizationStatus != .notDetermined {
+                await MainActor.run {
+                    requesting = false
+                    authStatus = currentSettings.authorizationStatus
+                    switch currentSettings.authorizationStatus {
+                    case .authorized, .provisional, .ephemeral:
+                        Haptics.success()
+                    default:
+                        Haptics.light()
+                    }
+                    onAllow()
+                }
+                return
+            }
+
+            let granted = (try? await center
                 .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
             await MainActor.run {
                 requesting = false
@@ -191,11 +214,12 @@ struct NotificationPermissionView: View {
     private func benefitRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(AppFonts.bodyMedium(18))
+                .font(AppFonts.bodyMedium(20))
                 .foregroundColor(AppColors.accent)
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
                 .background(AppColors.accent.opacity(0.12))
-                .cornerRadius(10)
+                .cornerRadius(12)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -207,5 +231,7 @@ struct NotificationPermissionView: View {
             }
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle)")
     }
 }
