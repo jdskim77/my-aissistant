@@ -23,6 +23,18 @@ struct OnboardingContainerView: View {
     /// Save error surfaced via alert when SwiftData persistence fails.
     @State private var saveErrorMessage: String?
 
+    /// Closing-screen stage. Owned here (not inside OnboardingClosingView)
+    /// so it survives any TabView re-mount of the closing page (QA
+    /// BUG-01). Without this lift, a backtrack-and-return path would
+    /// reset the state machine and re-show Apple Sign-in even after
+    /// successful auth.
+    @State private var closingStage: OnboardingClosingView.Stage = .signIn
+
+    /// Last-advance timestamp for the navigation throttle (QA BUG-10).
+    /// Rapid back/forward taps could otherwise interrupt a mid-flight
+    /// `withAnimation` and oscillate `currentPage`.
+    @State private var lastNavAt: Date = .distantPast
+
     /// Step 2 restructure: 10-screen flow → 7-screen "value-first" flow.
     /// Sign-in moved to the closing step ("Sign in to save your Compass"
     /// is a stronger CTA than upfront auth), Name Capture absorbed into
@@ -89,8 +101,11 @@ struct OnboardingContainerView: View {
 
                 // Screen 6: Combined SignIn + Name + Notification (closing
                 // step). Internal state machine — see OnboardingClosingView.
+                // Stage is bound from the container so a re-mount doesn't
+                // reset the user's progress through the sub-stages.
                 OnboardingClosingView(
                     capturedName: $capturedName,
+                    stage: $closingStage,
                     onComplete: { completeOnboarding() }
                 )
                 .tag(6)
@@ -101,7 +116,12 @@ struct OnboardingContainerView: View {
             // validate input. Swipe let users bypass e.g. NameCapture
             // validation or the intent required before screen 6. Pages
             // still advance programmatically via `advance()`.
-            .gesture(DragGesture().onChanged { _ in })
+            //
+            // `simultaneousGesture` runs alongside the page TabView's
+            // own DragGesture and consumes the events deterministically,
+            // closing the iOS-version-dependent gap where a plain
+            // `.gesture` would lose precedence (QA BUG-07).
+            .simultaneousGesture(DragGesture().onChanged { _ in })
             .animation(.easeInOut(duration: 0.3), value: currentPage)
         }
         .background(AppColors.background.ignoresSafeArea())
@@ -137,6 +157,7 @@ struct OnboardingContainerView: View {
     }
 
     private func advanceBy(_ steps: Int) {
+        guard !isNavThrottled() else { return }
         Haptics.light()
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = min(currentPage + steps, totalPages - 1)
@@ -145,6 +166,7 @@ struct OnboardingContainerView: View {
 
     private func goBack() {
         guard currentPage > 0 else { return }
+        guard !isNavThrottled() else { return }
         Haptics.selection()
 
         // Linear back. The Apple-name skip-special-casing from the prior
@@ -154,6 +176,17 @@ struct OnboardingContainerView: View {
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = max(0, currentPage - 1)
         }
+    }
+
+    /// Soft throttle on page navigation. Rapid back/forward taps could
+    /// otherwise interrupt a mid-flight `withAnimation` and oscillate
+    /// `currentPage` (QA BUG-10). 320ms matches the 0.3s page-transition
+    /// duration plus a small buffer.
+    private func isNavThrottled() -> Bool {
+        let now = Date()
+        if now.timeIntervalSince(lastNavAt) < 0.32 { return true }
+        lastNavAt = now
+        return false
     }
 
     // MARK: - Top Bar

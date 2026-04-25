@@ -16,6 +16,7 @@ struct NotificationPermissionView: View {
     @State private var appeared = false
     @State private var requesting = false
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,8 +114,6 @@ struct NotificationPermissionView: View {
             }
         }
     }
-
-    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - Permission state
 
@@ -251,9 +250,22 @@ struct NotificationPermissionView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("4 check-ins a day. 15 seconds each, set later in Settings.")
 
-            HStack(spacing: 8) {
-                ForEach(CheckInTime.allCases) { slot in
-                    slotPill(slot)
+            // ViewThatFits picks the horizontal row when it fits, the
+            // 2x2 grid when it doesn't (iPhone SE + XXL Dynamic Type
+            // would clip the four pills in a single row — QA BUG-04).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(CheckInTime.allCases) { slot in
+                        slotPill(slot)
+                    }
+                }
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 8),
+                    GridItem(.flexible(), spacing: 8)
+                ], spacing: 8) {
+                    ForEach(CheckInTime.allCases) { slot in
+                        slotPill(slot)
+                    }
                 }
             }
             .padding(.top, 4)

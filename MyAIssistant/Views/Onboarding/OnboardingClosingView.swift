@@ -25,11 +25,17 @@ import SwiftUI
 /// machine — no business logic of its own.
 struct OnboardingClosingView: View {
     @Binding var capturedName: String
+    /// Stage owned by the container so it survives any TabView
+    /// re-mount of this view (QA BUG-01). If the closing view re-
+    /// initialised its own `@State`, a backtrack-and-return path
+    /// would re-show Apple Sign-in even though the user already
+    /// completed it — risking duplicate backend account creation.
+    /// Keeping the stage in the container makes re-mount idempotent.
+    @Binding var stage: Stage
     let onComplete: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var stage: Stage = .signIn
-
-    enum Stage {
+    enum Stage: String {
         case signIn
         case nameConfirm
         case notification
@@ -72,7 +78,10 @@ struct OnboardingClosingView: View {
             }
         }
         .transition(.opacity)
-        .animation(.easeInOut(duration: 0.25), value: stage)
+        // Reduce Motion gate: opacity transitions are intrinsically
+        // motion-light, but explicitly disable the easeInOut so the
+        // switch lands instantly for users who opted out (QA BUG-06).
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: stage)
     }
 
     private func advance(to next: Stage) {

@@ -108,16 +108,17 @@ struct OnboardingCompassRevealView: View {
         .onAppear {
             // Snappier reveal. The old 0.8s spring with 0.3s delay made
             // the radar feel performative — this is the coach speaking,
-            // not a magic-trick reveal. Reduce Motion users skip the
-            // animation entirely (instant set).
-            if reduceMotion {
+            // not a magic-trick reveal.
+            //
+            // Reduce Motion path replaces motion with a short opacity
+            // fade per ui-ux.md §13 ("replace motion with opacity
+            // change") rather than an instant pop-in (QA BUG-05). The
+            // shorter duration matches iOS conventions for Reduce
+            // Motion fallbacks (Mail, Messages, etc.).
+            let duration: Double = reduceMotion ? 0.2 : 0.3
+            withAnimation(.easeOut(duration: duration)) {
                 appeared = true
                 revealed = true
-            } else {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    appeared = true
-                    revealed = true
-                }
             }
         }
     }
@@ -127,14 +128,20 @@ struct OnboardingCompassRevealView: View {
     private var coachVoiceCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
+                // Decorative glyph — VoiceOver would otherwise read it
+                // as "diamond" or "sparkle" before the speaker name
+                // (QA BUG-09). The explicit accessibilityLabel below
+                // provides a clean spoken identification.
                 Text("✦")
                     .font(AppFonts.bodyMedium(13))
                     .foregroundColor(AppColors.gold)
+                    .accessibilityHidden(true)
                 Text("Thrivn")
                     .font(AppFonts.label(11))
                     .foregroundColor(AppColors.gold)
                     .textCase(.uppercase)
                     .tracking(0.8)
+                    .accessibilityHidden(true)
                 Spacer()
             }
 
@@ -143,6 +150,7 @@ struct OnboardingCompassRevealView: View {
                 .foregroundColor(AppColors.textPrimary)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -153,7 +161,7 @@ struct OnboardingCompassRevealView: View {
                 .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
         )
         .cornerRadius(12)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Thrivn says: \(firstSpokenLine)")
     }
 
