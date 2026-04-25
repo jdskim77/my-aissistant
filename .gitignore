@@ -50,3 +50,6 @@ playground.xcworkspace
 
 # Local project status scratchpad (not shipped)
 STATUS.md
+
+# Local audit / scratch docs (HTML reports generated outside the build)
+docs/
