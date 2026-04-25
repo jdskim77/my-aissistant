@@ -14,7 +14,6 @@
 		0DAC1C8DE678C1A505F6139E /* CheckInSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */; };
 		0F3E8B87E19C3F1C921999DF /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000008000000 /* UsageTracker.swift */; };
 		1421C3325C32ABC2E421D763 /* UserDimensionPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */; };
-		1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */; };
 		16D80D0F8FFA40AA984D64D3 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000009000000 /* ThemeManager.swift */; };
 		1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FCF68B29F85C6A879DF526 /* MyStatsIntent.swift */; };
 		188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */; };
@@ -247,6 +246,7 @@
 		F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */; };
 		F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */; };
 		F2699F8D5F4CD208215F5842 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B300000006000000 /* KeychainService.swift */; };
+		F949F2227BC8824230D45570 /* OnboardingClosingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9B75A4F838A25A2337D02A /* OnboardingClosingView.swift */; };
 		FE06FDA48FBA13F28BD798A3 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006000000 /* ChatMessage.swift */; };
 		FF11223344000001 /* Breadcrumb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000002000000 /* Breadcrumb.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
@@ -528,7 +528,6 @@
 		C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartFocusIntent.swift; sourceTree = "<group>"; };
 		CB8D0046527AFECED4AC06D5 /* ShareView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
 		CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInWithAppleView.swift; sourceTree = "<group>"; };
-		CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingScheduleView.swift; sourceTree = "<group>"; };
 		D16C346B63AC3BE2254EC278 /* ModelContext+SafeSave.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "ModelContext+SafeSave.swift"; sourceTree = "<group>"; };
 		D18EADAE48EC13D3EE451116 /* WindowedHabitRule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowedHabitRule.swift; sourceTree = "<group>"; };
 		D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeEngine.swift; sourceTree = "<group>"; };
@@ -542,6 +541,7 @@
 		E4A1B2C3D4E5F6A7 /* HabitReminderCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitReminderCoordinator.swift; sourceTree = "<group>"; };
 		E900000001000000 /* MyAIssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyAIssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E972B6EABF4699BFF00E4683 /* BalanceManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceManager.swift; sourceTree = "<group>"; };
+		ED9B75A4F838A25A2337D02A /* OnboardingClosingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingClosingView.swift; sourceTree = "<group>"; };
 		EDFA4DCB3318F989EE9FDAE2 /* CheckInPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInPreference.swift; sourceTree = "<group>"; };
 		EW00000001000000 /* MyAIssistantWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MyAIssistantWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NameCaptureView.swift; sourceTree = "<group>"; };
@@ -1036,7 +1036,6 @@
 				B400000007000000 /* WelcomeView.swift */,
 				B400000010000000 /* OnboardingCompleteView.swift */,
 				27B733BF5C99A22F7A726B76 /* OnboardingSuggestedTasksView.swift */,
-				CDAF7F1EABFC302C81108E69 /* OnboardingScheduleView.swift */,
 				F1EE0011B7A8C9D3E4F50601 /* NameCaptureView.swift */,
 				F1EE0012B7A8C9D3E4F50602 /* IntentionCaptureView.swift */,
 				F1EE0013B7A8C9D3E4F50603 /* NotificationPermissionView.swift */,
@@ -1045,6 +1044,7 @@
 				4FFE04A03F83F0427F5F2FD8 /* StarterTaskPool.swift */,
 				BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */,
 				CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */,
+				ED9B75A4F838A25A2337D02A /* OnboardingClosingView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1647,7 +1647,6 @@
 				6F3EF2736BD358CA9D3B6FE4 /* NudgeBannerView.swift in Sources */,
 				B0D1764C2F7D9AC774D7F5BA /* DimensionPickerView.swift in Sources */,
 				40081F943630A1543F00E479 /* OnboardingSuggestedTasksView.swift in Sources */,
-				1642AEB0B2C2EC06C89B8197 /* OnboardingScheduleView.swift in Sources */,
 				F1EE0001B7A8C9D3E4F50601 /* NameCaptureView.swift in Sources */,
 				F1EE0002B7A8C9D3E4F50602 /* IntentionCaptureView.swift in Sources */,
 				F1EE0003B7A8C9D3E4F50603 /* NotificationPermissionView.swift in Sources */,
@@ -1679,6 +1678,7 @@
 				E60B9327BB10814543599778 /* NudgeComposer.swift in Sources */,
 				188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */,
 				EE3BB100DC30D10E55B9F95B /* WindowedHabitRule.swift in Sources */,
+				F949F2227BC8824230D45570 /* OnboardingClosingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

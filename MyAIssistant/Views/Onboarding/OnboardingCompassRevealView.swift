@@ -5,6 +5,7 @@ struct OnboardingCompassRevealView: View {
     let onContinue: () -> Void
     @State private var revealed = false
     @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var weakest: LifeDimension {
         StarterTaskPool.weakestDimension(from: ratings)
@@ -17,6 +18,27 @@ struct OnboardingCompassRevealView: View {
         case .emotional: return "your connections"
         case .spiritual: return "your contribution"
         case .practical: return "your routines"
+        }
+    }
+
+    /// The coach's first spoken line. Per dimension; deterministic. Tone:
+    /// warm, grounded, tactile — not cheerleader, not drill sergeant.
+    /// This is the user's first impression of the coach voice, so the
+    /// fallback IS the floor; we don't network-stall onboarding to dress
+    /// it up. Future iteration could swap in an AI-generated variant
+    /// with these as offline fallbacks (per Step 2 handoff §1).
+    private var firstSpokenLine: String {
+        switch weakest {
+        case .physical:
+            return "Body's pulled in. Want to start there, or somewhere else? Either is fine."
+        case .mental:
+            return "Mind's been running. Want to ease the load first, or somewhere else? Either is fine."
+        case .emotional:
+            return "Connections feel a little quiet. Want to tend that, or somewhere else? Either is fine."
+        case .spiritual:
+            return "Spirit's asking for room. Want to make some, or start somewhere else? Either is fine."
+        case .practical:
+            return "Routines look thin. Want to firm those up, or somewhere else? Either is fine."
         }
     }
 
@@ -53,24 +75,13 @@ struct OnboardingCompassRevealView: View {
                     .padding(.horizontal, 20)
                     .opacity(appeared ? 1 : 0)
 
-                    // Callout for weakest
-                    HStack(spacing: 10) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(AppFonts.body(16))
-                            .foregroundColor(AppColors.gold)
-                        (Text("Looks like ")
-                            + Text(weakestLabel).fontWeight(.semibold)
-                            + Text(" could use some attention. Let's start there."))
-                            .font(AppFonts.body(14))
-                            .foregroundColor(AppColors.textSecondary)
-                            .accessibilityLabel("Looks like \(weakestLabel) could use some attention. Let's start there.")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(AppColors.gold.opacity(0.08))
-                    .cornerRadius(12)
-                    .padding(.horizontal, 20)
-                    .opacity(appeared ? 1 : 0)
+                    // Coach voice debut. First time the user "hears" Thrivn —
+                    // gold "✦ Thrivn" header announces voice; the line below
+                    // is per-dimension and warm-grounded by hand. No network,
+                    // no LLM stall on the first impression.
+                    coachVoiceCard
+                        .padding(.horizontal, 20)
+                        .opacity(appeared ? 1 : 0)
                 }
                 .padding(.bottom, 100)
             }
@@ -95,13 +106,55 @@ struct OnboardingCompassRevealView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .onAppear {
-            withAnimation(.easeOut(duration: 0.4)) {
+            // Snappier reveal. The old 0.8s spring with 0.3s delay made
+            // the radar feel performative — this is the coach speaking,
+            // not a magic-trick reveal. Reduce Motion users skip the
+            // animation entirely (instant set).
+            if reduceMotion {
                 appeared = true
-            }
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.3)) {
                 revealed = true
+            } else {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    appeared = true
+                    revealed = true
+                }
             }
         }
+    }
+
+    // MARK: - Coach voice card
+
+    private var coachVoiceCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text("✦")
+                    .font(AppFonts.bodyMedium(13))
+                    .foregroundColor(AppColors.gold)
+                Text("Thrivn")
+                    .font(AppFonts.label(11))
+                    .foregroundColor(AppColors.gold)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+                Spacer()
+            }
+
+            Text(firstSpokenLine)
+                .font(AppFonts.body(15))
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.gold.opacity(0.08))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
+        )
+        .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Thrivn says: \(firstSpokenLine)")
     }
 
     // MARK: - Dimension Score Row

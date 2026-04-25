@@ -4,6 +4,14 @@ import UserNotifications
 struct NotificationPermissionView: View {
     let onAllow: () -> Void
     let onSkip: () -> Void
+    /// When true, shows the 4 check-in time slots inline above the
+    /// permission-priming benefit rows. Used by `OnboardingClosingView`
+    /// (the merged SignIn + Name + Notification screen — step 2 #4):
+    /// the schedule no longer earns its own destination but still
+    /// appears as context so the user knows what they're being asked
+    /// to allow notifications for. Default `false` preserves the
+    /// view's prior behavior wherever it might still be used solo.
+    var showsScheduleContext: Bool = false
 
     @State private var appeared = false
     @State private var requesting = false
@@ -33,11 +41,15 @@ struct NotificationPermissionView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 14) {
-                    benefitRow(
-                        icon: "bell.fill",
-                        title: "4 check-ins a day",
-                        subtitle: "Morning, midday, afternoon, night"
-                    )
+                    if showsScheduleContext {
+                        scheduleContext
+                    } else {
+                        benefitRow(
+                            icon: "bell.fill",
+                            title: "4 check-ins a day",
+                            subtitle: "Morning, midday, afternoon, night"
+                        )
+                    }
                     benefitRow(
                         icon: "flame.fill",
                         title: "Streak protection",
@@ -209,6 +221,62 @@ struct NotificationPermissionView: View {
                 onAllow()
             }
         }
+    }
+
+    /// Inline schedule context shown when `showsScheduleContext` is true.
+    /// Uses the canonical `CheckInTime` enum (Models/CheckIn.swift) — no
+    /// onboarding-local copies. Replaces the 4-slot dedicated screen
+    /// from the prior 10-screen flow (step 2 #4).
+    private var scheduleContext: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 14) {
+                Image(systemName: "bell.fill")
+                    .font(AppFonts.bodyMedium(20))
+                    .foregroundColor(AppColors.accent)
+                    .frame(width: 44, height: 44)
+                    .background(AppColors.accent.opacity(0.12))
+                    .cornerRadius(12)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("4 check-ins a day")
+                        .font(AppFonts.bodyMedium(15))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("15 seconds each — set later in Settings")
+                        .font(AppFonts.caption(12))
+                        .foregroundColor(AppColors.textMuted)
+                }
+                Spacer()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("4 check-ins a day. 15 seconds each, set later in Settings.")
+
+            HStack(spacing: 8) {
+                ForEach(CheckInTime.allCases) { slot in
+                    slotPill(slot)
+                }
+            }
+            .padding(.top, 4)
+            .padding(.leading, 58) // align under the title text, not the icon
+        }
+    }
+
+    private func slotPill(_ slot: CheckInTime) -> some View {
+        VStack(spacing: 2) {
+            Text(slot.icon)
+                .font(AppFonts.body(14))
+                .accessibilityHidden(true)
+            Text(slot.timeLabel)
+                .font(AppFonts.caption(10))
+                .foregroundColor(slot.color)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(slot.color.opacity(0.10))
+        .cornerRadius(8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(slot.title) at \(slot.timeLabel)")
     }
 
     private func benefitRow(icon: String, title: String, subtitle: String) -> some View {

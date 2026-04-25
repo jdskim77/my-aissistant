@@ -23,18 +23,23 @@ struct OnboardingContainerView: View {
     /// Save error surfaced via alert when SwiftData persistence fails.
     @State private var saveErrorMessage: String?
 
-    private let totalPages = 10
+    /// Step 2 restructure: 10-screen flow → 7-screen "value-first" flow.
+    /// Sign-in moved to the closing step ("Sign in to save your Compass"
+    /// is a stronger CTA than upfront auth), Name Capture absorbed into
+    /// the closing step, Schedule deleted (its 4-slot context now lives
+    /// inside the Notification screen via `showsScheduleContext`).
+    private let totalPages = 7
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar with back button (on screens 2-8). Skipped on Welcome (no
-            // back), Sign-in (page 1 — backing here would soft-trap into
-            // Welcome with no chrome), and Notification (final step).
-            if currentPage > 1 && currentPage < totalPages - 1 {
+            // Top bar with back button on intermediate screens only.
+            // Welcome (page 0) has no back; closing step (page 6) is
+            // mid-stage-machine and shouldn't surface a generic back.
+            if currentPage > 0 && currentPage < totalPages - 1 {
                 topBar
             }
 
-            // Progress dots
+            // Progress dots — same window as the back button.
             if currentPage > 0 && currentPage < totalPages - 1 {
                 progressDots
                     .padding(.top, 4)
@@ -45,51 +50,25 @@ struct OnboardingContainerView: View {
                 WelcomeView(onContinue: { advance() })
                     .tag(0)
 
-                // Screen 1: Sign in with Apple (auth + free tier unlock)
-                SignInWithAppleView(
-                    onSignedIn: { name in
-                        // Pre-fill the Name Capture field with Apple's
-                        // returned name when present, but DON'T skip the
-                        // step — let the user confirm or edit. Previously
-                        // we auto-advanced past NameCapture, leaving users
-                        // stuck with a misspelled Apple name and no edit
-                        // path anywhere in the app.
-                        if let name, !name.isEmpty {
-                            capturedName = name
-                        }
-                        advance()
-                    },
-                    onSkip: { advance() }
-                )
-                .tag(1)
-
-                // Screen 2: Name Capture (skipped if Apple already provided name)
-                NameCaptureView(
-                    name: $capturedName,
-                    onContinue: { advance() },
-                    onSkip: { advance() }
-                )
-                .tag(2)
-
-                // Screen 3: Compass Intro
+                // Screen 1: Compass Intro
                 OnboardingIntroView(onContinue: { advance() })
-                    .tag(3)
+                    .tag(1)
 
-                // Screen 4: Quick Rate
+                // Screen 2: Quick Rate
                 OnboardingQuickRateView(ratings: $ratings, onContinue: {
                     suggestedTasks = StarterTaskPool.tasksForWeakest(ratings: ratings)
                     advance()
                 })
-                .tag(4)
+                .tag(2)
 
-                // Screen 5: Compass Reveal
+                // Screen 3: Compass Reveal (radar + AI voice debut)
                 OnboardingCompassRevealView(
                     ratings: ratings,
                     onContinue: { advance() }
                 )
-                .tag(5)
+                .tag(3)
 
-                // Screen 6: Intention Capture (creates SeasonGoal for Phase 1 AI)
+                // Screen 4: Intention Capture (creates SeasonGoal for Phase 1 AI)
                 IntentionCaptureView(
                     weakestDimension: weakestDimension,
                     intention: $capturedIntention,
@@ -97,27 +76,24 @@ struct OnboardingContainerView: View {
                     onContinue: { advance() },
                     onSkip: { advance() }
                 )
-                .tag(6)
+                .tag(4)
 
-                // Screen 7: Suggested Tasks
+                // Screen 5: Suggested Tasks
                 OnboardingSuggestedTasksView(
                     tasks: suggestedTasks,
                     addedIndices: $addedTaskIndices,
                     weakestDimension: weakestDimension,
                     onContinue: { advance() }
                 )
-                .tag(7)
+                .tag(5)
 
-                // Screen 8: Check-in Schedule
-                OnboardingScheduleView(onFinish: { advance() })
-                    .tag(8)
-
-                // Screen 9: Notification Permission (final step)
-                NotificationPermissionView(
-                    onAllow: { completeOnboarding() },
-                    onSkip: { completeOnboarding() }
+                // Screen 6: Combined SignIn + Name + Notification (closing
+                // step). Internal state machine — see OnboardingClosingView.
+                OnboardingClosingView(
+                    capturedName: $capturedName,
+                    onComplete: { completeOnboarding() }
                 )
-                .tag(9)
+                .tag(6)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             // Disable user-driven horizontal swipe between onboarding
@@ -171,21 +147,12 @@ struct OnboardingContainerView: View {
         guard currentPage > 0 else { return }
         Haptics.selection()
 
-        // Special-case the screens that we may have skipped over on the way
-        // forward. If the user reached page 3 (Compass Intro) via Apple
-        // sign-in (which jumps from 1 → 3), tapping back should land them
-        // back on the Sign-in screen, not the skipped Name Capture screen.
-        let trimmedName = capturedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let appleProvidedName = !trimmedName.isEmpty
-        let target: Int
-        if currentPage == 3 && appleProvidedName {
-            target = 1  // back to Sign in with Apple, skipping Name Capture
-        } else {
-            target = currentPage - 1
-        }
-
+        // Linear back. The Apple-name skip-special-casing from the prior
+        // 10-screen flow is gone — Sign-in and Name Capture now live
+        // inside the closing step (page 6), so there's no jump for the
+        // back button to compensate for.
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentPage = target
+            currentPage = max(0, currentPage - 1)
         }
     }
 
