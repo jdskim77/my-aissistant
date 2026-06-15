@@ -49,7 +49,7 @@ extension Notification.Name {
 }
 
 struct HomeView: View {
-    @Binding var selectedTab: Tab
+    @Binding var selectedTab: AppTab
     /// ContentView holds the pending habit-focus id so a "Do now" tap
     /// from Coach survives the tab switch even when HomeView hadn't
     /// yet materialized (cold-launch Coach-only sessions would

@@ -6,7 +6,7 @@ import SwiftUI
 /// used to occupy slot 2 but has been absorbed into Today as Overdue /
 /// Now&next / Tomorrow sections; a top-right calendar icon on Today
 /// opens the full Schedule view as a sheet for week/month navigation.
-enum Tab: Int, CaseIterable {
+enum AppTab: Int, CaseIterable {
     case coach = 0
     case home = 1
     case compass = 2
@@ -44,7 +44,7 @@ enum Tab: Int, CaseIterable {
 }
 
 struct CustomTabBar: View {
-    @Binding var selectedTab: Tab
+    @Binding var selectedTab: AppTab
     /// Count of unreacted nudges delivered to the Coach tab. Drives the
     /// red badge on the Coach icon so the user can see at a glance that
     /// the coach has something waiting, without needing a push.
@@ -75,7 +75,7 @@ struct CustomTabBar: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func tabButton(for tab: Tab, badge: Int = 0) -> some View {
+    private func tabButton(for tab: AppTab, badge: Int = 0) -> some View {
         Button {
             Haptics.selection()
             withAnimation(reduceMotion ? .none : .spring(response: 0.3)) {
@@ -132,7 +132,7 @@ struct CustomTabBar: View {
         .accessibilityAddTraits(selectedTab == tab ? [.isSelected] : [])
     }
 
-    private func accessibilityLabel(for tab: Tab, badge: Int) -> String {
+    private func accessibilityLabel(for tab: AppTab, badge: Int) -> String {
         guard badge > 0 else { return tab.label }
         let suffix = badge == 1 ? "1 unread nudge" : "\(badge) unread nudges"
         return "\(tab.label), \(suffix)"

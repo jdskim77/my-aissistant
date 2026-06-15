@@ -10,7 +10,7 @@ struct ContentView: View {
     /// Stored as Int raw because @SceneStorage accepts that directly;
     /// `selectedTabBinding` exposes the enum form to views that need it.
     /// Fixes BUG-04 (always-lands-on-Coach) from the QA pass.
-    @SceneStorage("selectedTabRaw") private var selectedTabRaw: Int = Tab.coach.rawValue
+    @SceneStorage("selectedTabRaw") private var selectedTabRaw: Int = AppTab.coach.rawValue
     @State private var onboardingComplete = false
     @State private var showingFocusTimer = false
     @State private var focusDuration = 25
@@ -43,13 +43,29 @@ struct ContentView: View {
         isKeyboardVisible
     }
 
-    private var selectedTabBinding: Binding<Tab> {
+    private var selectedTabBinding: Binding<AppTab> {
         Binding(
-            get: { Tab(rawValue: selectedTabRaw) ?? .coach },
+            get: { AppTab(rawValue: selectedTabRaw) ?? .coach },
             set: { selectedTabRaw = $0.rawValue }
         )
     }
-    private var selectedTab: Tab { Tab(rawValue: selectedTabRaw) ?? .coach }
+    private var selectedTab: AppTab { AppTab(rawValue: selectedTabRaw) ?? .coach }
+
+    /// Wraps a tab's root view so non-selected tabs stay mounted (state
+    /// preserved) but invisible + non-interactive. `allowsHitTesting`
+    /// stops touches from leaking through to hidden subtrees;
+    /// `.accessibilityHidden` keeps VoiceOver focused on the visible tab.
+    @ViewBuilder
+    private func tabContent<Content: View>(
+        _ tab: AppTab,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let isVisible = selectedTab == tab
+        content()
+            .opacity(isVisible ? 1 : 0)
+            .allowsHitTesting(isVisible)
+            .accessibilityHidden(!isVisible)
+    }
 
     private var hasCompletedOnboarding: Bool {
         profiles.first?.onboardingCompleted ?? false
@@ -84,37 +100,26 @@ struct ContentView: View {
     }
 
     private var mainView: some View {
-        // TabView (with its own chrome hidden) caches each tab's view
-        // state across switches, so ChatView's sendTask isn't cancelled,
-        // voiceModeEnabled survives, and the orb doesn't re-animate from
-        // cold on every return. The previous `Group { switch }` pattern
-        // tore down the non-selected subtree, which the QA audit flagged
-        // as BUG-01/02/15.
-        //
-        // `VStack { TabView; CustomTabBar }` is the correct bottom-
-        // chrome pattern on iOS 17: TabView with `.toolbar(.hidden,
-        // for: .tabBar)` does NOT propagate its own `.safeAreaInset`
-        // or `.overlay` down to the child tabs' safe-area stacks —
-        // they still see the window safe area. Any overlay-plus-
-        // spacer attempt ends in either a dead band above the bar
-        // (spacer out of sync with overlay coordinate space) or
-        // children rendering behind the bar (spacer missing). Making
-        // CustomTabBar a VStack sibling means each tab's natural
-        // layout ends at the TabView's bottom edge — flush with the
-        // tab bar's top — with no cross-tab coordination. The bar's
-        // background still carries `.ignoresSafeArea(edges: .bottom)`
-        // so the surface fill covers the home indicator.
+        // Custom tab chrome only. A hidden native `TabView` used to sit
+        // behind this bar for state caching, but iOS 26's Liquid Glass
+        // leaks `_UITabBarPlatterView` through `.toolbar(.hidden,
+        // for: .tabBar)`, which shows up as a blank draggable pill above
+        // our tab bar. The ZStack keeps all tab subtrees mounted so
+        // ChatView state survives tab switches, while avoiding native
+        // tab-bar rendering entirely.
         VStack(spacing: 0) {
-            TabView(selection: selectedTabBinding) {
-                ChatView().tag(Tab.coach)
-                HomeView(
-                    selectedTab: selectedTabBinding,
-                    pendingFocusedHabitID: $pendingFocusedHabitID
-                ).tag(Tab.home)
-                CompassTabView().tag(Tab.compass)
-                SettingsView().tag(Tab.settings)
+            ZStack {
+                tabContent(.coach)  { ChatView() }
+                tabContent(.home)   {
+                    HomeView(
+                        selectedTab: selectedTabBinding,
+                        pendingFocusedHabitID: $pendingFocusedHabitID
+                    )
+                }
+                tabContent(.compass)  { CompassTabView() }
+                tabContent(.settings) { SettingsView() }
             }
-            .toolbar(.hidden, for: .tabBar)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !shouldHideTabBarForKeyboard {
                 CustomTabBar(
@@ -149,8 +154,8 @@ struct ContentView: View {
                   !habitID.isEmpty else { return }
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             pendingFocusedHabitID = habitID
-            if selectedTabRaw != Tab.home.rawValue {
-                selectedTabRaw = Tab.home.rawValue
+            if selectedTabRaw != AppTab.home.rawValue {
+                selectedTabRaw = AppTab.home.rawValue
             }
         }
         // `keyboardWillChangeFrame` instead of `willShow`/`willHide`
@@ -269,7 +274,7 @@ struct ContentView: View {
             // nudge will be pinned at the top of the Coach surface
             // via the Recent Nudges section (commit 2 wires the
             // pinned-item highlight).
-            selectedTabRaw = Tab.coach.rawValue
+            selectedTabRaw = AppTab.coach.rawValue
         case "schedule":
             // Schedule is now a sheet on Today. Route the user to
             // Today first, then post an event HomeView listens for
@@ -278,14 +283,14 @@ struct ContentView: View {
             // notifications land in the task's schedule context,
             // not just on the Today list (fixes BUG-03 from the QA
             // audit on the IA-foundation commit).
-            selectedTabRaw = Tab.home.rawValue
+            selectedTabRaw = AppTab.home.rawValue
             NotificationCenter.default.post(name: .openScheduleSheet, object: nil)
         case "compass", "patterns":
-            selectedTabRaw = Tab.compass.rawValue
+            selectedTabRaw = AppTab.compass.rawValue
         case "settings":
-            selectedTabRaw = Tab.settings.rawValue
+            selectedTabRaw = AppTab.settings.rawValue
         default:
-            selectedTabRaw = Tab.home.rawValue
+            selectedTabRaw = AppTab.home.rawValue
         }
     }
 }
