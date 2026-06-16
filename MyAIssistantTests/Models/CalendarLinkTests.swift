@@ -80,7 +80,7 @@ final class CalendarLinkTests: XCTestCase {
 final class CalendarSourceTests: XCTestCase {
 
     func testAllCases() {
-        XCTAssertEqual(CalendarSource.allCases.count, 2)
+        XCTAssertEqual(CalendarSource.allCases.count, 3)
     }
 
     func testDisplayNames() {

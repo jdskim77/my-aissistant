@@ -8,6 +8,10 @@ final class AIProviderFactoryTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockKeychain = MockKeychainService()
+        // The factory throws .sessionExpired (not .noAPIKey) when this global
+        // flag is set. Clear it so "no key" tests see a clean, never-signed-in
+        // state regardless of what other tests/app runs left behind.
+        UserDefaults.standard.removeObject(forKey: AppConstants.hasSignedInWithAppleKey)
     }
 
     override func tearDown() {

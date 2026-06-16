@@ -13,6 +13,7 @@ final class GreetingManagerTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: AppConstants.lastGreetingTextKey)
         UserDefaults.standard.removeObject(forKey: "usedOpenersToday")
         UserDefaults.standard.removeObject(forKey: "usedOpenersDate")
+        UserDefaults.standard.removeObject(forKey: "greetingDismissedUntil")
     }
 
     override func tearDown() async throws {
@@ -21,6 +22,7 @@ final class GreetingManagerTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: AppConstants.lastGreetingTextKey)
         UserDefaults.standard.removeObject(forKey: "usedOpenersToday")
         UserDefaults.standard.removeObject(forKey: "usedOpenersDate")
+        UserDefaults.standard.removeObject(forKey: "greetingDismissedUntil")
     }
 
     // MARK: - Generate Greeting

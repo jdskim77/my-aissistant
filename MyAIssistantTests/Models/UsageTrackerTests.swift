@@ -76,7 +76,7 @@ final class UsageTrackerTests: XCTestCase {
         let tracker = UsageTracker()
         tracker.recordCheckIn()
 
-        XCTAssertEqual(tracker.checkInsThisWeek, 1)
+        XCTAssertEqual(tracker.checkInsToday, 1)
     }
 
     // MARK: - Limit Checks
@@ -181,12 +181,12 @@ final class UsageTrackerTests: XCTestCase {
     func testResetOnNewWeek() {
         let tracker = UsageTracker()
         tracker.recordCheckIn()
-        XCTAssertEqual(tracker.checkInsThisWeek, 1)
+        XCTAssertEqual(tracker.checkInsToday, 1)
 
-        // Simulate a different week
-        tracker.weekKey = "2020-W01"
+        // Check-ins now reset DAILY (not weekly) — simulate a different day
+        tracker.dayKey = "2020-01-01"
         tracker.resetIfNeeded()
-        XCTAssertEqual(tracker.checkInsThisWeek, 0)
+        XCTAssertEqual(tracker.checkInsToday, 0)
     }
 
     func testNoResetWithinSamePeriod() {
@@ -197,7 +197,7 @@ final class UsageTrackerTests: XCTestCase {
         tracker.resetIfNeeded()
         // Should not have reset since we're in the same month/week
         XCTAssertEqual(tracker.chatMessagesThisMonth, 1)
-        XCTAssertEqual(tracker.checkInsThisWeek, 1)
+        XCTAssertEqual(tracker.checkInsToday, 1)
     }
 
     // MARK: - Integrity
@@ -246,6 +246,6 @@ final class UsageTrackerTests: XCTestCase {
         let fetched = try context.fetch(descriptor)
         XCTAssertEqual(fetched.count, 1)
         XCTAssertEqual(fetched.first?.chatMessagesThisMonth, 1)
-        XCTAssertEqual(fetched.first?.checkInsThisWeek, 1)
+        XCTAssertEqual(fetched.first?.checkInsToday, 1)
     }
 }

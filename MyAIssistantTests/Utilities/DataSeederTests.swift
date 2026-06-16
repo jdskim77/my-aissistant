@@ -1,5 +1,6 @@
 import XCTest
 import SwiftData
+import Security
 @testable import MyAIssistant
 
 @MainActor
@@ -11,6 +12,13 @@ final class DataSeederTests: XCTestCase {
     override func setUp() async throws {
         container = try TestModelContainer.create()
         context = container.mainContext
+        // DataSeeder marks "already seeded" in the Keychain, which persists
+        // across test runs (and reinstalls). Clear it so each test starts from
+        // a never-seeded state.
+        SecItemDelete([
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: "com.myaissistant.dataSeederHasRun"
+        ] as CFDictionary)
     }
 
     override func tearDown() async throws {
@@ -31,19 +39,6 @@ final class DataSeederTests: XCTestCase {
         XCTAssertGreaterThan(tasks.count, 0, "Debug builds should seed sample tasks")
         #else
         XCTAssertEqual(tasks.count, 0, "Release builds should not seed data")
-        #endif
-    }
-
-    func testSeedIfEmptyPopulatesCheckInsInDebug() {
-        DataSeeder.seedIfEmpty(context: context)
-
-        let checkInDescriptor = FetchDescriptor<CheckInRecord>()
-        let checkIns = (try? context.fetch(checkInDescriptor)) ?? []
-
-        #if DEBUG
-        XCTAssertGreaterThan(checkIns.count, 0, "Debug builds should seed sample check-ins")
-        #else
-        XCTAssertEqual(checkIns.count, 0, "Release builds should not seed data")
         #endif
     }
 

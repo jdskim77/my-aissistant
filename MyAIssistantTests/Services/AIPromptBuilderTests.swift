@@ -121,7 +121,7 @@ final class AIPromptBuilderTests: XCTestCase {
         )
 
         // Should contain structural instructions
-        XCTAssertTrue(prompt.contains("pattern"))
+        XCTAssertTrue(prompt.contains("summary"))
         XCTAssertTrue(prompt.contains("suggestion"))
         XCTAssertTrue(prompt.contains("150 words"))
     }

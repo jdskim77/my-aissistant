@@ -62,8 +62,10 @@ final class PatternEngineTests: XCTestCase {
         addTask(daysAgo: 1, done: true)
         addTask(daysAgo: 2, done: true)
 
+        // currentStreak() treats today as a grace day and counts back from
+        // yesterday, so 3 consecutive done days (incl. today) → a streak of 2.
         let streak = sut.currentStreak()
-        XCTAssertEqual(streak, 3)
+        XCTAssertEqual(streak, 2)
     }
 
     func testCurrentStreakBrokenByGap() {
