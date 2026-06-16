@@ -13,7 +13,7 @@ struct AIGreetingCard: View {
                 .frame(width: 52, height: 52)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Your AI Assistant")
+                Text("Your Coach")
                     .font(AppFonts.label(11))
                     .foregroundColor(AppColors.textMuted)
                     .textCase(.uppercase)

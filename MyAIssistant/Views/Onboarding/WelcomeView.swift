@@ -36,7 +36,7 @@ struct WelcomeView: View {
 
                 VStack(alignment: .leading, spacing: 16) {
                     featureRow(icon: "🧭", title: "Your week, at a glance", subtitle: "A four-dimension compass that updates as you check in")
-                    featureRow(icon: "✦", title: "An AI assistant with context", subtitle: "Your check-ins inform every reply, so suggestions match your real week")
+                    featureRow(icon: "✦", title: "A coach with context", subtitle: "Your check-ins inform every reply, so suggestions match your real week")
                     featureRow(icon: "🌅", title: "Four quick check-ins a day", subtitle: "Each one adds to your weekly pattern")
                 }
                 .padding(.top, 16)

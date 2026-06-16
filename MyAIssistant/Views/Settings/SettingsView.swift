@@ -339,7 +339,7 @@ struct SettingsView: View {
                         Text("Our Vision")
                             .font(AppFonts.label(13))
                             .foregroundColor(AppColors.accent)
-                        Text("Find balance across the four dimensions that matter most — physical, mental, emotional, and spiritual well-being. Thrivn turns daily check-ins, habit tracking, and a context-aware AI assistant into one place to see your week clearly and act on what matters.")
+                        Text("Find balance across the four dimensions that matter most — physical, mental, emotional, and spiritual well-being. Thrivn turns daily check-ins, habit tracking, and a context-aware coach into one place to see your week clearly and act on what matters.")
                             .font(AppFonts.body(14))
                             .foregroundColor(AppColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

@@ -195,6 +195,6 @@ struct VoiceSettingsView: View {
         previewSynthesizer.stop()
         previewSynthesizer.selectedProviderType = selectedProvider
         previewSynthesizer.selectedVoiceIdentifier = voice.id
-        previewSynthesizer.speak("Hi, I'm your AI assistant. How can I help you today?")
+        previewSynthesizer.speak("Hi, I'm your coach. How can I help you today?")
     }
 }

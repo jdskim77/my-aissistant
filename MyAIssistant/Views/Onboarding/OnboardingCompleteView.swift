@@ -24,13 +24,13 @@ struct OnboardingCompleteView: View {
                     .font(AppFonts.display(32))
                     .foregroundColor(AppColors.textPrimary)
 
-                Text("Your AI assistant is ready to help you\nstay organized and motivated.")
+                Text("Your coach is ready to help you\nstay organized and motivated.")
                     .font(AppFonts.body(16))
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
 
                 VStack(spacing: 12) {
-                    tipRow(icon: "💬", text: "Chat with your assistant to add tasks")
+                    tipRow(icon: "💬", text: "Chat with your coach to add tasks")
                     tipRow(icon: "🔔", text: "Check in 4x daily to build your streak")
                     tipRow(icon: "📊", text: "Review your patterns each week")
                 }

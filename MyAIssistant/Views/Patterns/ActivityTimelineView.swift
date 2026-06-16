@@ -94,7 +94,7 @@ struct ActivityTimelineView: View {
             Text("No activities tracked yet")
                 .font(AppFonts.body(13))
                 .foregroundColor(AppColors.textSecondary)
-            Text("Chat with your assistant about what you've been up to and it'll start tracking automatically.")
+            Text("Chat with your coach about what you've been up to and it'll start tracking automatically.")
                 .font(AppFonts.caption(11))
                 .foregroundColor(AppColors.textMuted)
                 .multilineTextAlignment(.center)

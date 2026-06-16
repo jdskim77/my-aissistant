@@ -658,7 +658,7 @@ struct CheckInDetailView: View {
         )
         .padding(.horizontal, 4)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Daily insight from your assistant")
+        .accessibilityLabel("Daily insight from your coach")
     }
 
     /// Card variant shown when the recap is the hardcoded

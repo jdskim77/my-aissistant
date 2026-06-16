@@ -629,7 +629,7 @@ struct ChatView: View {
             .frame(width: 56, height: 56)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("AI Assistant")
+                Text("Coach")
                     .font(AppFonts.heading(17))
                     .foregroundColor(AppColors.textPrimary)
                 Text(providerLabel)

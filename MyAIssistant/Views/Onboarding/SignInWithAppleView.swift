@@ -31,7 +31,7 @@ struct SignInWithAppleView: View {
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("Securely sign in with Apple to save your data across devices and chat with your AI assistant.")
+                    Text("Securely sign in with Apple to save your data across devices and chat with your coach.")
                         .font(AppFonts.body(15))
                         .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)

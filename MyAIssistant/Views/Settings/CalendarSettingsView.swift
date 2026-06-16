@@ -341,7 +341,7 @@ struct CalendarSettingsView: View {
                     Text("How Calendar Sync Works")
                         .font(AppFonts.bodyMedium(14))
                         .foregroundColor(AppColors.textPrimary)
-                    Text("Events from linked calendars appear as tasks in your schedule. Tasks created in the app can be pushed to Apple or Google Calendar. Your AI assistant can also add and remove events on your behalf.")
+                    Text("Events from linked calendars appear as tasks in your schedule. Tasks created in the app can be pushed to Apple or Google Calendar. Your coach can also add and remove events on your behalf.")
                         .font(AppFonts.body(13))
                         .foregroundColor(AppColors.textSecondary)
                 }
