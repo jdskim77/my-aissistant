@@ -1883,7 +1883,7 @@ private struct ConversationMessages: View {
                 .frame(height: 60)
 
             Text("✦")
-                .font(.system(size: 40))
+                .font(AppFonts.scaledSystem(40))
                 .foregroundColor(AppColors.accent)
 
             Text("How can I help?")

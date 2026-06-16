@@ -144,7 +144,7 @@ struct FocusTimerView: View {
                 // Time display
                 VStack(spacing: 4) {
                     Text(timeString)
-                        .font(.system(size: 56, weight: .light, design: .monospaced))
+                        .font(AppFonts.scaledSystem(56, weight: .light, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                     Text(isBreak ? "Take a breather" : "Stay focused")
                         .font(AppFonts.caption(13))

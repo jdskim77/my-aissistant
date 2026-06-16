@@ -218,10 +218,10 @@ struct BalancePulseCard: View {
                         .font(AppFonts.label(11))
                         .foregroundColor(AppColors.textMuted)
                     Text(stage.label)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(AppFonts.scaledSystem(13, weight: .semibold, design: .rounded))
                         .foregroundColor(stage.color)
                     Text("\(harmonyScore)")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(AppFonts.scaledSystem(13, weight: .semibold, design: .rounded))
                         .foregroundColor(stage.color)
                         .monospacedDigit()
                     Text("/100")
@@ -330,7 +330,7 @@ struct BalancePulseCard: View {
                 // Overflow "+" cap
                 if overflow {
                     Text("+")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(AppFonts.scaledSystem(14, weight: .bold, design: .rounded))
                         .foregroundColor(dim.color)
                         .offset(y: -8)
                         .transition(.scale.combined(with: .opacity))

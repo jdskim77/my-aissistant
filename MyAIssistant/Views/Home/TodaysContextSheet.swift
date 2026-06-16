@@ -141,7 +141,7 @@ struct TodaysContextSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(formatted(snap.temperature))
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .font(AppFonts.scaledSystem(28, weight: .semibold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .monospacedDigit()
                 Text(snap.conditionDescription)
@@ -201,7 +201,7 @@ struct TodaysContextSheet: View {
                     .foregroundColor(AppColors.textMuted)
             }
             Text(date.formatted(date: .omitted, time: .shortened))
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(AppFonts.scaledSystem(16, weight: .semibold, design: .rounded))
                 .foregroundColor(AppColors.textPrimary)
                 .monospacedDigit()
         }

@@ -55,4 +55,16 @@ struct AppFonts {
     static func icon(_ size: CGFloat) -> Font {
         .system(size: scaled(size))
     }
+
+    /// Scaled drop-in for `Font.system(size:weight:design:)` — for ad-hoc
+    /// TEXT that doesn't map to a named style. Applies the same Dynamic
+    /// Type / TextSize scaling as the named styles while preserving the
+    /// caller's weight and design exactly, so default-size rendering is
+    /// unchanged and only Accessibility sizes scale. Intended for text,
+    /// not SF Symbols (whose fixed sizing is a deliberate layout choice).
+    static func scaledSystem(_ size: CGFloat,
+                             weight: Font.Weight = .regular,
+                             design: Font.Design = .default) -> Font {
+        .system(size: scaled(size), weight: weight, design: design)
+    }
 }

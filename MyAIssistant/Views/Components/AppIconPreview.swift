@@ -295,7 +295,7 @@ struct AppIconPreviewGallery: View {
                         VStack(spacing: 6) {
                             AppIconPreview(style: style, size: 60)
                             Text(style.rawValue)
-                                .font(.system(size: 9))
+                                .font(AppFonts.scaledSystem(9))
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
@@ -453,7 +453,7 @@ private struct IconShareSheet: UIViewControllerRepresentable {
             VStack(spacing: 6) {
                 AppIconPreview(style: style, size: 60)
                 Text(style.rawValue)
-                    .font(.system(size: 9))
+                    .font(AppFonts.scaledSystem(9))
                     .foregroundStyle(.secondary)
                     .frame(width: 60)
                     .multilineTextAlignment(.center)

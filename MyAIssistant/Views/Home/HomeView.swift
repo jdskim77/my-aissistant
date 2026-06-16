@@ -1248,7 +1248,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("\(Int(dayCompletionFraction * 100))%")
-                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                            .font(AppFonts.scaledSystem(26, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.textPrimary)
                             .monospacedDigit()
                         Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
