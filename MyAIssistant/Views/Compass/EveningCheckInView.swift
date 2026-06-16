@@ -221,6 +221,7 @@ struct EveningCheckInView: View {
                         .foregroundColor(AppColors.completionGreen)
                 }
                 .tint(energySliderColor)
+                .accessibilityValue(energyLabel)
 
                 Text(energyLabel)
                     .font(AppFonts.bodyMedium(15))

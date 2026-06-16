@@ -62,6 +62,8 @@ struct MoodPicker: View {
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("\(mood.label), \(mood.value) of 5")
+                    .accessibilityAddTraits(selectedMood == mood.value ? [.isSelected] : [])
                 }
             }
         }
