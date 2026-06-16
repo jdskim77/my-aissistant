@@ -16,7 +16,10 @@ enum TestModelContainer {
             ActivityEntry.self,
             AlarmEntry.self,
             FocusSession.self,
-            HabitItem.self
+            HabitItem.self,
+            DailyBalanceCheckIn.self,
+            SeasonGoal.self,
+            ActivityPattern.self
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])

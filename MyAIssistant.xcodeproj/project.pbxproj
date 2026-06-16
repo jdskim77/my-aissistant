@@ -53,6 +53,7 @@
 		479FF8D6BD0058E321B2A75C /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F31C0E72D4DDB8DA7466E1 /* ChatManager.swift */; };
 		488DAEC992B7CED2DFA63AAF /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000008000000 /* ColorTheme.swift */; };
 		4A044491CE74B333142BE75C /* ActivityEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000001000000 /* ActivityEntry.swift */; };
+		4DB53D3C8E53F959583418EB /* BalanceManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BED1A17630FF3BB6282B8F0 /* BalanceManagerTests.swift */; };
 		4F7379F8B2A6CD77BDE41D24 /* KeywordCrisisClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E35A51C4E5CAA152B3236C /* KeywordCrisisClassifierTests.swift */; };
 		51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B94FBDE7397641F976C27E /* HabitItem.swift */; };
 		590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */; };
@@ -400,6 +401,7 @@
 		2902A18176BF58C082BECA96 /* CheckInBehavior.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckInBehavior.swift; sourceTree = "<group>"; };
 		29CFAD9307698492ECF74393 /* CompassView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompassView.swift; sourceTree = "<group>"; };
 		2B926BB655C77BB678211F85 /* ErrorBoundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBoundary.swift; sourceTree = "<group>"; };
+		2BED1A17630FF3BB6282B8F0 /* BalanceManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceManagerTests.swift; sourceTree = "<group>"; };
 		2CC7876C8754B413E5609FF8 /* DailyBalanceCheckIn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyBalanceCheckIn.swift; sourceTree = "<group>"; };
 		2DE9A75B1F614068DB70C0EE /* CalendarLinkTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarLinkTests.swift; sourceTree = "<group>"; };
 		32D006FE1E4464BF16603035 /* HabitItemTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitItemTests.swift; sourceTree = "<group>"; };
@@ -1212,6 +1214,7 @@
 				4D2DA0A651D2203920C1EA15 /* NotificationManagerTests.swift */,
 				A7EF5230F9BF5E42398F8951 /* TaskManagerNeutralPulseTests.swift */,
 				E5AFF34A9D2EFC8DF0AC65B1 /* WisdomManagerTests.swift */,
+				2BED1A17630FF3BB6282B8F0 /* BalanceManagerTests.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1851,6 +1854,7 @@
 				DD753AC9AE170173B90D04F9 /* ColorContrastTests.swift in Sources */,
 				722F9094222FCCA4D484A670 /* DataSeederTests.swift in Sources */,
 				1E9E9B7640562AB81EEC401D /* DateHelpersTests.swift in Sources */,
+				4DB53D3C8E53F959583418EB /* BalanceManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
