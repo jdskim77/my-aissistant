@@ -21,7 +21,7 @@ struct MyAIssistantApp: App {
     private let keychainService = KeychainService()
     @State private var greetingManager = GreetingManager()
     @State private var themeManager = ThemeManager.shared
-    @State private var notificationManager = NotificationManager()
+    @State private var notificationManager: NotificationManager
     @State private var networkMonitor: NetworkMonitor
     @State private var dailyRecapGenerator: DailyRecapGenerator?
     @State private var weatherManager: WeatherManager
@@ -68,6 +68,10 @@ struct MyAIssistantApp: App {
         }
 
         self.modelContainer = container
+        // Make the container available to NotificationDelegate so destructive
+        // notification actions (SNOOZE_ALARM) can validate against the
+        // authoritative AlarmEntry record before rescheduling.
+        NotificationDelegate.shared.modelContainer = container
         let context = container.mainContext
         let tm = TaskManager(modelContext: context)
         let pe = PatternEngine(modelContext: context, keychainService: keychainService)
@@ -80,6 +84,12 @@ struct MyAIssistantApp: App {
 
         let nm = NetworkMonitor()
         self._networkMonitor = State(initialValue: nm)
+
+        // NotificationManager is wired into NudgeEngine below — keep it as a
+        // local so it's accessible during init before all stored properties
+        // have been assigned. Same instance also surfaces as the @State.
+        let notifMgr = NotificationManager()
+        self._notificationManager = State(initialValue: notifMgr)
 
         tm.calendarSyncManager = csm
         tm.balanceManager = bm
@@ -100,6 +110,13 @@ struct MyAIssistantApp: App {
         cm.calendarSyncManager = csm
         cm.usageGateManager = ugm
         cm.networkMonitor = nm
+        // Single shared classifier across ChatManager, DailyRecapGenerator,
+        // and NudgeEngine. Stateless today, but a future CoreML version
+        // will have a model-load cost and we do not want to pay it three
+        // times at cold start. Kept here at the top of construction so
+        // every consumer below can reference it.
+        let crisisClassifier = KeywordCrisisClassifier()
+        cm.crisisClassifier = crisisClassifier
         self._chatManager = State(initialValue: cm)
         self._balanceManager = State(initialValue: bm)
         let hm = HabitManager(modelContext: context)
@@ -118,6 +135,8 @@ struct MyAIssistantApp: App {
         drg.taskManager = tm
         drg.chatManager = cm
         drg.habitManager = hm
+        // Crisis precheck on check-in notes — shared classifier instance.
+        drg.crisisClassifier = crisisClassifier
         self._dailyRecapGenerator = State(initialValue: drg)
 
         // Local — WeatherManager retains this; no need to store on self.
@@ -128,7 +147,6 @@ struct MyAIssistantApp: App {
         // (AppConstants.nudgeEngineKillSwitchEnabled = true) so the engine
         // short-circuits and delivers nothing until Phase 2 flips the flag.
         let composer = NudgeComposer()
-        let crisisClassifier = KeywordCrisisClassifier()
         let engine = NudgeEngine(
             modelContext: context,
             composer: composer,
@@ -139,6 +157,10 @@ struct MyAIssistantApp: App {
         engine.taskManager = tm
         engine.habitManager = hm
         engine.checkInBehaviorEngine = cibe
+        // Wire the local-notification delivery surface so `schedule(nudge:)`
+        // actually fires UNNotificationRequests. Same NotificationManager
+        // instance the rest of the app uses (via the @State above).
+        engine.notificationManager = notifMgr
         self._nudgeEngine = State(initialValue: engine)
 
         self.backgroundTaskManager = BackgroundTaskManager(
@@ -192,6 +214,9 @@ struct MyAIssistantApp: App {
                 .environment(\.nudgeEngine, nudgeEngine)
                 .environment(\.userName, UserDefaults.standard.string(forKey: "user_name"))
                 .task {
+                    // Resolve TestFlight-vs-App-Store once so beta-only UX
+                    // (the structured feedback form) routes correctly.
+                    await AppConstants.resolveBetaBuild()
                     await subscriptionManager.updateTier()
                     await subscriptionManager.loadProducts()
 
@@ -338,6 +363,14 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     /// ContentView reads and clears this on appear.
     var pendingDestination: String?
 
+    /// Set by `MyAIssistantApp` on launch so destructive notification actions
+    /// (`SNOOZE_ALARM`) can re-derive their content from the authoritative
+    /// SwiftData record rather than trusting the inbound notification's
+    /// payload. Without this, a notification mutableCopy() blindly carries
+    /// whatever title/body the original had — fine for our own scheduled
+    /// notifications, less fine if the body ever flowed from external input.
+    var modelContainer: ModelContainer?
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -375,13 +408,31 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
             }
             destination = "home"
         case "ALARM":
-            // Snooze: reschedule 5 minutes from now, don't open app
-            if action == "SNOOZE_ALARM", let alarmID = userInfo["alarmID"] as? String {
-                let snoozeTime = Date().addingTimeInterval(5 * 60)
-                guard let content = response.notification.request.content.mutableCopy() as? UNMutableNotificationContent else {
+            // Snooze: reschedule 5 minutes from now, don't open app.
+            // Rebuild the content from the stored AlarmEntry rather than
+            // mutable-copying the inbound notification — this validates the
+            // alarmID is real (drops snooze taps for unknown IDs) and
+            // ensures the snooze body matches the user's saved label, not
+            // whatever happened to be in the delivered payload.
+            if action == "SNOOZE_ALARM",
+               let alarmID = userInfo["alarmID"] as? String,
+               let container = self.modelContainer {
+                let context = ModelContext(container)
+                let descriptor = FetchDescriptor<AlarmEntry>(
+                    predicate: #Predicate { $0.id == alarmID }
+                )
+                guard let alarm = (try? context.fetch(descriptor))?.first else {
+                    AppLogger.app.warning("SNOOZE_ALARM: unknown alarmID — ignoring")
                     completionHandler()
                     return
                 }
+                let snoozeTime = Date().addingTimeInterval(5 * 60)
+                let content = UNMutableNotificationContent()
+                content.title = "Alarm"
+                content.body = alarm.label
+                content.sound = .default
+                content.categoryIdentifier = "ALARM"
+                content.userInfo = ["alarmID": alarmID]
                 let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: snoozeTime)
                 let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
                 let request = UNNotificationRequest(identifier: "alarm-\(alarmID)-snooze", content: content, trigger: trigger)

@@ -46,13 +46,4 @@ final class SpeechSynthesizerTests: XCTestCase {
         XCTAssertFalse(callbackFired)
         XCTAssertNotNil(sut.onFinishedSpeaking)
     }
-
-    // MARK: - Best Available Voice
-
-    func testBestAvailableVoiceReturnsVoice() {
-        let voice = SpeechSynthesizer.bestAvailableVoice()
-        // Should return some voice — we can't guarantee quality tier in test environment
-        XCTAssertNotNil(voice)
-        XCTAssertTrue(voice.language.hasPrefix("en"))
-    }
 }

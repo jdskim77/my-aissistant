@@ -19,6 +19,13 @@ struct GoalSuggestionsSheet: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var isGated = false
+    /// Hardcoded safety routing copy when `AIGuardrail` flagged the
+    /// season-goal intention. When non-nil, the sheet replaces its
+    /// content area with the safety card — crisis text never reaches
+    /// the suggestions LLM and the user gets the same helpline routing
+    /// the chat path uses.
+    @State private var safetyMessage: String?
+    @State private var safetyLanguage: String?
 
     var body: some View {
         NavigationStack {
@@ -77,7 +84,9 @@ struct GoalSuggestionsSheet: View {
 
     @ViewBuilder
     private var content: some View {
-        if isGated {
+        if let safetyMessage {
+            safetyCard(message: safetyMessage)
+        } else if isGated {
             gatedView
         } else if isLoading {
             loadingView
@@ -134,6 +143,43 @@ struct GoalSuggestionsSheet: View {
             title: "Out of suggestions this week",
             message: "Free plan includes \(AppConstants.freeGoalSuggestionsPerWeek) AI goal suggestions per week. Upgrade for unlimited.",
             action: nil
+        )
+    }
+
+    /// Rendered when `AIGuardrail` flags the goal intention. Mirrors the
+    /// chat safety bubble and `NLTaskParserView.safetyCard`: hardcoded
+    /// copy, helpline link, dismiss button. No retry — the user
+    /// dismisses or taps the helpline.
+    private func safetyCard(message: String) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: "heart.circle.fill")
+                .font(AppFonts.display(28))
+                .foregroundColor(AppColors.coral)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(AppFonts.body(14))
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.center)
+                .accessibilityElement(children: .combine)
+            Link(destination: SafeResourceCopy.actionURL()) {
+                HStack(spacing: 8) {
+                    Image(systemName: "phone.fill")
+                    Text(SafeResourceCopy.findHelplineLabel(detectedLanguage: safetyLanguage))
+                }
+                .font(AppFonts.bodyMedium(15))
+                .foregroundColor(AppColors.onAccent)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(AppColors.coral)
+                .cornerRadius(12)
+            }
+            .accessibilityLabel(SafeResourceCopy.findHelplineLabel(detectedLanguage: safetyLanguage))
+        }
+        .padding(20)
+        .background(AppColors.card)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppColors.border, lineWidth: 1)
         )
     }
 
@@ -279,6 +325,26 @@ struct GoalSuggestionsSheet: View {
                 self.isLoading = false
                 self.errorMessage = nil
                 usageGateManager?.recordGoalSuggestion()
+            }
+        } catch let error as GoalTaskSuggesterError {
+            // Branch on the safety-route case so the inline safety card
+            // renders with localized copy. All other typed errors fall
+            // through to the generic error view (with Retry).
+            //
+            // Unlike chat/recap, this surface does NOT persist a safety
+            // message into the chat conversation — the sheet's inline
+            // card is the routing. Persisting here would require
+            // choosing a conversation ID that doesn't exist in this
+            // surface's domain, and create orphan messages if the
+            // user never opens chat.
+            await MainActor.run {
+                self.isLoading = false
+                if case .safetyRoute(let language) = error {
+                    self.safetyMessage = SafeResourceCopy.message(detectedLanguage: language)
+                    self.safetyLanguage = language
+                } else {
+                    self.errorMessage = error.errorDescription
+                }
             }
         } catch {
             await MainActor.run {

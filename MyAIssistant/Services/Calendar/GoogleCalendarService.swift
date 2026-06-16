@@ -1,4 +1,5 @@
 import AuthenticationServices
+import CryptoKit
 import Foundation
 
 /// Google Calendar REST API client using OAuth2 via ASWebAuthenticationSession.
@@ -14,7 +15,32 @@ actor GoogleCalendarService {
     private let authURL = "https://accounts.google.com/o/oauth2/v2/auth"
     private let tokenURL = "https://oauth2.googleapis.com/token"
 
-    init(clientID: String = "", redirectURI: String = "com.myaissistant:/oauth2callback") {
+    /// Per-flow PKCE + CSRF state. Generated when `authorizationURL()` is
+    /// called and consumed when `exchangeCallback(_:)` returns. Held in
+    /// memory only; if the user backgrounds the app mid-flow and the actor
+    /// is deallocated, they'll need to restart sign-in (acceptable).
+    private struct PendingFlow {
+        let codeVerifier: String
+        let state: String
+    }
+    private var pendingFlow: PendingFlow?
+
+    /// Dedicated session for OAuth token endpoints. URLSession.shared has
+    /// 60s/7d default timeouts and shared cookie storage; on hostile Wi-Fi
+    /// a token call could hang the full resource window. Tighten timeouts
+    /// and isolate cookies/credentials so OAuth traffic doesn't entangle
+    /// with WeatherKit or any other shared-session caller.
+    private static let tokenSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 30
+        config.httpCookieAcceptPolicy = .never
+        config.urlCredentialStorage = nil
+        config.httpShouldSetCookies = false
+        return URLSession(configuration: config)
+    }()
+
+    init(clientID: String = "", redirectURI: String = "com.myaissistant://oauth2callback") {
         self.clientID = clientID
         self.redirectURI = redirectURI
         // Load persisted tokens from Keychain
@@ -37,11 +63,20 @@ actor GoogleCalendarService {
     }
 
     /// Build the OAuth2 authorization URL for use with ASWebAuthenticationSession.
+    /// Generates a per-flow PKCE verifier (S256) and CSRF `state`, both stored
+    /// on `self` for the matching `exchangeCallback(_:)`. RFC 8252 requires
+    /// PKCE for installed apps; without it (and without `state`) a phished
+    /// callback can deliver an attacker's auth code into our token exchange.
     func authorizationURL() -> URL? {
         guard !clientID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             AppLogger.calendar.error("Google OAuth: client_id is empty")
             return nil
         }
+        let verifier = Self.generateCodeVerifier()
+        let challenge = Self.codeChallenge(for: verifier)
+        let state = Self.generateState()
+        self.pendingFlow = PendingFlow(codeVerifier: verifier, state: state)
+
         var components = URLComponents(string: authURL)
         components?.queryItems = [
             URLQueryItem(name: "client_id", value: clientID),
@@ -50,20 +85,52 @@ actor GoogleCalendarService {
             URLQueryItem(name: "scope", value: "https://www.googleapis.com/auth/calendar"),
             URLQueryItem(name: "access_type", value: "offline"),
             URLQueryItem(name: "prompt", value: "consent"),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "state", value: state),
         ]
         let url = components?.url
         let prefix = String(clientID.prefix(8))
-        AppLogger.calendar.info("Google OAuth URL built, client_id: \(prefix, privacy: .public)…")
+        AppLogger.calendar.info("Google OAuth URL built (PKCE), client_id: \(prefix, privacy: .public)…")
         return url
     }
 
-    /// Exchange authorization code for access and refresh tokens.
-    func exchangeCodeForTokens(_ code: String) async throws {
+    /// Validate the OAuth callback URL against the pending flow's `state`,
+    /// extract the authorization code, and exchange it (with the stored PKCE
+    /// verifier) for tokens. Throws `.authFailed` on any mismatch — never
+    /// proceeds with a code from a callback we didn't initiate.
+    func exchangeCallback(_ callbackURL: URL) async throws {
+        guard let pending = pendingFlow else {
+            AppLogger.calendar.error("Google OAuth: callback received without pending flow")
+            throw GoogleCalendarError.authFailed
+        }
+        // Single-use: clear regardless of success/failure so a leaked URL
+        // can't be replayed.
+        self.pendingFlow = nil
+
+        let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false)
+        let returnedState = components?.queryItems?.first(where: { $0.name == "state" })?.value
+        guard let returnedState, returnedState == pending.state else {
+            AppLogger.calendar.error("Google OAuth: state mismatch on callback")
+            throw GoogleCalendarError.authFailed
+        }
+        guard let code = components?.queryItems?.first(where: { $0.name == "code" })?.value,
+              !code.isEmpty else {
+            AppLogger.calendar.error("Google OAuth: callback missing code")
+            throw GoogleCalendarError.authFailed
+        }
+        try await exchangeCodeForTokens(code, codeVerifier: pending.codeVerifier)
+    }
+
+    /// Exchange authorization code for access and refresh tokens. Internal —
+    /// always called via `exchangeCallback(_:)` so the PKCE verifier is bound.
+    private func exchangeCodeForTokens(_ code: String, codeVerifier: String) async throws {
         let body: [String: String] = [
             "code": code,
             "client_id": clientID,
             "redirect_uri": redirectURI,
             "grant_type": "authorization_code",
+            "code_verifier": codeVerifier,
         ]
 
         let bodyString = body.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
@@ -73,7 +140,7 @@ actor GoogleCalendarService {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.tokenSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw GoogleCalendarError.authFailed
@@ -87,6 +154,30 @@ actor GoogleCalendarService {
         self.tokenExpiry = Date().addingTimeInterval(TimeInterval(tokenResponse.expiresIn))
 
         persistTokens()
+    }
+
+    // MARK: - PKCE / state helpers
+
+    /// 32 random bytes, base64url (RFC 4648 §5) — the OAuth-mandated charset
+    /// excludes `+`, `/`, and `=`.
+    private static func generateCodeVerifier() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return Data(bytes).base64URLEncodedString()
+    }
+
+    /// SHA-256 of the verifier, base64url-encoded.
+    private static func codeChallenge(for verifier: String) -> String {
+        let hash = SHA256.hash(data: Data(verifier.utf8))
+        return Data(hash).base64URLEncodedString()
+    }
+
+    /// 32 random bytes, hex-encoded. Hex chosen over base64url for `state`
+    /// so it survives URL parsing on every implementation without question.
+    private static func generateState() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return bytes.map { String(format: "%02x", $0) }.joined()
     }
 
     func setAccessToken(_ token: String) {
@@ -163,7 +254,7 @@ actor GoogleCalendarService {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.tokenSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             // Refresh failed — clear tokens and require re-auth
@@ -446,4 +537,17 @@ struct GoogleEvent: Codable, Identifiable {
 struct GoogleDateTime: Codable {
     let dateTime: String?
     let date: String?
+}
+
+// MARK: - base64url
+
+private extension Data {
+    /// Base64-URL encoding (RFC 4648 §5): '+' → '-', '/' → '_', no padding.
+    /// Used by PKCE for `code_verifier` and `code_challenge`.
+    func base64URLEncodedString() -> String {
+        base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 }

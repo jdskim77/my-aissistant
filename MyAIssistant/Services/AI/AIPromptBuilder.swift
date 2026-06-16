@@ -105,13 +105,20 @@ enum AIPromptBuilder {
         app will parse and execute the action tags automatically.
 
         To create a task/event: [[CREATE_EVENT:Title|YYYY-MM-DD HH:mm|YYYY-MM-DD HH:mm|Optional description|recurrence|dimension]]
-        Parameters: Title, start time, end time, description (optional), recurrence (optional: daily/weekly/biweekly/monthly), dimension (optional: physical/mental/emotional/spiritual)
-        The dimension indicates which life area this task serves. ALWAYS include it when possible:
-        - physical: exercise, sleep, nutrition, movement, healthcare, body care
-        - mental: learning, reading, deep work, problem-solving, focus time, creative work
-        - emotional: relationships, social time, therapy, journaling, fun, self-care, connection
-        - spiritual: service to others, volunteering, contribution, gratitude, helping, giving back
-        If unsure, infer from context. "Walk" → physical. "Read" → mental. "Call Mom" → emotional. "Volunteer" → spiritual.
+        Parameters: Title, start time, end time, description (optional), recurrence (optional: daily/weekly/biweekly/monthly), dimension (REQUIRED — one of: practical/physical/mental/emotional/spiritual)
+
+        DIMENSION IS REQUIRED on EVERY CREATE_EVENT. Never omit it. If you genuinely cannot decide between a scored pillar and `practical`, choose `practical` — it's the safe default for chores/admin/logistics that don't represent pillar effort.
+
+        DO NOT emit `[[CREATE_EVENT:Title|start|end]]` without the dimension slot. Even if you've omitted the description and recurrence, you MUST include `||dimension` at minimum.
+
+        The taxonomy:
+        - practical: errands, admin, chores, logistics, AND healthcare in general — appointments, booking, paying, refilling, scheduling. Healthcare is admin/logistics work the user has to do but it isn't body-pillar effort. Examples: "cancel hotel", "renew passport", "pick up dry cleaning", "dentist appointment", "book dentist", "refill prescription", "pay insurance bill", "call about appointment", "pick up meds".
+        - physical: BODY EFFORT the user actively performs — exercise, movement, sleep, nutrition, body care they DO themselves. Examples: "30-min walk", "yoga class", "8 hours sleep", "stretch routine", "meal prep". NOT medical appointments (those are practical).
+        - mental: learning, reading, deep work, problem-solving, focus time, creative work. Examples: "deep work block", "read book", "study Spanish", "design review".
+        - emotional: relationships, social time, therapy, journaling, fun, self-care, connection. Examples: "call Mom", "lunch with friend", "therapy session", "movie night".
+        - spiritual: service to others, volunteering, contribution, gratitude, helping, giving back. Examples: "volunteer at food bank", "help neighbor move", "donate clothes", "meditation".
+
+        Decision rule: BODY EFFORT the user actively performs (exercise, sleep, nutrition) → physical. Healthcare in general (appointments, booking, calls, prescriptions) → practical. Mental focus the user actively performs → mental. Connection / relationships → emotional. Service / contribution → spiritual. Anything else (errands, admin, logistics) → practical.
         To delete a task/event: [[DELETE_EVENT:event_id]]
 
         Always confirm the action in your conversational text. Use these tags whenever the user \
@@ -126,9 +133,11 @@ enum AIPromptBuilder {
         - "Block 2 hours for deep work tomorrow" → CREATE_EVENT with mental dimension, title \
           "Deep work", duration 120 min, default to 9:00 or 10:00
         - "Remind me to stretch every evening at 9" → CREATE_EVENT with physical dimension, daily recurrence, 21:00
-        - "Add a dentist appointment next Tuesday at 11am" → CREATE_EVENT with physical dimension, \
-          next Tuesday's date, 11:00–12:00, title "Dentist"
+        - "Add a dentist appointment next Tuesday at 11am" → CREATE_EVENT with practical dimension, \
+          next Tuesday's date, 11:00–12:00, title "Dentist". (Healthcare appointments are admin/logistics, not pillar effort — physical is reserved for movement and body care like exercise/sleep/nutrition.)
         - "Volunteer at the food bank Saturday" → CREATE_EVENT with spiritual dimension
+        - "Cancel my hotel reservation" → CREATE_EVENT with practical dimension (admin/logistics, not pillar effort)
+        - "Renew my passport this week" → CREATE_EVENT with practical dimension
 
         DEVICE COMMANDS YOU CANNOT EXECUTE: You have NO ability to control the user's microphone, \
         speaker, voice mode, notifications, app settings, system volume, screen brightness, Bluetooth, \

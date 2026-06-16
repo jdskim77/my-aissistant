@@ -147,9 +147,15 @@ actor AnthropicProvider: AIProvider {
     private func buildMessages(conversationHistory: [ChatMessage], userMessage: String) -> [[String: Any]] {
         var messages: [[String: Any]] = []
         for msg in conversationHistory.suffix(10) {
+            // User-role replay: strip action-tag glyphs from anything the user
+            // typed historically — a poisoned earlier turn could otherwise prime
+            // the model to emit forged tags spontaneously. Assistant-role
+            // replay is already tag-stripped at storage time (parsedDisplayText),
+            // so it is sent as-is.
+            let safeContent = msg.role == .user ? msg.content.sanitizedForPrompt : msg.content
             messages.append([
                 "role": msg.role == .user ? "user" : "assistant",
-                "content": msg.content
+                "content": safeContent
             ])
         }
         messages.append(["role": "user", "content": userMessage])

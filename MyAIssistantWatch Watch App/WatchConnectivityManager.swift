@@ -295,67 +295,117 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
 
     // MARK: - Persistence
 
-    private static let apiKeyAccount = "com.myaissistant.watch-api-key"
+    /// Shared App-Group Keychain identifiers — kept inline (not via
+    /// `AppConstants`) because the Watch target compiles without the
+    /// main-app Core sources. Must match the values the iPhone uses in
+    /// `KeychainService.swift` / `AppConstants.swift`. Both targets carry
+    /// the `group.com.myaissistant.shared` entitlement, so the Watch reads
+    /// the iPhone-written record directly — the API key never traverses
+    /// `WCSession.applicationContext`'s plaintext plist sandbox.
+    private static let sharedKeychainAccessGroup = "group.com.myaissistant.shared"
+    private static let anthropicAPIKeyAccount = "com.myaissistant.anthropic-api-key"
 
-    private func extractAPIKey(from dict: [String: Any]) {
-        guard let key = dict["apiKey"] as? String, !key.isEmpty else { return }
-        // Shape-validate before committing to Keychain. Historically we
-        // required an "sk-ant-" prefix, but that silently rejected legit
-        // keys with future prefixes (admin tokens, gateway keys) and left
-        // the user with no feedback about why Watch AI wasn't working.
-        // Loose validation: length + visible ASCII only. Enough to reject
-        // obvious garbage without locking out legitimate variants.
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= 20,
-              trimmed.unicodeScalars.allSatisfy({ $0.value >= 0x21 && $0.value <= 0x7E }) else {
-            return
+    /// Legacy Watch-only Keychain account written by older builds. Migrate
+    /// any value found here into the shared-group account on first launch
+    /// post-upgrade so the Watch keeps its existing key, then delete the
+    /// legacy entry.
+    private static let legacyWatchAPIKeyAccount = "com.myaissistant.watch-api-key"
+
+    /// Refresh the API key from shared Keychain. Cheap; called whenever a
+    /// WC payload arrives (signal that the iPhone may have rotated the key)
+    /// and on launch.
+    private func refreshAPIKeyFromSharedKeychain() {
+        if let key = loadAPIKeyFromSharedKeychain() {
+            // No-op if unchanged — avoids needless redraws downstream.
+            if key != apiKey {
+                self.apiKey = key
+            }
         }
-        // No-op if the key hasn't changed — avoids excess Keychain churn
-        // every applicationContext delivery.
-        guard trimmed != apiKey else { return }
-        self.apiKey = trimmed
-        saveAPIKeyToKeychain(trimmed)
     }
 
     private func loadAPIKeyFromCache() {
-        apiKey = loadAPIKeyFromKeychain()
+        // First, attempt the shared-group read (canonical source).
+        if let key = loadAPIKeyFromSharedKeychain() {
+            self.apiKey = key
+            return
+        }
+        // Then migrate any legacy Watch-only key, if present.
+        if let legacy = loadLegacyWatchKey() {
+            self.apiKey = legacy
+            // Best-effort write into the shared group so subsequent reads
+            // hit the canonical path. The iPhone will overwrite if/when
+            // the user changes the key.
+            saveAPIKeyToSharedKeychain(legacy)
+            deleteLegacyWatchKey()
+            return
+        }
+        self.apiKey = nil
     }
 
-    private func saveAPIKeyToKeychain(_ key: String) {
-        let data = Data(key.utf8)
+    private func loadAPIKeyFromSharedKeychain() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: Self.apiKeyAccount
+            kSecAttrAccount as String: Self.anthropicAPIKeyAccount,
+            kSecAttrAccessGroup as String: Self.sharedKeychainAccessGroup,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
-        SecItemDelete(query as CFDictionary)
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let key = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        return key
+    }
+
+    private func saveAPIKeyToSharedKeychain(_ key: String) {
+        let data = Data(key.utf8)
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: Self.anthropicAPIKeyAccount,
+            kSecAttrAccessGroup as String: Self.sharedKeychainAccessGroup
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
         let add: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: Self.apiKeyAccount,
+            kSecAttrAccount as String: Self.anthropicAPIKeyAccount,
+            kSecAttrAccessGroup as String: Self.sharedKeychainAccessGroup,
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            // Match iPhone-side storage class for BYOK keys: never migrate
+            // via iCloud Keychain to a different device.
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         SecItemAdd(add as CFDictionary, nil)
     }
 
-    private func loadAPIKeyFromKeychain() -> String? {
+    private func loadLegacyWatchKey() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: Self.apiKeyAccount,
+            kSecAttrAccount as String: Self.legacyWatchAPIKeyAccount,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         guard status == errSecSuccess, let data = result as? Data else {
-            // Migrate from old UserDefaults storage if present
+            // One-shot UserDefaults migration from older builds.
             if let old = UserDefaults.standard.string(forKey: "watchAPIKey") {
-                saveAPIKeyToKeychain(old)
                 UserDefaults.standard.removeObject(forKey: "watchAPIKey")
                 return old
             }
             return nil
         }
         return String(data: data, encoding: .utf8)
+    }
+
+    private func deleteLegacyWatchKey() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: Self.legacyWatchAPIKeyAccount
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 
     private func persistAndUpdate(_ data: WatchScheduleData) {
@@ -447,7 +497,10 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
             self.activationTimeoutTask?.cancel()
             self.activationTimeoutTask = nil
             self.hasAttemptedSync = true
-            self.extractAPIKey(from: context)
+            // The API key no longer rides on WCSession payloads — read it
+            // from the shared App-Group Keychain. Refreshing on every WC
+            // delivery picks up iPhone-side rotations in near real time.
+            self.refreshAPIKeyFromSharedKeychain()
             if let data = WatchScheduleData.from(context: context) {
                 self.applyIncoming(data)
             }
@@ -457,7 +510,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         Task { @MainActor in
             self.hasAttemptedSync = true
-            self.extractAPIKey(from: applicationContext)
+            self.refreshAPIKeyFromSharedKeychain()
             if let data = WatchScheduleData.from(context: applicationContext) {
                 self.applyIncoming(data)
             }
@@ -467,7 +520,7 @@ class WatchConnectivityManager: NSObject, WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         Task { @MainActor in
             self.hasAttemptedSync = true
-            self.extractAPIKey(from: message)
+            self.refreshAPIKeyFromSharedKeychain()
             if let data = WatchScheduleData.from(context: message) {
                 self.persistAndUpdate(data)
             }

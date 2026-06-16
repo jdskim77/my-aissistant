@@ -90,6 +90,16 @@ struct BalancePulseCard: View {
     @State private var collapsedFlashTask: Task<Void, Never>?
     @State private var lastCollapsedFlashToken: UUID?
 
+    /// Neutral pulse — used when a practical-only or untagged task
+    /// completes. No specific bar grows (BalanceManager doesn't score
+    /// these), so we don't fly a colored particle to a bar (would lie).
+    /// Instead the entire card briefly scales 1.02× then back, signaling
+    /// "task done, compass acknowledges your work" without claiming a
+    /// pillar-score change. User chose this over silent completion.
+    @State private var neutralPulseScale: CGFloat = 1.0
+    @State private var neutralPulseTask: Task<Void, Never>?
+    @State private var lastNeutralPulseToken: UUID?
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Derived
@@ -147,6 +157,7 @@ struct BalancePulseCard: View {
                 .animation(.easeInOut(duration: 0.2), value: collapsedFlashColor)
                 .allowsHitTesting(false)
         )
+        .scaleEffect(neutralPulseScale)
         .onAppear {
             // Seed previousFills so the first onChange doesn't retroactively
             // fire crossing/goal animations for data that was already there.
@@ -166,6 +177,8 @@ struct BalancePulseCard: View {
             tierResetTasks.removeAll()
             collapsedFlashTask?.cancel()
             collapsedFlashTask = nil
+            neutralPulseTask?.cancel()
+            neutralPulseTask = nil
         }
     }
 
@@ -524,8 +537,59 @@ struct BalancePulseCard: View {
               token != lastCollapsedFlashToken,
               let pulse = flightPulse else { return }
         lastCollapsedFlashToken = token
+
+        // Neutral pulse path — practical/untagged task completion.
+        // Triggers a whole-card scale animation regardless of expansion
+        // state, since there's no specific bar to flash.
+        if pulse.isNeutral {
+            triggerNeutralPulse()
+            return
+        }
+
         guard !isExpanded else { return }
         triggerCollapsedFlash(color: pulse.dimension.color)
+    }
+
+    /// Whole-card scale-up-and-back animation for neutral pulses.
+    /// Brief (≤ 400ms total) so it doesn't compete with bar pulses on
+    /// adjacent scored-task completions. Reduce Motion users get an
+    /// opacity beat instead — same temporal feedback, no spatial motion.
+    private func triggerNeutralPulse() {
+        neutralPulseTask?.cancel()
+        if reduceMotion {
+            // Fade flash on the card border surrogate via collapsedFlash
+            // mechanism with a neutral muted color — reuses the existing
+            // overlay so we don't introduce a second animation layer.
+            // Cancel any in-flight scored-pulse reset Task too — without
+            // this, a scored pulse's 550ms reset would overwrite our
+            // muted color mid-animation (BUG-04 from QA pass).
+            collapsedFlashTask?.cancel()
+            collapsedFlashTask = nil
+            withAnimation(.easeOut(duration: 0.2)) {
+                collapsedFlashColor = AppColors.textMuted
+                collapsedFlashOpacity = 0.4
+            }
+            neutralPulseTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.4)) { collapsedFlashOpacity = 0 }
+            }
+            return
+        }
+        // Reset scale to baseline before launching the new spring so
+        // adjacent rapid-fire pulses don't animate from mid-bounce
+        // (BUG-09 from QA pass — visual amplitude consistency).
+        neutralPulseScale = 1.0
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.55)) {
+            neutralPulseScale = 1.02
+        }
+        neutralPulseTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                neutralPulseScale = 1.0
+            }
+        }
     }
 
     private func triggerCollapsedFlash(color: Color) {

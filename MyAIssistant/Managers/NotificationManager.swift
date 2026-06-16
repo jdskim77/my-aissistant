@@ -279,6 +279,65 @@ final class NotificationManager {
             .removePendingNotificationRequests(withIdentifiers: [AppConstants.streakReminderIdentifier])
     }
 
+    // MARK: - Coach Nudges
+
+    /// Schedule a delivered `Nudge` as a local `UNNotificationRequest` with
+    /// inline NUDGE_CATEGORY actions (Accept / Dismiss / Snooze / Silence).
+    ///
+    /// `scheduledFor` controls timing: nil → fire immediately (1s trigger so
+    /// the system has time to register), set → calendar-based trigger at
+    /// that date. Identifier is `nudge-<id>` so a follow-up engine pass can
+    /// cancel a stale nudge by id without affecting unrelated notifications.
+    ///
+    /// Dimension is encoded into `userInfo` so `NotificationDelegate` can
+    /// route the tap back to the right surface (Coach tab pinned card).
+    func scheduleNudgeNotification(
+        nudgeID: String,
+        bodyText: String,
+        category: String,
+        dimension: String?,
+        scheduledFor: Date?
+    ) {
+        let center = UNUserNotificationCenter.current()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Thrivn"
+        content.body = bodyText
+        content.sound = .default
+        content.categoryIdentifier = AppConstants.nudgeNotificationCategory
+        var userInfo: [String: Any] = [
+            "nudgeID": nudgeID,
+            "nudgeCategory": category
+        ]
+        if let dimension { userInfo["dimension"] = dimension }
+        content.userInfo = userInfo
+
+        let trigger: UNNotificationTrigger
+        if let scheduledFor, scheduledFor > Date() {
+            let comps = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute],
+                from: scheduledFor
+            )
+            trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        } else {
+            trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        }
+
+        let request = UNNotificationRequest(
+            identifier: "nudge-\(nudgeID)",
+            content: content,
+            trigger: trigger
+        )
+        center.add(request)
+    }
+
+    /// Cancels a scheduled nudge by id (e.g. when the user dismisses or
+    /// the engine supersedes it before delivery).
+    func cancelNudgeNotification(nudgeID: String) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["nudge-\(nudgeID)"])
+    }
+
     // MARK: - Habit Reminders
 
     /// Schedule daily reminders for all active habits that have a reminder time set.
@@ -412,7 +471,36 @@ final class NotificationManager {
             intentIdentifiers: []
         )
 
+        // Nudge category — inline actions matching the IDs in AppConstants.
+        // Tap routes through the default category handler; explicit actions
+        // give the user a no-app-open path for dismiss/snooze/silence.
+        let nudgeAcceptAction = UNNotificationAction(
+            identifier: AppConstants.nudgeAcceptActionID,
+            title: "Open",
+            options: [.foreground]
+        )
+        let nudgeDismissAction = UNNotificationAction(
+            identifier: AppConstants.nudgeDismissActionID,
+            title: "Not now",
+            options: []
+        )
+        let nudgeSnoozeAction = UNNotificationAction(
+            identifier: AppConstants.nudgeSnoozeActionID,
+            title: "Later",
+            options: []
+        )
+        let nudgeSilenceAction = UNNotificationAction(
+            identifier: AppConstants.nudgeSilenceActionID,
+            title: "Silence this kind",
+            options: [.destructive]
+        )
+        let nudgeCategory = UNNotificationCategory(
+            identifier: AppConstants.nudgeNotificationCategory,
+            actions: [nudgeAcceptAction, nudgeDismissAction, nudgeSnoozeAction, nudgeSilenceAction],
+            intentIdentifiers: []
+        )
+
         UNUserNotificationCenter.current()
-            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory, streakCategory, habitCategory])
+            .setNotificationCategories([checkInCategory, taskCategory, alarmCategory, streakCategory, habitCategory, nudgeCategory])
     }
 }

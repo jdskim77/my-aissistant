@@ -270,6 +270,25 @@ struct WatchVoiceChatView: View {
         aiResponse = ""
         lastFailedQuery = nil
 
+        // Crisis precheck — same gate iOS uses on chat and check-in notes.
+        // BEFORE any local action and BEFORE the LLM call. If text matches
+        // the on-device classifier, surface SafeResourceCopy and short-
+        // circuit. Mirrors `ChatManager.send` and `DailyRecapGenerator.generate`
+        // on iOS. Closes the watch safety leak (P0-1 from priority queue).
+        let evaluation = WatchCrisisClassifier.evaluate(text)
+        if evaluation.isCrisis {
+            let safetyText = WatchSafeResourceCopy.message(detectedLanguage: evaluation.detectedLanguage)
+            lastQuery = text  // already set above; keeps the user's view of what they typed
+            aiResponse = safetyText
+            isProcessing = false
+            // Speak the safety copy so a hands-free user hears it. Watch
+            // is often used hands-free; voice is the primary surface.
+            speakResponse(safetyText)
+            // Light haptic to confirm receipt — not a celebratory pattern.
+            WKInterfaceDevice.current().play(.notification)
+            return
+        }
+
         // Execute local actions IMMEDIATELY — don't wait for the API call.
         // This fixes the bug where tasks weren't created if the API key was
         // missing or the network was down.

@@ -58,6 +58,7 @@ struct WeeklyReflectionView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(AppColors.border, lineWidth: 1)
                             )
+                            .privacySensitive()
                     }
 
                     // Season goal check-in

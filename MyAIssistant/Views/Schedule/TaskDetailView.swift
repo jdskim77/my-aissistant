@@ -188,6 +188,7 @@ struct TaskDetailView: View {
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(AppColors.border, lineWidth: 1)
                             )
+                            .privacySensitive()
                     }
 
                     // Calendar source info

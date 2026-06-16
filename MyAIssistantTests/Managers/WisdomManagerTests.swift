@@ -7,20 +7,20 @@ final class WisdomManagerTests: XCTestCase {
     // MARK: - Quote Struct
 
     func testQuoteCodable() throws {
-        let json = #"{"text":"Be the change.","author":"Gandhi","category":"motivation"}"#
+        let json = #"{"text":"Be the change.","author":"Gandhi","dimension":"motivation"}"#
         let data = json.data(using: .utf8)!
         let quote = try JSONDecoder().decode(WisdomManager.Quote.self, from: data)
 
         XCTAssertEqual(quote.text, "Be the change.")
         XCTAssertEqual(quote.author, "Gandhi")
-        XCTAssertEqual(quote.category, "motivation")
+        XCTAssertEqual(quote.dimension, "motivation")
     }
 
     func testQuoteArrayCodable() throws {
         let json = """
         [
-            {"text":"Quote 1","author":"Author 1","category":"cat1"},
-            {"text":"Quote 2","author":"Author 2","category":"cat2"}
+            {"text":"Quote 1","author":"Author 1","dimension":"cat1"},
+            {"text":"Quote 2","author":"Author 2","dimension":"cat2"}
         ]
         """
         let data = json.data(using: .utf8)!

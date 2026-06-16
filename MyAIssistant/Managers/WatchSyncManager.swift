@@ -49,20 +49,25 @@ final class WatchSyncManager: NSObject {
         }
     }
 
-    /// Send API key to Watch so it can make direct Claude API calls.
+    /// No-op as of the security audit: the Anthropic key is no longer
+    /// broadcast over WCSession. The iPhone writes the key into the
+    /// `group.com.myaissistant.shared` Keychain access group via
+    /// `KeychainService` (already configured), and the Watch reads the
+    /// same record directly. Keeping this entry point + signature so any
+    /// existing callers ("on key change, sync to Watch") still link;
+    /// the Watch-side `loadAPIKeyFromSharedKeychain()` is now the source
+    /// of truth.
+    ///
+    /// Why removed: the previous implementation pushed the API key into
+    /// `WCSession.updateApplicationContext` and `sendMessage`. Both land
+    /// in the WC sandbox (a plist), not Keychain — readable from a
+    /// paired-computer backup of an unlocked-once device. Shared
+    /// Keychain stays inside the Keychain encryption boundary.
     func syncAPIKey() {
-        guard let session else { return }
-        guard isActivated, session.isPaired, session.isWatchAppInstalled else { return }
-        let keychain = KeychainService()
-        guard let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty else { return }
-        let message = ["apiKey": apiKey]
-        // Use both channels to ensure delivery
-        if session.isReachable {
-            session.sendMessage(message, replyHandler: nil)
-        }
-        // Also include in application context for when Watch isn't reachable
+        // Intentionally empty — see header.
+        // Push only the textSize hint, which is non-secret.
+        guard let session, isActivated, session.isPaired, session.isWatchAppInstalled else { return }
         var context = session.applicationContext
-        context["apiKey"] = apiKey
         context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
         try? session.updateApplicationContext(context)
     }
@@ -145,19 +150,20 @@ final class WatchSyncManager: NSObject {
             completedCheckIns: completedCheckIns
         )
 
-        // Read-modify-write so any keys set by `syncAPIKey` (or future
-        // sibling methods) survive this push. Starting from
-        // `data.toDictionary()` would silently drop unrelated keys —
-        // currently safe because we re-add apiKey + textSize below, but
-        // fragile as more keys join the context.
+        // Read-modify-write so non-payload keys (e.g. `textSize`) set by
+        // sibling methods survive this push. We deliberately do NOT add
+        // the Anthropic API key here — see `syncAPIKey()` header. The
+        // Watch reads the key from the shared App-Group Keychain
+        // directly, which keeps it inside the Keychain encryption
+        // boundary instead of WC's plist sandbox.
         var context = session.applicationContext
         for (key, value) in data.toDictionary() {
             context[key] = value
         }
-        let keychain = KeychainService()
-        if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty {
-            context["apiKey"] = apiKey
-        }
+        // Strip any stale `apiKey` left over from prior builds — it can
+        // linger in the WC applicationContext indefinitely until the next
+        // overwrite.
+        context.removeValue(forKey: "apiKey")
         context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
         try? session.updateApplicationContext(context)
     }
@@ -180,33 +186,88 @@ extension WatchSyncManager: WCSessionDelegate {
         session.activate()
     }
 
-    /// Handle Watch requesting a fresh schedule update, toggling a task, or adding a task
+    /// Handle Watch requesting a fresh schedule update, toggling a task, or adding a task.
+    /// All string fields from the Watch payload are length-bounded and the
+    /// `addTask.title` is run through the prompt sanitizer before persisting,
+    /// so a future watch-side compromise can't push a forged action-tag glyph
+    /// or a megabyte of text into our SwiftData store.
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         if message["request"] as? String == "scheduleUpdate" {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchRequestedUpdate, object: nil)
             }
         }
-        if let taskID = message["toggleTask"] as? String {
+        if let taskID = message["toggleTask"] as? String, Self.isValidTaskID(taskID) {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
-        if message["addTask"] as? Bool == true {
+        if message["addTask"] as? Bool == true,
+           let validated = Self.validatedAddTaskPayload(message) {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: message)
+                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: validated)
             }
         }
-        if message["quickCheckIn"] as? Bool == true {
+        if message["quickCheckIn"] as? Bool == true,
+           let validated = Self.validatedQuickCheckInPayload(message) {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: message)
+                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: validated)
             }
         }
-        if let taskID = message["deleteTask"] as? String {
+        if let taskID = message["deleteTask"] as? String, Self.isValidTaskID(taskID) {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchDeletedTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
+    }
+
+    // MARK: - WC payload validation
+
+    /// Task IDs in our schema are UUIDs (36 chars) or `google:<id>` —
+    /// neither exceeds 128 chars. Reject anything outside that band so a
+    /// hostile string can't cascade into a `#Predicate` or NotificationCenter
+    /// userInfo of arbitrary size.
+    nonisolated static func isValidTaskID(_ id: String) -> Bool {
+        (1...128).contains(id.count)
+    }
+
+    nonisolated static func validatedAddTaskPayload(_ raw: [String: Any]) -> [String: Any]? {
+        guard let title = raw["title"] as? String, !title.isEmpty,
+              title.count <= 200,
+              let priority = raw["priority"] as? String, priority.count <= 16,
+              let date = raw["date"] as? TimeInterval else { return nil }
+
+        // Sanitize title with the same logic used app-wide so a Watch-relayed
+        // title can't fabricate a `[[CREATE_EVENT:…]]` glyph that later flows
+        // into an LLM prompt.
+        let safeTitle = title
+            .replacingOccurrences(of: "[[", with: "⟦")
+            .replacingOccurrences(of: "]]", with: "⟧")
+            .replacingOccurrences(of: "|", with: "∣")
+
+        var validated: [String: Any] = [
+            "addTask": true,
+            "title": safeTitle,
+            "priority": priority,
+            "date": date,
+            "hasTime": (raw["hasTime"] as? Bool) ?? false
+        ]
+        if let dims = raw["dimensions"] as? String, dims.count <= 64 {
+            validated["dimensions"] = dims
+        }
+        return validated
+    }
+
+    nonisolated static func validatedQuickCheckInPayload(_ raw: [String: Any]) -> [String: Any]? {
+        guard let mood = raw["mood"] as? Int, (0...10).contains(mood),
+              let energy = raw["energy"] as? Int, (0...10).contains(energy),
+              let slot = raw["timeSlot"] as? String, slot.count <= 32 else { return nil }
+        return [
+            "quickCheckIn": true,
+            "mood": mood,
+            "energy": energy,
+            "timeSlot": slot
+        ]
     }
 
     /// Handle app-context pushes (latest-state, overwriting). Watch doesn't
@@ -214,36 +275,39 @@ extension WatchSyncManager: WCSessionDelegate {
     /// updateApplicationContext won't vanish silently — it'll route through
     /// the same message handlers below.
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        if let taskID = applicationContext["toggleTask"] as? String {
+        if let taskID = applicationContext["toggleTask"] as? String, Self.isValidTaskID(taskID) {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
-        if applicationContext["quickCheckIn"] as? Bool == true {
+        if applicationContext["quickCheckIn"] as? Bool == true,
+           let validated = Self.validatedQuickCheckInPayload(applicationContext) {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: applicationContext)
+                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: validated)
             }
         }
     }
 
     /// Handle queued messages sent via transferUserInfo (when iPhone wasn't reachable)
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        if let taskID = userInfo["toggleTask"] as? String {
+        if let taskID = userInfo["toggleTask"] as? String, Self.isValidTaskID(taskID) {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchToggledTask, object: nil, userInfo: ["taskID": taskID])
             }
         }
-        if userInfo["addTask"] as? Bool == true {
+        if userInfo["addTask"] as? Bool == true,
+           let validated = Self.validatedAddTaskPayload(userInfo) {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: userInfo)
+                NotificationCenter.default.post(name: .watchAddedTask, object: nil, userInfo: validated)
             }
         }
-        if userInfo["quickCheckIn"] as? Bool == true {
+        if userInfo["quickCheckIn"] as? Bool == true,
+           let validated = Self.validatedQuickCheckInPayload(userInfo) {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: userInfo)
+                NotificationCenter.default.post(name: .watchQuickCheckIn, object: nil, userInfo: validated)
             }
         }
-        if let taskID = userInfo["deleteTask"] as? String {
+        if let taskID = userInfo["deleteTask"] as? String, Self.isValidTaskID(taskID) {
             Task { @MainActor in
                 NotificationCenter.default.post(name: .watchDeletedTask, object: nil, userInfo: ["taskID": taskID])
             }

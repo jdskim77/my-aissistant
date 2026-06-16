@@ -29,6 +29,18 @@ import UIKit
 struct ParticlePulseRequest: Equatable {
     let dimension: LifeDimension
     let token: UUID
+    /// True for practical / untagged-task completions. Subscribers that
+    /// target a specific bar (the in-place pulse) skip these; subscribers
+    /// that render whole-card feedback (BalancePulseCard's neutral
+    /// scale animation) react to them. The animator itself does NOT
+    /// emit a particle for neutral pulses — there is no bar to fly to.
+    let isNeutral: Bool
+
+    init(dimension: LifeDimension, token: UUID, isNeutral: Bool = false) {
+        self.dimension = dimension
+        self.token = token
+        self.isNeutral = isNeutral
+    }
 }
 
 @MainActor

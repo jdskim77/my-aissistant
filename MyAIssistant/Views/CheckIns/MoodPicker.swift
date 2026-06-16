@@ -2,6 +2,19 @@ import SwiftUI
 
 struct MoodPicker: View {
     @Binding var selectedMood: Int?
+    /// Fired after selection so the parent can auto-advance the flow.
+    /// Optional so callers that just want a picker (no advance) keep working.
+    var onSelect: ((Int) -> Void)? = nil
+    /// When true, taps are ignored — used by the parent during the
+    /// 250ms auto-advance debounce so a fast double-tap can't skip a step.
+    var isLocked: Bool = false
+
+    /// Per-tap counter so `.sensoryFeedback(.selection, trigger:)` fires
+    /// even when the user re-taps the same value (e.g. after Back-nav
+    /// from the next step). Using `selectedMood` as the trigger swallows
+    /// the haptic on identical re-selection because the value didn't
+    /// change. BUG-06 from the auto-advance QA pass.
+    @State private var hapticTick = 0
 
     private let moods: [(emoji: String, label: String, value: Int)] = [
         ("😔", "Rough", 1),
@@ -20,9 +33,12 @@ struct MoodPicker: View {
             HStack(spacing: 16) {
                 ForEach(moods, id: \.value) { mood in
                     Button {
+                        guard !isLocked else { return }
+                        hapticTick &+= 1
                         withAnimation(.spring(response: 0.3)) {
                             selectedMood = mood.value
                         }
+                        onSelect?(mood.value)
                     } label: {
                         VStack(spacing: 4) {
                             Text(mood.emoji)
@@ -49,5 +65,6 @@ struct MoodPicker: View {
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: hapticTick)
     }
 }

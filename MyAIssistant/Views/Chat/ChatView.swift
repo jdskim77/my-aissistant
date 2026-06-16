@@ -126,6 +126,16 @@ struct ChatView: View {
     @State private var showClockAppPrompt = false
     @State private var showChatPaywall = false
     @State private var pendingCalendarActions: [CalendarAction] = []
+    /// Holds a queued batch of calendar actions while we wait for the
+    /// destructive-action confirmation alert. Calendar deletes are
+    /// irreversible (the event can't be recovered from Apple/Google's
+    /// trash via this app) and a prompt-injection vector existed where a
+    /// hostile event title could elicit a `[[DELETE_EVENT:...]]` tag the
+    /// user never asked for. The Approve button on the pending-actions
+    /// chip is now a soft gate only — any batch that contains a delete
+    /// passes through this state and shows an explicit destructive alert
+    /// before execution.
+    @State private var pendingDeleteConfirmation: [CalendarAction]? = nil
     // Calendar routing transparency: which calendar the last successful AI-created
     // event actually landed in, and whether to nudge the user to link Google the
     // first time we fall back to Apple. See CalendarResultChip.swift for why.
@@ -301,6 +311,32 @@ struct ChatView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Please enable microphone and speech recognition access in Settings to use voice input.")
+        }
+        // Destructive-action gate for calendar deletes. Required because
+        // calendar deletions are irreversible AND user-controlled event
+        // titles can elicit a `[[DELETE_EVENT:...]]` tag from the model.
+        // Approve on the pending-actions chip routes deletes here instead
+        // of executing them.
+        .alert(
+            "Delete calendar events?",
+            isPresented: Binding(
+                get: { pendingDeleteConfirmation != nil },
+                set: { if !$0 { pendingDeleteConfirmation = nil } }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                let actions = pendingDeleteConfirmation ?? []
+                pendingDeleteConfirmation = nil
+                Task { await executeCalendarActions(actions) }
+            }
+            Button("Cancel", role: .cancel) {
+                pendingDeleteConfirmation = nil
+            }
+        } message: {
+            let count = (pendingDeleteConfirmation ?? []).reduce(0) { acc, action in
+                if case .delete = action { return acc + 1 } else { return acc }
+            }
+            Text("This will remove \(count) event\(count == 1 ? "" : "s") from your calendar. This can't be undone.")
         }
         .sheet(isPresented: $showingConversations) {
             ConversationListView(selectedConversationID: $conversationID)
@@ -763,6 +799,8 @@ struct ChatView: View {
                                 lineWidth: speechRecognizer.isRecording ? 2.5 : 1
                             )
                     )
+                    // Free-text user message — redact during screen capture.
+                    .privacySensitive()
                     // Keyboard dismiss: drag-to-dismiss via
                     // .scrollDismissesKeyboard on the ConversationMessages
                     // ScrollView (above), plus focus is cleared on send.
@@ -1313,10 +1351,21 @@ struct ChatView: View {
 
                 Button {
                     let actions = pendingCalendarActions
+                    let hasDelete = actions.contains { if case .delete = $0 { return true } else { return false } }
                     withAnimation(.easeInOut(duration: 0.2)) {
                         pendingCalendarActions = []
                     }
-                    Task { await executeCalendarActions(actions) }
+                    if hasDelete {
+                        // Defer to destructive-action confirmation alert.
+                        // Calendar deletions are irreversible, so they need
+                        // a separate explicit confirmation — a single
+                        // "Approve" tap can't double as consent for a
+                        // delete the AI may have inferred (or been tricked
+                        // into) emitting.
+                        pendingDeleteConfirmation = actions
+                    } else {
+                        Task { await executeCalendarActions(actions) }
+                    }
                 } label: {
                     Text("Approve")
                         .font(AppFonts.bodyMedium(13))
@@ -1950,7 +1999,7 @@ private struct PinnedNudgeCard: View {
 
             if isSafety {
                 Link(destination: SafeResourceCopy.actionURL()) {
-                    Label(SafeResourceCopy.actionTitle, systemImage: "arrow.up.right.square")
+                    Label(SafeResourceCopy.actionTitle(), systemImage: "arrow.up.right.square")
                         .font(AppFonts.bodyMedium(13))
                 }
                 .foregroundColor(AppColors.warning)

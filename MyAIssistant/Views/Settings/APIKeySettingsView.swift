@@ -44,6 +44,7 @@ struct APIKeySettingsView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(AppColors.border, lineWidth: 1)
                     )
+                    .privacySensitive()
 
                     Text("Used for Claude AI chat and check-ins.")
                         .font(AppFonts.caption(12))
@@ -87,6 +88,7 @@ struct APIKeySettingsView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(AppColors.border, lineWidth: 1)
                     )
+                    .privacySensitive()
 
                     Text("Optional. When set, the app uses your OpenAI key instead of Claude.")
                         .font(AppFonts.caption(12))

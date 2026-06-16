@@ -66,7 +66,8 @@ final class DailySnapshotTests: XCTestCase {
         XCTAssertEqual(fetched.count, 1)
         XCTAssertEqual(fetched.first?.tasksTotal, 5)
         XCTAssertEqual(fetched.first?.tasksCompleted, 3)
-        XCTAssertEqual(fetched.first?.averageMood, 4.2, accuracy: 0.01)
+        let mood = try XCTUnwrap(fetched.first?.averageMood)
+        XCTAssertEqual(mood, 4.2, accuracy: 0.01)
     }
 
     func testNilAverageMoodPersistence() throws {

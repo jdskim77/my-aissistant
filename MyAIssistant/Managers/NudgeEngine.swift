@@ -34,6 +34,11 @@ final class NudgeEngine {
     var checkInManager: CheckInManager?
     var checkInBehaviorEngine: CheckInBehaviorEngine?
 
+    /// Delivery surface. When set, `schedule(nudge:)` posts a real
+    /// `UNNotificationRequest`; when nil, scheduling is a no-op (tests,
+    /// previews). Wired from `MyAIssistantApp` at init.
+    var notificationManager: NotificationManager?
+
     /// Registered trigger rules, evaluated in array order.
     /// **Order matters**: the first rule whose preconditions match wins
     /// (one nudge per run, spec §12 Q5), so time-sensitive rules come
@@ -719,13 +724,17 @@ final class NudgeEngine {
     }
 
     private func schedule(nudge: Nudge) {
-        // Phase 1: this is a no-op. Phase 2 wires NotificationManager to
-        // actually schedule a UNNotificationRequest with the inline actions
-        // (NUDGE_ACCEPT / NUDGE_DISMISS / NUDGE_SNOOZE / NUDGE_SILENCE).
-        //
-        // For now mark as delivered immediately — with the rule set empty
-        // this code path is unreachable anyway, but marking keeps caps
-        // accurate if Phase 2 forgets to update status.
+        // Hand off to the local notification surface. NotificationManager is
+        // optional (nil in tests/previews) — when absent, we still mark the
+        // nudge delivered so caps/cooldowns advance and the engine's
+        // accounting stays honest.
+        notificationManager?.scheduleNudgeNotification(
+            nudgeID: nudge.id,
+            bodyText: nudge.bodyText,
+            category: nudge.category.rawValue,
+            dimension: nudge.dimensionRaw,
+            scheduledFor: nudge.scheduledFor
+        )
         nudge.status = .delivered
         nudge.deliveredAt = Date()
         modelContext.safeSave()

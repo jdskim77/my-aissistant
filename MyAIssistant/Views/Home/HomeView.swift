@@ -803,6 +803,24 @@ struct HomeView: View {
                 lastHandledBusToken = newToken
                 return
             }
+            // Neutral pulses (practical/untagged completions) bypass
+            // the bar-targeted particle path — there's no bar to fly
+            // toward. We still need to nudge BalancePulseCard so its
+            // whole-card scale animation fires, so we publish a
+            // neutral-flagged ParticlePulseRequest directly to
+            // `pulseRequest`. The card observes that field via
+            // `flightPulse: particleAnimator.pulseRequest` and its
+            // `.onChange` -> `handleCollapsedFlash` branches on
+            // `pulse.isNeutral` to call `triggerNeutralPulse`.
+            if pulse.isNeutral {
+                lastHandledBusToken = newToken
+                particleAnimator.pulseRequest = ParticlePulseRequest(
+                    dimension: .practical,
+                    token: newToken,
+                    isNeutral: true
+                )
+                return
+            }
             guard particleAnimator.shouldHandleBusPulse(pulse.dimension) else {
                 lastHandledBusToken = newToken
                 return

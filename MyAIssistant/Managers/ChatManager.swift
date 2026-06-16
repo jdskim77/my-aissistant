@@ -21,6 +21,12 @@ final class ChatManager {
     /// Optional connectivity probe. When injected, sends short-circuit with a
     /// friendly error instead of waiting for URLSession to time out.
     var networkMonitor: NetworkMonitor?
+    /// On-device safety classifier. Runs against the user's message *before*
+    /// the LLM call so a crisis turn never reaches the coach prompt — the
+    /// app routes to 988/Samaritans resources directly. Required by
+    /// `crisis-safety-protocols`: classification must happen at the app
+    /// layer, not be left to the prompt.
+    var crisisClassifier: CrisisClassifier?
 
     /// Re-entrancy guard. A double-tap on Send (or a fast tap from voice mode,
     /// or simultaneous Watch + iPhone) was firing two parallel API calls and
@@ -48,8 +54,18 @@ final class ChatManager {
     /// Used by Task Builder, Watch, voice flows, and any feature that needs to
     /// post a local-only assistant or user message.
     @discardableResult
-    func insertLocalMessage(role: MessageRole, content: String, conversationID: String) -> ChatMessage {
-        let msg = ChatMessage(role: role, content: content, conversationID: conversationID)
+    func insertLocalMessage(
+        role: MessageRole,
+        content: String,
+        conversationID: String,
+        isSafetyResource: Bool = false
+    ) -> ChatMessage {
+        let msg = ChatMessage(
+            role: role,
+            content: content,
+            conversationID: conversationID,
+            isSafetyResource: isSafetyResource
+        )
         modelContext.insert(msg)
         modelContext.safeSave()
         return msg
@@ -121,6 +137,62 @@ final class ChatManager {
         isSending = true
         defer { isSending = false }
 
+        // Hard cap on input size — caps the per-message blast radius for
+        // pasted prompts that would otherwise blow the input-token budget
+        // (and the user's bill on BYOK) in a single shot. 8000 chars ≈
+        // 2k tokens of typical English prose; legitimate chat turns sit
+        // well under this. Trimming preserves the user's drafted prefix
+        // rather than rejecting outright.
+        let text = String(text.prefix(8_000))
+
+        // Crisis short-circuit via `AIGuardrail` — the single visible
+        // preflight every LLM call site goes through. Runs BEFORE
+        // usage/network gates so a paywall or offline state can never
+        // block safety routing. The user message is still persisted
+        // (so the thread shows what they typed), but the assistant
+        // response is the hardcoded `SafeResourceCopy` returned by the
+        // guardrail — never an LLM call.
+        //
+        // Both messages are marked `isSafetyResource: true`. The flag has two jobs:
+        //   1. Render: `ChatBubble` shows the safety variant for the
+        //      assistant message (coral + Link). User messages always
+        //      render as the user's bubble — we never reframe what
+        //      the user wrote.
+        //   2. History: `ChatMessage.shouldSendToAI` excludes flagged
+        //      messages from the conversation history sent to the LLM
+        //      on subsequent turns. Without this, the very crisis
+        //      content that triggered the gate would be relayed to
+        //      Anthropic on the next non-crisis turn (BUG-01/BUG-02).
+        let guardrail = AIGuardrail.preflight(
+            userText: text,
+            classifier: crisisClassifier ?? AIGuardrail.defaultClassifier,
+            callSite: "chat"
+        )
+        if case .block(let safetyText, _) = guardrail {
+            let userMessage = ChatMessage(
+                role: .user,
+                content: text,
+                conversationID: conversationID,
+                isSafetyResource: true
+            )
+            modelContext.insert(userMessage)
+            let assistantMessage = ChatMessage(
+                role: .assistant,
+                content: safetyText,
+                conversationID: conversationID,
+                isSafetyResource: true
+            )
+            modelContext.insert(assistantMessage)
+            modelContext.safeSave()
+            return SendResult(
+                displayText: safetyText,
+                calendarActions: [],
+                alarms: [],
+                hasError: false,
+                errorMessage: nil
+            )
+        }
+
         // Enforce free tier chat limit
         if let gate = usageGateManager, !gate.canSendChat(tier: subscriptionTier) {
             return SendResult(
@@ -153,6 +225,21 @@ final class ChatManager {
         modelContext.insert(userMessage)
         modelContext.safeSave()
 
+        // Soft jailbreak signal — log when BYOK keys are about to flow on
+        // a compromised device. We don't refuse the call (refusing would
+        // break legitimate users who happen to be on jailbroken hardware),
+        // but the line surfaces in diagnostics so the posture is visible.
+        // Probes inlined here (not extracted to a standalone module)
+        // because the share-extension target compiles a different subset
+        // of files and a separate Security/RuntimePosture.swift file
+        // would have to be added to multiple targets in the Xcode project
+        // — keeping it local to ChatManager (main-app-only) sidesteps
+        // that. Two cheap probes: known jailbreak artifact paths and a
+        // sandbox-write probe.
+        if Self.isLikelyJailbroken {
+            AppLogger.app.critical("BYOK chat path entered on compromised device")
+        }
+
         do {
             let provider = try AIProviderFactory.provider(
                 for: subscriptionTier,
@@ -182,14 +269,18 @@ final class ChatManager {
                 habitSummary: buildHabitSummary()
             )
 
-            // Filter out app-generated error stubs before sending to the AI —
-            // those are shown inline for user continuity but were never
-            // actually said by the model, and echoing them back shapes the
-            // next response around a fake prior turn.
-            let cleanHistory = priorHistory.filter { !$0.isErrorStub }
+            // Filter via `ChatMessage.shouldSendToAI` so the safety
+            // contract lives next to the flags rather than duplicated
+            // here. See the property's doc-comment for the criteria.
+            let cleanHistory = priorHistory.filter(\.shouldSendToAI)
 
+            // The user-typed text is shown verbatim in the chat thread, but
+            // sanitized before it reaches the model — otherwise a user can
+            // plant `[[CREATE_EVENT:…]]` in their own message and have the
+            // model echo it back, fooling the action-tag parser into firing
+            // an event the user "didn't ask for, but did, kind of."
             let aiResponse = try await provider.sendMessage(
-                userMessage: text,
+                userMessage: text.sanitizedForPrompt,
                 conversationHistory: Array(cleanHistory.suffix(10)),
                 systemPromptStable: systemPromptStable,
                 systemPromptVolatile: systemPromptVolatile
@@ -302,7 +393,13 @@ final class ChatManager {
 
     // MARK: - Calendar Actions
 
-    func executeCalendarActions(_ actions: [CalendarAction]) async -> String? {
+    /// Made `private` deliberately — the live execution path runs in
+    /// `ChatView.executeCalendarActions`, which gates deletes through
+    /// `pendingDeleteConfirmation`. Keeping this routed through ChatView
+    /// preserves the destructive-confirmation invariant; making this
+    /// internal/public again would let a future caller (Watch, voice loop,
+    /// intent) delete events without the user's confirmation tap.
+    private func executeCalendarActions(_ actions: [CalendarAction]) async -> String? {
         let syncManager = calendarSyncManager
         let enabledLinks = syncManager?.enabledCalendarLinks() ?? []
         let googleCalendarID = enabledLinks.first(where: { $0.calendarSource == .google })?.calendarID
@@ -512,7 +609,10 @@ final class ChatManager {
         let repeatsDaily: Bool
     }
 
-    private struct ParsedResponse {
+    /// Internal so tests can construct it directly to assert parser
+    /// outputs. Field-by-field comparison is more durable than a string
+    /// snapshot test.
+    struct ParsedResponse {
         let displayText: String
         let calendarActions: [CalendarAction]
         let activities: [(category: String, description: String)]
@@ -529,14 +629,69 @@ final class ChatManager {
         guard !habits.isEmpty else { return "" }
 
         let today = Date()
+        // Sanitize habit title — user-controlled, flows verbatim into prompt.
         return habits.map { h in
             let done = h.isCompletedOn(today) ? "done" : "not done"
             let streak = h.currentStreak()
-            return "\(h.icon) \(h.title): \(done) today, streak \(streak)"
+            return "\(h.icon) \(h.title.sanitizedForPrompt): \(done) today, streak \(streak)"
         }.joined(separator: "\n")
     }
 
-    private func parseResponseTags(from text: String) -> ParsedResponse {
+    // MARK: - Runtime posture (inlined; see comment in `sendMessage`)
+
+    private static var isLikelyJailbroken: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        let artifacts = [
+            "/Applications/Cydia.app",
+            "/Applications/Sileo.app",
+            "/Library/MobileSubstrate/MobileSubstrate.dylib",
+            "/usr/sbin/sshd",
+            "/etc/apt",
+            "/private/var/lib/apt/",
+            "/private/var/lib/cydia",
+            "/var/jb/usr/lib/apt/methods/file"
+        ]
+        if artifacts.contains(where: { FileManager.default.fileExists(atPath: $0) }) {
+            return true
+        }
+        // Sandboxed apps can't write outside their container; success is a
+        // strong jailbreak indicator.
+        let probe = "/private/jb-probe-\(UUID().uuidString)"
+        do {
+            try Data("x".utf8).write(to: URL(fileURLWithPath: probe))
+            try? FileManager.default.removeItem(atPath: probe)
+            return true
+        } catch {
+            return false
+        }
+        #endif
+    }
+
+    /// Allowed shapes:
+    /// * Apple EKEvent identifiers — alphanumeric with hyphens, occasional
+    ///   colons / dots / @ signs (e.g. `45D9CA9F-...:6E0B0001-...`).
+    /// * Google event IDs prefixed with `google:` — alphanumeric + hyphens.
+    /// Length 8–256 keeps the surface tight without rejecting real IDs.
+    private static func isValidExternalEventID(_ id: String) -> Bool {
+        guard (8...256).contains(id.count) else { return false }
+        let allowed = CharacterSet(charactersIn:
+            "abcdefghijklmnopqrstuvwxyz" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+            "0123456789-_:.@"
+        )
+        return id.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
+
+    /// Internal so the parser can be unit-tested without spinning up
+    /// the full ChatManager + provider stack. This function holds the
+    /// CREATE_EVENT / DELETE_EVENT tag grammar, including the
+    /// dimension-required defense-in-depth that backstops a soft
+    /// "REQUIRED" prompt constraint — testing the fallback directly
+    /// gates the regression of untagged tasks landing without a
+    /// dimension (the original animation-regression user report).
+    func parseResponseTags(from text: String) -> ParsedResponse {
         var displayText = text
         var calendarActions: [CalendarAction] = []
         var activities: [(category: String, description: String)] = []
@@ -549,7 +704,7 @@ final class ChatManager {
         // so dropped/reordered optional fields can't silently mis-parse (e.g. "daily"
         // landing in the description slot when the AI omits the description pipe).
         let recurrenceKeywords: Set<String> = ["daily", "weekly", "biweekly", "monthly"]
-        let dimensionKeywords: Set<String> = ["physical", "mental", "emotional", "spiritual"]
+        let dimensionKeywords: Set<String> = ["physical", "mental", "emotional", "spiritual", "practical"]
         let createPattern = /\[\[CREATE_EVENT:([^\]]+?)\]\]/
         for match in text.matches(of: createPattern) {
             let parts = String(match.1).split(separator: "|", omittingEmptySubsequences: false).map {
@@ -580,23 +735,44 @@ final class ChatManager {
 
             if let startDate = dateFormatter.date(from: startStr),
                let endDate = dateFormatter.date(from: endStr) {
+                // Defense-in-depth: the prompt declares dimension REQUIRED,
+                // but "REQUIRED" is a soft constraint on the model — it
+                // routinely drops fields under load or in long multi-action
+                // replies. Default to `.practical` when missing so an
+                // omitted tag never re-creates the original user-reported
+                // regression (untagged tasks landing without dimension and
+                // never firing the BalancePulse). Practical is the safest
+                // fallback because it's the unscored bucket: a real-world
+                // chore mis-tagged practical is closer to truth than the
+                // same chore mis-tagged physical/mental/emotional/spiritual,
+                // and it doesn't pollute pillar bars with phantom effort.
+                let resolvedDimension = dimension ?? .practical
                 calendarActions.append(.create(
                     title: title,
                     start: startDate,
                     end: endDate,
                     description: desc,
                     recurrence: recurrence,
-                    dimension: dimension
+                    dimension: resolvedDimension
                 ))
             }
             displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
         }
 
-        // Parse DELETE_EVENT tags
+        // Parse DELETE_EVENT tags. The captured eventID is shape-validated
+        // against the format we ourselves emit ("google:<id>" or an Apple
+        // EKEvent identifier) — anything else is an attempt to forge a
+        // delete from a hostile string the model relayed (calendar invite,
+        // shared note). A failed shape check strips the tag from the
+        // displayed reply but does not enqueue a delete action.
         let deletePattern = /\[\[DELETE_EVENT:(.+?)\]\]/
         for match in text.matches(of: deletePattern) {
             let eventID = String(match.1).trimmingCharacters(in: .whitespaces)
-            calendarActions.append(.delete(eventID: eventID))
+            if Self.isValidExternalEventID(eventID) {
+                calendarActions.append(.delete(eventID: eventID))
+            } else {
+                AppLogger.ai.warning("Dropped DELETE_EVENT tag with invalid eventID shape")
+            }
             displayText = displayText.replacingOccurrences(of: String(match.0), with: "")
         }
 

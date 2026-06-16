@@ -41,8 +41,18 @@ if grep -rnE 'toolbar\([[:space:]]*\.hidden[[:space:]]*,[[:space:]]*for:[[:space
   fail=1
 fi
 
+# 3. Onboarding must not reintroduce a native pager. A page-style TabView is a
+#    UIPageViewController whose chrome can leak the same Liquid Glass lens, and
+#    its horizontal swipe bypasses each screen's Continue / Skip validation
+#    gates. The onboarding flow uses a manual ZStack page container instead.
+onboarding="MyAIssistant/Views/Onboarding/OnboardingContainerView.swift"
+if grep -nE '(^|[^A-Za-z])TabView[[:space:]]*[({]|tabViewStyle\([[:space:]]*\.page' "$onboarding"; then
+  echo "::error file=${onboarding}::Native page TabView reintroduced in onboarding — use the manual ZStack page container instead."
+  fail=1
+fi
+
 if [ "$fail" -eq 0 ]; then
-  echo "guard-no-native-tabbar: OK — no native TabView or hidden-tabBar toolbar found."
+  echo "guard-no-native-tabbar: OK — no native TabView, hidden-tabBar toolbar, or onboarding pager found."
 fi
 
 exit "$fail"

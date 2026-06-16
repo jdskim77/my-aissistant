@@ -20,12 +20,28 @@ struct BalancePulse: Equatable, Sendable {
     let points: Int
     let token: UUID
     let createdAt: Date
+    /// True for completions that don't contribute to a scored pillar
+    /// (practical-only or untagged tasks). The downstream consumer
+    /// (HomeView / BalancePulseCard) renders a generic whole-compass
+    /// shimmer instead of a colored particle flying to a specific bar.
+    /// `dimension` is set to `.practical` for neutral pulses but the
+    /// flag is what the UI branches on — keeps "this pulse doesn't
+    /// claim a pillar contribution" explicit instead of inferred from
+    /// the dimension being unscored.
+    let isNeutral: Bool
 
-    init(dimension: LifeDimension, points: Int, token: UUID = UUID(), createdAt: Date = Date()) {
+    init(
+        dimension: LifeDimension,
+        points: Int,
+        token: UUID = UUID(),
+        createdAt: Date = Date(),
+        isNeutral: Bool = false
+    ) {
         self.dimension = dimension
         self.points = points
         self.token = token
         self.createdAt = createdAt
+        self.isNeutral = isNeutral
     }
 
     /// True if the pulse is older than the given window — used by the Balance

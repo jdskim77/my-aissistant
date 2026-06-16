@@ -110,7 +110,8 @@ final class BackgroundTaskManagerTests: XCTestCase {
         XCTAssertEqual(fetched.first?.tasksTotal, 5)
         XCTAssertEqual(fetched.first?.tasksCompleted, 3)
         XCTAssertEqual(fetched.first?.checkInsCompleted, 2)
-        XCTAssertEqual(fetched.first?.averageMood, 3.5, accuracy: 0.01)
+        let mood = try XCTUnwrap(fetched.first?.averageMood)
+        XCTAssertEqual(mood, 3.5, accuracy: 0.01)
         XCTAssertEqual(fetched.first?.streakCount, 4)
     }
 

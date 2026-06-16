@@ -61,11 +61,23 @@ final class HabitManager {
     /// actually contributes to a scored dimension — untagged habit toggles
     /// are score-neutral and the cache doesn't need to be flushed.
     private func publishPulse(for habit: HabitItem) {
-        guard let dim = habit.dimensions.primaryScored else { return }
-        balanceManager?.invalidateCache()
-        let scoredCount = habit.dimensions.filter(\.isScored).count
-        let share = splitPoints(total: HabitManager.habitEffortPoints, across: scoredCount)
-        balancePulseBus?.publish(BalancePulse(dimension: dim, points: share))
+        if let dim = habit.dimensions.primaryScored {
+            balanceManager?.invalidateCache()
+            let scoredCount = habit.dimensions.filter(\.isScored).count
+            let share = splitPoints(total: HabitManager.habitEffortPoints, across: scoredCount)
+            balancePulseBus?.publish(BalancePulse(dimension: dim, points: share))
+        } else {
+            // Practical-only or untagged habit completion — fire a
+            // neutral pulse for parity with TaskManager. The user gets
+            // the same whole-card scale acknowledgment regardless of
+            // whether they completed a chore-style habit or a
+            // chore-style task. Without this, the surfaces felt
+            // inconsistent (tasks pulsed, untagged habits silently
+            // checked off). BUG-05 from the latch+neutral-pulse QA pass.
+            balancePulseBus?.publish(
+                BalancePulse(dimension: .practical, points: 1, isNeutral: true)
+            )
+        }
     }
 
     func findHabit(byID id: String) -> HabitItem? {

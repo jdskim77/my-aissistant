@@ -401,7 +401,7 @@ struct SettingsView: View {
                             icon: "bubble.left.and.bubble.right.fill",
                             color: AppColors.accent,
                             title: "Send Feedback",
-                            subtitle: AppConstants.isBetaUnlimited
+                            subtitle: AppConstants.isBetaBuild
                                 ? "Anonymous form — ~5 min, every answer shapes what comes next"
                                 : "Report a bug or share an idea"
                         )
@@ -632,12 +632,12 @@ struct SettingsView: View {
     // MARK: - Account Actions
 
     /// Open the right feedback channel for the current build phase.
-    /// - Beta (`isBetaUnlimited == true`): opens the structured Google Form in Safari.
-    ///   Anonymous, ~5 min, designed for high-signal beta feedback.
-    /// - Public: opens the system Mail composer pre-filled with device, OS, and
-    ///   app version diagnostics so support can debug without asking.
+    /// - Beta (`isBetaBuild == true` — Debug or TestFlight): opens the
+    ///   structured Google Form in Safari. Anonymous, ~5 min, high-signal.
+    /// - Public (App Store): opens the system Mail composer pre-filled with
+    ///   device, OS, and app version diagnostics so support can debug.
     private func sendFeedback() {
-        if AppConstants.isBetaUnlimited {
+        if AppConstants.isBetaBuild {
             if let url = URL(string: AppConstants.feedbackGoogleFormURL) {
                 UIApplication.shared.open(url)
             }

@@ -364,11 +364,11 @@ struct CalendarImportView: View {
             // Present ASWebAuthenticationSession
             let callbackURL = await startGoogleAuth(url: authURL)
 
-            if let callbackURL,
-               let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
-               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+            if let callbackURL {
                 do {
-                    try await syncManager.googleService.exchangeCodeForTokens(code)
+                    // Service validates `state` against the pending PKCE flow,
+                    // extracts the code, and exchanges it with the verifier.
+                    try await syncManager.googleService.exchangeCallback(callbackURL)
                     await syncManager.loadGoogleCalendars()
                 } catch {
                     googleAuthError = "Sign-in failed: \(error.localizedDescription)"
@@ -395,7 +395,9 @@ struct CalendarImportView: View {
                     continuation.resume(returning: callbackURL)
                 }
             }
-            session.prefersEphemeralWebBrowserSession = false
+            // Ephemeral session — don't reuse Safari cookies. See sibling site
+            // in CalendarSettingsView for rationale.
+            session.prefersEphemeralWebBrowserSession = true
             session.presentationContextProvider = GoogleAuthPresenter.shared
             session.start()
         }

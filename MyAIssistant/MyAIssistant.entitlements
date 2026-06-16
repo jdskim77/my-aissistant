@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- aps-environment: `development` is correct for Debug + TestFlight Internal
+	     Testing builds. Flip to `production` for App Store / TestFlight External
+	     Testing release. There is currently no `didRegisterForRemoteNotifications`
+	     handler in the app, so push delivery is wired-but-unused; flipping early
+	     silently breaks future Debug push tests, so we leave it at `development`
+	     and revisit when the first remote-push feature ships. -->
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.developer.applesignin</key>

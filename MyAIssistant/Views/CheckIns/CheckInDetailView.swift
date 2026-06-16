@@ -36,9 +36,36 @@ struct CheckInDetailView: View {
     @Environment(\.userName) private var userName
     @State private var recapMessage: String?
     @State private var isLoadingRecap = false
+    /// True when `recapMessage` is the hardcoded `SafeResourceCopy.message()`
+    /// returned by the crisis gate in `DailyRecapGenerator` (BUG-03 fix
+    /// from the recap-gate QA pass). Drives a distinct card variant —
+    /// safety framing, hotline link, no "Reply" affordance — so VoiceOver
+    /// users don't hear "Daily insight from your assistant" when they're
+    /// actually being shown crisis resources, and so the URL in the body
+    /// is a tappable Link instead of plain text.
+    @State private var isSafetyRecap = false
     /// Surfaces a brief "switched to <slot>" banner when the user tapped an
     /// already-completed slot and we auto-advanced to the next open one.
     @State private var didAutoAdvanceSlot = false
+    /// True during the 250ms beat between a tap on mood/energy and the
+    /// auto-advance to the next step. Locks the picker buttons so a
+    /// fast double-tap can't skip a step, and hides the redundant
+    /// Continue button on these steps (since the tap *is* the answer).
+    @State private var isAdvancing = false
+    /// Generation counter for auto-advance. Each `scheduleAutoAdvance`
+    /// call increments it; the awaiting task captures its own generation
+    /// and only commits the advance if the counter still matches. This
+    /// closes a race that `Task.cancel()` alone can't: cancel is async
+    /// and the sleeping task may have already passed `isCancelled` by
+    /// the time we cancel it. Generation match is a synchronous fence.
+    @State private var advanceGeneration = 0
+    /// Per-tap counter wired into `.sensoryFeedback(.selection, trigger:)`
+    /// on the energy step so re-tapping the SAME value still fires a
+    /// haptic (e.g. after Back-nav from notes). `trigger:` only fires
+    /// on value change — using `selectedEnergy` as the trigger swallows
+    /// haptics on identical re-taps. MoodPicker has its own internal
+    /// counter for the same reason. BUG-06 from the auto-advance QA pass.
+    @State private var hapticTickEnergy = 0
 
     // Habits due today
     @Query(filter: #Predicate<HabitItem> { $0.archivedAt == nil }) private var allHabits: [HabitItem]
@@ -159,6 +186,11 @@ struct CheckInDetailView: View {
                 } else {
                     loadGreeting()
                 }
+            }
+            .onDisappear {
+                // Sheet dismissed mid-beat → cancel pending auto-advance
+                // so it can't fire goForward against torn-down state.
+                cancelPendingAdvance()
             }
         }
     }
@@ -339,7 +371,11 @@ struct CheckInDetailView: View {
                 .font(.system(size: 40, weight: .semibold))
                 .foregroundColor(timeSlot.color)
 
-            MoodPicker(selectedMood: $selectedMood)
+            MoodPicker(
+                selectedMood: $selectedMood,
+                onSelect: { _ in scheduleAutoAdvance() },
+                isLocked: isAdvancing
+            )
         }
         .padding(.top, 20)
     }
@@ -355,9 +391,12 @@ struct CheckInDetailView: View {
             HStack(spacing: 12) {
                 ForEach(1...5, id: \.self) { level in
                     Button {
+                        guard !isAdvancing else { return }
+                        hapticTickEnergy &+= 1
                         withAnimation(.spring(response: 0.3)) {
                             selectedEnergy = level
                         }
+                        scheduleAutoAdvance()
                     } label: {
                         VStack(spacing: 4) {
                             ZStack {
@@ -395,6 +434,7 @@ struct CheckInDetailView: View {
             }
         }
         .padding(.top, 20)
+        .sensoryFeedback(.selection, trigger: hapticTickEnergy)
     }
 
     // MARK: - Notes Step
@@ -420,6 +460,10 @@ struct CheckInDetailView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(AppColors.border, lineWidth: 1)
                 )
+                // Free-text mood/journal content — redact under Sensitive
+                // Content (screen recording, screenshare, AssistiveTouch
+                // overlay capture). Privacy is the wedge per CLAUDE.md.
+                .privacySensitive()
         }
         .padding(.top, 20)
     }
@@ -455,9 +499,15 @@ struct CheckInDetailView: View {
                 .accessibilityLabel("Loading daily insight")
                 .padding()
             } else if let recap = recapMessage {
-                recapCard(recap)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    .animation(.easeOut(duration: 0.3), value: recapMessage)
+                Group {
+                    if isSafetyRecap {
+                        safetyResourceCard(recap)
+                    } else {
+                        recapCard(recap)
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .animation(.easeOut(duration: 0.3), value: recapMessage)
             }
 
             // Habits due today (not yet completed)
@@ -611,14 +661,113 @@ struct CheckInDetailView: View {
         .accessibilityLabel("Daily insight from your assistant")
     }
 
+    /// Card variant shown when the recap is the hardcoded
+    /// `SafeResourceCopy.message()` returned by the crisis gate. Distinct
+    /// from `recapCard` in three ways that matter for safety:
+    ///
+    ///   1. Header reads "Support resources" instead of "I noticed
+    ///      something about your day" — VoiceOver announces the actual
+    ///      framing, not the daily-insight framing.
+    ///   2. The hotline URL from `SafeResourceCopy.actionURL()` is a
+    ///      tappable `Link` (opens in Safari) instead of being plain
+    ///      text inside the body string.
+    ///   3. There is NO "Reply" button. Conversational follow-up to the
+    ///      coach is the wrong action here — the user should reach a
+    ///      human, not chat with the AI. The Done button on the parent
+    ///      surface is the only forward affordance.
+    ///
+    /// `accessibilityLabel` carries the safety framing so screen-reader
+    /// users hear "Support resources" before the body is read.
+    private func safetyResourceCard(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header + body grouped into a single a11y element so
+            // VoiceOver announces "Support resources, <body>" on first
+            // focus. Link stays outside as a discrete focusable action.
+            // Mirrors the ChatBubble safety variant for surface
+            // consistency.
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "heart.text.square.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.coral)
+                        .accessibilityHidden(true)
+                    Text("Support resources")
+                        .font(AppFonts.bodyMedium(13))
+                        .foregroundColor(AppColors.coral)
+                }
+
+                Text(message)
+                    .font(AppFonts.body(15))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+
+            // Tappable hotline link — opens findahelpline.com (or the
+            // region-specific URL `SafeResourceCopy.actionURL` returns)
+            // in Safari. Pre-fix this was a plain-text URL inside the
+            // body string, which VoiceOver and most users would not
+            // recognize as actionable.
+            Link(destination: SafeResourceCopy.actionURL()) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption)
+                    Text(SafeResourceCopy.findHelplineLabel())
+                        .font(AppFonts.bodyMedium(13))
+                }
+                .foregroundColor(AppColors.coral)
+                .frame(minHeight: 44)
+                .padding(.horizontal, 12)
+                .background(AppColors.coral.opacity(0.1))
+                .cornerRadius(AppRadius.sm)
+                // Make the entire pill (including padding + background)
+                // hit-testable. Without this, `Link`'s gesture region is
+                // the rendered text bounds only and taps on the coral
+                // padding miss. Same shape as the Reply button on the
+                // recap card. BUG-05 from the safety-card QA pass.
+                .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Find a helpline")
+            .accessibilityHint("Opens findahelpline.com in your browser")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .fill(AppColors.coral.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .stroke(AppColors.coral.opacity(0.2), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 4)
+    }
+
     private func generateRecap() async {
         guard let generator = recapGenerator else { return }
         isLoadingRecap = true
-        recapMessage = await generator.generate(
+        let result = await generator.generate(
             currentTimeSlot: timeSlot,
             userName: userName,
             subscriptionTier: tier
         )
+        // Discriminate via the typed result instead of string-equality
+        // against `SafeResourceCopy.message()`. The previous string match
+        // was fragile against any copy edit and against locale drift
+        // between generator and view (BUG-01/02 from the safety-card
+        // QA pass). Now the generator's return type carries the
+        // safety-vs-insight intent explicitly.
+        switch result {
+        case .insight(let text):
+            recapMessage = text
+            isSafetyRecap = false
+        case .safety(let text):
+            recapMessage = text
+            isSafetyRecap = true
+        case .none:
+            recapMessage = nil
+            isSafetyRecap = false
+        }
         isLoadingRecap = false
     }
 
@@ -646,6 +795,16 @@ struct CheckInDetailView: View {
                 }
             }
 
+            // Continue is hidden on the single-select rating steps (mood,
+            // energy) since the tap *is* the answer — auto-advance kicks
+            // in after a 250ms beat. Greeting still needs an explicit
+            // Begin tap (loading gate); notes needs an explicit Complete
+            // (free-text has no natural commit moment). VoiceOver users
+            // always see Continue (auto-advance disabled for them).
+            //
+            // We always render the Continue slot — invisible + non-hit
+            // when hidden — so the footer geometry doesn't thrash on
+            // step change (BUG-03 from the QA pass on this commit).
             Button {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     goForward()
@@ -659,11 +818,63 @@ struct CheckInDetailView: View {
                     .background(canAdvance ? timeSlot.color : AppColors.textMuted)
                     .cornerRadius(12)
             }
-            .disabled(!canAdvance)
+            .disabled(!canAdvance || !showsForwardButton)
+            .opacity(showsForwardButton ? 1 : 0)
+            .accessibilityHidden(!showsForwardButton)
+            .animation(.easeInOut(duration: 0.2), value: showsForwardButton)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(AppColors.surface)
+    }
+
+    /// Auto-advance steps suppress the forward button — but ONLY when
+    /// auto-advance is active. Under VoiceOver we keep Continue visible
+    /// so screen-reader users have an explicit, predictable advance
+    /// affordance and don't lose focus mid-announcement.
+    private var showsForwardButton: Bool {
+        switch currentStep {
+        case .greeting, .notes: return true
+        case .mood, .energy:
+            return UIAccessibility.isVoiceOverRunning
+        case .complete: return false
+        }
+    }
+
+    /// Schedule a 250ms beat then call `goForward`. The beat lets the
+    /// selection state register visually so the tap doesn't feel
+    /// stolen. Generation-fenced — cancellation is via incrementing
+    /// `advanceGeneration`; the awaiting task only commits if its
+    /// captured generation still matches. Skipped entirely under
+    /// VoiceOver so screen-reader users get the explicit Continue
+    /// affordance instead of having focus yanked mid-announcement.
+    private func scheduleAutoAdvance() {
+        // VoiceOver: skip auto-advance, surface Continue button instead.
+        // `showsForwardButton` reads the same flag so they stay in sync.
+        if UIAccessibility.isVoiceOverRunning { return }
+
+        advanceGeneration += 1
+        let myGen = advanceGeneration
+        isAdvancing = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            // Synchronous fence: only the most recently scheduled
+            // generation may commit. A stale task that woke after
+            // a re-schedule, dismiss, or back-nav drops here.
+            guard myGen == advanceGeneration else { return }
+            isAdvancing = false
+            withAnimation(.easeInOut(duration: 0.3)) {
+                goForward()
+            }
+        }
+    }
+
+    /// Invalidate any pending auto-advance — used by goBack, onDisappear,
+    /// and finalize paths so a stale beat can't fire goForward against
+    /// torn-down state.
+    private func cancelPendingAdvance() {
+        advanceGeneration += 1
+        isAdvancing = false
     }
 
     // MARK: - Logic
@@ -707,6 +918,8 @@ struct CheckInDetailView: View {
     }
 
     private func goBack() {
+        // Cancel any pending auto-advance — user changed direction.
+        cancelPendingAdvance()
         switch currentStep {
         case .mood: currentStep = .greeting
         case .energy: currentStep = .mood

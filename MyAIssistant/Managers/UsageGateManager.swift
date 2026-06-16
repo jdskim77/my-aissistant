@@ -63,13 +63,48 @@ final class UsageGateManager {
     // MARK: - Gate Checks
 
     func canSendChat(tier: SubscriptionTier) -> Bool {
-        // Developer mode + beta period bypass everything, including integrity
-        // checks. Otherwise CloudKit cross-device HMAC mismatches could lock
-        // beta testers out of chat with no recovery path.
+        // Absolute daily-input-token ceiling — applies first, before the
+        // beta / developer bypass. Without this, an exposed BYOK key plus
+        // `isBetaUnlimited == true` (the current production state) means
+        // there's no client-side ceiling on AI spend. The cap is high
+        // enough not to trip legitimate workloads but stops runaway abuse.
+        if Self.absoluteDailyInputTokens() >= AppConstants.absoluteDailyInputTokenCeiling {
+            AppLogger.ai.warning("Absolute daily input-token ceiling reached — chat blocked for the rest of today")
+            return false
+        }
+        // Developer mode + beta period bypass everything ELSE, including
+        // integrity checks. Otherwise CloudKit cross-device HMAC mismatches
+        // could lock beta testers out of chat with no recovery path.
         if AppConstants.isDeveloperMode { return true }
         let t = tracker()
         guard t.verifyIntegrity() else { return false }
         return t.canSendChat(tier: tier)
+    }
+
+    // MARK: - Absolute daily token ceiling
+
+    /// UserDefaults-backed: a `[dateString: tokenCount]` keyed by today's
+    /// `yyyy-MM-dd`. We intentionally store a single-key dictionary instead
+    /// of just an Int so a stale value from yesterday auto-clears on read.
+    private static func todayKey() -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
+
+    static func absoluteDailyInputTokens() -> Int {
+        let bucket = UserDefaults.standard.dictionary(forKey: AppConstants.absoluteDailyTokenBucketKey) as? [String: Int] ?? [:]
+        return bucket[todayKey()] ?? 0
+    }
+
+    static func incrementAbsoluteDailyInputTokens(by tokens: Int) {
+        guard tokens > 0 else { return }
+        let key = todayKey()
+        // Replace the whole dictionary with a single entry — yesterday's
+        // entry is the one cleanup we need.
+        let current = (UserDefaults.standard.dictionary(forKey: AppConstants.absoluteDailyTokenBucketKey) as? [String: Int])?[key] ?? 0
+        UserDefaults.standard.set([key: current + tokens], forKey: AppConstants.absoluteDailyTokenBucketKey)
     }
 
     func canDoCheckIn(tier: SubscriptionTier) -> Bool {
@@ -125,6 +160,11 @@ final class UsageGateManager {
         let t = tracker()
         t.recordChatMessage(inputTokens: effectiveInput, outputTokens: outputTokens)
         modelContext.safeSave()
+
+        // Bump the absolute daily ceiling — this counter is the only one
+        // that survives `isBetaUnlimited` / developer mode, so it must
+        // increment regardless of tier path.
+        Self.incrementAbsoluteDailyInputTokens(by: effectiveInput)
     }
 
     func recordCheckIn() {

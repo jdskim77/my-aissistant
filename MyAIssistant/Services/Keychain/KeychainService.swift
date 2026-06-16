@@ -51,8 +51,14 @@ class KeychainService: @unchecked Sendable {
         let fallbackStatus = SecItemCopyMatching(fallbackQuery as CFDictionary, &fallbackResult)
         if fallbackStatus == errSecSuccess, let data = fallbackResult as? Data,
            let string = String(data: data, encoding: .utf8) {
-            // Re-save with shared access group so Watch can access it
-            _ = save(key: key, value: string)
+            // Re-save with shared access group so Watch can access it.
+            // Always pin to `.whenUnlockedThisDeviceOnly` on this migration path:
+            // we don't know what `key` is at this layer, but every key the
+            // fallback can hit (BYOK API keys, OAuth refresh tokens, auth JWTs)
+            // is sensitive enough that the legacy `.afterFirstUnlock` default
+            // would silently downgrade it and let it migrate via iCloud
+            // Keychain to attacker-paired devices.
+            _ = save(key: key, value: string, protection: .whenUnlockedThisDeviceOnly)
             return string
         }
 
@@ -118,6 +124,10 @@ class KeychainService: @unchecked Sendable {
     // MARK: - Convenience
 
     func anthropicAPIKey() -> String? {
+        // Jailbreak posture check is intentionally NOT here — the share
+        // extension target compiles this file and has no access to the
+        // main-app `RuntimePosture` / `AppLogger` symbols. The warning is
+        // emitted at the main-app BYOK call funnel (ChatManager) instead.
         read(key: AppConstants.anthropicAPIKeyKey)
     }
 

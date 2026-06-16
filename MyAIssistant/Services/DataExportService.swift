@@ -69,7 +69,9 @@ struct DataExportService {
             "chatMessages": chats.map { m in
                 ["id": m.id, "role": m.roleRaw, "content": m.content,
                  "timestamp": iso.string(from: m.timestamp),
-                 "conversationID": m.conversationID] as [String: Any]
+                 "conversationID": m.conversationID,
+                 "isErrorStub": m.isErrorStub,
+                 "isSafetyResource": m.isSafetyResource] as [String: Any]
             },
 
             "dailySnapshots": snapshots.map { s in
@@ -309,12 +311,21 @@ struct DataExportService {
                     timestamp = Date()
                 }
 
+                // Round-trip the safety/error flags. Without this, an
+                // export → import cycle silently drops `isSafetyResource`
+                // (regressing the BUG-03 chat-bubble fix the moment a
+                // backup is restored) and `isErrorStub` (re-feeding
+                // app-generated stubs back to the AI as fake prior turns).
+                // Both default to false so old export files without the
+                // keys decode cleanly.
                 let msg = ChatMessage(
                     id: id,
                     role: MessageRole(rawValue: roleRaw) ?? .user,
                     content: content,
                     timestamp: timestamp,
-                    conversationID: dict["conversationID"] as? String ?? "main"
+                    conversationID: dict["conversationID"] as? String ?? "main",
+                    isErrorStub: dict["isErrorStub"] as? Bool ?? false,
+                    isSafetyResource: dict["isSafetyResource"] as? Bool ?? false
                 )
                 modelContext.insert(msg)
                 result.chatsImported += 1

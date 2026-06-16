@@ -34,14 +34,24 @@ struct GoalTaskSuggestion: Identifiable, Hashable, Sendable {
 
 // MARK: - Errors
 
-enum GoalTaskSuggesterError: LocalizedError {
+enum GoalTaskSuggesterError: LocalizedError, Equatable {
     case parseFailed
     case emptyResponse
+    /// Raised when `AIGuardrail.preflight` flagged the user's season-goal
+    /// intention. Carries the detected language so the caller can render
+    /// localized safety copy via `SafeResourceCopy.message(detectedLanguage:)`.
+    /// `nil` language falls back to `Locale.current` in `SafeResourceCopy`.
+    case safetyRoute(detectedLanguage: String?)
 
     var errorDescription: String? {
         switch self {
         case .parseFailed: return "Couldn't understand the suggestions from the AI. Please try again."
         case .emptyResponse: return "The AI returned no suggestions. Please try again."
+        case .safetyRoute:
+            // The caller should branch on this case and render the safety
+            // card directly — this string is only used if the error is
+            // mis-routed to a generic error view, as a defensive fallback.
+            return "Suggestions are paused."
         }
     }
 }
@@ -74,6 +84,19 @@ final actor GoalTaskSuggester {
         recentTaskTitles: [String],
         scheduleSummary: String
     ) async throws -> [GoalTaskSuggestion] {
+        // Crisis preflight on the user-typed intention. The string is
+        // already `.sanitizedForPrompt` downstream, but action-tag
+        // glyph stripping doesn't catch self-harm content — that's
+        // what `AIGuardrail` is for. Surfaces a typed error carrying
+        // `detectedLanguage` so `GoalSuggestionsSheet` can render the
+        // inline safety card with localized copy.
+        if !goal.intention.isEmpty {
+            let outcome = AIGuardrail.preflight(userText: goal.intention, callSite: "goal-suggester")
+            if case .block(_, let evaluation) = outcome {
+                throw GoalTaskSuggesterError.safetyRoute(detectedLanguage: evaluation.detectedLanguage)
+            }
+        }
+
         let provider = try AIProviderFactory.provider(for: tier, useCase: .chat, keychain: keychain)
         let systemPrompt = buildSystemPrompt(
             goal: goal,
@@ -102,13 +125,16 @@ final actor GoalTaskSuggester {
         scheduleSummary: String
     ) -> String {
         let dimensionLabel = goal.dimension.label
-        let intention = goal.intention.isEmpty ? "(no explicit intention text)" : goal.intention
+        // `intention` is user-typed and `recentTaskTitles` may come from calendar
+        // invites — both flow verbatim into the prompt, so sanitize action-tag
+        // glyphs to prevent a hostile string from forging tags the model echoes.
+        let intention = goal.intention.isEmpty ? "(no explicit intention text)" : goal.intention.sanitizedForPrompt
         let daysLeft = goal.daysRemaining
         let recentBlock: String
         if recentTaskTitles.isEmpty {
             recentBlock = "(none)"
         } else {
-            recentBlock = recentTaskTitles.prefix(30).map { "- \($0)" }.joined(separator: "\n")
+            recentBlock = recentTaskTitles.prefix(30).map { "- \($0.sanitizedForPrompt)" }.joined(separator: "\n")
         }
         let scheduleBlock = scheduleSummary.isEmpty ? "(empty)" : scheduleSummary
 

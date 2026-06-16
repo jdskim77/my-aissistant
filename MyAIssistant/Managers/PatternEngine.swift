@@ -291,8 +291,10 @@ final class PatternEngine {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
 
+        // Sanitize user / AI-controlled fields so they can't smuggle an
+        // action tag (e.g. `[[DELETE_EVENT:...]]`) back into the prompt.
         let lines = activities.prefix(50).map { entry in
-            "\(formatter.string(from: entry.date)): [\(entry.category)] \(entry.activity)"
+            "\(formatter.string(from: entry.date)): [\(entry.category.sanitizedForPrompt)] \(entry.activity.sanitizedForPrompt)"
         }
         return lines.joined(separator: "\n")
     }
@@ -382,7 +384,10 @@ final class PatternEngine {
             sortBy: [SortDescriptor(\TaskItem.date)]
         )
         let weekTasks = (try? modelContext.fetch(tasksDescriptor)) ?? []
-        let weekSummary = weekTasks.map { "\($0.title) (\($0.done ? "done" : "pending"))" }.joined(separator: "\n")
+        // Title may originate from a calendar invite (untrusted external sender).
+        // Strip action-tag glyphs so a hostile invite can't forge a CREATE/DELETE
+        // tag the model echoes back into `parseResponseTags`.
+        let weekSummary = weekTasks.map { "\($0.title.sanitizedForPrompt) (\($0.done ? "done" : "pending"))" }.joined(separator: "\n")
 
         // Average mood from check-ins
         let checkInDescriptor = FetchDescriptor<CheckInRecord>(

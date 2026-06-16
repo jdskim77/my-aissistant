@@ -291,23 +291,29 @@ final class CalendarSyncManager {
             )
             let existing = (try? modelContext.fetch(descriptor)) ?? []
 
+            // External calendar invites may contain action-tag glyphs (`[[`, `]]`,
+            // `|`) inserted by a hostile sender. Sanitize at ingestion so any
+            // downstream prompt that includes these strings can't be forged into
+            // emitting a CREATE/DELETE tag the model echoes.
+            let safeTitle = (ekEvent.title ?? "Untitled").sanitizedForPrompt
+            let safeNotes = (ekEvent.notes ?? "").sanitizedForPrompt
+
             if let existingTask = existing.first {
                 // Update existing task
-                existingTask.title = ekEvent.title ?? "Untitled"
+                existingTask.title = safeTitle
                 existingTask.date = ekEvent.startDate
-                existingTask.notes = ekEvent.notes ?? ""
+                existingTask.notes = safeNotes
             } else {
                 // Skip if a task with the same title already exists on this day (cross-source dedup)
-                let title = ekEvent.title ?? "Untitled"
-                guard !taskExistsOnSameDay(title: title, date: ekEvent.startDate) else { continue }
+                guard !taskExistsOnSameDay(title: safeTitle, date: ekEvent.startDate) else { continue }
 
                 let task = TaskItem(
-                    title: title,
+                    title: safeTitle,
                     category: .personal,
                     priority: .medium,
                     date: ekEvent.startDate,
                     icon: "📅",
-                    notes: ekEvent.notes ?? ""
+                    notes: safeNotes
                 )
                 task.externalCalendarID = eventID
                 modelContext.insert(task)
@@ -353,21 +359,26 @@ final class CalendarSyncManager {
                     )
                     let existing = (try? modelContext.fetch(descriptor)) ?? []
 
+                    // Sanitize external invite content at ingestion (see Apple
+                    // sync above for rationale).
+                    let safeTitle = event.title.sanitizedForPrompt
+                    let safeNotes = (event.description ?? "").sanitizedForPrompt
+
                     if let existingTask = existing.first {
-                        existingTask.title = event.title
+                        existingTask.title = safeTitle
                         existingTask.date = startDate
-                        existingTask.notes = event.description ?? ""
+                        existingTask.notes = safeNotes
                     } else {
                         // Skip if a task with the same title already exists on this day (cross-source dedup)
-                        guard !taskExistsOnSameDay(title: event.title, date: startDate) else { continue }
+                        guard !taskExistsOnSameDay(title: safeTitle, date: startDate) else { continue }
 
                         let task = TaskItem(
-                            title: event.title,
+                            title: safeTitle,
                             category: .personal,
                             priority: .medium,
                             date: startDate,
                             icon: "🌐",
-                            notes: event.description ?? ""
+                            notes: safeNotes
                         )
                         task.externalCalendarID = googleID
                         modelContext.insert(task)

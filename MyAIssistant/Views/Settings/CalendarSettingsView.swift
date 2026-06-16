@@ -470,11 +470,12 @@ struct CalendarSettingsView: View {
 
             let callbackURL = await startGoogleAuth(url: authURL)
 
-            if let callbackURL,
-               let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
-               let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+            if let callbackURL {
                 do {
-                    try await syncManager.googleService.exchangeCodeForTokens(code)
+                    // Service validates `state` against the pending PKCE flow,
+                    // extracts the code, and exchanges it with the verifier.
+                    // Anything malformed or replayed throws `.authFailed`.
+                    try await syncManager.googleService.exchangeCallback(callbackURL)
                     await syncManager.loadGoogleCalendars()
                     isGoogleConnected = true
 
@@ -527,7 +528,11 @@ struct CalendarSettingsView: View {
                     continuation.resume(returning: callbackURL)
                 }
             }
-            session.prefersEphemeralWebBrowserSession = false
+            // Ephemeral session — don't reuse Safari cookies. Without this, a
+            // user who briefly hands off an unlocked phone can re-authenticate
+            // silently with the host's Google account; with it, the OAuth flow
+            // always requires fresh credentials in the in-app sheet.
+            session.prefersEphemeralWebBrowserSession = true
             session.presentationContextProvider = GoogleAuthPresenter.shared
             session.start()
         }

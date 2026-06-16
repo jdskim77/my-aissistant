@@ -82,6 +82,17 @@ final class ShareExtensionViewModel {
         let content = buildContentString()
         guard !content.isEmpty else { return }
 
+        // Crisis preflight — classifier-first, LLM-never. Shared content
+        // is untrusted: a user can route self-harm text from another
+        // app into Thrivn via the share sheet. Without this gate, that
+        // text would flow verbatim to Anthropic for "task extraction."
+        // On match: skip the LLM call and keep the raw default title;
+        // the user can edit or discard before tapping Save. The
+        // in-app coach gate fires when they later open Thrivn proper.
+        if ShareExtensionCrisisGuardrail.isCrisis(content) {
+            return
+        }
+
         let keychainService = KeychainService()
 
         // Try BYOK Anthropic key first, then Thrivn backend access token
@@ -131,9 +142,14 @@ final class ShareExtensionViewModel {
 
         let context = ModelContext(container)
 
-        // Build notes from the shared content
+        // Build notes from the shared content. Sanitize action-tag glyphs
+        // before persisting — these notes can later flow into an AI prompt
+        // (`DailyRecapGenerator`, etc.), and we don't want a hostile share
+        // to plant a tag the model later echoes.
         var notes = ""
-        if let url = sharedURL {
+        if let url = sharedURL,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
             notes = url.absoluteString
             if let text = sharedText, !text.isEmpty, text != url.absoluteString {
                 notes += "\n\n\(text)"
@@ -141,6 +157,7 @@ final class ShareExtensionViewModel {
         } else if let text = sharedText, text != proposedTitle {
             notes = text
         }
+        notes = Self.sanitizeForPrompt(String(notes.prefix(4_000)))
 
         let task = TaskItem(
             title: proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -169,15 +186,32 @@ final class ShareExtensionViewModel {
 
     // MARK: - Private Helpers
 
+    /// Action-tag glyph stripper, inlined because `PromptSanitizer.swift`
+    /// (the main-app extension on `String`) is not in the share-extension
+    /// target's compile sources. Keep in sync with that file.
+    private static func sanitizeForPrompt(_ s: String) -> String {
+        s.replacingOccurrences(of: "[[", with: "⟦")
+            .replacingOccurrences(of: "]]", with: "⟧")
+            .replacingOccurrences(of: "|", with: "∣")
+    }
+
+    /// Shared content the user routes through the Share sheet is treated as
+    /// untrusted: a sender can attach hostile text or pointer URLs (file://,
+    /// data:, javascript:) that would otherwise flow into an LLM call.
+    /// We cap to 4 KB so a giant pasted page can't blow the input-token
+    /// budget in a single shot, and we allow only http/https URLs.
     private func buildContentString() -> String {
         var parts: [String] = []
         if let text = sharedText, !text.isEmpty {
-            parts.append(text)
+            parts.append(Self.sanitizeForPrompt(text))
         }
-        if let url = sharedURL {
+        if let url = sharedURL,
+           let scheme = url.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
             parts.append(url.absoluteString)
         }
-        return parts.joined(separator: "\n")
+        let joined = parts.joined(separator: "\n")
+        return String(joined.prefix(4_000))
     }
 
     private static func defaultTitle(text: String?, url: URL?) -> String {

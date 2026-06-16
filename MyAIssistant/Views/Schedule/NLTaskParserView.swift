@@ -10,6 +10,12 @@ struct NLTaskParserView: View {
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    /// Hardcoded safety routing copy when `AIGuardrail` flags the input.
+    /// When non-nil, the view replaces the parser UI with the safety card —
+    /// crisis text never reaches the parsing LLM. The optional language
+    /// is threaded so the "Find a helpline" button label localizes too.
+    @State private var safetyMessage: String?
+    @State private var safetyLanguage: String?
 
     // Parsed task fields (editable before confirming)
     @State private var parsedTitle = ""
@@ -26,7 +32,9 @@ struct NLTaskParserView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if showConfirmation {
+                if safetyMessage != nil {
+                    safetyCard
+                } else if showConfirmation {
                     confirmationCard
                 } else {
                     inputSection
@@ -295,6 +303,20 @@ struct NLTaskParserView: View {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
 
+        // Crisis preflight — classifier-first, LLM-never. The quick-add
+        // surface used to skip this; any user typing self-harm language
+        // would have been forwarded to Anthropic for "parsing." Routes
+        // to the in-sheet safety card instead.
+        switch AIGuardrail.preflight(userText: text, callSite: "task-parser") {
+        case .proceed:
+            break
+        case .block(let message, let evaluation):
+            inputFocused = false
+            safetyMessage = message
+            safetyLanguage = evaluation.detectedLanguage
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         inputFocused = false
@@ -379,6 +401,59 @@ struct NLTaskParserView: View {
 
                 parsedDate = cal.date(from: components) ?? date
             }
+        }
+    }
+
+    // MARK: - Safety Card
+
+    /// Rendered when `AIGuardrail` flagged the input. Mirrors the chat
+    /// safety bubble's spirit (coral surface, helpline button) without
+    /// pulling in `ChatBubble` directly. No retry: the user dismisses
+    /// the sheet or taps the helpline.
+    private var safetyCard: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            VStack(spacing: 12) {
+                Image(systemName: "heart.circle.fill")
+                    .font(AppFonts.icon(44))
+                    .foregroundColor(AppColors.coral)
+                    .accessibilityHidden(true)
+
+                Text(safetyMessage ?? "")
+                    .font(AppFonts.body(15))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isHeader)
+            }
+
+            VStack(spacing: 10) {
+                Link(destination: SafeResourceCopy.actionURL()) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "phone.fill")
+                        Text(SafeResourceCopy.findHelplineLabel(detectedLanguage: safetyLanguage))
+                    }
+                    .font(AppFonts.bodyMedium(16))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppColors.coral)
+                    .cornerRadius(16)
+                }
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Close")
+                        .font(AppFonts.body(15))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+            .padding(.horizontal, 20)
+
+            Spacer()
         }
     }
 

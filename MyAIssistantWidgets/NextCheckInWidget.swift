@@ -52,15 +52,33 @@ struct NextCheckInProvider: TimelineProvider {
     }
 
     /// Read user-configured check-in windows from App Group UserDefaults
-    /// (written by the main app's CheckInBehaviorEngine). Falls back to
-    /// hardcoded defaults if nothing is stored yet.
+    /// (written by the main app's CheckInBehaviorEngine). The shared suite
+    /// is writable by any extension with the App-Group entitlement
+    /// (Share Extension), so the decoded payload gets sanity-checked
+    /// before use — out-of-range hours, oversized name strings, or
+    /// excessive entries are dropped and we fall back to the safe defaults.
     private func enabledWindows() -> [WidgetCheckInWindow] {
         let defaults = UserDefaults(suiteName: "group.com.myaissistant.shared")
         if let data = defaults?.data(forKey: "enabledCheckInWindows"),
-           let decoded = try? JSONDecoder().decode([WidgetCheckInWindow].self, from: data) {
+           let decoded = try? JSONDecoder().decode([WidgetCheckInWindow].self, from: data),
+           Self.isValid(decoded) {
             return decoded
         }
-        return [
+        return defaultWindows
+    }
+
+    private static func isValid(_ windows: [WidgetCheckInWindow]) -> Bool {
+        guard (1...8).contains(windows.count) else { return false }
+        return windows.allSatisfy { w in
+            (0...23).contains(w.hour)
+                && (0...59).contains(w.minute)
+                && w.name.count <= 32
+                && w.greeting.count <= 200
+        }
+    }
+
+    private var defaultWindows: [WidgetCheckInWindow] {
+        [
             WidgetCheckInWindow(name: "Morning", hour: 8, minute: 0, greeting: "Good morning!"),
             WidgetCheckInWindow(name: "Midday", hour: 13, minute: 0, greeting: "How's your morning going?"),
             WidgetCheckInWindow(name: "Afternoon", hour: 18, minute: 0, greeting: "Afternoon check-in"),

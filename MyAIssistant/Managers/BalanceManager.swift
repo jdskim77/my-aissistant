@@ -1100,7 +1100,8 @@ final class BalanceManager {
 
         if let goal = seasonGoal {
             lines.append("Season goal: Focus on \(goal.dimension.label) (\(goal.daysRemaining) days left)")
-            if !goal.intention.isEmpty { lines.append("  Intention: \(goal.intention)") }
+            // Sanitize user-typed intention so it can't forge an action tag.
+            if !goal.intention.isEmpty { lines.append("  Intention: \(goal.intention.sanitizedForPrompt)") }
         }
 
         // Energy data

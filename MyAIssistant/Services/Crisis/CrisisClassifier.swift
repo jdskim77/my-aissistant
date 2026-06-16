@@ -21,6 +21,19 @@ struct CrisisEvaluation: Sendable, Equatable {
     let isCrisis: Bool
     /// The matched terms (for audit logs / eval harness). Empty when `isCrisis` is false.
     let matchedTerms: [String]
+    /// BCP-47 language code (`"en"`, `"es"`, `"pt"`, `"zh"`, `"ja"`) of the
+    /// matched patterns, used by callers to pick localized safety copy.
+    /// Solves the "user types in Japanese on en-US device" gap — `Locale.current`
+    /// would return `"en"` even though the flagging text was Japanese.
+    /// Nil when `isCrisis` is false. When multiple languages match (rare),
+    /// the highest-priority is the FIRST matched term's language.
+    let detectedLanguage: String?
 
-    static let safe = CrisisEvaluation(isCrisis: false, matchedTerms: [])
+    static let safe = CrisisEvaluation(isCrisis: false, matchedTerms: [], detectedLanguage: nil)
+
+    init(isCrisis: Bool, matchedTerms: [String], detectedLanguage: String? = nil) {
+        self.isCrisis = isCrisis
+        self.matchedTerms = matchedTerms
+        self.detectedLanguage = detectedLanguage
+    }
 }

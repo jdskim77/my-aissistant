@@ -125,7 +125,7 @@ final class UsageTrackerTests: XCTestCase {
 
     func testFreeTierBlockedAfterCheckInLimit() {
         let tracker = UsageTracker()
-        for _ in 0..<AppConstants.freeCheckInsPerWeek {
+        for _ in 0..<AppConstants.freeCheckInsPerDay {
             tracker.recordCheckIn()
         }
         XCTAssertFalse(tracker.canDoCheckIn(tier: .free))
@@ -151,10 +151,10 @@ final class UsageTrackerTests: XCTestCase {
 
     func testRemainingCheckIns() {
         let tracker = UsageTracker()
-        XCTAssertEqual(tracker.remainingCheckIns, AppConstants.freeCheckInsPerWeek)
+        XCTAssertEqual(tracker.remainingCheckIns, AppConstants.freeCheckInsPerDay)
 
         tracker.recordCheckIn()
-        XCTAssertEqual(tracker.remainingCheckIns, AppConstants.freeCheckInsPerWeek - 1)
+        XCTAssertEqual(tracker.remainingCheckIns, AppConstants.freeCheckInsPerDay - 1)
     }
 
     func testRemainingNeverNegative() {

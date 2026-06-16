@@ -44,6 +44,28 @@
 		<string>clock-sleep-alarm</string>
 	</array>
 
+	<!-- Registered URL Schemes (own this app's callback target).
+	     `com.myaissistant` is the OAuth2 redirect scheme used by Google
+	     Calendar sign-in. Registering it here claims ownership for THIS
+	     bundle so an app installed later can't silently take over the
+	     scheme — combined with PKCE + `state` validation in
+	     GoogleCalendarService, intercepted callbacks fail closed.
+	     The role is "Editor" because we initiate the URL flow
+	     (ASWebAuthenticationSession) AND consume the callback. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.myaissistant.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.myaissistant</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- Background Tasks -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
