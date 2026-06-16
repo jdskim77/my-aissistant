@@ -1,4 +1,5 @@
 import Foundation
+import StoreKit
 
 enum AppConstants {
     // MARK: - API Endpoints
@@ -18,10 +19,59 @@ enum AppConstants {
     static let freeGoalSuggestionsPerWeek = 3
 
     // MARK: - Beta Period
-    /// Beta period flag — when true, all usage limits are disabled for testers.
-    /// Set to false before App Store public release to re-enable free-tier limits.
-    /// One-line revert: change `true` to `false`, rebuild, ship.
-    static let isBetaUnlimited = true
+    /// Beta period flag — when true, all usage limits are disabled.
+    ///
+    /// GATED ON BUILD CONFIGURATION so a release build — App Store **or**
+    /// TestFlight — can NEVER disable limits (audit SEC-01: a hardcoded
+    /// `true` previously meant any release build silently gave everyone
+    /// unlimited paid access). Only local Debug builds are unlimited; every
+    /// release build enforces the free-tier limits.
+    static var isBetaUnlimited: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// True for Debug and TestFlight builds, false for App Store production.
+    ///
+    /// Drives BETA-ONLY UX (currently the structured Google feedback form) —
+    /// deliberately SEPARATE from `isBetaUnlimited`, which gates usage limits
+    /// on DEBUG only. A TestFlight build is a *release* build, so it can't be
+    /// told apart from the App Store at compile time; `resolveBetaBuild()`
+    /// asks StoreKit once at launch and caches the answer. Reads false (the
+    /// safe production path) until that resolves.
+    static var isBetaBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return UserDefaults.standard.bool(forKey: betaBuildResolvedKey)
+        #endif
+    }
+
+    private static let betaBuildResolvedKey = "thrivn.buildEnv.isBetaBuild"
+
+    /// Resolve the App Store environment once at launch (no-op in Debug).
+    /// TestFlight / sandbox installs flip `isBetaBuild` to true so testers
+    /// keep the structured feedback form; App Store production stays false.
+    static func resolveBetaBuild() async {
+        #if !DEBUG
+        guard let result = try? await AppTransaction.shared,
+              case .verified(let appTransaction) = result else { return }
+        UserDefaults.standard.set(appTransaction.environment != .production,
+                                  forKey: betaBuildResolvedKey)
+        #endif
+    }
+
+    /// Absolute daily input-token ceiling that ALWAYS applies, even when
+    /// `isBetaUnlimited == true` or `isDeveloperMode == true`. Backstop
+    /// against runaway spend if a key is exposed or the user pastes a
+    /// pathological prompt repeatedly. 1M tokens/day ≈ ~750k words of
+    /// input, well above any legitimate single-user workload but below
+    /// the abuse threshold. Reset daily by date string.
+    static let absoluteDailyInputTokenCeiling = 1_000_000
+    static let absoluteDailyTokenBucketKey = "thrivn.usage.absoluteDailyTokenBucket"
 
     // MARK: - Developer Mode
     static let developerModeKey = "developerModeEnabled"
@@ -29,9 +79,20 @@ enum AppConstants {
     /// Returns true if developer mode is active — bypasses all usage limits.
     /// Also returns true during the beta period (`isBetaUnlimited`) so testers
     /// have unlimited chat messages, check-ins, tasks, and goal suggestions.
+    ///
+    /// Always false under XCTest so the unit tests exercise the real
+    /// limit-enforcement paths instead of the beta bypass (audit SEC-01 /
+    /// the previously-orphaned UsageTracker limit tests).
     static var isDeveloperMode: Bool {
+        if isRunningUnitTests { return false }
         if isBetaUnlimited { return true }
         return UserDefaults.standard.bool(forKey: developerModeKey)
+    }
+
+    /// True while the process is hosting an XCTest bundle. Used to keep the
+    /// beta/developer bypass from masking limit-enforcement logic in tests.
+    static var isRunningUnitTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
     /// Returns true ONLY if the user explicitly enabled developer mode via the
