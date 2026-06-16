@@ -42,6 +42,7 @@
 		488DAEC992B7CED2DFA63AAF /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000008000000 /* ColorTheme.swift */; };
 		4A044491CE74B333142BE75C /* ActivityEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE00000001000000 /* ActivityEntry.swift */; };
 		51FA2D72FD072453F3D7E118 /* HabitItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B94FBDE7397641F976C27E /* HabitItem.swift */; };
+		547FAFE42B1548F11F06CCBE /* OnboardingCoachReachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9004FD1DCF5C1A94E1BA1E4A /* OnboardingCoachReachView.swift */; };
 		590C7506EAC540BD9BB37620 /* CheckInBehaviorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B25EC21D92737F250F6402 /* CheckInBehaviorEngine.swift */; };
 		5C772A75756E87215ECC7801 /* CheckInSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FCF31ADF47E4B42F2FCAA9 /* CheckInSuggestion.swift */; };
 		5E6CCE70FB494200A7BD067A /* FocusTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38DBDF8CA1B0781A6B2ACD0 /* FocusTimerView.swift */; };
@@ -394,6 +395,7 @@
 		72A2ED953527A1FF0AB7FEB5 /* DimensionSuggester.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DimensionSuggester.swift; sourceTree = "<group>"; };
 		7B639629AB4CC9037A38934D /* NudgeTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeTypes.swift; sourceTree = "<group>"; };
 		7D6C6A858885DACBEDF35D24 /* ScaleButtonStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScaleButtonStyle.swift; sourceTree = "<group>"; };
+		9004FD1DCF5C1A94E1BA1E4A /* OnboardingCoachReachView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingCoachReachView.swift; sourceTree = "<group>"; };
 		91402BE331DBEA3C2911E012 /* Nudge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Nudge.swift; sourceTree = "<group>"; };
 		9291E4950E52C884AA8C1CB9 /* CrisisClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrisisClassifier.swift; sourceTree = "<group>"; };
 		937D7AD26947E833B43D374E /* NudgeComposer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NudgeComposer.swift; sourceTree = "<group>"; };
@@ -1045,6 +1047,7 @@
 				BE6E18459B0F04B3D3E907AF /* OnboardingQuickRateView.swift */,
 				CC3D5DF917CA50A7108D4EEA /* SignInWithAppleView.swift */,
 				ED9B75A4F838A25A2337D02A /* OnboardingClosingView.swift */,
+				9004FD1DCF5C1A94E1BA1E4A /* OnboardingCoachReachView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1679,6 +1682,7 @@
 				188222856E34945EC6ED4D9F /* NudgeEngine.swift in Sources */,
 				EE3BB100DC30D10E55B9F95B /* WindowedHabitRule.swift in Sources */,
 				F949F2227BC8824230D45570 /* OnboardingClosingView.swift in Sources */,
+				547FAFE42B1548F11F06CCBE /* OnboardingCoachReachView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

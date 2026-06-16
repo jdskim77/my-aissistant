@@ -68,6 +68,7 @@ struct IntentionCaptureView: View {
                             .lineLimit(2...4)
                             .focused($isFocused)
                             .submitLabel(.done)
+                            .privacySensitive()
                             .toolbar {
                                 ToolbarItemGroup(placement: .keyboard) {
                                     Spacer()
