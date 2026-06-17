@@ -73,6 +73,7 @@
 		6F1E979C4ECA539AA8E3D464 /* HabitFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9C0B175716E6DC712AF766 /* HabitFormView.swift */; };
 		6F3EF2736BD358CA9D3B6FE4 /* NudgeBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6913F3351F7E9853DAC699A0 /* NudgeBannerView.swift */; };
 		6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6169581E8F0F1202E4E6F1FF /* AppRadius.swift */; };
+		70E5DF9364562C9519AF40AB /* SeasonGoalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F941C56FBFCB48FE4A72284E /* SeasonGoalStore.swift */; };
 		712945758B24C67C5737D0B4 /* SeasonGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */; };
 		722F9094222FCCA4D484A670 /* DataSeederTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F922C6B6862FD7917F75F30F /* DataSeederTests.swift */; };
 		729BAB7E9B4D2F53BA07F952 /* CheckInBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2902A18176BF58C082BECA96 /* CheckInBehavior.swift */; };
@@ -258,6 +259,7 @@
 		C56CF1ABB0B973E485415C31 /* FocusSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4EC24E793485FD28F82D50E /* FocusSession.swift */; };
 		C64A4B70081C166D7C2C3CDF /* Nudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91402BE331DBEA3C2911E012 /* Nudge.swift */; };
 		C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A17E8528D7A6360CB24DA5B /* ToggleHabitIntent.swift */; };
+		C7E56E72EBDD280955420961 /* BalanceCheckInStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3848ED711E3E853591EC14D /* BalanceCheckInStore.swift */; };
 		CE3C774BA2A1C1742E13E453 /* CompassInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E35DDE9C812B1DA1C4094E /* CompassInfoSheet.swift */; };
 		D060B2C212668DDA89B9A9B8 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009000000 /* AppColors.swift */; };
 		D1FC450489A25DAD8E193C84 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB8D0046527AFECED4AC06D5 /* ShareView.swift */; };
@@ -586,6 +588,7 @@
 		C205430EF2CD31C5F03F4162 /* ThrivnBackendService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThrivnBackendService.swift; sourceTree = "<group>"; };
 		C27C9C2651FE513B64FD7305 /* TodayScheduleIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayScheduleIntent.swift; sourceTree = "<group>"; };
 		C29DA53CF4D4280E3F41910F /* ColorContrastTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ColorContrastTests.swift; sourceTree = "<group>"; };
+		C3848ED711E3E853591EC14D /* BalanceCheckInStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BalanceCheckInStore.swift; sourceTree = "<group>"; };
 		C4EC24E793485FD28F82D50E /* FocusSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSession.swift; sourceTree = "<group>"; };
 		C5C847075057F68B9E39C52A /* NLTaskParserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NLTaskParserView.swift; sourceTree = "<group>"; };
 		C5DCE2D0D5136CF1B5A2438B /* VariedGreetingBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VariedGreetingBuilderTests.swift; sourceTree = "<group>"; };
@@ -625,6 +628,7 @@
 		F66D72F9EB7A1EF789A3CF7E /* SeasonGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoalView.swift; sourceTree = "<group>"; };
 		F82AE1D8946C134B8F2CC9BD /* ThrivnShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ThrivnShareExtension.entitlements; sourceTree = "<group>"; };
 		F922C6B6862FD7917F75F30F /* DataSeederTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataSeederTests.swift; sourceTree = "<group>"; };
+		F941C56FBFCB48FE4A72284E /* SeasonGoalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoalStore.swift; sourceTree = "<group>"; };
 		F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
 		FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1080,6 +1084,8 @@
 				937D7AD26947E833B43D374E /* NudgeComposer.swift */,
 				D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */,
 				D18EADAE48EC13D3EE451116 /* WindowedHabitRule.swift */,
+				C3848ED711E3E853591EC14D /* BalanceCheckInStore.swift */,
+				F941C56FBFCB48FE4A72284E /* SeasonGoalStore.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1805,6 +1811,8 @@
 				F949F2227BC8824230D45570 /* OnboardingClosingView.swift in Sources */,
 				A299000099990001 /* PromptSanitizer.swift in Sources */,
 				A499000099990001 /* OnboardingCoachReachView.swift in Sources */,
+				C7E56E72EBDD280955420961 /* BalanceCheckInStore.swift in Sources */,
+				70E5DF9364562C9519AF40AB /* SeasonGoalStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

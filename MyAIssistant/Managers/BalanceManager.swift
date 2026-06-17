@@ -13,6 +13,12 @@ import SwiftUI
 final class BalanceManager {
     private let modelContext: ModelContext
 
+    /// Extracted stores — BalanceManager keeps the public API and delegates the
+    /// SwiftData CRUD for check-ins and season goals to these, so this type can
+    /// stay focused on scoring.
+    private let checkInStore: BalanceCheckInStore
+    private let seasonGoalStore: SeasonGoalStore
+
     /// Default weekly effort target per dimension. User can customize.
     private static let defaultTarget = 10
 
@@ -25,6 +31,8 @@ final class BalanceManager {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+        self.checkInStore = BalanceCheckInStore(modelContext: modelContext)
+        self.seasonGoalStore = SeasonGoalStore(modelContext: modelContext)
     }
 
     /// Invalidate the cache (call after any data mutation).
@@ -622,100 +630,26 @@ final class BalanceManager {
         return streak
     }
 
-    // MARK: - Check-In Management
+    // MARK: - Check-In Management (delegated to BalanceCheckInStore)
 
-    /// Record satisfaction ratings for all dimensions at once during a check-in.
     func recordSatisfaction(ratings: [LifeDimension: Int], energyRating: Int? = nil) {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
-
-        // Find or create today's check-in. Range predicate (not `== today`)
-        // tolerates sub-second drift that can sneak in through CloudKit
-        // round-trips, Watch sync, or any path that doesn't pin the date to
-        // exact midnight — without it we were inserting duplicate rows.
-        let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
-        )
-        let existing = try? modelContext.fetch(descriptor).first
-
-        let checkIn = existing ?? DailyBalanceCheckIn(date: today)
-        if existing == nil {
-            modelContext.insert(checkIn)
-        }
-
-        for (dim, rating) in ratings {
-            checkIn.setSatisfaction(max(1, min(5, rating)), for: dim)
-        }
-        if let energy = energyRating {
-            checkIn.energyRating = energy
-        }
-
-        // Set the "best energy" dimension to the one with highest rating
-        if let best = ratings.max(by: { $0.value < $1.value }) {
-            checkIn.dimension = best.key
-        }
-
-        modelContext.safeSave()
+        checkInStore.recordSatisfaction(ratings: ratings, energyRating: energyRating)
     }
 
-    /// Legacy: Record a single-dimension check-in (backwards compatible).
     func recordCheckIn(dimension: LifeDimension, energyRating: Int? = nil) {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
-        let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
-        )
-        if let existing = try? modelContext.fetch(descriptor).first {
-            modelContext.delete(existing)
-        }
-        let checkIn = DailyBalanceCheckIn(dimension: dimension, energyRating: energyRating)
-        modelContext.insert(checkIn)
-        modelContext.safeSave()
+        checkInStore.recordCheckIn(dimension: dimension, energyRating: energyRating)
     }
 
-    /// Whether the user has completed today's balance check-in.
     func hasCheckedInToday() -> Bool {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
-        let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
-        )
-        return ((try? modelContext.fetchCount(descriptor)) ?? 0) > 0
+        checkInStore.hasCheckedInToday()
     }
 
-    /// Today's satisfaction ratings, if any.
     func todaySatisfaction() -> [LifeDimension: Int] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.safeDate(byAdding: .day, value: 1, to: today)
-        let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date >= today && $0.date < tomorrow }
-        )
-        guard let checkIn = try? modelContext.fetch(descriptor).first else { return [:] }
-        var result: [LifeDimension: Int] = [:]
-        for dim in LifeDimension.scored {
-            if let rating = checkIn.satisfaction(for: dim) {
-                result[dim] = rating
-            }
-        }
-        return result
+        checkInStore.todaySatisfaction()
     }
 
-    /// Average energy rating for the current week (-3 to +3), or nil if no ratings.
     func weeklyEnergyAverage() -> Double? {
-        let calendar = Calendar.current
-        let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
-        let end = calendar.safeDate(byAdding: .day, value: 7, to: start)
-        let descriptor = FetchDescriptor<DailyBalanceCheckIn>(
-            predicate: #Predicate { $0.date >= start && $0.date < end }
-        )
-        let checkIns = (try? modelContext.fetch(descriptor)) ?? []
-        let rated = checkIns.compactMap(\.energyRating)
-        guard !rated.isEmpty else { return nil }
-        return Double(rated.reduce(0, +)) / Double(rated.count)
+        checkInStore.weeklyEnergyAverage()
     }
 
     // MARK: - Task Counts (for display)
@@ -841,34 +775,22 @@ final class BalanceManager {
         }
     }
 
-    // MARK: - Season Goals
+    // MARK: - Season Goals (CRUD delegated to SeasonGoalStore)
 
     func activeSeasonGoal() -> SeasonGoal? {
-        // Use startOfDay to include the entire final day (matches SeasonGoal.isActive logic)
-        let today = Calendar.current.startOfDay(for: Date())
-        let descriptor = FetchDescriptor<SeasonGoal>(
-            predicate: #Predicate { $0.completedAt == nil && $0.endDate >= today },
-            sortBy: [SortDescriptor(\SeasonGoal.startDate, order: .reverse)]
-        )
-        return try? modelContext.fetch(descriptor).first
+        seasonGoalStore.activeSeasonGoal()
     }
 
     func startSeasonGoal(dimension: LifeDimension, intention: String) {
-        if let existing = activeSeasonGoal() { existing.completedAt = Date() }
-        let goal = SeasonGoal(dimension: dimension, intention: intention)
-        modelContext.insert(goal)
-        modelContext.safeSave()
+        seasonGoalStore.startSeasonGoal(dimension: dimension, intention: intention)
     }
 
     func completeSeasonGoal() {
-        if let goal = activeSeasonGoal() {
-            goal.completedAt = Date()
-            modelContext.safeSave()
-        }
+        seasonGoalStore.completeSeasonGoal()
     }
 
     func seasonGoalProgress() -> Double? {
-        guard let goal = activeSeasonGoal() else { return nil }
+        guard let goal = seasonGoalStore.activeSeasonGoal() else { return nil }
         let scores = weeklyScores()
         return scores[goal.dimension]
     }
