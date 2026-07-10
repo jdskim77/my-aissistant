@@ -122,9 +122,9 @@ open MyAIssistant.xcodeproj
 - **Compass** (replaces the Patterns tab) — Pillar 3's visible surface. Spec: `MyAIssistant/COMPASS_SPEC.md`.
 - **Habits** — full habit tracker with multi-dimension tagging, dimension-colored rows, streak math.
 - **Focus Timer** — lightweight focus/pomodoro session.
-- **12-step onboarding** (vs the rebuild doc's 5) — Sign in with Apple, name capture, Compass reveal, starter tasks, intention capture.
+- **8-screen onboarding** (current — was briefly 7, addenda's 12-step plan was deprecated): Welcome → Compass Intro → Quick Rate → Compass Reveal → Intention Capture → **Coach Reach** (consents to proactive nudges, sets `nudgeEnabledKey`) → Suggested Tasks → Closing (sub-stage machine: SignIn → Name → Notification permission). On completion, schedules a one-shot Day-2 morning nudge using the captured intention.
 
-Schema is at V4 (see `Models/SchemaVersioning.swift`). Live `ModelContainer` registers all models in addenda §A, not the rebuild doc's 7-model subset.
+Schema is at `SchemaV1` (single baseline; `AppMigrationPlan.stages` is empty). Live `ModelContainer` registers 24 `@Model` types via `Schema(versionedSchema: SchemaV1.self)`, not the rebuild doc's 7-model subset.
 
 Open engineering work:
 - No CI yet.
@@ -145,38 +145,33 @@ See `prototype-to-production` skill for the sequencing to first TestFlight.
 - **`actor` types** for network-bound services; **`@MainActor`** for UI managers
 - **No external package dependencies**
 
-### SwiftData schema (7 models)
+### SwiftData schema (24 `@Model` types in `SchemaV1`)
 
-```swift
-let schema = Schema([
-    TaskItem.self,          // tasks + calendar-linked events
-    ChatMessage.self,       // chat with conversationID grouping
-    CheckInRecord.self,     // 4×/day check-in with mood/energy
-    DailySnapshot.self,     // daily stats cache
-    UserProfile.self,       // onboarding state, display name
-    UsageTracker.self,      // singleton tier-based usage counter
-    CalendarLink.self       // linked Apple/Google calendars
-])
-```
+The V1-rebuild doc's 7-model core is no longer current. The live `ModelContainer` registers all `@Model` types via `Schema(versionedSchema: SchemaV1.self)`. See `Models/SchemaVersioning.swift` for the canonical list.
+
+Live additions beyond the V1 core (post-freeze): `Nudge`, `HabitItem`, `SeasonGoal`, `DailyBalanceCheckIn`, `ActivityEntry`, `ActivityPattern`, `AlarmEntry`, `CheckIn`, `CheckInBehavior`, `CheckInPreference`, `CheckInSuggestion`, `FocusSession`, `TaskBuilderState`, `UserDimensionPreference`, `WidgetCheckInWindow`, `WatchScheduleData`, plus enum tables.
+
+**Schema versioning state:** `SchemaV1` is the single baseline; `AppMigrationPlan.stages` is empty. Adding a property to a live `@Model` post-ship is a migration trap — read the file header in `Models/SchemaVersioning.swift` for the V2 procedure (do NOT alias `V2.models = V1.models`).
 
 **SwiftData rules:**
-- Store enums as `rawValue` strings (`categoryRaw`, `priorityRaw`, `roleRaw`, `timeSlotRaw`) with `@Transient` computed accessors. `#Predicate` can only reference stored properties.
+- Store enums as `rawValue` strings (`categoryRaw`, `priorityRaw`, `roleRaw`, `timeSlotRaw`, `dimensionRaw`, `statusRaw`, etc.) with `@Transient` computed accessors. `#Predicate` can only reference stored properties.
 - `UsageTracker` is a singleton (`id = "usage-singleton"`) with `resetIfNeeded()` for monthly/weekly resets.
+- No `@Relationship` anywhere — cross-model links are by string ID (e.g. `userInfo["taskID"]`, `WatchScheduleData.WatchTask.id`). Cascade deletes are manual.
 
 ### Navigation
 
-**`CustomTabBar`** with 4 tabs + center AI button (verified in `ContentView.swift` + `Views/Components/CustomTabBar.swift`):
+**`CustomTabBar`** with 4 tabs (verified in `ContentView.swift` + `Views/Components/CustomTabBar.swift`). The center "✦" button is gone — Coach is a real tab and the default landing surface.
 
-| Tab | Icon (selected) | Label | Purpose |
-|-----|-----------------|-------|---------|
-| Home | `checklist` | **Today** | Today dashboard — greeting card, stats, overdue, today, completed, tomorrow; plus `NudgeBannerView` (the only Compass element on Home) |
-| Schedule | `calendar` | Schedule | Timeline with category filters, add form, dim past |
-| **Compass** | `safari` / `safari.fill` | Compass | Radar chart, 3-signal breakdown, season goals, evening check-in, weekly reflection. **Replaces the Patterns tab** at the tab-bar level. Full spec in `MyAIssistant/COMPASS_SPEC.md`. |
-| Settings | `gearshape.fill` | Settings | Appearance, Account (subscription + API keys), Preferences, About |
+| Tab | Default? | Purpose |
+|-----|----------|---------|
+| **Coach** | ✅ default (`@SceneStorage("selectedTabRaw") = Tab.coach.rawValue`) | `ChatView`. Coach is now first-class, not a modal. Pinned nudge surfaces here; the unreacted-nudge badge lives on this tab. |
+| Home / Today | | Today dashboard — greeting card, stats, overdue/today/completed/tomorrow, `BalancePulseCard`, `PatternInsightBanner`. Schedule is opened as a sheet from this tab's header icon. |
+| Compass | | Radar chart, 3-signal breakdown, season goals, evening check-in, weekly reflection. Spec: `MyAIssistant/COMPASS_SPEC.md`. (Open question per audits — overlaps Home and competes with Coach for daily attention.) |
+| Settings | | Appearance, Account (subscription + API keys), Preferences, About |
 
-**Center AI button** (gradient circle, "✦" symbol) opens `ChatView` as a sheet / full-screen cover (`@State showingChat` in `ContentView`).
+**Schedule is no longer a tab.** `ScheduleView` is presented as a sheet (`HomeSheet.schedule`) from the Today header icon. Reachable only from Today.
 
-**Focus Timer** is also invoked as a modal from `ContentView` (`@State showingFocusTimer`, `@State focusDuration = 25`), not a separate destination.
+**Focus Timer** is also invoked as a modal from `ContentView` (`@State showingFocusTimer`, `@State focusDuration = 25`).
 
 `Views/Patterns/` still contains 6 files (`ActivityTimelineView`, `CategoryBreakdownView`, `MoodTrendView`, `PatternsView`, `WeeklyAIReviewView`, `WeeklyChartView`). They're no longer a tab but are **consumed into Compass views** and `DataExportService`. Do NOT delete them outright — check references first.
 
@@ -212,7 +207,9 @@ MyAIssistant/
 └── Widgets/                    # TodayProgressWidget, NextCheckInWidget, StreakWidget (in separate target)
 ```
 
-### Managers (8 `@MainActor` coordinators)
+### Managers (~27 `@MainActor` / `@Observable` coordinators)
+
+V1-spec's 8 managers grew significantly post-freeze. Highlights:
 
 | Manager | Purpose |
 |---------|---------|
@@ -221,9 +218,22 @@ MyAIssistant/
 | `CheckInManager` | Check-in completion with AI summary generation |
 | `CalendarSyncManager` | Orchestrates Apple (EventKit) + Google (REST) calendars |
 | `GreetingManager` | App-launch greeting with 1-hour cooldown |
-| `NotificationManager` | Check-in reminders (4 daily) + task reminders (30 min lead) |
+| `NotificationManager` | Check-in reminders, task reminders, habit reminders, **nudge notifications** (NUDGE_CATEGORY w/ Accept/Dismiss/Snooze/Silence actions) |
 | `UsageGateManager` | Tier-based limit enforcement (Free: 10 chat/month, 5 check-ins/week) |
-| `BackgroundTaskManager` | 3 `BGTask` registrations: daily snapshot, weekly review, calendar sync |
+| `BackgroundTaskManager` | 4 `BGTask` registrations: daily snapshot, weekly review, calendar sync, **nudge evaluation** |
+| `NudgeEngine` | Proactive coaching engine — rule loop, kill switch, crisis precheck, frequency caps, dedupe, quiet hours. Delivery: posts via `NotificationManager.scheduleNudgeNotification` (no longer a stub). |
+| `BalanceManager` | Compass scoring, season goals, weekly reflection, energy trends, AI summary. ⚠️ 1,182 lines / 51 funcs — flagged by audit as god-class candidate for split. |
+| `HabitManager` | Habit CRUD, completion logging, streak math, reminder rescheduling |
+| `ChatManager` | Chat send pipeline, response-tag parsing, calendar action execution, **crisis short-circuit** (KeywordCrisisClassifier runs before LLM call — routes to `SafeResourceCopy` on flag) |
+| `WisdomManager` | Daily wisdom quote selection |
+| `InsightEngine` | `Views/Patterns/` insights for Compass/Home banner |
+| `WeatherManager` | Location-based weather context for AI |
+| `BalancePulseBus` | Cross-view event bus for completion pulses |
+| `WatchSyncManager` | WCSession bridge — schedule + API key + check-ins + tasks |
+| `CheckInBehaviorEngine` | Adaptive 14-day behavioral stats; informs notification frequency |
+| `DailyRecapGenerator` | Post-check-in AI insight assembly |
+
+Plus auxiliary coordinators (`HabitReminderCoordinator`, `NudgeComposer`, `BackgroundTaskManager`, `NetworkMonitor`, `SubscriptionManager`, `ThemeManager`, etc.). DI wired via 22 custom `EnvironmentKey`s in `Core/DependencyContainer.swift`.
 
 ### AI integration
 
