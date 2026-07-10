@@ -40,6 +40,10 @@ playground.xcworkspace
 # Claude Code local settings
 .claude/
 
+# Codex CLI local config (agents + migrated skills)
+.agents/
+.codex/
+
 # Design mockups / scratch HTML at repo root
 /*.html
 
