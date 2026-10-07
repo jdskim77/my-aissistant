@@ -40,6 +40,39 @@ actor ThrivnBackendService: AIProvider {
         let content: String
     }
 
+    /// One block of the system-prompt array shape (mirrors AnthropicProvider's
+    /// stable/volatile split in buildRequestBody). Optional `cacheControl`
+    /// marks a block as Anthropic prompt-cache eligible.
+    private struct SystemBlock: Encodable {
+        let type = "text"
+        let text: String
+        let cacheControl: CacheControl?
+
+        enum CodingKeys: String, CodingKey {
+            case type, text
+            case cacheControl = "cache_control"
+        }
+
+        struct CacheControl: Encodable {
+            let type = "ephemeral"
+        }
+    }
+
+    /// Either a plain string (back-compat) or the cache-block array the
+    /// backend now also accepts (thrivn-backend `chat.ts` `system` union).
+    private enum SystemPayload: Encodable {
+        case text(String)
+        case blocks([SystemBlock])
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+            case .text(let s): try container.encode(s)
+            case .blocks(let b): try container.encode(b)
+            }
+        }
+    }
+
     init(model: String = AppConstants.haikuModel, keychain: KeychainService) {
         // Fall back to a known-good URL if AppConstants is misconfigured at runtime.
         // Avoids the force-unwrap crash on app launch if the constant is ever changed.
@@ -76,7 +109,32 @@ actor ThrivnBackendService: AIProvider {
         systemPrompt: String
     ) async throws -> AIResponse {
         let messages = buildMessages(history: conversationHistory, userMessage: userMessage)
-        return try await postChat(systemPrompt: systemPrompt, messages: messages)
+        return try await postChat(systemPayload: .text(systemPrompt), messages: messages)
+    }
+
+    /// Mirrors AnthropicProvider's native caching path (:220-238): the stable
+    /// block (persona/rules) is marked `cache_control: ephemeral` and sent
+    /// first, the volatile block (date/schedule/stats) follows uncached.
+    /// Previously this protocol requirement fell through to the default
+    /// extension, which concatenated both into one plain string and sent it
+    /// via the string-only `sendMessage` above — so every signed-in chat
+    /// request missed the cache (backlog BUG-A4-01).
+    func sendMessage(
+        userMessage: String,
+        conversationHistory: [ChatMessage],
+        systemPromptStable: String,
+        systemPromptVolatile: String
+    ) async throws -> AIResponse {
+        let messages = buildMessages(history: conversationHistory, userMessage: userMessage)
+        guard !systemPromptStable.isEmpty else {
+            // Nothing to cache — fall back to a single plain-string block.
+            return try await postChat(systemPayload: .text(systemPromptVolatile), messages: messages)
+        }
+        var blocks = [SystemBlock(text: systemPromptStable, cacheControl: .init())]
+        if !systemPromptVolatile.isEmpty {
+            blocks.append(SystemBlock(text: systemPromptVolatile, cacheControl: nil))
+        }
+        return try await postChat(systemPayload: .blocks(blocks), messages: messages)
     }
 
     func sendVisionMessage(
@@ -281,19 +339,19 @@ actor ThrivnBackendService: AIProvider {
 
     // MARK: - Chat (private)
 
-    private func postChat(systemPrompt: String, messages: [ChatRequestMessage]) async throws -> AIResponse {
+    private func postChat(systemPayload: SystemPayload, messages: [ChatRequestMessage]) async throws -> AIResponse {
         struct Body: Encodable {
             let model: String
             let max_tokens: Int
             let messages: [ChatRequestMessage]
-            let system: String
+            let system: SystemPayload
             let stream: Bool
         }
         let body = Body(
             model: model,
             max_tokens: 1024,
             messages: messages,
-            system: systemPrompt,
+            system: systemPayload,
             stream: false
         )
 
