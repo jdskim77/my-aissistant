@@ -99,7 +99,11 @@ struct EveningCheckInView: View {
 
     private var headerColor: Color {
         switch step {
-        case .satisfaction: return AppColors.night
+        // "One purple" (Impeccable Screens audit): the satisfaction step's
+        // moon icon previously used AppColors.night (a separate violet
+        // defined per-theme for date pills), which could drift from the
+        // brand accent. Use the single brand accent color everywhere.
+        case .satisfaction: return AppColors.accent
         case .energy: return AppColors.gold
         case .recall: return AppColors.accent
         case .confirmation: return AppColors.completionGreen
@@ -132,6 +136,20 @@ struct EveningCheckInView: View {
 
     private var satisfactionStep: some View {
         VStack(spacing: 16) {
+            // "Rough … Great" anchors for the 1-5 scale, shown once above
+            // the rows (Impeccable Screens audit) rather than per-row.
+            HStack {
+                Spacer().frame(width: 110 + 12)
+                Text("Rough")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+                Text("Great")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted)
+                    .padding(.trailing, 4)
+            }
+
             ForEach(LifeDimension.scored) { dim in
                 satisfactionRow(dim)
             }
@@ -172,47 +190,49 @@ struct EveningCheckInView: View {
     }
 
     private func satisfactionRow(_ dim: LifeDimension) -> some View {
-        HStack(spacing: 12) {
-            // Dimension icon + name
-            HStack(spacing: 8) {
-                Image(systemName: dim.icon)
-                    .font(AppFonts.heading(18).weight(.medium))
-                    .foregroundColor(dim.color)
-                    .frame(width: 28)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                // Dimension icon + name
+                HStack(spacing: 8) {
+                    Image(systemName: dim.icon)
+                        .font(AppFonts.heading(18).weight(.medium))
+                        .foregroundColor(dim.color)
+                        .frame(width: 28)
 
-                Text(dim.label)
-                    .font(AppFonts.bodyMedium(14))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-            .frame(width: 110, alignment: .leading)
+                    Text(dim.label)
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .frame(width: 110, alignment: .leading)
 
-            // 1-5 rating dots
-            HStack(spacing: 6) {
-                ForEach(1...5, id: \.self) { value in
-                    Button {
-                        Haptics.selection()
-                        withAnimation(.snappy(duration: 0.15)) {
-                            if ratings[dim] == value {
-                                ratings.removeValue(forKey: dim) // tap again to deselect
-                            } else {
-                                ratings[dim] = value
+                // 1-5 rating dots
+                HStack(spacing: 6) {
+                    ForEach(1...5, id: \.self) { value in
+                        Button {
+                            Haptics.selection()
+                            withAnimation(.snappy(duration: 0.15)) {
+                                if ratings[dim] == value {
+                                    ratings.removeValue(forKey: dim) // tap again to deselect
+                                } else {
+                                    ratings[dim] = value
+                                }
                             }
+                        } label: {
+                            let isSelected = (ratings[dim] ?? 0) >= value
+                            Circle()
+                                .fill(isSelected ? dim.color : dim.color.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Text("\(value)")
+                                        .font(AppFonts.label(12).weight(.semibold))
+                                        .foregroundColor(isSelected ? AppColors.onAccent : AppColors.textPrimary)
+                                )
                         }
-                    } label: {
-                        let isSelected = (ratings[dim] ?? 0) >= value
-                        Circle()
-                            .fill(isSelected ? dim.color : dim.color.opacity(0.15))
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Text("\(value)")
-                                    .font(AppFonts.label(12))
-                                    .foregroundColor(isSelected ? AppColors.onAccent : dim.color)
-                            )
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(dim.label) rating \(value) of 5")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(dim.label) rating \(value) of 5")
                 }
             }
         }

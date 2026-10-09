@@ -2,6 +2,12 @@ import SwiftUI
 
 struct ChatBubble: View {
     let message: ChatMessage
+    /// Whether to render the timestamp label under this bubble. Hidden
+    /// for messages grouped with the previous one (same sender, within
+    /// 5 minutes) per `MessageGrouping` — avoids a timestamp under every
+    /// single bubble in a back-to-back burst (Impeccable Screens audit
+    /// P2: "group consecutive messages and show one time per group").
+    var showTimestamp: Bool = true
 
     private var isUser: Bool { message.role == .user }
 
@@ -42,9 +48,11 @@ struct ChatBubble: View {
                         }
                     }
 
-                Text(formatTime(message.timestamp))
-                    .font(AppFonts.caption(11))
-                    .foregroundColor(AppColors.textMuted)
+                if showTimestamp {
+                    Text(formatTime(message.timestamp))
+                        .font(AppFonts.caption(11))
+                        .foregroundColor(AppColors.textMuted)
+                }
             }
 
             if !isUser { Spacer(minLength: 60) }

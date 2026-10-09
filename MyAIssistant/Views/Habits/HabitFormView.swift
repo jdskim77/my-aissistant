@@ -2,6 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct HabitFormView: View {
+    /// All habits, used only for the duplicate-name warning below. Sort
+    /// doesn't matter here — we only read titles.
+    @Query private var allHabitsForDuplicateCheck: [HabitItem]
+
     enum Mode: Identifiable {
         case create
         case edit(HabitItem)
@@ -53,6 +57,20 @@ struct HabitFormView: View {
     private var existingHabit: HabitItem? {
         if case .edit(let h) = mode { return h }
         return nil
+    }
+
+    /// Near-duplicate warning text, non-blocking (Impeccable Screens
+    /// audit: "Duplicate habits... were allowed" / "Warn on
+    /// near-duplicate habit names"). Save stays enabled — this is a
+    /// nudge, not a hard validation error.
+    private var duplicateWarning: String? {
+        let titles = allHabitsForDuplicateCheck.map(\.title)
+        guard let match = HabitNameDuplicateCheck.duplicate(
+            of: title,
+            among: titles,
+            excluding: existingHabit?.title
+        ) else { return nil }
+        return "You already have a habit called \u{201C}\(match)\u{201D}"
     }
 
     init(mode: Mode) {
@@ -126,6 +144,18 @@ struct HabitFormView: View {
                                     Button("Done") { titleFocused = false }
                                 }
                             }
+
+                        if let duplicateWarning {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 11))
+                                Text(duplicateWarning)
+                                    .font(AppFonts.caption(12))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .foregroundColor(AppColors.accentWarm)
+                            .accessibilityElement(children: .combine)
+                        }
                     }
 
                     // Life dimension — ties the habit to a Compass quadrant.
