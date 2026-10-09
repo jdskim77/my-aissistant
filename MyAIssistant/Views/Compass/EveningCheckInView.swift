@@ -21,26 +21,42 @@ struct EveningCheckInView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                header
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    header
 
-                switch step {
-                case .satisfaction:
-                    satisfactionStep
-                case .energy:
-                    energySliderStep
-                case .recall:
-                    recallStep
-                case .confirmation:
-                    confirmationState
+                    switch step {
+                    case .satisfaction:
+                        satisfactionStep
+                    case .energy:
+                        energySliderStep
+                    case .recall:
+                        recallStep
+                    case .confirmation:
+                        confirmationState
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
+            }
+            .background(AppColors.background.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Haptics.light()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFonts.body(15).weight(.semibold))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    .accessibilityLabel("Close")
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 32)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
-        .background(AppColors.background.ignoresSafeArea())
         .onAppear {
             balanceManager.updateActivityPatterns()
             recallSuggestions = balanceManager.recallSuggestions()
@@ -127,7 +143,7 @@ struct EveningCheckInView: View {
                     step = .energy
                 }
             } label: {
-                Text(ratings.isEmpty ? "Skip ratings" : "Continue")
+                Text("Save check-in")
                     .font(AppFonts.bodyMedium(16))
                     .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
@@ -135,13 +151,14 @@ struct EveningCheckInView: View {
                     .background(ratings.isEmpty ? AppColors.textMuted : AppColors.accent)
                     .cornerRadius(14)
             }
-            .accessibilityLabel(ratings.isEmpty ? "Skip satisfaction ratings" : "Continue to energy check")
+            .disabled(ratings.isEmpty)
+            .accessibilityLabel("Save check-in")
 
             Button {
                 Haptics.light()
                 dismiss()
             } label: {
-                Text("Skip for today")
+                Text("Skip tonight")
                     .font(AppFonts.body(14))
                     .foregroundColor(AppColors.textMuted)
                     .frame(minHeight: 44)
@@ -166,6 +183,8 @@ struct EveningCheckInView: View {
                 Text(dim.label)
                     .font(AppFonts.bodyMedium(14))
                     .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .frame(width: 110, alignment: .leading)
 

@@ -321,7 +321,8 @@ struct HomeView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
+        NavigationStack {
+            List {
             // AI Greeting
             if greetingManager.isShowingGreeting {
                 Section {
@@ -996,6 +997,16 @@ struct HomeView: View {
             Button("Cancel", role: .cancel) { taskToDelete = nil }
         } message: {
             Text("Are you sure you want to delete \"\(taskToDelete?.title ?? "")\"?")
+        }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Today")
+                        .font(AppFonts.bodyMedium(16))
+                        .foregroundColor(AppColors.textPrimary)
+                }
+            }
         }
     }
 
