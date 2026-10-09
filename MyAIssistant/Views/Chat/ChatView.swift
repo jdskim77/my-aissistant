@@ -1701,7 +1701,6 @@ private struct ConversationMessages: View {
         guard timestampVisibility.indices.contains(index) else { return true }
         return timestampVisibility[index]
     }
-
     /// True when the bottom-anchor sentinel is on-screen.
     /// Defaults true because `.defaultScrollAnchor(.bottom)` on the
     /// ScrollView positions us at the bottom on first render, so the
@@ -1732,9 +1731,15 @@ private struct ConversationMessages: View {
                         .buttonStyle(.plain)
                     }
 
-                    ForEach(Array(visibleMessages.enumerated()), id: \.element.id) { index, message in
-                        ChatBubble(message: message, showTimestamp: showTimestamp(at: index))
-                            .id(message.id)
+                    // Zip against the precomputed flags once rather than
+                    // calling `showTimestamp(at:)` per row — that would
+                    // recompute the whole-transcript `timestampVisibility`
+                    // array on every row, making render O(N²) as history
+                    // grows via "Load earlier messages".
+                    let rows = Array(zip(visibleMessages, timestampVisibility))
+                    ForEach(Array(rows.enumerated()), id: \.element.0.id) { _, row in
+                        ChatBubble(message: row.0, showTimestamp: row.1)
+                            .id(row.0.id)
                     }
 
                     if isAITyping {

@@ -64,11 +64,11 @@ struct HabitFormView: View {
     /// near-duplicate habit names"). Save stays enabled — this is a
     /// nudge, not a hard validation error.
     private var duplicateWarning: String? {
-        let titles = allHabitsForDuplicateCheck.map(\.title)
+        let candidates = allHabitsForDuplicateCheck.map { (id: $0.id, title: $0.title) }
         guard let match = HabitNameDuplicateCheck.duplicate(
             of: title,
-            among: titles,
-            excluding: existingHabit?.title
+            among: candidates,
+            excludingID: existingHabit?.id
         ) else { return nil }
         return "You already have a habit called \u{201C}\(match)\u{201D}"
     }

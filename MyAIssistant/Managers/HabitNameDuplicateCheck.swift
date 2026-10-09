@@ -24,24 +24,25 @@ enum HabitNameDuplicateCheck {
     }
 
     /// Returns the first existing title (if any) that the candidate
-    /// title would collide with after normalization. Excludes the habit
-    /// currently being edited (pass its title as `excluding` when
-    /// editing) so saving a habit under its own unchanged name never
-    /// warns on itself.
+    /// title would collide with after normalization. `existing` pairs
+    /// each title with a stable identifier so the habit currently being
+    /// edited can be excluded by ID rather than by title — excluding by
+    /// title alone would also hide a *real* duplicate when two other
+    /// habits already share that exact name. Pass the ID of the habit
+    /// being edited as `excludingID` (nil when creating).
     static func duplicate(
         of candidate: String,
-        among existingTitles: [String],
-        excluding: String? = nil
+        among existing: [(id: String, title: String)],
+        excludingID: String? = nil
     ) -> String? {
         let normalizedCandidate = normalize(candidate)
         guard !normalizedCandidate.isEmpty else { return nil }
-        let normalizedExcluding = excluding.map(normalize)
-        for existing in existingTitles {
-            if let normalizedExcluding, normalize(existing) == normalizedExcluding {
+        for item in existing {
+            if let excludingID, item.id == excludingID {
                 continue
             }
-            if normalize(existing) == normalizedCandidate {
-                return existing
+            if normalize(item.title) == normalizedCandidate {
+                return item.title
             }
         }
         return nil
