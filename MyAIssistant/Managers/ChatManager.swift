@@ -277,8 +277,16 @@ final class ChatManager {
                     kind = .transient
                 case .apiError(let code, let message):
                     if code == 401 {
-                        errorMsg = "Your session has expired."
-                        kind = .authExpired
+                        // NOTE: a Thrivn-backend 401 never reaches this branch —
+                        // ThrivnBackendService.performRefresh()/postChat() convert
+                        // a dead refresh token straight to AIError.noAPIKey (see
+                        // the fix above). The only path that throws .apiError(401)
+                        // is a direct BYOK AnthropicProvider/OpenAIProvider call
+                        // with an invalid key, so this must NOT offer "Sign in"
+                        // (Codex audit catch: that previously misrouted BYOK key
+                        // failures into Apple re-auth).
+                        errorMsg = "Your API key appears to be invalid. Check it in Settings."
+                        kind = .none
                     } else if code == 400 || code == 422 {
                         // 400 = bad request, 422 = validation error (e.g. system prompt too long).
                         // Either way the user can't fix it — keep the message simple.

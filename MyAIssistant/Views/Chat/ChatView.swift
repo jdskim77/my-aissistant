@@ -978,7 +978,15 @@ struct ChatView: View {
         // can retry by tapping Send again once they're back online.
         if let monitor = networkMonitor, !monitor.isConnected {
             Haptics.medium()
-            errorMessage = "You're offline. Your message is saved — tap Send again when you're back online."
+            // Codex audit fix: retryLastFailedMessage() clears errorKind to
+            // .none before calling sendMessage, which previously meant a
+            // retry that bounced off this same offline guard lost its own
+            // Retry action (kind stayed .none → inline row renders no
+            // button). Restore .transient + the draft text here so the
+            // offline banner keeps a working Retry once back online.
+            lastFailedMessageText = text
+            errorMessage = "You're offline. Tap Retry when you're back online."
+            errorKind = .transient
             return
         }
 
