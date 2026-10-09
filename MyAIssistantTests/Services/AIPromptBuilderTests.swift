@@ -125,4 +125,54 @@ final class AIPromptBuilderTests: XCTestCase {
         XCTAssertTrue(prompt.contains("suggestion"))
         XCTAssertTrue(prompt.contains("150 words"))
     }
+
+    // MARK: - Evening Reflection Prompt (Evening Flow redesign)
+
+    func test_eveningReflectionPrompt_includesRatings() {
+        let prompt = AIPromptBuilder.eveningReflectionPrompt(
+            ratings: ["physical": 4, "mental": 3],
+            energyRating: 2
+        )
+        XCTAssertTrue(prompt.contains("physical: 4/5"))
+        XCTAssertTrue(prompt.contains("mental: 3/5"))
+        XCTAssertTrue(prompt.contains("Energy: +2"))
+    }
+
+    func test_eveningReflectionPrompt_instructsOneReflectionAtMostTwoSentencesPlusQuestion() {
+        let prompt = AIPromptBuilder.eveningReflectionPrompt(
+            ratings: ["physical": 4],
+            energyRating: nil
+        )
+        XCTAssertTrue(prompt.contains("ONE reflection"))
+        XCTAssertTrue(prompt.contains("At most 2 sentences"))
+        XCTAssertTrue(prompt.contains("one question"))
+    }
+
+    func test_eveningReflectionPrompt_neverCheerleads() {
+        let prompt = AIPromptBuilder.eveningReflectionPrompt(
+            ratings: ["physical": 4],
+            energyRating: nil
+        )
+        XCTAssertTrue(prompt.contains("Never cheerlead"))
+    }
+
+    /// Product rule: a low rating must never produce celebratory wording
+    /// in the instruction — no "Great job" after a low mood.
+    func test_eveningReflectionPrompt_lowRating_addsGentleAcknowledgementNoCelebration() {
+        let prompt = AIPromptBuilder.eveningReflectionPrompt(
+            ratings: ["physical": 1, "mental": 4],
+            energyRating: -2
+        )
+        XCTAssertFalse(prompt.contains("Great job"))
+        XCTAssertTrue(prompt.lowercased().contains("rated low"))
+        XCTAssertTrue(prompt.contains("do NOT say things like \"Great job\""))
+    }
+
+    func test_eveningReflectionPrompt_noLowRating_omitsLowRatingClause() {
+        let prompt = AIPromptBuilder.eveningReflectionPrompt(
+            ratings: ["physical": 4, "mental": 5],
+            energyRating: 3
+        )
+        XCTAssertFalse(prompt.contains("rated low"))
+    }
 }

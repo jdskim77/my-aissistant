@@ -530,6 +530,42 @@ enum AIPromptBuilder {
         return prompt
     }
 
+    // MARK: - Evening Check-In → Coach Reflection Prompt
+
+    /// Builds the system prompt for the ONE coach reflection sent right
+    /// after the user saves their night check-in (Evening Flow redesign).
+    /// Pure function — no SwiftData/ModelContext — so it's unit-testable.
+    ///
+    /// Product rule (never cheerleads): the coach acknowledges, it does not
+    /// celebrate. A low rating must never produce celebratory wording in
+    /// the instruction (no "Great job" after a low mood) — callers should
+    /// assert this directly on the returned string in tests.
+    static func eveningReflectionPrompt(
+        ratings: [String: Int],
+        energyRating: Int?
+    ) -> String {
+        let ratingsSummary = ratings
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key): \($0.value)/5" }
+            .joined(separator: ", ")
+        let energySummary = energyRating.map { "Energy: \($0 >= 0 ? "+" : "")\($0)" } ?? "Energy: not rated"
+        let hasLowRating = ratings.values.contains { $0 <= 2 }
+
+        var prompt = """
+        The user just completed tonight's check-in. Tonight's ratings — \(ratingsSummary.isEmpty ? "no dimensions rated" : ratingsSummary). \(energySummary).
+
+        Send ONE reflection message now, referencing tonight's ratings specifically. Be honest and specific — ground it in the actual numbers above, not generic encouragement. At most 2 sentences, plus one question. Never cheerlead: acknowledge, don't celebrate.
+        """
+
+        if hasLowRating {
+            prompt += """
+            \n\nAt least one dimension was rated low tonight. Acknowledge that gently and honestly — do NOT say things like "Great job" or otherwise celebrate. No celebratory language of any kind for a low rating.
+            """
+        }
+
+        return prompt
+    }
+
     // MARK: - Daily Recap Prompt
 
     /// Generates a personalized post-check-in insight message.
