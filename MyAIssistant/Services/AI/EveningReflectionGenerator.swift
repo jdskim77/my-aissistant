@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 /// Evening Flow redesign: generates the ONE coach reflection sent to the
 /// Coach tab right after the user saves their night check-in. The

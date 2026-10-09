@@ -470,6 +470,7 @@ struct EveningCheckInView: View {
         }
         .transition(.scale.combined(with: .opacity))
         .task {
+            triggerReflectionHandoffIfNeeded()
             try? await Task.sleep(for: .seconds(1.5))
             dismiss()
         }
@@ -490,7 +491,6 @@ struct EveningCheckInView: View {
             let bestDim = LifeDimension.scored.first ?? .physical
             balanceManager.recordCheckIn(dimension: bestDim, energyRating: energy == 0 ? nil : energy)
         }
-        triggerReflectionHandoffIfNeeded()
     }
 
     /// Evening Flow redesign: after Save check-in, hand off to Coach with
