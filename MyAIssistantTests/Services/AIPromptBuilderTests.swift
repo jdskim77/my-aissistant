@@ -163,9 +163,12 @@ final class AIPromptBuilderTests: XCTestCase {
             ratings: ["physical": 1, "mental": 4],
             energyRating: -2
         )
-        XCTAssertFalse(prompt.contains("Great job"))
+        // The prompt names "Great job" explicitly as an example of what NOT
+        // to say — that's expected (it's the forbidden phrase, quoted as an
+        // instruction to the model), not celebratory language itself.
         XCTAssertTrue(prompt.lowercased().contains("rated low"))
         XCTAssertTrue(prompt.contains("do NOT say things like \"Great job\""))
+        XCTAssertTrue(prompt.lowercased().contains("no celebratory"))
     }
 
     func test_eveningReflectionPrompt_noLowRating_omitsLowRatingClause() {
