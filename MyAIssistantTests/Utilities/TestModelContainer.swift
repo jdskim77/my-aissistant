@@ -24,7 +24,10 @@ enum TestModelContainer {
             DailyBalanceCheckIn.self,
             SeasonGoal.self,
             ActivityPattern.self,
-            UserDimensionPreference.self
+            UserDimensionPreference.self,
+            // NudgeEngine persists/fetches Nudge rows; without it every
+            // insert/fetch in NudgeEngineTests silently no-ops.
+            Nudge.self
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])
