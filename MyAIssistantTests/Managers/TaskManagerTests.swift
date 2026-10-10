@@ -91,6 +91,48 @@ final class TaskManagerTests: XCTestCase {
         XCTAssertEqual(clones.count, 1, "re-toggling done should not insert a duplicate recurring clone")
     }
 
+    func testToggleCompletionRecurringSuccessorEditDoesNotCauseDuplicate() throws {
+        // Codex review of the first fix caught this: the generated
+        // successor's id is derived from the SOURCE task's own id, not
+        // from the successor's own (editable) title/category/date, so
+        // renaming/recategorizing/rescheduling the successor must NOT
+        // defeat the de-dup check on re-toggle of the original.
+        let task = makeTask(title: "Daily Standup", date: Date())
+        task.recurrence = .daily
+        sut.addTask(task)
+
+        sut.toggleCompletion(task) // -> done, generates successor
+        XCTAssertEqual(sut.allTasks().count, 2)
+
+        let successor = sut.allTasks().first { $0.id != task.id }
+        successor?.title = "Renamed"
+        successor?.category = .work
+        successor?.date = Calendar.current.date(byAdding: .day, value: 5, to: Date())!
+
+        sut.toggleCompletion(task) // -> undone
+        sut.toggleCompletion(task) // -> done again
+
+        XCTAssertEqual(sut.allTasks().count, 2, "editing the successor must not defeat de-dup on re-toggle")
+    }
+
+    func testToggleCompletionRecurringDoesNotCollideWithUnrelatedIdenticalTask() throws {
+        // Codex review: two independent recurring tasks with identical
+        // title/category/date/recurrence must each get their own
+        // successor — matching on those editable fields would silently
+        // drop the second task's legitimate successor.
+        let taskA = makeTask(title: "Daily Standup", category: .work, date: Date())
+        taskA.recurrence = .daily
+        let taskB = makeTask(title: "Daily Standup", category: .work, date: Date())
+        taskB.recurrence = .daily
+        sut.addTask(taskA)
+        sut.addTask(taskB)
+
+        sut.toggleCompletion(taskA)
+        sut.toggleCompletion(taskB)
+
+        XCTAssertEqual(sut.allTasks().count, 4, "each independent task must get its own successor")
+    }
+
     func testDeleteTask() throws {
         let task = makeTask()
         sut.addTask(task)

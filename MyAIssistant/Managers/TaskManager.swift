@@ -42,25 +42,38 @@ final class TaskManager {
         // Bug fix: toggling done -> false -> true again (e.g. undo/redo a
         // checkbox tap) used to re-run this block and insert a SECOND clone
         // for the identical next occurrence, since `task.date` /
-        // `recurrence` are unchanged by the back-and-forth. Guard against
-        // that by skipping generation if a clone for this exact next
-        // occurrence already exists (same title/category/date/recurrence).
+        // `recurrence` are unchanged by the back-and-forth.
+        //
+        // Guard by giving the generated clone a deterministic id derived
+        // from the SOURCE task's own (immutable) id and the target
+        // occurrence date, then checking for that exact id before
+        // inserting. This is deliberately NOT a match on title/category/
+        // date/recurrence (those are user-editable and two independent
+        // recurring tasks can legitimately share all four), so it can't
+        // misidentify an unrelated task as this one's successor, and it
+        // keeps matching the right successor even if the user later
+        // renames/recategorizes/reschedules it.
         if task.done, task.recurrence != .none,
            let nextDate = task.recurrence.nextDate(after: task.date) {
-            let recurrenceRaw = task.recurrenceRaw
-            let categoryRaw = task.categoryRaw
-            let title = task.title
-            let alreadyExists = (try? modelContext.fetch(FetchDescriptor<TaskItem>(
-                predicate: #Predicate { candidate in
-                    candidate.title == title
-                        && candidate.categoryRaw == categoryRaw
-                        && candidate.date == nextDate
-                        && candidate.recurrenceRaw == recurrenceRaw
-                }
-            )).first) != nil
+            let nextOccurrenceID = "\(task.id)#recur#\(nextDate.timeIntervalSinceReferenceDate)"
+            var existingDescriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { candidate in candidate.id == nextOccurrenceID }
+            )
+            existingDescriptor.fetchLimit = 1
+            let alreadyExists: Bool
+            do {
+                alreadyExists = try !modelContext.fetch(existingDescriptor).isEmpty
+            } catch {
+                // Fail safe: if we can't prove a successor already exists,
+                // don't risk silently dropping the next occurrence either —
+                // log and proceed with generation rather than guessing.
+                AppLogger.tasks.error("Recurrence dedup fetch failed: \(error.localizedDescription, privacy: .public)")
+                alreadyExists = false
+            }
 
             if !alreadyExists {
                 let next = TaskItem(
+                    id: nextOccurrenceID,
                     title: task.title,
                     category: task.category,
                     priority: task.priority,
