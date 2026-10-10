@@ -44,11 +44,15 @@ struct TaskCard: View {
     }
 
     private var rowBaseColor: Color {
-        isOverdue && !task.done ? AppColors.overdueBg : AppColors.card
+        AppColors.card
     }
 
     private var checkboxColor: Color {
-        task.done ? AppColors.completionGreen : AppColors.checkboxColor(task.priority)
+        // Today rows use a neutral checkbox circle — priority still lives
+        // in the task detail sheet, but Today itself stays calm instead of
+        // flagging H/M/L via colour. Completed rows still read as the
+        // completion colour so the forward-motion feedback is unchanged.
+        task.done ? AppColors.completionGreen : AppColors.textMuted
     }
 
     private var timeText: String? {
@@ -61,9 +65,13 @@ struct TaskCard: View {
     }
 
     private var overdueDateText: String {
+        // "Carried over" rows show secondary weekday meta ("from Thu")
+        // instead of a hard date — phase 1 of the Today redesign removes
+        // the red "Overdue" treatment entirely in favour of a neutral,
+        // humane label.
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: task.date)
+        formatter.dateFormat = "EEE"
+        return "from \(formatter.string(from: task.date))"
     }
 
     /// VO label for the completion button. Prepends the dimension (Body /
@@ -168,7 +176,7 @@ struct TaskCard: View {
                         if isOverdue && !task.done {
                             Text(overdueDateText)
                                 .font(AppFonts.caption(12))
-                                .foregroundColor(AppColors.overdueRed)
+                                .foregroundColor(AppColors.textMuted)
                         } else if let time = timeText, !task.done {
                             Text(time)
                                 .font(AppFonts.caption(12))
@@ -183,17 +191,6 @@ struct TaskCard: View {
                 }
 
                 Spacer()
-
-                // Priority badge (color + text, not color-only)
-                if !task.done {
-                    Text(task.priority.rawValue.prefix(1))
-                        .font(AppFonts.label(11))
-                        .foregroundColor(AppColors.checkboxColor(task.priority))
-                        .frame(width: 24, height: 24)
-                        .background(AppColors.checkboxColor(task.priority).opacity(0.12))
-                        .cornerRadius(6)
-                        .accessibilityLabel("\(task.priority.rawValue) priority")
-                }
 
                 // Expand/collapse button
                 Button {

@@ -43,8 +43,8 @@ final class HomeViewTonightCardSourceGuardTests: XCTestCase {
 
     func testRemainingHabitsShownInsideTonightCard() throws {
         let source = try locateSourceFile()
-        guard let cardRange = source.range(of: "private var tonightCard: some View") else {
-            XCTFail("Expected a tonightCard view in HomeView.swift")
+        guard let cardRange = source.range(of: "private var tonightActionContent: some View") else {
+            XCTFail("Expected a tonightActionContent view in HomeView.swift")
             return
         }
         let tail = source[cardRange.lowerBound...]
