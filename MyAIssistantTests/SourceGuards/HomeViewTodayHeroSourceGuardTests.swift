@@ -29,7 +29,7 @@ final class HomeViewTodayHeroSourceGuardTests: XCTestCase {
     func testHomeViewUsesTodayHeroCard() throws {
         let source = try locateSourceFile(named: "HomeView.swift")
         XCTAssertTrue(
-            source.contains("TodayHeroCard("),
+            source.contains("TodayHeroCard(") || source.contains("TodayHeroCard {"),
             "Home should render the photo-strip hero via TodayHeroCard"
         )
     }
