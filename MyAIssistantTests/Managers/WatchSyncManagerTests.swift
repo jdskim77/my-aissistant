@@ -5,6 +5,7 @@ import XCTest
 /// payload-shaping logic factored out of `syncSchedule` (zero test coverage
 /// backlog item). `now` is injected so day-boundary and check-in-slot
 /// behavior are deterministic instead of depending on the real clock.
+@MainActor
 final class WatchSyncManagerTests: XCTestCase {
 
     private let calendar = Calendar.current
