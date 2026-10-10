@@ -87,6 +87,7 @@
 		8B670A057CAC4D92CDB098F2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */; };
 		8B670A067CAC4D92CDB098F3 /* TodaysContextSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */; };
 		8B670A077CAC4D92CDB098F4 /* WeatherChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */; };
+		D1A1B2C3E4F5678901234501 /* TodayHeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1B2C3E4F5678901234500 /* TodayHeroCard.swift */; };
 		8B670A087CAC4D92CDB098F5 /* BalancePulseBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */; };
 		8B670A097CAC4D92CDB098F6 /* ParticleAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */; };
 		8BAC2619A39D0CCD5CA274D2 /* EveningCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24402D4F01D47D5F0155EFE6 /* EveningCheckInView.swift */; };
@@ -263,6 +264,7 @@
 				7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */; };
 				648281BE7FEA6EDBFB564264 /* HomeViewTonightCardSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */; };
 				7FFF38C01F49DF4A2C61CD97 /* EveningCheckInHandoffSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */; };
+		D1A1B2C3E4F5678901234503 /* HomeViewTodayHeroSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -362,6 +364,7 @@
 		16CC9AF6CEF1F649F39701F2 /* WeatherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeatherManager.swift; path = MyAIssistant/Managers/WeatherManager.swift; sourceTree = SOURCE_ROOT; };
 		16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodaysContextSheet.swift; sourceTree = "<group>"; };
 		16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherChip.swift; sourceTree = "<group>"; };
+		D1A1B2C3E4F5678901234500 /* TodayHeroCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayHeroCard.swift; sourceTree = "<group>"; };
 		16CC9AF9CEF1F649F39701F5 /* BalancePulseBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BalancePulseBus.swift; path = MyAIssistant/Managers/BalancePulseBus.swift; sourceTree = SOURCE_ROOT; };
 		16CC9AFACEF1F649F39701F6 /* ParticleAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ParticleAnimator.swift; path = MyAIssistant/Managers/ParticleAnimator.swift; sourceTree = SOURCE_ROOT; };
 		194F8EF6AA6FA943F69D1BD1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -577,6 +580,7 @@
 				AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewSourceGuardTests.swift; sourceTree = "<group>"; };
 				FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewTonightCardSourceGuardTests.swift; sourceTree = "<group>"; };
 				04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInHandoffSourceGuardTests.swift; sourceTree = "<group>"; };
+		D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewTodayHeroSourceGuardTests.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -901,6 +905,7 @@
 				16CC9AF4CEF1F649F39701EE /* PatternInsightBanner.swift */,
 				16CC9AF7CEF1F649F39701F3 /* TodaysContextSheet.swift */,
 				16CC9AF8CEF1F649F39701F4 /* WeatherChip.swift */,
+				D1A1B2C3E4F5678901234500 /* TodayHeroCard.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -1135,6 +1140,7 @@
 								AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */,
 								FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */,
 								04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */,
+								D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */,
 							);
 							path = SourceGuards;
 			sourceTree = "<group>";
@@ -1728,6 +1734,7 @@
 				8B670A057CAC4D92CDB098F2 /* WeatherManager.swift in Sources */,
 				8B670A067CAC4D92CDB098F3 /* TodaysContextSheet.swift in Sources */,
 				8B670A077CAC4D92CDB098F4 /* WeatherChip.swift in Sources */,
+				D1A1B2C3E4F5678901234501 /* TodayHeroCard.swift in Sources */,
 				8B670A087CAC4D92CDB098F5 /* BalancePulseBus.swift in Sources */,
 				8B670A097CAC4D92CDB098F6 /* ParticleAnimator.swift in Sources */,
 				C64A4B70081C166D7C2C3CDF /* Nudge.swift in Sources */,
@@ -1752,7 +1759,8 @@
 								7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */,
 								648281BE7FEA6EDBFB564264 /* HomeViewTonightCardSourceGuardTests.swift in Sources */,
 								7FFF38C01F49DF4A2C61CD97 /* EveningCheckInHandoffSourceGuardTests.swift in Sources */,
-				A900000002000000 /* MockAIProvider.swift in Sources */,
+								D1A1B2C3E4F5678901234503 /* HomeViewTodayHeroSourceGuardTests.swift in Sources */,
+								A900000002000000 /* MockAIProvider.swift in Sources */,
 				A900000003000000 /* MockKeychainService.swift in Sources */,
 				A900000004000000 /* TaskManagerTests.swift in Sources */,
 				A900000005000000 /* PatternEngineTests.swift in Sources */,
