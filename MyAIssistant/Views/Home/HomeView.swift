@@ -116,6 +116,17 @@ struct HomeView: View {
     @State private var lastHandledBusToken: UUID?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// BUG-05 fix: single shared "now" for every time-dependent Home
+    /// decision that needs to recompute when the clock crosses a daypart
+    /// boundary (chiefly 6pm/Tonight-card) while Home stays idle on
+    /// screen. Refreshed by a lightweight self-rescheduling task (fires
+    /// once at the next hour boundary, then reschedules — never a tight
+    /// poll loop) and immediately on scenePhase becoming `.active`, so a
+    /// user who opens Home at 5:59pm and leaves it open sees the Tonight
+    /// card appear at 6:00pm without needing some unrelated state change
+    /// to trigger a re-render first.
+    @State private var now = Date()
+
     /// Tracks insight-banner dismissal within this view session so a user who
     /// dismisses the banner doesn't see it flash back during the same visit.
     /// Re-evaluated on `.active` scene phase transitions so the per-day key
@@ -125,7 +136,7 @@ struct HomeView: View {
     // MARK: - Computed
 
     private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
+        let hour = Calendar.current.component(.hour, from: now)
         if hour < 12 { return "Good morning" }
         if hour < 17 { return "Good afternoon" }
         return "Good evening"
@@ -171,10 +182,19 @@ struct HomeView: View {
 
     // MARK: - Check-in State
 
-    /// Slots completed today, deduped by slot (one record per slot per day).
+    /// Slots completed today, deduped by slot (one record per slot per
+    /// day). BUG-02 fix: unions in the Night slot from the evening
+    /// BalanceManager flow (`DailyBalanceCheckIn`) when present, since
+    /// that flow doesn't write a `CheckInRecord` — delegates to the
+    /// pure, unit-tested `HomeProgressCalc.completedSlotsToday` so the
+    /// day strip, count, CTA, and Tonight-card visibility all agree.
     private var todayCompletedSlots: Set<String> {
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        return Set(allCheckIns.filter { $0.date >= startOfDay }.map(\.timeSlotRaw))
+        let recordSlots = Set(allCheckIns.filter { $0.date >= startOfDay }.map(\.timeSlotRaw))
+        return HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: recordSlots,
+            nightCheckInDoneViaBalanceManager: balanceManager?.hasCheckedInToday() ?? false
+        )
     }
 
     private var todayCheckInCount: Int { todayCompletedSlots.count }
@@ -207,7 +227,7 @@ struct HomeView: View {
     /// function so the decision is unit-testable without SwiftData.
     private var shouldShowTonightCard: Bool {
         HomeProgressCalc.shouldShowTonightCard(
-            hour: Calendar.current.component(.hour, from: Date()),
+            hour: Calendar.current.component(.hour, from: now),
             nightCheckInDone: balanceManager?.hasCheckedInToday() ?? false
         )
     }
@@ -895,11 +915,35 @@ struct HomeView: View {
             // hidden across the midnight rollover if the user left Home
             // visible overnight.
             if phase == .active {
+                now = Date()
                 insightBannerDismissed = PatternInsightBanner.isDismissedToday()
                 // Weather cache is 30 min; after a long background gap the
                 // Home chip would otherwise keep showing stale conditions
                 // until the user manually tapped it.
                 Task { await weatherManager?.refreshIfAuthorizedAndStale() }
+            }
+        }
+        // BUG-05 fix: Home is often left open and idle straight through
+        // the 6pm daypart boundary (and the morning/afternoon ones) with
+        // no other state change to trigger a re-render, so the Tonight
+        // card / greeting / remaining-items copy would silently go stale
+        // until something unrelated happened to refresh the view. This
+        // self-rescheduling task sleeps until the next hour boundary,
+        // bumps `now`, then reschedules itself — SwiftUI's `.task`
+        // modifier cancels and restarts it automatically across
+        // appear/disappear, so there's no leaked timer and no tight
+        // poll loop.
+        .task(id: Calendar.current.component(.hour, from: now)) {
+            guard let nextHour = Calendar.current.nextDate(
+                after: now,
+                matching: DateComponents(minute: 0, second: 0),
+                matchingPolicy: .nextTime
+            ) else { return }
+            let interval = nextHour.timeIntervalSince(now)
+            guard interval > 0 else { return }
+            try? await Task.sleep(for: .seconds(interval))
+            if !Task.isCancelled {
+                now = Date()
             }
         }
         .onChange(of: allCheckIns.isEmpty) { _, _ in
@@ -1273,7 +1317,7 @@ struct HomeView: View {
     private var shouldShowRemainingItemsInsteadOfPercent: Bool {
         HomeProgressCalc.shouldShowRemainingItemsInsteadOfPercent(
             dayCompletionFraction: dayCompletionFraction,
-            hour: Calendar.current.component(.hour, from: Date())
+            hour: Calendar.current.component(.hour, from: now)
         )
     }
 

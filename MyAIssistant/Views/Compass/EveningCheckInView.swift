@@ -470,9 +470,19 @@ struct EveningCheckInView: View {
         }
         .transition(.scale.combined(with: .opacity))
         .task {
-            triggerReflectionHandoffIfNeeded()
+            // BUG-01/BUG-NEW-01 fix: start generation (if applicable) up
+            // front, but ALWAYS show the full 1.5s confirmation beat and
+            // dismiss exactly once afterward — the handoff to Coach only
+            // happens if this is the Tonight-card entry point AND the
+            // setting is enabled, checked here (after the delay) rather
+            // than inside the generation starter so a disabled setting
+            // never switches tabs even when it skips generation.
+            startReflectionGenerationIfNeeded()
             try? await Task.sleep(for: .seconds(1.5))
             dismiss()
+            if onCheckInSaved != nil, AppConstants.eveningReflectionHandoffEnabled {
+                onCheckInSaved?()
+            }
         }
     }
 
@@ -493,26 +503,30 @@ struct EveningCheckInView: View {
         }
     }
 
-    /// Evening Flow redesign: after Save check-in, hand off to Coach with
-    /// ONE reflection referencing tonight's ratings. Fires at most once
-    /// per check-in (guarded by `didTriggerReflectionHandoff`), and only
-    /// when `onCheckInSaved` was provided (the Tonight-card entry point).
+    /// Evening Flow redesign: starts the Coach reflection generation for
+    /// the Tonight-card entry point. Fires at most once per check-in
+    /// (guarded by `didTriggerReflectionHandoff`), and only when
+    /// `onCheckInSaved` was provided AND the handoff setting is enabled
+    /// (BUG-NEW-01 fix: a disabled setting must suppress generation, not
+    /// just the tab switch). Runs as a `Task.detached` so dismissing this
+    /// sheet — which cancels the confirmation `.task` that calls this —
+    /// can never cancel the in-flight AI call (BUG-01/Codex fix:
+    /// generation must not be tied to the sheet's `.task` lifetime).
     /// `EveningReflectionGenerator` itself silently no-ops with no error
-    /// bubble when AI is unavailable or the user is signed out — this
-    /// method still calls `onCheckInSaved()` in that case so the user
-    /// lands on Coach regardless.
-    private func triggerReflectionHandoffIfNeeded() {
-        guard let onCheckInSaved, !didTriggerReflectionHandoff else { return }
+    /// bubble when AI is unavailable or the user is signed out.
+    private func startReflectionGenerationIfNeeded() {
+        guard onCheckInSaved != nil, !didTriggerReflectionHandoff else { return }
         didTriggerReflectionHandoff = true
+        guard AppConstants.eveningReflectionHandoffEnabled else { return }
         let capturedRatings = ratings
         let capturedEnergy = Int(energyRating) == 0 ? nil : Int(energyRating)
         let generator = EveningReflectionGenerator(keychainService: keychainService, chatManager: chatManager)
-        onCheckInSaved()
-        Task {
+        let tier = subscriptionTier
+        Task.detached { @MainActor in
             await generator.send(
                 ratings: capturedRatings,
                 energyRating: capturedEnergy,
-                subscriptionTier: subscriptionTier
+                subscriptionTier: tier
             )
         }
     }

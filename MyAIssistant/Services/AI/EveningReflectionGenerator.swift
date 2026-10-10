@@ -36,9 +36,7 @@ final class EveningReflectionGenerator {
         energyRating: Int?,
         subscriptionTier: SubscriptionTier
     ) async {
-        guard UserDefaults.standard.object(forKey: AppConstants.eveningReflectionHandoffEnabledKey) == nil
-            || UserDefaults.standard.bool(forKey: AppConstants.eveningReflectionHandoffEnabledKey)
-        else { return }
+        guard AppConstants.eveningReflectionHandoffEnabled else { return }
 
         let stringRatings: [String: Int] = ratings.reduce(into: [:]) { $0[$1.key.rawValue] = $1.value }
         let prompt = AIPromptBuilder.eveningReflectionPrompt(

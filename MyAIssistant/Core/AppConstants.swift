@@ -199,6 +199,19 @@ enum AppConstants {
     /// Coach Settings.
     static let eveningReflectionHandoffEnabledKey = "coach.eveningReflection.handoff.enabled"
 
+    /// Shared accessor for the handoff setting above — the single source
+    /// of truth for both the view (navigation gate) and the generator
+    /// (AI-call gate), so the "unset == true" default logic lives in one
+    /// place instead of being duplicated across call sites (QA BUG-03 /
+    /// Codex triage: duplicated default handling is a silent-gate-failure
+    /// risk). Unset (never visited Coach Settings) reads as enabled.
+    static var eveningReflectionHandoffEnabled: Bool {
+        if UserDefaults.standard.object(forKey: eveningReflectionHandoffEnabledKey) == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: eveningReflectionHandoffEnabledKey)
+    }
+
     /// Notification category for inline actions.
     static let nudgeNotificationCategory = "NUDGE_CATEGORY"
     static let nudgeAcceptActionID = "NUDGE_ACCEPT"

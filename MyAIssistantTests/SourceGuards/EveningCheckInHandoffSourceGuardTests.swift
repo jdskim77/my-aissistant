@@ -68,3 +68,34 @@ final class EveningCheckInHandoffSourceGuardTests: XCTestCase {
         )
     }
 }
+
+/// Behavioral test for the shared `AppConstants.eveningReflectionHandoffEnabled`
+/// accessor (BUG-03/Codex fix: a single source of truth for the "unset ==
+/// true" default, read by both EveningCheckInView's navigation gate and
+/// EveningReflectionGenerator's AI-call gate — this exercises the actual
+/// logic rather than just guarding source text).
+final class EveningReflectionHandoffSettingGateTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        UserDefaults.standard.removeObject(forKey: AppConstants.eveningReflectionHandoffEnabledKey)
+    }
+
+    override func tearDown() {
+        UserDefaults.standard.removeObject(forKey: AppConstants.eveningReflectionHandoffEnabledKey)
+        super.tearDown()
+    }
+
+    func testUnsetReadsAsEnabled() {
+        XCTAssertTrue(AppConstants.eveningReflectionHandoffEnabled)
+    }
+
+    func testExplicitlyEnabled() {
+        UserDefaults.standard.set(true, forKey: AppConstants.eveningReflectionHandoffEnabledKey)
+        XCTAssertTrue(AppConstants.eveningReflectionHandoffEnabled)
+    }
+
+    func testExplicitlyDisabled() {
+        UserDefaults.standard.set(false, forKey: AppConstants.eveningReflectionHandoffEnabledKey)
+        XCTAssertFalse(AppConstants.eveningReflectionHandoffEnabled)
+    }
+}
