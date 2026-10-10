@@ -478,7 +478,10 @@ struct EveningCheckInView: View {
             // than inside the generation starter so a disabled setting
             // never switches tabs even when it skips generation.
             startReflectionGenerationIfNeeded()
-            try? await Task.sleep(for: .seconds(1.5))
+            // Codex P2: if the user swipes the sheet away during the beat,
+            // SwiftUI cancels this task — stop here so a dismissed sheet
+            // never re-dismisses or yanks the user to the Coach tab.
+            do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
             dismiss()
             if onCheckInSaved != nil, AppConstants.eveningReflectionHandoffEnabled {
                 onCheckInSaved?()

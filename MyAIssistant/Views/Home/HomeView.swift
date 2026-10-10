@@ -934,17 +934,21 @@ struct HomeView: View {
         // appear/disappear, so there's no leaked timer and no tight
         // poll loop.
         .task(id: Calendar.current.component(.hour, from: now)) {
+            // Codex P2: `now` may be stale when Home re-appears (e.g. it
+            // last ticked at 17:00 and the user returns at 17:59). Refresh
+            // it first and schedule from the real clock; if the hour has
+            // already rolled over, the id change restarts this task.
+            let current = Date()
+            now = current
             guard let nextHour = Calendar.current.nextDate(
-                after: now,
+                after: current,
                 matching: DateComponents(minute: 0, second: 0),
                 matchingPolicy: .nextTime
             ) else { return }
-            let interval = nextHour.timeIntervalSince(now)
+            let interval = nextHour.timeIntervalSince(current)
             guard interval > 0 else { return }
-            try? await Task.sleep(for: .seconds(interval))
-            if !Task.isCancelled {
-                now = Date()
-            }
+            do { try await Task.sleep(for: .seconds(interval)) } catch { return }
+            now = Date()
         }
         .onChange(of: allCheckIns.isEmpty) { _, _ in
             promoteFromDay0IfNeeded()
