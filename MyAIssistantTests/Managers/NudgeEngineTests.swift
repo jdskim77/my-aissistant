@@ -72,18 +72,22 @@ final class NudgeEngineTests: XCTestCase {
         return engine
     }
 
-    /// Fixed reference instant: 2024-01-15 10:00:00 UTC (a Monday, clear of
+    /// Fixed reference instant: 2024-01-15 10:00 local time (a Monday, clear of
     /// any quiet-hours default window) so tests that don't care about time
     /// get a deterministic, daylight hour.
     private static let fixedNow: Date = {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
+        // Calendar.current, not UTC: the engine's quiet-hours and day-boundary
+        // math uses Calendar.current, so fixtures must too or results depend
+        // on the CI runner's timezone (Codex P2).
+        let cal = Calendar.current
         return cal.date(from: DateComponents(year: 2024, month: 1, day: 15, hour: 10))!
     }()
 
     private func dateAt(hour: Int, day: Int = 15) -> Date {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
+        // Calendar.current, not UTC: the engine's quiet-hours and day-boundary
+        // math uses Calendar.current, so fixtures must too or results depend
+        // on the CI runner's timezone (Codex P2).
+        let cal = Calendar.current
         return cal.date(from: DateComponents(year: 2024, month: 1, day: day, hour: hour))!
     }
 
