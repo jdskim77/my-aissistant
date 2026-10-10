@@ -120,8 +120,12 @@ final class AIPromptBuilderTests: XCTestCase {
             streak: 2
         )
 
-        // Should contain structural instructions
-        XCTAssertTrue(prompt.contains("pattern"))
+        // Should contain structural instructions. Commit 688a281 (Life
+        // Compass phase 1) reworded bullet #2 from "pattern" to "life
+        // balance across dimensions" — this test still asserted the old
+        // wording and never caught up, so it failed against correct,
+        // intentional prompt copy. Assert the current structural anchors.
+        XCTAssertTrue(prompt.contains("life balance"))
         XCTAssertTrue(prompt.contains("suggestion"))
         XCTAssertTrue(prompt.contains("150 words"))
     }
