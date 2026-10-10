@@ -40,8 +40,11 @@ final class PatternEngine {
         var checkDate = calendar.startOfDay(for: Date())
         var isToday = true
 
-        // Hard cap the walk so a misbehaving DB can't infinite-loop.
-        let maxLookback = 365
+        // Hard cap the walk so a misbehaving DB can't infinite-loop. +1 vs
+        // the pre-today-grace version: the walk now starts at today instead
+        // of yesterday, so bump by one day to preserve the same historical
+        // (pre-today) lookback depth.
+        let maxLookback = 366
         var iterations = 0
 
         while iterations < maxLookback {
