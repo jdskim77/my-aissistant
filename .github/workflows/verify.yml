@@ -1,9 +1,12 @@
-name: Verify (fix/prompt-cache-blocks)
+name: Verify
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - fix/prompt-cache-blocks
+      - main
 
 jobs:
   test:
