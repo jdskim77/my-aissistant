@@ -8,6 +8,7 @@ import SwiftData
 enum HomeSheet: Identifiable {
     case todaysContext
     case checkIn
+    case eveningCheckIn
     case habits
     case addHabit
     case reschedule(TaskItem)
@@ -26,6 +27,7 @@ enum HomeSheet: Identifiable {
         switch self {
         case .todaysContext: return "todaysContext"
         case .checkIn: return "checkIn"
+        case .eveningCheckIn: return "eveningCheckIn"
         case .habits: return "habits"
         case .addHabit: return "addHabit"
         case .reschedule(let task): return "reschedule-\(task.id)"
@@ -197,6 +199,17 @@ struct HomeView: View {
             return .prominent(slot: current)
         }
         return .progress
+    }
+
+    /// Evening Flow redesign: whether to show the "Tonight" card — one
+    /// next action (night check-in) plus remaining habits — in place of
+    /// the normal progress hero. Delegates to the pure `HomeProgressCalc`
+    /// function so the decision is unit-testable without SwiftData.
+    private var shouldShowTonightCard: Bool {
+        HomeProgressCalc.shouldShowTonightCard(
+            hour: Calendar.current.component(.hour, from: Date()),
+            nightCheckInDone: balanceManager?.hasCheckedInToday() ?? false
+        )
     }
 
     private var formattedDate: String {
@@ -417,12 +430,22 @@ struct HomeView: View {
                     }
                 }
 
-                // Today hero card (dual-ring + contextual check-in action)
+                // Today hero card (dual-ring + contextual check-in action),
+                // or the Evening Flow "Tonight" card once it's evening and
+                // the night check-in isn't done yet (mockup: 2026-10-09
+                // evening-flow redesign, "Proposed" row).
                 Section {
-                    todayHeroCard
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                    if shouldShowTonightCard {
+                        tonightCard
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    } else {
+                        todayHeroCard
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
                 }
 
                 // Balance Pulse — Pillar 3 (Whole-Life Balance). Now also hosts
@@ -953,6 +976,17 @@ struct HomeView: View {
                 )
             case .checkIn:
                 CheckInDetailView(timeSlot: CheckInTime.next())
+            case .eveningCheckIn:
+                // Evening Flow redesign: Tonight card's "Night check-in · 1
+                // min" action opens the same EveningCheckInView the Compass
+                // tab uses, so ratings land in the one BalanceManager store.
+                // onCheckInSaved switches to Coach once Save check-in fires.
+                if let bm = balanceManager {
+                    EveningCheckInView(balanceManager: bm, onCheckInSaved: {
+                        activeSheet = nil
+                        selectedTab = .coach
+                    })
+                }
             case .habits:
                 HabitsView()
             case .addHabit:
@@ -1248,6 +1282,97 @@ struct HomeView: View {
             completedTasks: completedTodayCount,
             totalTasks: totalTodayCount,
             completedCheckIns: todayCheckInCount
+        )
+    }
+
+    // MARK: - Tonight Card (Evening Flow redesign)
+    //
+    // Shown instead of `todayHeroCard` once it's evening and the night
+    // check-in hasn't been logged (see `shouldShowTonightCard`). Surfaces
+    // ONE next action — the night check-in — plus the remaining habits
+    // inline so completing them doesn't require leaving Home. The usual
+    // dual-ring progress becomes a small secondary glyph underneath
+    // rather than the headline element.
+    private var tonightCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(CheckInTime.night.color)
+                Text("TONIGHT")
+                    .font(AppFonts.label(11))
+                    .tracking(0.8)
+                    .foregroundColor(AppColors.textMuted)
+                Spacer(minLength: 0)
+            }
+
+            // ONE next action — opens the existing EveningCheckInView via
+            // the Home sheet router. No alternate path, no second action
+            // competing for attention here.
+            Button {
+                Haptics.light()
+                activeSheet = .eveningCheckIn
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(CheckInTime.night.color))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Night check-in · 1 min")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("Calibrate how today went")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.textMuted)
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(CheckInTime.night.color.opacity(0.12))
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Night check-in, 1 minute. Calibrate how today went.")
+
+            // Remaining habits inline — same completion logic/row the
+            // normal Habits card uses, just surfaced here so the Tonight
+            // card can be the single stop for the user's remaining
+            // evening actions.
+            let todo = habitsToDoToday
+            if !todo.isEmpty {
+                let today = Calendar.current.startOfDay(for: Date())
+                VStack(spacing: 8) {
+                    ForEach(Array(todo.prefix(3)), id: \.id) { habit in
+                        HabitRow(habit: habit, isDone: false, today: today, onFlightLaunch: flightLaunchHandler)
+                    }
+                }
+            }
+
+            // Progress ring demoted to a small secondary glyph beneath the
+            // next action, per the approved mockup — no longer the
+            // headline element while there's an unfinished evening action.
+            HStack(spacing: 8) {
+                compactDualRing
+                    .scaleEffect(0.6)
+                    .frame(width: 36, height: 36)
+                Text(remainingItemsText)
+                    .font(AppFonts.caption(12))
+                    .foregroundColor(AppColors.textMuted)
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(AppColors.card)
         )
     }
 

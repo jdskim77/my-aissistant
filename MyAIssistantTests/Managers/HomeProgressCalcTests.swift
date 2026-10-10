@@ -106,4 +106,36 @@ final class HomeProgressCalcTests: XCTestCase {
         )
         XCTAssertEqual(text, "4 check-ins left")
     }
+
+    // MARK: - shouldShowTonightCard (Evening Flow redesign)
+
+    func test_shouldShowTonightCard_eveningAndNotDone_true() {
+        XCTAssertTrue(
+            HomeProgressCalc.shouldShowTonightCard(hour: 19, nightCheckInDone: false)
+        )
+    }
+
+    func test_shouldShowTonightCard_boundaryHourSix_true() {
+        XCTAssertTrue(
+            HomeProgressCalc.shouldShowTonightCard(hour: 18, nightCheckInDone: false)
+        )
+    }
+
+    func test_shouldShowTonightCard_beforeEvening_false() {
+        XCTAssertFalse(
+            HomeProgressCalc.shouldShowTonightCard(hour: 17, nightCheckInDone: false)
+        )
+    }
+
+    func test_shouldShowTonightCard_eveningButAlreadyDone_false() {
+        XCTAssertFalse(
+            HomeProgressCalc.shouldShowTonightCard(hour: 22, nightCheckInDone: true)
+        )
+    }
+
+    func test_shouldShowTonightCard_morningAndDone_false() {
+        XCTAssertFalse(
+            HomeProgressCalc.shouldShowTonightCard(hour: 8, nightCheckInDone: true)
+        )
+    }
 }

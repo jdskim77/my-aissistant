@@ -191,7 +191,8 @@
 		AABAEF299BF772EE3244C709 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000008000000 /* UserProfile.swift */; };
 		AAEB380490879F3B53121260 /* CheckInPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976F70F2542E5B2358038CB1 /* CheckInPreferencesView.swift */; };
 		AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD5011DD2D513D3890F0B6E /* AppSpacing.swift */; };
-		AB00000001000000 /* DailyRecapGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000002000000 /* DailyRecapGenerator.swift */; };
+				AB00000001000000 /* DailyRecapGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00000002000000 /* DailyRecapGenerator.swift */; };
+				A479B630EC7AF90C99E1F864 /* EveningReflectionGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EB4F77242C2DFA207F4724D /* EveningReflectionGenerator.swift */; };
 		AB5424797AEE57CCF3D7473E /* DailySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000007000000 /* DailySnapshot.swift */; };
 		AC00000001000000 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000001000000 /* SpeechRecognizer.swift */; };
 		AC00000002000000 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC00000002000000 /* CustomTabBar.swift */; };
@@ -259,8 +260,10 @@
 		E596E7EE959641418BE124D9 /* HabitNameDuplicateCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */; };
 		400043B40BE84533B8E99144 /* HomeProgressCalcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */; };
 		56DBC96EEC2C4279B6B9B673 /* MessageGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */; };
-		7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */; };
-/* End PBXBuildFile section */
+				7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */; };
+				648281BE7FEA6EDBFB564264 /* HomeViewTonightCardSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */; };
+				7FFF38C01F49DF4A2C61CD97 /* EveningCheckInHandoffSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		4583C2B92F79D1BE00603B08 /* PBXContainerItemProxy */ = {
@@ -413,7 +416,8 @@
 		A45180E1CF55D484DE91629E /* AppLogger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		AA00000002000000 /* Breadcrumb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Breadcrumb.swift; sourceTree = "<group>"; };
 		AA00000004000000 /* DiagnosticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsManager.swift; sourceTree = "<group>"; };
-		AB00000002000000 /* DailyRecapGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRecapGenerator.swift; sourceTree = "<group>"; };
+				AB00000002000000 /* DailyRecapGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyRecapGenerator.swift; sourceTree = "<group>"; };
+				5EB4F77242C2DFA207F4724D /* EveningReflectionGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningReflectionGenerator.swift; sourceTree = "<group>"; };
 		AF2BFB3D59F9A92753D456DE /* DimensionPickerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DimensionPickerView.swift; sourceTree = "<group>"; };
 		B100000001000000 /* MyAIssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyAIssistantApp.swift; sourceTree = "<group>"; };
 		B100000002000000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -570,8 +574,10 @@
 		1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitNameDuplicateCheckTests.swift; sourceTree = "<group>"; };
 		D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeProgressCalcTests.swift; sourceTree = "<group>"; };
 		4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageGroupingTests.swift; sourceTree = "<group>"; };
-		AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewSourceGuardTests.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+				AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewSourceGuardTests.swift; sourceTree = "<group>"; };
+				FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewTonightCardSourceGuardTests.swift; sourceTree = "<group>"; };
+				04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInHandoffSourceGuardTests.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4583C2AD2F79D1BB00603B08 /* MyAIssistantWatch Watch App */ = {
@@ -1030,8 +1036,9 @@
 				B300000004000000 /* OpenAIProvider.swift */,
 				B300000005000000 /* AIProviderFactory.swift */,
 				B3A200P2000000000001 /* GoalTaskSuggester.swift */,
-				AB00000002000000 /* DailyRecapGenerator.swift */,
-			);
+								AB00000002000000 /* DailyRecapGenerator.swift */,
+								5EB4F77242C2DFA207F4724D /* EveningReflectionGenerator.swift */,
+							);
 			path = AI;
 			sourceTree = "<group>";
 		};
@@ -1125,9 +1132,11 @@
 		6B7D4F721C5C4341BFB06390 /* SourceGuards */ = {
 			isa = PBXGroup;
 			children = (
-				AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */,
-			);
-			path = SourceGuards;
+								AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */,
+								FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */,
+								04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */,
+							);
+							path = SourceGuards;
 			sourceTree = "<group>";
 		};
 		D900000002000000 /* Managers */ = {
@@ -1680,7 +1689,8 @@
 				188A60D37D2EFDB8E32A3799 /* AppLogger.swift in Sources */,
 				FF11223344000001 /* Breadcrumb.swift in Sources */,
 				AA00000003000000 /* DiagnosticsManager.swift in Sources */,
-				AB00000001000000 /* DailyRecapGenerator.swift in Sources */,
+								AB00000001000000 /* DailyRecapGenerator.swift in Sources */,
+								A479B630EC7AF90C99E1F864 /* EveningReflectionGenerator.swift in Sources */,
 				6FBD753D90EC7007AF5F2925 /* AppRadius.swift in Sources */,
 				65EB481849E9730352A7CA70 /* ScaleButtonStyle.swift in Sources */,
 				AAEECDD0AFDFD9E67394AE8E /* AppSpacing.swift in Sources */,
@@ -1739,7 +1749,9 @@
 				E596E7EE959641418BE124D9 /* HabitNameDuplicateCheckTests.swift in Sources */,
 				400043B40BE84533B8E99144 /* HomeProgressCalcTests.swift in Sources */,
 				56DBC96EEC2C4279B6B9B673 /* MessageGroupingTests.swift in Sources */,
-				7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */,
+								7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */,
+								648281BE7FEA6EDBFB564264 /* HomeViewTonightCardSourceGuardTests.swift in Sources */,
+								7FFF38C01F49DF4A2C61CD97 /* EveningCheckInHandoffSourceGuardTests.swift in Sources */,
 				A900000002000000 /* MockAIProvider.swift in Sources */,
 				A900000003000000 /* MockKeychainService.swift in Sources */,
 				A900000004000000 /* TaskManagerTests.swift in Sources */,

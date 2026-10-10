@@ -41,6 +41,13 @@ struct CoachSettingsView: View {
     @AppStorage(AppConstants.nudgePostLowMoodEnabledKey)
     private var postLowMoodEnabled: Bool = false
 
+    /// Evening Flow redesign: whether "Save check-in" hands off to Coach
+    /// with one reflection referencing tonight's ratings. Defaults ON —
+    /// unlike the mood-triggered nudge above, this fires only in direct
+    /// response to the user's own action (saving), not a background rule.
+    @AppStorage(AppConstants.eveningReflectionHandoffEnabledKey)
+    private var eveningReflectionHandoffEnabled: Bool = true
+
     var body: some View {
         Form {
             Section {
@@ -66,6 +73,13 @@ struct CoachSettingsView: View {
                 } else {
                     Text("Specific, well-timed suggestions from your coach across body, mind, heart, and spirit. Always with consent; silenceable any time.")
                 }
+            }
+
+            Section {
+                Toggle("Reflect after night check-in", isOn: $eveningReflectionHandoffEnabled)
+                    .tint(AppColors.accent)
+            } footer: {
+                Text("After you save your night check-in, the coach sends one short reflection on tonight's ratings.")
             }
 
             if nudgesEnabled {

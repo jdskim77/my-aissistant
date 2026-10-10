@@ -192,6 +192,13 @@ enum AppConstants {
     /// the rule fires. Toggled via Coach Settings.
     static let nudgePostLowMoodEnabledKey = "coach.nudge.postLowMood.enabled"
 
+    /// Evening Flow redesign: whether saving the night check-in should
+    /// hand off to the Coach tab with one reflection referencing tonight's
+    /// ratings. Default ON — this is the core "coach is the spine"
+    /// behavior, unlike the opt-in nudge rules above. Toggled via
+    /// Coach Settings.
+    static let eveningReflectionHandoffEnabledKey = "coach.eveningReflection.handoff.enabled"
+
     /// Notification category for inline actions.
     static let nudgeNotificationCategory = "NUDGE_CATEGORY"
     static let nudgeAcceptActionID = "NUDGE_ACCEPT"

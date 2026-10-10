@@ -7,7 +7,17 @@ import SwiftUI
 ///   Step 4: Confirmation + auto-dismiss
 struct EveningCheckInView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.chatManager) private var chatManager
+    @Environment(\.keychainService) private var keychainService
+    @Environment(\.subscriptionTier) private var subscriptionTier
     let balanceManager: BalanceManager
+
+    /// Evening Flow redesign: called once the check-in is saved and this
+    /// view is about to dismiss. Callers that want the Coach handoff
+    /// (the new Tonight card path) pass a closure that switches the tab;
+    /// the existing Compass-tab entry point passes nil and keeps today's
+    /// behavior (plain dismiss, no handoff).
+    var onCheckInSaved: (() -> Void)? = nil
 
     @State private var step: CheckInStep = .satisfaction
     @State private var ratings: [LifeDimension: Int] = [:]
@@ -15,6 +25,9 @@ struct EveningCheckInView: View {
     @State private var processing = false
     @State private var recallSuggestions: [BalanceManager.RecallSuggestion] = []
     @State private var selectedDuration: [String: Int] = [:]
+    /// Trigger-once guard: the reflection handoff fires at most once per
+    /// check-in session, even if the save path is somehow re-entered.
+    @State private var didTriggerReflectionHandoff = false
 
     private enum CheckInStep {
         case satisfaction, energy, recall, confirmation
@@ -457,6 +470,7 @@ struct EveningCheckInView: View {
         }
         .transition(.scale.combined(with: .opacity))
         .task {
+            triggerReflectionHandoffIfNeeded()
             try? await Task.sleep(for: .seconds(1.5))
             dismiss()
         }
@@ -476,6 +490,30 @@ struct EveningCheckInView: View {
             // No ratings — just save energy via legacy method with best guess dimension
             let bestDim = LifeDimension.scored.first ?? .physical
             balanceManager.recordCheckIn(dimension: bestDim, energyRating: energy == 0 ? nil : energy)
+        }
+    }
+
+    /// Evening Flow redesign: after Save check-in, hand off to Coach with
+    /// ONE reflection referencing tonight's ratings. Fires at most once
+    /// per check-in (guarded by `didTriggerReflectionHandoff`), and only
+    /// when `onCheckInSaved` was provided (the Tonight-card entry point).
+    /// `EveningReflectionGenerator` itself silently no-ops with no error
+    /// bubble when AI is unavailable or the user is signed out — this
+    /// method still calls `onCheckInSaved()` in that case so the user
+    /// lands on Coach regardless.
+    private func triggerReflectionHandoffIfNeeded() {
+        guard let onCheckInSaved, !didTriggerReflectionHandoff else { return }
+        didTriggerReflectionHandoff = true
+        let capturedRatings = ratings
+        let capturedEnergy = Int(energyRating) == 0 ? nil : Int(energyRating)
+        let generator = EveningReflectionGenerator(keychainService: keychainService, chatManager: chatManager)
+        onCheckInSaved()
+        Task {
+            await generator.send(
+                ratings: capturedRatings,
+                energyRating: capturedEnergy,
+                subscriptionTier: subscriptionTier
+            )
         }
     }
 

@@ -59,4 +59,20 @@ enum HomeProgressCalc {
         }
         return parts.joined(separator: ", ") + " left"
     }
+
+    /// Evening Flow redesign: whether Home should show the "Tonight" card
+    /// — one next action instead of the full dual-ring hero — in place of
+    /// the normal progress hero. Pure decision function (no SwiftData) so
+    /// it's directly unit-testable.
+    ///
+    /// True only when it's evening (>= the 6pm threshold used elsewhere
+    /// in this file) AND the night check-in slot hasn't been logged yet.
+    /// Outside the evening, or once the night check-in is done, the
+    /// normal layout stays as-is.
+    static func shouldShowTonightCard(
+        hour: Int,
+        nightCheckInDone: Bool
+    ) -> Bool {
+        hour >= 18 && !nightCheckInDone
+    }
 }
