@@ -253,6 +253,13 @@
 		FE06FDA48FBA13F28BD798A3 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006000000 /* ChatMessage.swift */; };
 		FF11223344000001 /* Breadcrumb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000002000000 /* Breadcrumb.swift */; };
 		WDTA00000001000 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW00000005000000 /* WidgetData.swift */; };
+		36F0ED89C8A54B77A8F105B5 /* HabitNameDuplicateCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72690E8C6A0143658083D3F4 /* HabitNameDuplicateCheck.swift */; };
+		FFB25A8D5EEC40059CF6A563 /* HomeProgressCalc.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24300790C5245B981CF07E6 /* HomeProgressCalc.swift */; };
+		A952F268F5F44E019141D063 /* MessageGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C0FF21A6DA4AAC91159C4A /* MessageGrouping.swift */; };
+		E596E7EE959641418BE124D9 /* HabitNameDuplicateCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */; };
+		400043B40BE84533B8E99144 /* HomeProgressCalcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */; };
+		56DBC96EEC2C4279B6B9B673 /* MessageGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */; };
+		7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -557,6 +564,13 @@
 		F82AE1D8946C134B8F2CC9BD /* ThrivnShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ThrivnShareExtension.entitlements; sourceTree = "<group>"; };
 		F99C62526C82213DD094FD84 /* UserDimensionPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserDimensionPreference.swift; sourceTree = "<group>"; };
 		FE15FBFBF6AE45AA56ED4FB4 /* SeasonGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SeasonGoal.swift; sourceTree = "<group>"; };
+		72690E8C6A0143658083D3F4 /* HabitNameDuplicateCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HabitNameDuplicateCheck.swift; path = MyAIssistant/Managers/HabitNameDuplicateCheck.swift; sourceTree = SOURCE_ROOT; };
+		E24300790C5245B981CF07E6 /* HomeProgressCalc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HomeProgressCalc.swift; path = MyAIssistant/Managers/HomeProgressCalc.swift; sourceTree = SOURCE_ROOT; };
+		C0C0FF21A6DA4AAC91159C4A /* MessageGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageGrouping.swift; path = MyAIssistant/Managers/MessageGrouping.swift; sourceTree = SOURCE_ROOT; };
+		1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitNameDuplicateCheckTests.swift; sourceTree = "<group>"; };
+		D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeProgressCalcTests.swift; sourceTree = "<group>"; };
+		4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageGroupingTests.swift; sourceTree = "<group>"; };
+		AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewSourceGuardTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -987,6 +1001,9 @@
 				937D7AD26947E833B43D374E /* NudgeComposer.swift */,
 				D4EA4C5D2FE8798FA65B2610 /* NudgeEngine.swift */,
 				D18EADAE48EC13D3EE451116 /* WindowedHabitRule.swift */,
+				72690E8C6A0143658083D3F4 /* HabitNameDuplicateCheck.swift */,
+				E24300790C5245B981CF07E6 /* HomeProgressCalc.swift */,
+				C0C0FF21A6DA4AAC91159C4A /* MessageGrouping.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1091,65 +1108,77 @@
 			path = StoreKit;
 			sourceTree = "<group>";
 		};
-						D900000001000000 /* MyAIssistantTests */ = {
-							isa = PBXGroup;
-							children = (
-								D900000002000000 /* Managers */,
-								D900000003000000 /* Services */,
-								D900000004000000 /* Mocks */,
-								D900000005000000 /* Utilities */,
-								2D30C0743EE3AD4371769947 /* Models */,
-								D900000006000000 /* Views */,
-							);
-							path = MyAIssistantTests;
-							sourceTree = "<group>";
-						};
-						D900000002000000 /* Managers */ = {
-							isa = PBXGroup;
-							children = (
-								B900000004000000 /* TaskManagerTests.swift */,
-								B900000005000000 /* PatternEngineTests.swift */,
-								B900000006000000 /* UsageGateManagerTests.swift */,
-								2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
-							);
-							path = Managers;
-							sourceTree = "<group>";
-						};
-						D900000003000000 /* Services */ = {
-							isa = PBXGroup;
-							children = (
-								B900000007000000 /* AIProviderFactoryTests.swift */,
-								B900000008000000 /* AIPromptBuilderTests.swift */,
-								62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */,
-							);
-							path = Services;
-							sourceTree = "<group>";
-						};
-						D900000004000000 /* Mocks */ = {
-							isa = PBXGroup;
-							children = (
-								B900000002000000 /* MockAIProvider.swift */,
-								B900000003000000 /* MockKeychainService.swift */,
-							);
-							path = Mocks;
-							sourceTree = "<group>";
-						};
-						D900000005000000 /* Utilities */ = {
-							isa = PBXGroup;
-							children = (
-								B900000001000000 /* TestModelContainer.swift */,
-							);
-							path = Utilities;
-							sourceTree = "<group>";
-						};
-						D900000006000000 /* Views */ = {
-							isa = PBXGroup;
-							children = (
-								4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */,
-							);
-							path = Views;
-							sourceTree = "<group>";
-						};
+		D900000001000000 /* MyAIssistantTests */ = {
+			isa = PBXGroup;
+			children = (
+				D900000002000000 /* Managers */,
+				D900000003000000 /* Services */,
+				D900000004000000 /* Mocks */,
+				D900000005000000 /* Utilities */,
+				2D30C0743EE3AD4371769947 /* Models */,
+				D900000006000000 /* Views */,
+				6B7D4F721C5C4341BFB06390 /* SourceGuards */,
+			);
+			path = MyAIssistantTests;
+			sourceTree = "<group>";
+		};
+		6B7D4F721C5C4341BFB06390 /* SourceGuards */ = {
+			isa = PBXGroup;
+			children = (
+				AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */,
+			);
+			path = SourceGuards;
+			sourceTree = "<group>";
+		};
+		D900000002000000 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				B900000004000000 /* TaskManagerTests.swift */,
+				B900000005000000 /* PatternEngineTests.swift */,
+				B900000006000000 /* UsageGateManagerTests.swift */,
+				2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
+				1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */,
+				D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */,
+				4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		D900000003000000 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B900000007000000 /* AIProviderFactoryTests.swift */,
+				B900000008000000 /* AIPromptBuilderTests.swift */,
+				62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D900000004000000 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				B900000002000000 /* MockAIProvider.swift */,
+				B900000003000000 /* MockKeychainService.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		D900000005000000 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				B900000001000000 /* TestModelContainer.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		D900000006000000 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		D91FC206E071692950236C46 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -1512,6 +1541,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000001000000 /* MyAIssistantApp.swift in Sources */,
+				36F0ED89C8A54B77A8F105B5 /* HabitNameDuplicateCheck.swift in Sources */,
+				FFB25A8D5EEC40059CF6A563 /* HomeProgressCalc.swift in Sources */,
+				A952F268F5F44E019141D063 /* MessageGrouping.swift in Sources */,
 				A100000002000000 /* ContentView.swift in Sources */,
 				A200000001000000 /* AppConstants.swift in Sources */,
 				A200000002000000 /* DependencyContainer.swift in Sources */,
@@ -1703,18 +1735,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-		A900000001000000 /* TestModelContainer.swift in Sources */,
-		A900000002000000 /* MockAIProvider.swift in Sources */,
-		A900000003000000 /* MockKeychainService.swift in Sources */,
-		A900000004000000 /* TaskManagerTests.swift in Sources */,
-		A900000005000000 /* PatternEngineTests.swift in Sources */,
-		A900000006000000 /* UsageGateManagerTests.swift in Sources */,
-						A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
-						A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
-						29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
-						F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
-						A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
-						B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
+			A900000001000000 /* TestModelContainer.swift in Sources */,
+				E596E7EE959641418BE124D9 /* HabitNameDuplicateCheckTests.swift in Sources */,
+				400043B40BE84533B8E99144 /* HomeProgressCalcTests.swift in Sources */,
+				56DBC96EEC2C4279B6B9B673 /* MessageGroupingTests.swift in Sources */,
+				7FC0F179AA78460DB7E0CB5A /* ChatViewSourceGuardTests.swift in Sources */,
+				A900000002000000 /* MockAIProvider.swift in Sources */,
+				A900000003000000 /* MockKeychainService.swift in Sources */,
+				A900000004000000 /* TaskManagerTests.swift in Sources */,
+				A900000005000000 /* PatternEngineTests.swift in Sources */,
+				A900000006000000 /* UsageGateManagerTests.swift in Sources */,
+				A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
+				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
+				29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
+				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
+				A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
+				B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

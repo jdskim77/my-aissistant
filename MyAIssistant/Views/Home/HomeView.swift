@@ -613,10 +613,30 @@ struct HomeView: View {
                 // Hide the "Today" header on day 0 so the Start-Here card is
                 // the unambiguous focal point.
                 if homeStage == .normal || !todayActiveTasks.isEmpty || !todayCalendarEvents.isEmpty {
-                    Text("Today")
-                        .font(AppFonts.heading(15))
-                        .foregroundColor(AppColors.textPrimary)
-                        .textCase(nil)
+                    HStack(spacing: 8) {
+                        Text("Today")
+                            .font(AppFonts.heading(15))
+                            .foregroundColor(AppColors.textPrimary)
+                            .textCase(nil)
+
+                        Spacer()
+
+                        // "+" add-task button next to the Today section
+                        // header, matching the Habits section pattern
+                        // (Impeccable Screens audit).
+                        Button {
+                            Haptics.light()
+                            activeSheet = .schedule
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.accent)
+                                .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add new task")
+                    }
                 }
             }
 
@@ -1199,23 +1219,45 @@ struct HomeView: View {
     /// bucket they hadn't scheduled — a misleading "you've done nothing
     /// today" when they haven't had breakfast yet.
     private var dayCompletionFraction: Double {
-        // Task side contributes when tasks exist; check-in side always
-        // weighs the 4 slots. Sum only the units the user actually signed
-        // up for. If nothing's scheduled AND no check-ins yet, fraction
-        // is 0 but the ring UI shows it as "ready for today" copy upstream.
-        let taskUnits = max(0, totalTodayCount)
-        let checkInUnits = 4
-        let totalUnits = taskUnits + checkInUnits
-        guard totalUnits > 0 else { return 0 }
-        let doneUnits = completedTodayCount + todayCheckInCount
-        return min(1.0, Double(doneUnits) / Double(totalUnits))
+        // When totalTodayCount == 0 the task side contributes exactly 0
+        // units (not a phantom denominator) — the ring is excluded from
+        // task progress entirely and reflects check-ins only (Impeccable
+        // Screens audit: "ring excludes 0/0 tasks"). Delegates to the
+        // pure `HomeProgressCalc` so the logic is unit-testable.
+        HomeProgressCalc.dayCompletionFraction(
+            completedTasks: completedTodayCount,
+            totalTasks: totalTodayCount,
+            completedCheckIns: todayCheckInCount
+        )
+    }
+
+    /// Whether the ring's percentage would misleadingly read as "you've
+    /// done nothing" late in the day with nothing scheduled and no
+    /// check-ins yet. Used to swap the bare "0%" for a remaining-items
+    /// count instead (Impeccable Screens audit).
+    private var shouldShowRemainingItemsInsteadOfPercent: Bool {
+        HomeProgressCalc.shouldShowRemainingItemsInsteadOfPercent(
+            dayCompletionFraction: dayCompletionFraction,
+            hour: Calendar.current.component(.hour, from: Date())
+        )
+    }
+
+    /// Remaining-items text shown at night instead of a bare "0%".
+    private var remainingItemsText: String {
+        HomeProgressCalc.remainingItemsText(
+            completedTasks: completedTodayCount,
+            totalTasks: totalTodayCount,
+            completedCheckIns: todayCheckInCount
+        )
     }
 
     private var todayHeroCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // TODAY label only — streak moved out (lived in the corner as
+            // Progress label only — streak moved out (lived in the corner as
             // cosmetic chrome; not load-bearing for today's screen).
-            Text("TODAY")
+            // Renamed from "TODAY" (Impeccable Screens audit) since the
+            // ring/stats below are a progress summary, not a day label.
+            Text("PROGRESS")
                 .font(AppFonts.label(11))
                 .tracking(0.8)
                 .foregroundColor(AppColors.textMuted)
@@ -1240,13 +1282,19 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(Int(dayCompletionFraction * 100))%")
-                            .font(.system(size: 26, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.textPrimary)
-                            .monospacedDigit()
-                        Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
-                            .font(AppFonts.caption(12))
-                            .foregroundColor(AppColors.textMuted)
+                        if shouldShowRemainingItemsInsteadOfPercent {
+                            Text(remainingItemsText)
+                                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.textPrimary)
+                        } else {
+                            Text("\(Int(dayCompletionFraction * 100))%")
+                                .font(.system(size: 26, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.textPrimary)
+                                .monospacedDigit()
+                            Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
+                                .font(AppFonts.caption(12))
+                                .foregroundColor(AppColors.textMuted)
+                        }
                     }
                     HStack(spacing: 12) {
                         legendItem(color: AppColors.completionGreen, label: "Tasks \(completedTodayCount)/\(totalTodayCount)")
@@ -1458,9 +1506,22 @@ struct HomeView: View {
                 Text(greeting)
                     .font(AppFonts.display(24))
                     .foregroundColor(AppColors.textPrimary)
-                Text(formattedDate)
-                    .font(AppFonts.bodyMedium(14))
-                    .foregroundColor(AppColors.textSecondary)
+                // Weather pill moved inline next to the date (Impeccable
+                // Screens audit: "shrink to inline next to date") instead
+                // of living as a separate full-size chip in the trailing
+                // header row.
+                HStack(spacing: 6) {
+                    Text(formattedDate)
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textSecondary)
+                    WeatherChip(
+                        snapshot: weatherManager?.latest,
+                        isLoading: weatherManager?.isLoading ?? false,
+                        isAuthorized: weatherManager?.isAuthorized ?? false,
+                        onTap: { activeSheet = .todaysContext }
+                    )
+                    .scaleEffect(0.85, anchor: .leading)
+                }
             }
 
             Spacer()
@@ -1482,14 +1543,6 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Open schedule")
             .accessibilityHint("Week and month view with task add")
-
-            // Weather chip — aligns with the date line via bottom alignment.
-            WeatherChip(
-                snapshot: weatherManager?.latest,
-                isLoading: weatherManager?.isLoading ?? false,
-                isAuthorized: weatherManager?.isAuthorized ?? false,
-                onTap: { activeSheet = .todaysContext }
-            )
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -1541,7 +1594,7 @@ struct HomeView: View {
             Text("No tasks today")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
-            Text("Tap the calendar icon above to add a task")
+            Text("Use the + above to add a task")
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textMuted)
         }
@@ -2169,25 +2222,17 @@ private struct HabitRow: View {
                 .font(.system(size: 16))
                 .accessibilityHidden(true)
 
-            // Dimension dot + title. Mirrors TaskCard so habits and tasks
-            // read identically at a glance — the dot is the pre-completion
-            // hint of which Compass bar this habit will feed.
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if let dim = habit.dimensions.primaryScored {
-                    Circle()
-                        .fill(dim.color)
-                        .frame(width: 7, height: 7)
-                        .alignmentGuide(.firstTextBaseline) { d in d.height - 1 }
-                        .accessibilityHidden(true)
-                }
-                Text(habit.title)
-                    .font(AppFonts.body(14))
-                    .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
-                    .strikethrough(isDone)
-            }
-            // Title is announced via the checkbox button's label; suppress
-            // the duplicate VO read here.
-            .accessibilityHidden(true)
+            // Title only — the dimension dot was redundant with the
+            // checkbox's own dimension-colored stroke and the emoji icon,
+            // so it's dropped (Impeccable Screens audit: "drop the green
+            // dimension dot OR the emoji — keep emoji").
+            Text(habit.title)
+                .font(AppFonts.body(14))
+                .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                .strikethrough(isDone)
+                // Title is announced via the checkbox button's label;
+                // suppress the duplicate VO read here.
+                .accessibilityHidden(true)
             Spacer()
 
             let streak = habit.currentStreak()

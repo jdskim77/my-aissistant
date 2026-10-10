@@ -615,13 +615,18 @@ struct ChatView: View {
                 Text("AI Assistant")
                     .font(AppFonts.heading(17))
                     .foregroundColor(AppColors.textPrimary)
-                Text(providerLabel)
+                Text(coachStatusLabel)
                     .font(AppFonts.caption(12))
-                    .foregroundColor(AppColors.textMuted)
+                    .foregroundColor(isAITyping ? AppColors.accent : AppColors.textMuted)
             }
 
             Spacer()
 
+            // Mute and history icons share one visual treatment — tinted
+            // background only while "on"/active, otherwise a plain
+            // surface chip — so the pair reads as one icon-button family
+            // instead of two different styles (Impeccable Screens audit
+            // P2: "make the mute and history icons the same style").
             Button {
                 voiceModeEnabled.toggle()
                 if !voiceModeEnabled {
@@ -652,10 +657,14 @@ struct ChatView: View {
             } label: {
                 Image(systemName: "bubble.left.and.bubble.right")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(AppColors.accent)
+                    .foregroundColor(AppColors.textMuted)
                     .padding(8)
-                    .background(AppColors.accentLight)
+                    .background(AppColors.surface)
                     .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.clear, lineWidth: 1)
+                    )
             }
             .accessibilityLabel("Conversations")
             .accessibilityHint("Switch between or create chat conversations")
@@ -665,16 +674,14 @@ struct ChatView: View {
         .background(AppColors.surface)
     }
 
-    private var providerLabel: String {
-        switch tier {
-        case .powerUser:
-            if keychainService.openAIAPIKey() != nil {
-                return "Powered by OpenAI"
-            }
-            return "Powered by Claude"
-        default:
-            return "Powered by Claude"
-        }
+    /// Subtitle under "AI Assistant": a live status instead of a static
+    /// provider credit. The old static credit line read as marketing
+    /// chrome in the header, duplicated the real credit already in
+    /// Settings → Legal and APIKeySettingsView, and gave no signal about
+    /// what the coach is actually doing right now (Impeccable Screens
+    /// audit P2: replace the static credit subtitle with a live status).
+    private var coachStatusLabel: String {
+        isAITyping ? "Thinking…" : "Online"
     }
 
     // MARK: - Input bar
@@ -846,9 +853,22 @@ struct ChatView: View {
                                 isAnimating: true
                             )
                         } else {
-                            // Idle state — Thrivn AI presence mark.
-                            AIPresenceIcon(size: 44)
+                            // Idle state — a real mic glyph. Previously
+                            // the orb brand mark doubled as the mic
+                            // button, so there was no mic affordance
+                            // anywhere in the composer (Impeccable
+                            // Screens audit: "mic button is the logo
+                            // orb, with no mic glyph"). The orb remains
+                            // the coach's avatar in the header
+                            // (AIActivityOrb) — this button is now a
+                            // plain accent-filled circle + mic glyph that
+                            // swaps to the arrow send state above.
+                            Circle()
+                                .fill(AppColors.accentLight)
                                 .frame(width: 44, height: 44)
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 19, weight: .semibold))
+                                .foregroundColor(AppColors.accent)
                         }
                     }
                     .frame(width: 44, height: 44)
@@ -1666,6 +1686,21 @@ private struct ConversationMessages: View {
         messages.count > renderedWindow
     }
 
+    /// Per-message "show this timestamp" flags for `visibleMessages`,
+    /// computed via the pure `MessageGrouping.timestampVisibility`
+    /// function. A computed property (not cached @State) — `visibleMessages`
+    /// is itself O(window) and SwiftData already diffs `messages` for us,
+    /// so this stays cheap at the 200-message render window.
+    private var timestampVisibility: [Bool] {
+        MessageGrouping.timestampVisibility(
+            for: visibleMessages.map { (sender: $0.role, timestamp: $0.timestamp) }
+        )
+    }
+
+    private func showTimestamp(at index: Int) -> Bool {
+        guard timestampVisibility.indices.contains(index) else { return true }
+        return timestampVisibility[index]
+    }
     /// True when the bottom-anchor sentinel is on-screen.
     /// Defaults true because `.defaultScrollAnchor(.bottom)` on the
     /// ScrollView positions us at the bottom on first render, so the
@@ -1696,9 +1731,15 @@ private struct ConversationMessages: View {
                         .buttonStyle(.plain)
                     }
 
-                    ForEach(visibleMessages, id: \.id) { message in
-                        ChatBubble(message: message)
-                            .id(message.id)
+                    // Zip against the precomputed flags once rather than
+                    // calling `showTimestamp(at:)` per row — that would
+                    // recompute the whole-transcript `timestampVisibility`
+                    // array on every row, making render O(N²) as history
+                    // grows via "Load earlier messages".
+                    let rows = Array(zip(visibleMessages, timestampVisibility))
+                    ForEach(Array(rows.enumerated()), id: \.element.0.id) { _, row in
+                        ChatBubble(message: row.0, showTimestamp: row.1)
+                            .id(row.0.id)
                     }
 
                     if isAITyping {
