@@ -270,7 +270,7 @@ final class NudgeEngineTests: XCTestCase {
 
     func testRuleCooldownPreventsSameCategoryRefire() async throws {
         // AlwaysFireRule's default cooldown is 48h; deliver one 1h ago.
-        insertDeliveredNudge(category: .weakDimension, createdAt: Self.fixedNow.addingTimeInterval(-3600))
+        insertDeliveredNudge(category: .weakDimension, createdAt: Self.fixedNow.addingTimeInterval(-3 * 3600)) // 3h: clear of the 1h min-gap cap, inside the 48h cooldown
         let engine = makeEngine(
             now: { Self.fixedNow },
             rules: [AlwaysFireRule(id: .weakDimension)]
@@ -283,7 +283,7 @@ final class NudgeEngineTests: XCTestCase {
         // nudgeMaxPerDimensionHours = 48. A delivered nudge tagged
         // `.physical` 1h ago should block a *different* category's
         // candidate that's also tagged `.physical`.
-        insertDeliveredNudge(category: .habitSlip, dimension: .physical, createdAt: Self.fixedNow.addingTimeInterval(-3600))
+        insertDeliveredNudge(category: .habitSlip, dimension: .physical, createdAt: Self.fixedNow.addingTimeInterval(-3 * 3600)) // 3h: clear of the 1h min-gap cap, inside the 48h cooldown
         let engine = makeEngine(
             now: { Self.fixedNow },
             rules: [AlwaysFireRule(id: .weakDimension, dimension: .physical)]
@@ -293,7 +293,7 @@ final class NudgeEngineTests: XCTestCase {
     }
 
     func testDimensionCooldownDoesNotBlockUnrelatedDimension() async throws {
-        insertDeliveredNudge(category: .habitSlip, dimension: .physical, createdAt: Self.fixedNow.addingTimeInterval(-3600))
+        insertDeliveredNudge(category: .habitSlip, dimension: .physical, createdAt: Self.fixedNow.addingTimeInterval(-3 * 3600)) // 3h: clear of the 1h min-gap cap, inside the 48h cooldown
         let engine = makeEngine(
             now: { Self.fixedNow },
             rules: [AlwaysFireRule(id: .weakDimension, dimension: .mental)]
