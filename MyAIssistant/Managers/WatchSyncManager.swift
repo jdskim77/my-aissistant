@@ -94,8 +94,56 @@ final class WatchSyncManager: NSObject {
 
         guard session.isPaired, session.isWatchAppInstalled else { return }
 
+        let data = Self.buildSchedulePayload(
+            tasks: tasks,
+            streak: streak,
+            quoteText: quoteText,
+            quoteAuthor: quoteAuthor,
+            compassScores: compassScores,
+            userName: userName,
+            aiInsight: aiInsight,
+            completedCheckIns: completedCheckIns,
+            now: Date()
+        )
+
+        // Read-modify-write so any keys set by `syncAPIKey` (or future
+        // sibling methods) survive this push. Starting from
+        // `data.toDictionary()` would silently drop unrelated keys —
+        // currently safe because we re-add apiKey + textSize below, but
+        // fragile as more keys join the context.
+        var context = session.applicationContext
+        for (key, value) in data.toDictionary() {
+            context[key] = value
+        }
+        let keychain = KeychainService()
+        if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty {
+            context["apiKey"] = apiKey
+        }
+        context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
+        try? session.updateApplicationContext(context)
+    }
+
+    /// Pure day-window + payload-shaping logic factored out of
+    /// `syncSchedule` so it's unit-testable without a live `WCSession`
+    /// (zero test coverage backlog item: `WatchSyncManager` had none).
+    /// Filters `tasks` to `[startOfDay(now), startOfDay(now)+1day)`, sorts
+    /// by date, and maps to the Watch wire format — identical logic to
+    /// what `syncSchedule` used to inline, just given an injectable `now`
+    /// so the day-boundary and "current check-in slot" behavior can be
+    /// tested deterministically instead of depending on the real clock.
+    static func buildSchedulePayload(
+        tasks: [TaskItem],
+        streak: Int,
+        quoteText: String?,
+        quoteAuthor: String?,
+        compassScores: (body: Double, mind: Double, heart: Double, spirit: Double)?,
+        userName: String?,
+        aiInsight: String?,
+        completedCheckIns: [String]?,
+        now: Date
+    ) -> WatchScheduleData {
         let calendar = Calendar.current
-        let dayStart = calendar.startOfDay(for: Date())
+        let dayStart = calendar.startOfDay(for: now)
         // `safeDate` returns the original date on failure, which would
         // collapse the [dayStart, dayEnd) filter range to empty and silently
         // ship an empty payload. Fall back to a literal 24h offset so we
@@ -124,10 +172,10 @@ final class WatchSyncManager: NSObject {
 
         // Which slot is the user currently in? Single source of truth is
         // CheckInTime.slot(forHour:) — Watch and iOS must agree on the label.
-        let hour = calendar.component(.hour, from: Date())
+        let hour = calendar.component(.hour, from: now)
         let nextCheckIn: String? = CheckInTime.slot(forHour: hour).rawValue
 
-        let data = WatchScheduleData(
+        return WatchScheduleData(
             tasks: watchTasks,
             streakDays: streak,
             completedToday: todayTasks.filter(\.done).count,
@@ -135,7 +183,7 @@ final class WatchSyncManager: NSObject {
             quoteText: quoteText,
             quoteAuthor: quoteAuthor,
             nextCheckIn: nextCheckIn,
-            updatedAt: Date(),
+            updatedAt: now,
             bodyScore: compassScores?.body,
             mindScore: compassScores?.mind,
             heartScore: compassScores?.heart,
@@ -144,22 +192,6 @@ final class WatchSyncManager: NSObject {
             aiInsight: aiInsight,
             completedCheckIns: completedCheckIns
         )
-
-        // Read-modify-write so any keys set by `syncAPIKey` (or future
-        // sibling methods) survive this push. Starting from
-        // `data.toDictionary()` would silently drop unrelated keys —
-        // currently safe because we re-add apiKey + textSize below, but
-        // fragile as more keys join the context.
-        var context = session.applicationContext
-        for (key, value) in data.toDictionary() {
-            context[key] = value
-        }
-        let keychain = KeychainService()
-        if let apiKey = keychain.anthropicAPIKey(), !apiKey.isEmpty {
-            context["apiKey"] = apiKey
-        }
-        context["textSize"] = TextSizeManager.shared.selectedSize.rawValue
-        try? session.updateApplicationContext(context)
     }
 }
 
