@@ -476,9 +476,10 @@ final class TaskManager {
     private func computeStreak() -> Int {
         let calendar = Calendar.current
         var streak = 0
-        var checkDate = calendar.safeDate(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))
+        var checkDate = calendar.startOfDay(for: Date())
+        var isToday = true
         var iterations = 0
-        let maxLookback = 365
+        let maxLookback = 366
         while iterations < maxLookback {
             iterations += 1
             let nextDay = calendar.safeDate(byAdding: .day, value: 1, to: checkDate)
@@ -491,6 +492,7 @@ final class TaskManager {
             if scheduledCount == 0 {
                 // Quiet day — doesn't break the streak
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
                 continue
             }
 
@@ -501,6 +503,11 @@ final class TaskManager {
             if completedCount > 0 {
                 streak += 1
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
+            } else if isToday {
+                // Today has tasks but none completed yet — grace, keep walking.
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
             } else {
                 break
             }
