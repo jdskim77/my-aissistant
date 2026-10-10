@@ -172,10 +172,16 @@ actor ThrivnBackendService: AIProvider {
         }
 
         // Special case: if the refresh token itself is invalid (401/403), the session
-        // is dead. Clear local tokens so the next AIProviderFactory.provider() call
-        // falls through to "noAPIKey" and the user is prompted to sign in again.
+        // is dead. Clear local tokens AND the "signed in with Apple" flag together so
+        // the next AIProviderFactory.provider() call falls through to a consistent
+        // "noAPIKey" / signed-out state. Clearing tokens without also clearing this
+        // flag left AIProviderFactory seeing "signed in" + "no refresh token", which
+        // surfaced as a confusing AIError.sessionExpired instead of a clean sign-out
+        // (root cause of the "Your session expired" report — see
+        // 2026-10-09-coach-502-diagnosis.md).
         if let http = response as? HTTPURLResponse, (http.statusCode == 401 || http.statusCode == 403) {
             clearLocalTokens()
+            UserDefaults.standard.removeObject(forKey: AppConstants.hasSignedInWithAppleKey)
             throw AIError.noAPIKey
         }
         try validateHTTPResponse(response, data: data)

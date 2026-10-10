@@ -114,6 +114,13 @@ struct ChatView: View {
     @State private var isAITyping = false
     @State private var appeared = false
     @State private var errorMessage: String?
+    /// Kind of the last send failure — drives which single action the
+    /// inline system row offers (Sign in vs Retry). nil/.none means no
+    /// row is showing.
+    @State private var errorKind: ChatManager.ChatErrorKind = .none
+    /// The user's text from the most recent failed send, so "Retry"
+    /// can resend it without the user retyping.
+    @State private var lastFailedMessageText: String?
     @State private var showingConversations = false
     @AppStorage(AppConstants.voiceModeDefaultKey) private var voiceModeDefault = false
     @AppStorage(AppConstants.selectedVoiceIDKey) private var selectedVoiceID = ""
@@ -380,17 +387,21 @@ struct ChatView: View {
             // composer's border).
             remainingMessagesBanner
 
-            // Session expired banner — re-sign-in with Apple
+            // Inline system row — replaces system errors in-thread.
+            // Session-expired gets "Sign in", everything else transient
+            // gets "Retry" (resends the last failed user message). Never
+            // shown as a coach chat bubble (Impeccable Screens audit).
             if showReSignIn {
                 VStack(spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "person.crop.circle.badge.exclamationmark")
                             .font(AppFonts.bodyMedium(14))
-                        Text("Your session has expired.")
+                        Text(errorMessage ?? "Your session has expired.")
                             .font(AppFonts.bodyMedium(13))
                         Spacer()
                         Button {
                             showReSignIn = false
+                            errorMessage = nil
                         } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 12, weight: .bold))
@@ -415,18 +426,23 @@ struct ChatView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(AppColors.accent.opacity(0.06))
-            }
-
-            // Error banner
-            if let errorMessage, !showReSignIn {
+            } else if let errorMessage {
                 HStack {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 12))
                     Text(errorMessage)
                         .font(AppFonts.caption(12))
                     Spacer()
+                    if errorKind == .transient, lastFailedMessageText != nil {
+                        Button("Retry") {
+                            retryLastFailedMessage()
+                        }
+                        .font(AppFonts.bodyMedium(13))
+                        .foregroundColor(AppColors.accent)
+                    }
                     Button {
                         self.errorMessage = nil
+                        self.errorKind = .none
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 12, weight: .bold))
@@ -541,7 +557,10 @@ struct ChatView: View {
                         scrollAfterWizardStep()
                     }
                 )
-            } else {
+            } else if !showReSignIn && errorMessage == nil {
+                // Quick-reply chips hide while the inline system error row
+                // is showing (Impeccable Screens audit) — the row's single
+                // action button is the only thing offered at that moment.
                 QuickActionsBar(actions: quickActions) { action in
                     if action == "Create a Task" {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -951,6 +970,7 @@ struct ChatView: View {
         }
 
         errorMessage = nil
+        errorKind = .none
 
         // Pre-flight: short-circuit if offline so the user gets an instant
         // explanation instead of waiting up to 60s for URLSession to give up.
@@ -958,7 +978,15 @@ struct ChatView: View {
         // can retry by tapping Send again once they're back online.
         if let monitor = networkMonitor, !monitor.isConnected {
             Haptics.medium()
-            errorMessage = "You're offline. Your message is saved — tap Send again when you're back online."
+            // Codex audit fix: retryLastFailedMessage() clears errorKind to
+            // .none before calling sendMessage, which previously meant a
+            // retry that bounced off this same offline guard lost its own
+            // Retry action (kind stayed .none → inline row renders no
+            // button). Restore .transient + the draft text here so the
+            // offline banner keeps a working Retry once back online.
+            lastFailedMessageText = text
+            errorMessage = "You're offline. Tap Retry when you're back online."
+            errorKind = .transient
             return
         }
 
@@ -1000,13 +1028,21 @@ struct ChatView: View {
                 if result.hasError {
                     if result.errorMessage == "paywall" {
                         showChatPaywall = true
-                    } else if result.errorMessage == "sessionExpired" {
+                    } else if result.errorKind == .authExpired {
+                        lastFailedMessageText = text
+                        errorMessage = result.errorMessage
+                        errorKind = .authExpired
                         showReSignIn = true
                     } else {
+                        lastFailedMessageText = text
                         errorMessage = result.errorMessage
+                        errorKind = result.errorKind
                     }
                     return
                 }
+
+                // Success — clear any stale retry state from a prior failure.
+                lastFailedMessageText = nil
 
                 // Queue calendar actions for user confirmation (UI concern)
                 if !result.calendarActions.isEmpty {
@@ -1038,6 +1074,15 @@ struct ChatView: View {
                 }
             }
         }
+    }
+
+    /// Resends the text from the most recent failed send. Used by the
+    /// "Retry" action on the inline system error row.
+    private func retryLastFailedMessage() {
+        guard let text = lastFailedMessageText else { return }
+        errorMessage = nil
+        errorKind = .none
+        sendMessage(text)
     }
 
     // MARK: - SendResult Type Bridges

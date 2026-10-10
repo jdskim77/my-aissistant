@@ -180,6 +180,9 @@
 		A900000006000000 /* UsageGateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000006000000 /* UsageGateManagerTests.swift */; };
 		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000 /* AIProviderFactoryTests.swift */; };
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
+		29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */; };
+		F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */; };
+		A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */; };
 		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */; };
 		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
 		AA00000003000000 /* DiagnosticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000004000000 /* DiagnosticsManager.swift */; };
@@ -490,6 +493,9 @@
 		B900000006000000 /* UsageGateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
 		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
 		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
+		62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrivnBackendServiceAuthTests.swift; sourceTree = "<group>"; };
+		2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerErrorUXTests.swift; sourceTree = "<group>"; };
+		4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInViewGuardTests.swift; sourceTree = "<group>"; };
 		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA0000000B000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BC00000001000000 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
@@ -1085,54 +1091,65 @@
 			path = StoreKit;
 			sourceTree = "<group>";
 		};
-		D900000001000000 /* MyAIssistantTests */ = {
-			isa = PBXGroup;
-			children = (
-				D900000002000000 /* Managers */,
-				D900000003000000 /* Services */,
-				D900000004000000 /* Mocks */,
-				D900000005000000 /* Utilities */,
-				2D30C0743EE3AD4371769947 /* Models */,
-			);
-			path = MyAIssistantTests;
-			sourceTree = "<group>";
-		};
-		D900000002000000 /* Managers */ = {
-			isa = PBXGroup;
-			children = (
-				B900000004000000 /* TaskManagerTests.swift */,
-				B900000005000000 /* PatternEngineTests.swift */,
-				B900000006000000 /* UsageGateManagerTests.swift */,
-			);
-			path = Managers;
-			sourceTree = "<group>";
-		};
-		D900000003000000 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				B900000007000000 /* AIProviderFactoryTests.swift */,
-				B900000008000000 /* AIPromptBuilderTests.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		D900000004000000 /* Mocks */ = {
-			isa = PBXGroup;
-			children = (
-				B900000002000000 /* MockAIProvider.swift */,
-				B900000003000000 /* MockKeychainService.swift */,
-			);
-			path = Mocks;
-			sourceTree = "<group>";
-		};
-		D900000005000000 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				B900000001000000 /* TestModelContainer.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
+						D900000001000000 /* MyAIssistantTests */ = {
+							isa = PBXGroup;
+							children = (
+								D900000002000000 /* Managers */,
+								D900000003000000 /* Services */,
+								D900000004000000 /* Mocks */,
+								D900000005000000 /* Utilities */,
+								2D30C0743EE3AD4371769947 /* Models */,
+								D900000006000000 /* Views */,
+							);
+							path = MyAIssistantTests;
+							sourceTree = "<group>";
+						};
+						D900000002000000 /* Managers */ = {
+							isa = PBXGroup;
+							children = (
+								B900000004000000 /* TaskManagerTests.swift */,
+								B900000005000000 /* PatternEngineTests.swift */,
+								B900000006000000 /* UsageGateManagerTests.swift */,
+								2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
+							);
+							path = Managers;
+							sourceTree = "<group>";
+						};
+						D900000003000000 /* Services */ = {
+							isa = PBXGroup;
+							children = (
+								B900000007000000 /* AIProviderFactoryTests.swift */,
+								B900000008000000 /* AIPromptBuilderTests.swift */,
+								62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */,
+							);
+							path = Services;
+							sourceTree = "<group>";
+						};
+						D900000004000000 /* Mocks */ = {
+							isa = PBXGroup;
+							children = (
+								B900000002000000 /* MockAIProvider.swift */,
+								B900000003000000 /* MockKeychainService.swift */,
+							);
+							path = Mocks;
+							sourceTree = "<group>";
+						};
+						D900000005000000 /* Utilities */ = {
+							isa = PBXGroup;
+							children = (
+								B900000001000000 /* TestModelContainer.swift */,
+							);
+							path = Utilities;
+							sourceTree = "<group>";
+						};
+						D900000006000000 /* Views */ = {
+							isa = PBXGroup;
+							children = (
+								4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */,
+							);
+							path = Views;
+							sourceTree = "<group>";
+						};
 		D91FC206E071692950236C46 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -1603,7 +1620,7 @@
 				A7738B37A1572A605522039B /* AppShortcuts.swift in Sources */,
 				E8AC8180A3B7AE853714D883 /* IntentModelContainer.swift in Sources */,
 				1776B2E533AA42B784990A76 /* MyStatsIntent.swift in Sources */,
-				A95B541D257444769356150C /* StartFocusIntent.swift in Sources */,
+		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */,
 				B81E981592ED2834C970CFD0 /* TodayScheduleIntent.swift in Sources */,
 				C671F8C650E4B862AE6E40EA /* ToggleHabitIntent.swift in Sources */,
 				4541616C2F982840002A51F9 /* SafeResourceCopy.swift in Sources */,
@@ -1686,15 +1703,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A900000001000000 /* TestModelContainer.swift in Sources */,
-				A900000002000000 /* MockAIProvider.swift in Sources */,
-				A900000003000000 /* MockKeychainService.swift in Sources */,
-				A900000004000000 /* TaskManagerTests.swift in Sources */,
-				A900000005000000 /* PatternEngineTests.swift in Sources */,
-				A900000006000000 /* UsageGateManagerTests.swift in Sources */,
-				A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
-				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
-				B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
+		A900000001000000 /* TestModelContainer.swift in Sources */,
+		A900000002000000 /* MockAIProvider.swift in Sources */,
+		A900000003000000 /* MockKeychainService.swift in Sources */,
+		A900000004000000 /* TaskManagerTests.swift in Sources */,
+		A900000005000000 /* PatternEngineTests.swift in Sources */,
+		A900000006000000 /* UsageGateManagerTests.swift in Sources */,
+						A900000007000000 /* AIProviderFactoryTests.swift in Sources */,
+						A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
+						29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
+						F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
+						A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
+						B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
