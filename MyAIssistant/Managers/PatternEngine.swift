@@ -21,18 +21,24 @@ final class PatternEngine {
     /// a real 30-day streak would display as 0 the moment the user opened the
     /// app on a quiet Saturday with no tasks scheduled — and the streak-at-risk
     /// notification would fire for a streak the same code reported as zero.
+    /// It also never actually counted a completion made TODAY, so a 3-day
+    /// run finishing with "done today" under-reported as a 2-day streak.
     ///
-    /// New rule:
-    ///   - Today is always a grace day. The walk starts from yesterday.
-    ///   - A day with NO tasks scheduled does NOT break the streak — only a
-    ///     day where tasks existed and zero were completed counts as a break.
-    ///     This matches user intuition: "I show up when there's something to
-    ///     show up for."
+    /// Rule:
+    ///   - The walk starts at today, and today counts like any other day
+    ///     when it has a completion.
+    ///   - Today (and ONLY today) gets a grace pass when it has scheduled
+    ///     tasks but none are done yet — so opening the app before acting
+    ///     today doesn't zero out a real streak.
+    ///   - A day with NO tasks scheduled never breaks the streak (quiet days
+    ///     — including a quiet today — are a bridge, not a gap), same as
+    ///     before. Only a day with tasks scheduled and zero completed, where
+    ///     that day isn't today, actually ends the walk.
     func currentStreak() -> Int {
         let calendar = Calendar.current
         var streak = 0
-        // Start from yesterday — today is grace.
-        var checkDate = calendar.safeDate(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date()))
+        var checkDate = calendar.startOfDay(for: Date())
+        var isToday = true
 
         // Hard cap the walk so a misbehaving DB can't infinite-loop.
         let maxLookback = 365
@@ -51,6 +57,7 @@ final class PatternEngine {
             if scheduledCount == 0 {
                 // No tasks were scheduled — quiet day, doesn't break the streak
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
                 continue
             }
 
@@ -63,6 +70,11 @@ final class PatternEngine {
             if completedCount > 0 {
                 streak += 1
                 checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
+            } else if isToday {
+                // Today has tasks but none completed yet — grace, keep walking.
+                checkDate = calendar.safeDate(byAdding: .day, value: -1, to: checkDate)
+                isToday = false
             } else {
                 // Active day with zero completed tasks → streak broken
                 break

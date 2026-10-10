@@ -67,12 +67,16 @@ final class PatternEngineTests: XCTestCase {
     }
 
     func testCurrentStreakBrokenByGap() {
-        // Complete today and 2 days ago (gap yesterday)
+        // Today and 2 days ago are completed; yesterday has NO task scheduled
+        // at all (a quiet day, not a missed one). Per the documented
+        // "quiet days don't break the streak" rule, the walk bridges over
+        // the quiet day and both completions count: today (1) + bridging
+        // over yesterday's quiet gap to 2-days-ago (1) = 2.
         addTask(daysAgo: 0, done: true)
         addTask(daysAgo: 2, done: true)
 
         let streak = sut.currentStreak()
-        XCTAssertEqual(streak, 1) // Only today counts
+        XCTAssertEqual(streak, 2)
     }
 
     func testCurrentStreakOnlyIncompleteTasks() {
