@@ -181,7 +181,8 @@
 		A900000006000000 /* UsageGateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000006000000 /* UsageGateManagerTests.swift */; };
 		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000 /* AIProviderFactoryTests.swift */; };
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
-		A900000009000000 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000009000000 /* DataExportServiceTests.swift */; };
+				A900000009000000 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000009000000 /* DataExportServiceTests.swift */; };
+				4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */; };
 		29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */; };
 		F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */; };
 		A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */; };
@@ -508,7 +509,8 @@
 		B900000006000000 /* UsageGateManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageGateManagerTests.swift; sourceTree = "<group>"; };
 		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
 		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
-		B900000009000000 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportServiceTests.swift; sourceTree = "<group>"; };
+				B900000009000000 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportServiceTests.swift; sourceTree = "<group>"; };
+				56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeEngineTests.swift; sourceTree = "<group>"; };
 		62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrivnBackendServiceAuthTests.swift; sourceTree = "<group>"; };
 		2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerErrorUXTests.swift; sourceTree = "<group>"; };
 		4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInViewGuardTests.swift; sourceTree = "<group>"; };
@@ -1156,12 +1158,13 @@
 				2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
 				1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */,
 				D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */,
-				4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */,
-			);
-			path = Managers;
-			sourceTree = "<group>";
-		};
-		D900000003000000 /* Services */ = {
+								4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */,
+								56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */,
+							);
+							path = Managers;
+							sourceTree = "<group>";
+						};
+						D900000003000000 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				B900000007000000 /* AIProviderFactoryTests.swift */,
@@ -1774,11 +1777,12 @@
 				29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
 				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
 				A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
-				B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CW00000002000000 /* Sources */ = {
+								B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
+								4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */,
+							);
+							runOnlyForDeploymentPostprocessing = 0;
+						};
+						CW00000002000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
