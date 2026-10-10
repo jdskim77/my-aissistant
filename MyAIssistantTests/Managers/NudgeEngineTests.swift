@@ -47,7 +47,7 @@ final class NudgeEngineTests: XCTestCase {
     // MARK: - Fixture helpers
 
     private func makeEngine(
-        now: @escaping () -> Date = { Self.fixedNow },
+        now: @escaping () -> Date = { NudgeEngineTests.fixedNow },
         killSwitchOverride: Bool? = false,
         rules: [NudgeTriggerRule] = [],
         crisisClassifier: CrisisClassifier = StubCrisisClassifier(result: .safe),
