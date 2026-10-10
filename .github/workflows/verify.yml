@@ -1,9 +1,9 @@
-name: Verify (fix/toggle-completion-dup)
+name: Verify (test/dataexport-roundtrip)
 
 on:
   push:
     branches:
-      - fix/toggle-completion-dup
+      - test/dataexport-roundtrip
 
 jobs:
   test:
