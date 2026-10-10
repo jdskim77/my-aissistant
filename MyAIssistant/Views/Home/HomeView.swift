@@ -226,9 +226,15 @@ struct HomeView: View {
     /// the normal progress hero. Delegates to the pure `HomeProgressCalc`
     /// function so the decision is unit-testable without SwiftData.
     private var shouldShowTonightCard: Bool {
+        // Codex audit fix: must agree with the same unified completion
+        // read model as the day strip/count/CTA (`isSlotCompletedToday`),
+        // not just the BalanceManager flow in isolation — otherwise a
+        // Night slot completed via the conventional CheckInRecord flow
+        // (no DailyBalanceCheckIn) left Tonight still prompting for a
+        // check-in that was already done.
         HomeProgressCalc.shouldShowTonightCard(
             hour: Calendar.current.component(.hour, from: now),
-            nightCheckInDone: balanceManager?.hasCheckedInToday() ?? false
+            nightCheckInDone: isSlotCompletedToday(.night)
         )
     }
 
