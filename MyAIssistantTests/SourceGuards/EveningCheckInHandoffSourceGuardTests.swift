@@ -42,8 +42,8 @@ final class EveningCheckInHandoffSourceGuardTests: XCTestCase {
     func testReflectionGeneratorGatedBySettingAndNeverThrowsToCaller() throws {
         let source = try locateSourceFile(["Services", "AI", "EveningReflectionGenerator.swift"])
         XCTAssertTrue(
-            source.contains("eveningReflectionHandoffEnabledKey"),
-            "The handoff should be gated behind the on/off AppStorage setting"
+            source.contains("eveningReflectionHandoffEnabled"),
+            "The handoff should be gated behind the on/off AppConstants setting accessor"
         )
         XCTAssertTrue(
             source.contains("func send("),
