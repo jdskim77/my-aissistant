@@ -20,7 +20,10 @@ enum Tab: Int, CaseIterable {
         case .coach:    return "sparkles"
         case .home:     return "checklist"
         case .compass:  return "safari"
-        case .settings: return "gearshape.fill"
+        // Outline when unselected — was always ".fill", the one tab glyph
+        // that didn't follow the outline/filled-on-select pattern every
+        // other tab uses (Impeccable Screens audit: "mixed icon styles").
+        case .settings: return "gearshape"
         }
     }
 

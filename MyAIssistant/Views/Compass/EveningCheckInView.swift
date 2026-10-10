@@ -7,7 +7,17 @@ import SwiftUI
 ///   Step 4: Confirmation + auto-dismiss
 struct EveningCheckInView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.chatManager) private var chatManager
+    @Environment(\.keychainService) private var keychainService
+    @Environment(\.subscriptionTier) private var subscriptionTier
     let balanceManager: BalanceManager
+
+    /// Evening Flow redesign: called once the check-in is saved and this
+    /// view is about to dismiss. Callers that want the Coach handoff
+    /// (the new Tonight card path) pass a closure that switches the tab;
+    /// the existing Compass-tab entry point passes nil and keeps today's
+    /// behavior (plain dismiss, no handoff).
+    var onCheckInSaved: (() -> Void)? = nil
 
     @State private var step: CheckInStep = .satisfaction
     @State private var ratings: [LifeDimension: Int] = [:]
@@ -15,32 +25,51 @@ struct EveningCheckInView: View {
     @State private var processing = false
     @State private var recallSuggestions: [BalanceManager.RecallSuggestion] = []
     @State private var selectedDuration: [String: Int] = [:]
+    /// Trigger-once guard: the reflection handoff fires at most once per
+    /// check-in session, even if the save path is somehow re-entered.
+    @State private var didTriggerReflectionHandoff = false
 
     private enum CheckInStep {
         case satisfaction, energy, recall, confirmation
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                header
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    header
 
-                switch step {
-                case .satisfaction:
-                    satisfactionStep
-                case .energy:
-                    energySliderStep
-                case .recall:
-                    recallStep
-                case .confirmation:
-                    confirmationState
+                    switch step {
+                    case .satisfaction:
+                        satisfactionStep
+                    case .energy:
+                        energySliderStep
+                    case .recall:
+                        recallStep
+                    case .confirmation:
+                        confirmationState
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
+            }
+            .background(AppColors.background.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Haptics.light()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(AppFonts.body(15).weight(.semibold))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                    .accessibilityLabel("Close")
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 32)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
-        .background(AppColors.background.ignoresSafeArea())
         .onAppear {
             balanceManager.updateActivityPatterns()
             recallSuggestions = balanceManager.recallSuggestions()
@@ -83,7 +112,11 @@ struct EveningCheckInView: View {
 
     private var headerColor: Color {
         switch step {
-        case .satisfaction: return AppColors.night
+        // "One purple" (Impeccable Screens audit): the satisfaction step's
+        // moon icon previously used AppColors.night (a separate violet
+        // defined per-theme for date pills), which could drift from the
+        // brand accent. Use the single brand accent color everywhere.
+        case .satisfaction: return AppColors.accent
         case .energy: return AppColors.gold
         case .recall: return AppColors.accent
         case .confirmation: return AppColors.completionGreen
@@ -116,6 +149,20 @@ struct EveningCheckInView: View {
 
     private var satisfactionStep: some View {
         VStack(spacing: 16) {
+            // "Rough … Great" anchors for the 1-5 scale, shown once above
+            // the rows (Impeccable Screens audit) rather than per-row.
+            HStack {
+                Spacer().frame(width: 110 + 12)
+                Text("Rough")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+                Text("Great")
+                    .font(AppFonts.caption(10))
+                    .foregroundColor(AppColors.textMuted)
+                    .padding(.trailing, 4)
+            }
+
             ForEach(LifeDimension.scored) { dim in
                 satisfactionRow(dim)
             }
@@ -127,7 +174,7 @@ struct EveningCheckInView: View {
                     step = .energy
                 }
             } label: {
-                Text(ratings.isEmpty ? "Skip ratings" : "Continue")
+                Text("Save check-in")
                     .font(AppFonts.bodyMedium(16))
                     .foregroundColor(AppColors.onAccent)
                     .frame(maxWidth: .infinity)
@@ -135,13 +182,14 @@ struct EveningCheckInView: View {
                     .background(ratings.isEmpty ? AppColors.textMuted : AppColors.accent)
                     .cornerRadius(14)
             }
-            .accessibilityLabel(ratings.isEmpty ? "Skip satisfaction ratings" : "Continue to energy check")
+            .disabled(ratings.isEmpty)
+            .accessibilityLabel("Save check-in")
 
             Button {
                 Haptics.light()
                 dismiss()
             } label: {
-                Text("Skip for today")
+                Text("Skip tonight")
                     .font(AppFonts.body(14))
                     .foregroundColor(AppColors.textMuted)
                     .frame(minHeight: 44)
@@ -155,45 +203,49 @@ struct EveningCheckInView: View {
     }
 
     private func satisfactionRow(_ dim: LifeDimension) -> some View {
-        HStack(spacing: 12) {
-            // Dimension icon + name
-            HStack(spacing: 8) {
-                Image(systemName: dim.icon)
-                    .font(AppFonts.heading(18).weight(.medium))
-                    .foregroundColor(dim.color)
-                    .frame(width: 28)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                // Dimension icon + name
+                HStack(spacing: 8) {
+                    Image(systemName: dim.icon)
+                        .font(AppFonts.heading(18).weight(.medium))
+                        .foregroundColor(dim.color)
+                        .frame(width: 28)
 
-                Text(dim.label)
-                    .font(AppFonts.bodyMedium(14))
-                    .foregroundColor(AppColors.textPrimary)
-            }
-            .frame(width: 110, alignment: .leading)
+                    Text(dim.label)
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .frame(width: 110, alignment: .leading)
 
-            // 1-5 rating dots
-            HStack(spacing: 6) {
-                ForEach(1...5, id: \.self) { value in
-                    Button {
-                        Haptics.selection()
-                        withAnimation(.snappy(duration: 0.15)) {
-                            if ratings[dim] == value {
-                                ratings.removeValue(forKey: dim) // tap again to deselect
-                            } else {
-                                ratings[dim] = value
+                // 1-5 rating dots
+                HStack(spacing: 6) {
+                    ForEach(1...5, id: \.self) { value in
+                        Button {
+                            Haptics.selection()
+                            withAnimation(.snappy(duration: 0.15)) {
+                                if ratings[dim] == value {
+                                    ratings.removeValue(forKey: dim) // tap again to deselect
+                                } else {
+                                    ratings[dim] = value
+                                }
                             }
+                        } label: {
+                            let isSelected = (ratings[dim] ?? 0) >= value
+                            Circle()
+                                .fill(isSelected ? dim.color : dim.color.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Text("\(value)")
+                                        .font(AppFonts.label(12).weight(.semibold))
+                                        .foregroundColor(isSelected ? AppColors.onAccent : AppColors.textPrimary)
+                                )
                         }
-                    } label: {
-                        let isSelected = (ratings[dim] ?? 0) >= value
-                        Circle()
-                            .fill(isSelected ? dim.color : dim.color.opacity(0.15))
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Text("\(value)")
-                                    .font(AppFonts.label(12))
-                                    .foregroundColor(isSelected ? AppColors.onAccent : dim.color)
-                            )
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(dim.label) rating \(value) of 5")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(dim.label) rating \(value) of 5")
                 }
             }
         }
@@ -418,6 +470,7 @@ struct EveningCheckInView: View {
         }
         .transition(.scale.combined(with: .opacity))
         .task {
+            triggerReflectionHandoffIfNeeded()
             try? await Task.sleep(for: .seconds(1.5))
             dismiss()
         }
@@ -437,6 +490,30 @@ struct EveningCheckInView: View {
             // No ratings — just save energy via legacy method with best guess dimension
             let bestDim = LifeDimension.scored.first ?? .physical
             balanceManager.recordCheckIn(dimension: bestDim, energyRating: energy == 0 ? nil : energy)
+        }
+    }
+
+    /// Evening Flow redesign: after Save check-in, hand off to Coach with
+    /// ONE reflection referencing tonight's ratings. Fires at most once
+    /// per check-in (guarded by `didTriggerReflectionHandoff`), and only
+    /// when `onCheckInSaved` was provided (the Tonight-card entry point).
+    /// `EveningReflectionGenerator` itself silently no-ops with no error
+    /// bubble when AI is unavailable or the user is signed out — this
+    /// method still calls `onCheckInSaved()` in that case so the user
+    /// lands on Coach regardless.
+    private func triggerReflectionHandoffIfNeeded() {
+        guard let onCheckInSaved, !didTriggerReflectionHandoff else { return }
+        didTriggerReflectionHandoff = true
+        let capturedRatings = ratings
+        let capturedEnergy = Int(energyRating) == 0 ? nil : Int(energyRating)
+        let generator = EveningReflectionGenerator(keychainService: keychainService, chatManager: chatManager)
+        onCheckInSaved()
+        Task {
+            await generator.send(
+                ratings: capturedRatings,
+                energyRating: capturedEnergy,
+                subscriptionTier: subscriptionTier
+            )
         }
     }
 

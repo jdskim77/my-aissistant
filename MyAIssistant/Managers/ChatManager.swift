@@ -94,6 +94,18 @@ final class ChatManager {
 
     // MARK: - Send Message
 
+    /// Categorizes a send failure so the view can decide which single
+    /// action to offer. System errors are never persisted as chat bubbles
+    /// (Impeccable Screens audit) — the view renders one inline system
+    /// row with the matching action instead.
+    enum ChatErrorKind {
+        case none
+        /// Session/auth expired — offer "Sign in".
+        case authExpired
+        /// Everything else recoverable by resending — offer "Retry".
+        case transient
+    }
+
     /// Result of sending a message, containing info the view needs for UI updates.
     struct SendResult {
         let displayText: String
@@ -101,6 +113,7 @@ final class ChatManager {
         let alarms: [ParsedAlarm]
         let hasError: Bool
         let errorMessage: String?
+        let errorKind: ChatErrorKind
     }
 
     func sendMessage(
@@ -115,7 +128,8 @@ final class ChatManager {
                 calendarActions: [],
                 alarms: [],
                 hasError: true,
-                errorMessage: "Still sending the previous message — please wait."
+                errorMessage: "Still sending the previous message — please wait.",
+                errorKind: .transient
             )
         }
         isSending = true
@@ -128,7 +142,8 @@ final class ChatManager {
                 calendarActions: [],
                 alarms: [],
                 hasError: true,
-                errorMessage: "paywall"
+                errorMessage: "paywall",
+                errorKind: .none
             )
         }
 
@@ -142,7 +157,8 @@ final class ChatManager {
                 calendarActions: [],
                 alarms: [],
                 hasError: true,
-                errorMessage: "You're offline. Send this again when you reconnect."
+                errorMessage: "You're offline. Send this again when you reconnect.",
+                errorKind: .transient
             )
         }
 
@@ -233,69 +249,81 @@ final class ChatManager {
                 calendarActions: parsed.calendarActions,
                 alarms: parsed.alarms,
                 hasError: false,
-                errorMessage: nil
+                errorMessage: nil,
+                errorKind: .none
             )
         } catch {
+            // Impeccable Screens audit: system errors (session expired,
+            // 5xx, network, etc.) must NOT be persisted or shown as coach
+            // chat bubbles — the view renders one inline system row with
+            // a single action instead (Sign in / Retry). We still log the
+            // friendly copy for the inline row via `errorMessage`, but we
+            // no longer insert an `isErrorStub` ChatMessage for any of
+            // these cases, and `errorKind` tells the view which action to
+            // offer.
             let errorMsg: String
-            let assistantContent: String
+            let kind: ChatErrorKind
 
             if let aiError = error as? AIError {
                 switch aiError {
                 case .noAPIKey:
                     errorMsg = "Not connected. Sign in or add an API key in Settings."
-                    assistantContent = "I'm not connected yet. Sign in with Apple in Settings to get started, or add your own Anthropic API key."
+                    kind = .authExpired
                 case .sessionExpired:
-                    errorMsg = "sessionExpired"
-                    assistantContent = "Your session has expired. Please sign in again to continue chatting."
+                    errorMsg = "Your session has expired."
+                    kind = .authExpired
                 case .rateLimited:
-                    errorMsg = "Too many requests — please wait a moment."
-                    assistantContent = "I'm getting a lot of requests right now. Give me a moment and try again!"
+                    errorMsg = "Too many requests — give it a moment and try again."
+                    kind = .transient
                 case .apiError(let code, let message):
-                    errorMsg = "API error (\(code))"
                     if code == 401 {
-                        assistantContent = "Your API key appears to be invalid or expired. Please check it in Settings."
+                        // NOTE: a Thrivn-backend 401 never reaches this branch —
+                        // ThrivnBackendService.performRefresh()/postChat() convert
+                        // a dead refresh token straight to AIError.noAPIKey (see
+                        // the fix above). The only path that throws .apiError(401)
+                        // is a direct BYOK AnthropicProvider/OpenAIProvider call
+                        // with an invalid key, so this must NOT offer "Sign in"
+                        // (Codex audit catch: that previously misrouted BYOK key
+                        // failures into Apple re-auth).
+                        errorMsg = "Your API key appears to be invalid. Check it in Settings."
+                        kind = .none
                     } else if code == 400 || code == 422 {
                         // 400 = bad request, 422 = validation error (e.g. system prompt too long).
                         // Either way the user can't fix it — keep the message simple.
-                        assistantContent = "Something went wrong with the request. Please try again with a shorter message."
+                        errorMsg = "Something went wrong with that request. Try again with a shorter message."
+                        kind = .transient
                         AppLogger.ai.error("Request rejected (\(code, privacy: .public)): \(message.prefix(300), privacy: .public)")
-                    } else if (500...599).contains(code) || code == 502 || code == 503 || code == 529 {
+                    } else if (500...599).contains(code) {
                         // Upstream/backend outage — users don't need to see HTTP codes.
-                        assistantContent = "I'm having trouble reaching the server. Please try again in a moment."
+                        errorMsg = "Having trouble reaching the server."
+                        kind = .transient
                     } else {
-                        assistantContent = "Something went wrong. Please try again in a moment."
+                        errorMsg = "Something went wrong."
+                        kind = .transient
                         AppLogger.ai.error("Unhandled API error (\(code, privacy: .public)): \(message.prefix(300), privacy: .public)")
                     }
                 case .invalidResponse, .parsingError:
-                    errorMsg = "Unexpected response from AI."
-                    assistantContent = "I received an unexpected response. Please try again."
+                    errorMsg = "Unexpected response. Please try again."
+                    kind = .transient
                 case .networkError:
-                    errorMsg = "Network error."
-                    assistantContent = "I'm having trouble connecting. Please check your internet connection and try again."
+                    errorMsg = "Having trouble connecting."
+                    kind = .transient
                 }
             } else {
-                errorMsg = "Unexpected error."
-                assistantContent = "Something went wrong: \(error.localizedDescription). Please try again."
+                errorMsg = "Something went wrong."
+                kind = .transient
             }
 
             AppLogger.ai.error("Chat failed: \(errorMsg, privacy: .public)")
             Breadcrumb.add(category: "ai", message: "Chat error: \(errorMsg)")
 
-            let msg = ChatMessage(
-                role: .assistant,
-                content: assistantContent,
-                conversationID: conversationID,
-                isErrorStub: true
-            )
-            modelContext.insert(msg)
-            modelContext.safeSave()
-
             return SendResult(
-                displayText: assistantContent,
+                displayText: "",
                 calendarActions: [],
                 alarms: [],
                 hasError: true,
-                errorMessage: errorMsg
+                errorMessage: errorMsg,
+                errorKind: kind
             )
         }
     }

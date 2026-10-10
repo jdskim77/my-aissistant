@@ -8,6 +8,7 @@ import SwiftData
 enum HomeSheet: Identifiable {
     case todaysContext
     case checkIn
+    case eveningCheckIn
     case habits
     case addHabit
     case reschedule(TaskItem)
@@ -26,6 +27,7 @@ enum HomeSheet: Identifiable {
         switch self {
         case .todaysContext: return "todaysContext"
         case .checkIn: return "checkIn"
+        case .eveningCheckIn: return "eveningCheckIn"
         case .habits: return "habits"
         case .addHabit: return "addHabit"
         case .reschedule(let task): return "reschedule-\(task.id)"
@@ -199,6 +201,17 @@ struct HomeView: View {
         return .progress
     }
 
+    /// Evening Flow redesign: whether to show the "Tonight" card — one
+    /// next action (night check-in) plus remaining habits — in place of
+    /// the normal progress hero. Delegates to the pure `HomeProgressCalc`
+    /// function so the decision is unit-testable without SwiftData.
+    private var shouldShowTonightCard: Bool {
+        HomeProgressCalc.shouldShowTonightCard(
+            hour: Calendar.current.component(.hour, from: Date()),
+            nightCheckInDone: balanceManager?.hasCheckedInToday() ?? false
+        )
+    }
+
     private var formattedDate: String {
         Date().formatted(as: "EEEE, MMMM d")
     }
@@ -321,7 +334,8 @@ struct HomeView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
+        NavigationStack {
+            List {
             // AI Greeting
             if greetingManager.isShowingGreeting {
                 Section {
@@ -416,7 +430,10 @@ struct HomeView: View {
                     }
                 }
 
-                // Today hero card (dual-ring + contextual check-in action)
+                // Today hero card (dual-ring + contextual check-in action),
+                // or the Evening Flow "Tonight" card once it's evening and
+                // the night check-in isn't done yet (mockup: 2026-10-09
+                // evening-flow redesign, "Proposed" row).
                 Section {
                     todayHeroCard
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
@@ -424,67 +441,22 @@ struct HomeView: View {
                         .listRowSeparator(.hidden)
                 }
 
-                // Balance Pulse — Pillar 3 (Whole-Life Balance). Now also hosts
-                // the Daily Wisdom as a small italic tagline so we don't need
-                // a separate Wisdom card competing for attention above. The
-                // card is collapsible (chevron in its header) and the tagline
-                // is conditionally passed based on the Wisdom visibility
-                // toggle in Settings → Home Sections.
-                if showLifeBalance {
-                    Section {
-                        BalancePulseCard(
-                            todayFill: snapshot.todayFill,
-                            todayPoints: snapshot.todayPoints,
-                            yesterdayTick: snapshot.yesterdayTick,
-                            dailyTarget: snapshot.dailyTarget,
-                            harmonyScore: snapshot.harmony,
-                            stage: snapshot.stage,
-                            hasData: snapshot.hasData,
-                            flightPulse: particleAnimator.pulseRequest,
-                            tagline: showWisdom ? wisdomTagline(balanceScores: snapshot.scores) : nil,
-                            onTapCompass: { selectedTab = .compass }
-                        )
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                // Day strip — compact 4-segment Morning/Afternoon/Evening/Night
+                // row, filled per completed check-in, current slot outlined.
+                // Replaces the old 0% ring + Tasks/Check-ins breakdown.
+                Section {
+                    dayStrip
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                    }
                 }
             }
 
-            // Habits section — collapsible, auto-curated.
-            //
-            // The section only renders habits that still need attention today;
-            // completed ones collapse into a "✓ N done today" disclosure so a
-            // user with 6 habits doesn't see a 6-row wall once they've
-            // finished them. The whole section can also be collapsed from its
-            // header (chevron) for users who prefer a quieter Home.
-            if showHabits {
-                if activeHabits.isEmpty {
-                    // Empty state — user has never added a habit. Previously
-                    // the whole section was suppressed, which meant the only
-                    // way to add a habit from Home was... nowhere. Surface a
-                    // minimal CTA so Pillar 1 (daily ritual) has an on-ramp.
-                    Section {
-                        emptyHabitsCard
-                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-                } else {
-                    Section {
-                        if habitsExpanded {
-                            habitsCard
-                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                        }
-                    } header: {
-                        habitsHeader
-                    }
-                }
-            }
-
-            // Overdue section
+            // Carried-over section — phase 1 of the Today redesign replaces
+            // the red "Overdue" warning treatment with a neutral section;
+            // rows show "from Thu" style secondary meta instead of a red
+            // date, and the checkbox stays the same neutral circle used by
+            // today's own tasks.
             if !overdueTasks.isEmpty {
                 Section {
                     if overdueExpanded {
@@ -525,10 +497,10 @@ struct HomeView: View {
                     }
                 } header: {
                     collapsibleHeader(
-                        title: "Overdue",
+                        title: "Carried over",
                         count: overdueTasks.count,
                         isExpanded: $overdueExpanded,
-                        tintColor: AppColors.overdueRed
+                        tintColor: AppColors.textSecondary
                     )
                 }
             }
@@ -612,10 +584,30 @@ struct HomeView: View {
                 // Hide the "Today" header on day 0 so the Start-Here card is
                 // the unambiguous focal point.
                 if homeStage == .normal || !todayActiveTasks.isEmpty || !todayCalendarEvents.isEmpty {
-                    Text("Today")
-                        .font(AppFonts.heading(15))
-                        .foregroundColor(AppColors.textPrimary)
-                        .textCase(nil)
+                    HStack(spacing: 8) {
+                        Text("Today")
+                            .font(AppFonts.heading(15))
+                            .foregroundColor(AppColors.textPrimary)
+                            .textCase(nil)
+
+                        Spacer()
+
+                        // "+" add-task button next to the Today section
+                        // header, matching the Habits section pattern
+                        // (Impeccable Screens audit).
+                        Button {
+                            Haptics.light()
+                            activeSheet = .schedule
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.accent)
+                                .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add new task")
+                    }
                 }
             }
 
@@ -724,6 +716,69 @@ struct HomeView: View {
                         isExpanded: $tomorrowExpanded,
                         tintColor: AppColors.skyBlue
                     )
+                }
+            }
+
+            // Habits section — collapsible, auto-curated. Placed after
+            // Tasks per the Today redesign order (hero → day strip →
+            // Tasks → Habits → Momentum).
+            //
+            // The section only renders habits that still need attention today;
+            // completed ones collapse into a "✓ N done today" disclosure so a
+            // user with 6 habits doesn't see a 6-row wall once they've
+            // finished them. The whole section can also be collapsed from its
+            // header (chevron) for users who prefer a quieter Home.
+            if showHabits {
+                if activeHabits.isEmpty {
+                    // Empty state — user has never added a habit. Previously
+                    // the whole section was suppressed, which meant the only
+                    // way to add a habit from Home was... nowhere. Surface a
+                    // minimal CTA so Pillar 1 (daily ritual) has an on-ramp.
+                    Section {
+                        emptyHabitsCard
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+                } else {
+                    Section {
+                        if habitsExpanded {
+                            habitsCard
+                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                    } header: {
+                        habitsHeader
+                    }
+                }
+            }
+
+            // Balance Pulse — Pillar 3 (Whole-Life Balance). Placed last in
+            // the Today order (hero → day strip → tasks → habits → Momentum)
+            // per the Today redesign spec; content/behaviour unchanged. Now
+            // also hosts the Daily Wisdom as a small italic tagline so we
+            // don't need a separate Wisdom card competing for attention
+            // above. The card is collapsible (chevron in its header) and
+            // the tagline is conditionally passed based on the Wisdom
+            // visibility toggle in Settings → Home Sections.
+            if showLifeBalance && homeStage != .day0 {
+                Section {
+                    BalancePulseCard(
+                        todayFill: snapshot.todayFill,
+                        todayPoints: snapshot.todayPoints,
+                        yesterdayTick: snapshot.yesterdayTick,
+                        dailyTarget: snapshot.dailyTarget,
+                        harmonyScore: snapshot.harmony,
+                        stage: snapshot.stage,
+                        hasData: snapshot.hasData,
+                        flightPulse: particleAnimator.pulseRequest,
+                        tagline: showWisdom ? wisdomTagline(balanceScores: snapshot.scores) : nil,
+                        onTapCompass: { selectedTab = .compass }
+                    )
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
 
@@ -932,6 +987,17 @@ struct HomeView: View {
                 )
             case .checkIn:
                 CheckInDetailView(timeSlot: CheckInTime.next())
+            case .eveningCheckIn:
+                // Evening Flow redesign: Tonight card's "Night check-in · 1
+                // min" action opens the same EveningCheckInView the Compass
+                // tab uses, so ratings land in the one BalanceManager store.
+                // onCheckInSaved switches to Coach once Save check-in fires.
+                if let bm = balanceManager {
+                    EveningCheckInView(balanceManager: bm, onCheckInSaved: {
+                        activeSheet = nil
+                        selectedTab = .coach
+                    })
+                }
             case .habits:
                 HabitsView()
             case .addHabit:
@@ -996,6 +1062,16 @@ struct HomeView: View {
             Button("Cancel", role: .cancel) { taskToDelete = nil }
         } message: {
             Text("Are you sure you want to delete \"\(taskToDelete?.title ?? "")\"?")
+        }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Today")
+                        .font(AppFonts.bodyMedium(16))
+                        .foregroundColor(AppColors.textPrimary)
+                }
+            }
         }
     }
 
@@ -1160,252 +1236,165 @@ struct HomeView: View {
         .opacity(appeared ? 1 : 0)
     }
 
-    // MARK: - Today Hero Card (dual-ring)
+    // MARK: - Today Hero Card (photo strip + next action)
     //
-    // Apple Fitness pattern: outer ring = tasks (green), inner ring = check-ins
-    // (accent). One composed graphic replaces the old ring + breakdown row
-    // (which was showing two representations of the same data).
+    // Phase 1 of the Today redesign: Joe's own surf photo as a short
+    // wide strip at the top of Home, with the existing "next thing"
+    // panel (Tonight card's night check-in CTA, or the normal hero's
+    // contextual check-in action) merged directly underneath inside
+    // the SAME card — no more separate blue "Afternoon check-in" row.
+    // The 0% ring + Tasks/Check-ins breakdown + daypart icon row that
+    // used to live here moved to `dayStrip`, rendered as its own
+    // section right below this card.
 
-    /// Fraction of today's tasks that are complete. Zero when no tasks exist.
-    private var tasksFraction: Double {
-        guard totalTodayCount > 0 else { return 0 }
-        return min(1, Double(completedTodayCount) / Double(totalTodayCount))
-    }
-
-    /// Fraction of today's 4 check-in slots that have been logged.
-    private var checkInFraction: Double {
-        min(1, Double(todayCheckInCount) / 4.0)
-    }
-
-    /// Blended day-percentage shown in the ring center.
+    /// Blended day-percentage. Kept for the remaining-items phrasing
+    /// used in VoiceOver labels and the Tonight card's secondary line;
+    /// the ring itself is no longer rendered on Today (replaced by the
+    /// day strip), but the underlying signal is still useful copy.
     ///
     /// When the user has NO tasks scheduled today (totalTodayCount == 0),
     /// the check-ins become the sole signal — completing all 4 check-ins
     /// should read as "100% done" rather than "4 of 4+0 = bucket division
-    /// by a fake +4 task-count that's really counting check-ins." Previously
-    /// a user with 0 tasks and 4 check-ins read as 100% (correct) but a
-    /// user with 0 tasks and 0 check-ins at 6 AM read as 0% of a 4-unit
-    /// bucket they hadn't scheduled — a misleading "you've done nothing
-    /// today" when they haven't had breakfast yet.
+    /// by a fake +4 task-count that's really counting check-ins."
     private var dayCompletionFraction: Double {
-        // Task side contributes when tasks exist; check-in side always
-        // weighs the 4 slots. Sum only the units the user actually signed
-        // up for. If nothing's scheduled AND no check-ins yet, fraction
-        // is 0 but the ring UI shows it as "ready for today" copy upstream.
-        let taskUnits = max(0, totalTodayCount)
-        let checkInUnits = 4
-        let totalUnits = taskUnits + checkInUnits
-        guard totalUnits > 0 else { return 0 }
-        let doneUnits = completedTodayCount + todayCheckInCount
-        return min(1.0, Double(doneUnits) / Double(totalUnits))
+        // Delegates to the pure `HomeProgressCalc` so the logic is
+        // unit-testable.
+        HomeProgressCalc.dayCompletionFraction(
+            completedTasks: completedTodayCount,
+            totalTasks: totalTodayCount,
+            completedCheckIns: todayCheckInCount
+        )
     }
 
-    private var todayHeroCard: some View {
+    /// Whether the ring's percentage would misleadingly read as "you've
+    /// done nothing" late in the day with nothing scheduled and no
+    /// check-ins yet. Used to swap the bare "0%" for a remaining-items
+    /// count instead (Impeccable Screens audit).
+    private var shouldShowRemainingItemsInsteadOfPercent: Bool {
+        HomeProgressCalc.shouldShowRemainingItemsInsteadOfPercent(
+            dayCompletionFraction: dayCompletionFraction,
+            hour: Calendar.current.component(.hour, from: Date())
+        )
+    }
+
+    /// Remaining-items text shown at night instead of a bare "0%".
+    private var remainingItemsText: String {
+        HomeProgressCalc.remainingItemsText(
+            completedTasks: completedTodayCount,
+            totalTasks: totalTodayCount,
+            completedCheckIns: todayCheckInCount
+        )
+    }
+
+    // MARK: - Tonight / next-action content (merged into the hero card)
+    //
+    // Both branches below render ONLY the "next thing" panel — no
+    // photo, no card chrome — so `TodayHeroCard` can host either one
+    // directly beneath Joe's photo as a single merged card.
+
+    /// Shown instead of `heroActionContent` once it's evening and the
+    /// night check-in hasn't been logged (see `shouldShowTonightCard`).
+    /// Surfaces ONE next action — the night check-in — plus the
+    /// remaining habits inline so completing them doesn't require
+    /// leaving Home.
+    private var tonightActionContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // TODAY label only — streak moved out (lived in the corner as
-            // cosmetic chrome; not load-bearing for today's screen).
-            Text("TODAY")
-                .font(AppFonts.label(11))
-                .tracking(0.8)
-                .foregroundColor(AppColors.textMuted)
+            HStack(spacing: 10) {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(CheckInTime.night.color)
+                Text("TONIGHT")
+                    .font(AppFonts.label(11))
+                    .tracking(0.8)
+                    .foregroundColor(AppColors.textMuted)
+                Spacer(minLength: 0)
+            }
 
-            // Hero row: compact ring on the left + stats stacked to the right.
-            // Saves ~60pt of vertical versus the centered-ring layout and
-            // reads as a single horizontal "status line" rather than a
-            // dedicated ring section.
-            //
-            // Vertical alignment is `.center` so at XXL Dynamic Type the
-            // ring stays vertically centered against the growing % text
-            // stack (otherwise the ring hangs above the baseline).
-            //
-            // The whole row is a single VoiceOver element reading
-            // `heroAccessibilityLabel`. Without `.ignore` + top-level label,
-            // VO reads the ring label and the adjacent "% of day done" text
-            // as two separate announcements — the exact BUG-01 regression.
-            // `heroAccessibilityLabel` already phrases both counts, so the
-            // legend row's detail stays reachable via that label.
-            HStack(alignment: .center, spacing: 14) {
-                compactDualRing
-
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(Int(dayCompletionFraction * 100))%")
-                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+            // ONE next action — opens the existing EveningCheckInView via
+            // the Home sheet router. No alternate path, no second action
+            // competing for attention here.
+            Button {
+                Haptics.light()
+                activeSheet = .eveningCheckIn
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(CheckInTime.night.color))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Night check-in · 1 min")
+                            .font(AppFonts.bodyMedium(16))
                             .foregroundColor(AppColors.textPrimary)
-                            .monospacedDigit()
-                        Text(dayCompletionFraction >= 1 ? "all done" : "of day done")
+                        Text("Calibrate how today went")
                             .font(AppFonts.caption(12))
                             .foregroundColor(AppColors.textMuted)
                     }
-                    HStack(spacing: 12) {
-                        legendItem(color: AppColors.completionGreen, label: "Tasks \(completedTodayCount)/\(totalTodayCount)")
-                        legendItem(color: AppColors.accent, label: "Check-ins \(todayCheckInCount)/4")
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.textMuted)
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(CheckInTime.night.color.opacity(0.12))
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Night check-in, 1 minute. Calibrate how today went.")
+
+            // Remaining habits inline — same completion logic/row the
+            // normal Habits card uses, just surfaced here so the Tonight
+            // panel can be the single stop for the user's remaining
+            // evening actions.
+            let todo = habitsToDoToday
+            if !todo.isEmpty {
+                let today = Calendar.current.startOfDay(for: Date())
+                VStack(spacing: 8) {
+                    ForEach(Array(todo.prefix(3)), id: \.id) { habit in
+                        HabitRow(habit: habit, isDone: false, today: today, onFlightLaunch: flightLaunchHandler)
                     }
                 }
-                Spacer(minLength: 0)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(heroAccessibilityLabel)
-
-            // Slot icons strip — light/filled by completion state.
-            HStack(spacing: 8) {
-                ForEach(CheckInTime.allCases) { slot in
-                    Image(systemName: slot.sfSymbol)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(isSlotCompletedToday(slot) ? slot.color : AppColors.border)
-                }
-                Spacer(minLength: 0)
-            }
-
-            if !overdueTasks.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(AppColors.overdueRed)
-                    Text("\(overdueTasks.count) overdue")
-                        .font(AppFonts.caption(12))
-                        .foregroundColor(AppColors.overdueRed)
-                    Spacer(minLength: 0)
-                }
-            }
-
-            // Action slot — only renders in .prominent / .complete states.
-            if case .progress = checkInCardState {
-                EmptyView()
-            } else {
-                heroActionRow
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(AppColors.card)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(
-                            RadialGradient(
-                                colors: [AppColors.accent.opacity(0.05), Color.clear],
-                                center: .top,
-                                startRadius: 10,
-                                endRadius: 220
-                            )
-                        )
-                )
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 2)
-        )
-        .offset(y: appeared ? 0 : 15)
-        .opacity(appeared ? 1 : 0)
-    }
-
-    /// Compact dual-ring: outer = tasks, inner = check-ins. Sized to fit as
-    /// a left-anchored glyph inside the hero row, with the percentage label
-    /// moved out to the right (see `todayHeroCard`). No center text here —
-    /// the big % text lives in the adjacent VStack so font scaling doesn't
-    /// overrun the ring.
-    ///
-    /// When both rings are empty (normal stage, 0 tasks and 0 check-ins
-    /// today) the inner empty track is suppressed so the card reads as a
-    /// single "starting fresh" ring rather than a concentric target/bullseye
-    /// icon. The inner track re-appears as soon as either fraction > 0.
-    private var compactDualRing: some View {
-        let outerSize: CGFloat = 60
-        let innerSize: CGFloat = 40
-        let lineWidth: CGFloat = 5
-        let hasAnyProgress = tasksFraction > 0 || checkInFraction > 0
-        return ZStack {
-            // Outer ring — Tasks. Guarded on >0 so an empty track doesn't
-            // render a rounded-cap dot from a forced 0.001 trim.
-            Circle()
-                .stroke(AppColors.border, lineWidth: lineWidth)
-                .frame(width: outerSize, height: outerSize)
-            if tasksFraction > 0 {
-                Circle()
-                    .trim(from: 0, to: tasksFraction)
-                    .stroke(AppColors.completionGreen, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                    .frame(width: outerSize, height: outerSize)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.45, dampingFraction: 0.75), value: tasksFraction)
-            }
-
-            // Inner ring — Check-ins. Only render when either dimension has
-            // progress; a paired empty inner track next to an empty outer
-            // track reads as a target icon instead of "nothing yet today."
-            if hasAnyProgress {
-                Circle()
-                    .stroke(AppColors.border, lineWidth: lineWidth)
-                    .frame(width: innerSize, height: innerSize)
-                if checkInFraction > 0 {
-                    Circle()
-                        .trim(from: 0, to: checkInFraction)
-                        .stroke(AppColors.accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                        .frame(width: innerSize, height: innerSize)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.45, dampingFraction: 0.75), value: checkInFraction)
-                }
-            }
-        }
-        .frame(width: outerSize, height: outerSize)
-    }
-
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-            Text(label)
-                .font(AppFonts.caption(11))
-                .foregroundColor(AppColors.textSecondary)
-                .monospacedDigit()
         }
     }
 
-    /// Constructs a humane description of the ring for VoiceOver. Avoids
-    /// the confusing "0 of 0 tasks" reading when the user has no tasks
-    /// scheduled — we phrase it differently in that case.
-    private var heroAccessibilityLabel: String {
-        let percent = Int(dayCompletionFraction * 100)
-        let taskPhrase: String
-        if totalTodayCount == 0 {
-            taskPhrase = "no tasks scheduled"
-        } else {
-            taskPhrase = "\(completedTodayCount) of \(totalTodayCount) tasks complete"
-        }
-        let checkPhrase = "\(todayCheckInCount) of 4 check-ins"
-        return "Today: \(percent) percent done. \(taskPhrase), \(checkPhrase)."
-    }
-
-    /// Adaptive bottom slot: shows whichever action is most relevant.
+    /// Normal (non-evening) next action panel — the same contextual
+    /// check-in CTA previously shown in the "action slot" at the bottom
+    /// of the old ring hero. Shown directly under Joe's photo.
     @ViewBuilder
-    private var heroActionRow: some View {
+    private var heroActionContent: some View {
         switch checkInCardState {
         case .prominent(let slot):
             Button { activeSheet = .checkIn } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     Image(systemName: slot.sfSymbol)
-                        .font(.system(size: 16, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundColor(slot.color)
-                        .frame(width: 28, height: 28)
-                        .background(slot.color.opacity(0.15))
-                        .clipShape(Circle())
-                    Text("\(slot.rawValue) check-in")
-                        .font(AppFonts.bodyMedium(14))
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer()
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(slot.color))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(slot.rawValue) check-in")
+                            .font(AppFonts.bodyMedium(16))
+                            .foregroundColor(AppColors.textPrimary)
+                        Text("\(todayCheckInCount) of 4 done today")
+                            .font(AppFonts.caption(12))
+                            .foregroundColor(AppColors.textMuted)
+                    }
+                    Spacer(minLength: 0)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(slot.color)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.textMuted)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(12)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(slot.color.opacity(0.08))
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(slot.color.opacity(0.12))
                 )
             }
-            .buttonStyle(.scale)
-            .accessibilityElement(children: .combine)
+            .buttonStyle(.plain)
             .accessibilityLabel("\(slot.rawValue) check-in available. \(todayCheckInCount) of 4 done today. Tap to start.")
         case .complete:
             HStack(spacing: 8) {
@@ -1417,8 +1406,6 @@ struct HomeView: View {
                     .foregroundColor(AppColors.completionGreen)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
         case .progress:
             // Between active windows — no urgent action.
             Button { activeSheet = .checkIn } label: {
@@ -1431,12 +1418,69 @@ struct HomeView: View {
                         .foregroundColor(AppColors.accent)
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// The merged hero card: Joe's photo strip + whichever "next thing"
+    /// panel applies right now.
+    private var todayHeroCard: some View {
+        TodayHeroCard {
+            if shouldShowTonightCard {
+                tonightActionContent
+            } else {
+                heroActionContent
+            }
+        }
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
+    }
+
+    // MARK: - Day Strip
+    //
+    // Compact 4-segment strip (Morning/Afternoon/Evening/Night) replacing
+    // the old 0% ring + "Tasks 0/2 · Check-ins 0/4" breakdown + faded
+    // daypart icons. Filled when that check-in slot is done today;
+    // the slot the user is currently in (and hasn't logged) is outlined
+    // instead of faded, so "what's next" reads at a glance.
+    private var dayStrip: some View {
+        let current = CheckInTime.current()
+        return HStack(spacing: 8) {
+            ForEach(CheckInTime.allCases) { slot in
+                let done = isSlotCompletedToday(slot)
+                let isCurrent = slot == current && !done
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(done ? AppColors.completionGreen : Color.clear)
+                        Circle()
+                            .stroke(done ? Color.clear : slot.color, lineWidth: isCurrent ? 2 : 1)
+                        if done {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.onAccent)
+                        }
+                    }
+                    .frame(width: 22, height: 22)
+                    Text(slot.rawValue)
+                        .font(AppFonts.caption(10))
+                        .foregroundColor(done || isCurrent ? AppColors.textSecondary : AppColors.textSecondary.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(slot.rawValue) check-in, \(done ? "done" : (isCurrent ? "current, not done yet" : "not done yet"))")
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(AppColors.card)
+        )
+        .offset(y: appeared ? 0 : 15)
+        .opacity(appeared ? 1 : 0)
     }
 
     // MARK: - Header
@@ -1447,9 +1491,23 @@ struct HomeView: View {
                 Text(greeting)
                     .font(AppFonts.display(24))
                     .foregroundColor(AppColors.textPrimary)
-                Text(formattedDate)
-                    .font(AppFonts.bodyMedium(14))
-                    .foregroundColor(AppColors.textSecondary)
+                // Weather pill moved inline next to the date (Impeccable
+                // Screens audit: "shrink to inline next to date") instead
+                // of living as a separate full-size chip in the trailing
+                // header row.
+                HStack(spacing: 6) {
+                    Text(formattedDate)
+                        .font(AppFonts.bodyMedium(14))
+                        .foregroundColor(AppColors.textSecondary)
+                    WeatherChip(
+                        snapshot: weatherManager?.latest,
+                        isLoading: weatherManager?.isLoading ?? false,
+                        isAuthorized: weatherManager?.isAuthorized ?? false,
+                        style: .plain,
+                        onTap: { activeSheet = .todaysContext }
+                    )
+                    .scaleEffect(0.85, anchor: .leading)
+                }
             }
 
             Spacer()
@@ -1471,14 +1529,6 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Open schedule")
             .accessibilityHint("Week and month view with task add")
-
-            // Weather chip — aligns with the date line via bottom alignment.
-            WeatherChip(
-                snapshot: weatherManager?.latest,
-                isLoading: weatherManager?.isLoading ?? false,
-                isAuthorized: weatherManager?.isAuthorized ?? false,
-                onTap: { activeSheet = .todaysContext }
-            )
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -1495,9 +1545,19 @@ struct HomeView: View {
             }
         } label: {
             HStack {
-                Image(systemName: title == "Overdue" ? "exclamationmark.triangle.fill" : title == "Tomorrow" ? "sunrise.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 13))
-                    .foregroundColor(tintColor)
+                // "Carried over" intentionally gets no leading icon — phase 1
+                // of the Today redesign removes the red warning-triangle
+                // treatment entirely so overdue work reads as neutral, not
+                // alarming.
+                if title == "Tomorrow" {
+                    Image(systemName: "sunrise.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(tintColor)
+                } else if title == "Completed" {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(tintColor)
+                }
                 Text("\(title) (\(count))")
                     .font(AppFonts.heading(15))
                     .foregroundColor(AppColors.textPrimary)
@@ -1530,7 +1590,7 @@ struct HomeView: View {
             Text("No tasks today")
                 .font(AppFonts.heading(18))
                 .foregroundColor(AppColors.textPrimary)
-            Text("Tap the calendar icon above to add a task")
+            Text("Use the + above to add a task")
                 .font(AppFonts.body(14))
                 .foregroundColor(AppColors.textMuted)
         }
@@ -2158,25 +2218,17 @@ private struct HabitRow: View {
                 .font(.system(size: 16))
                 .accessibilityHidden(true)
 
-            // Dimension dot + title. Mirrors TaskCard so habits and tasks
-            // read identically at a glance — the dot is the pre-completion
-            // hint of which Compass bar this habit will feed.
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if let dim = habit.dimensions.primaryScored {
-                    Circle()
-                        .fill(dim.color)
-                        .frame(width: 7, height: 7)
-                        .alignmentGuide(.firstTextBaseline) { d in d.height - 1 }
-                        .accessibilityHidden(true)
-                }
-                Text(habit.title)
-                    .font(AppFonts.body(14))
-                    .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
-                    .strikethrough(isDone)
-            }
-            // Title is announced via the checkbox button's label; suppress
-            // the duplicate VO read here.
-            .accessibilityHidden(true)
+            // Title only — the dimension dot was redundant with the
+            // checkbox's own dimension-colored stroke and the emoji icon,
+            // so it's dropped (Impeccable Screens audit: "drop the green
+            // dimension dot OR the emoji — keep emoji").
+            Text(habit.title)
+                .font(AppFonts.body(14))
+                .foregroundColor(isDone ? AppColors.textMuted : AppColors.textPrimary)
+                .strikethrough(isDone)
+                // Title is announced via the checkbox button's label;
+                // suppress the duplicate VO read here.
+                .accessibilityHidden(true)
             Spacer()
 
             let streak = habit.currentStreak()
