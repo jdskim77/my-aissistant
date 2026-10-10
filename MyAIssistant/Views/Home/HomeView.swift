@@ -1325,7 +1325,7 @@ struct HomeView: View {
                         .background(Circle().fill(CheckInTime.night.color))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Night check-in · 1 min")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(AppFonts.bodyMedium(16))
                             .foregroundColor(AppColors.textPrimary)
                         Text("Calibrate how today went")
                             .font(AppFonts.caption(12))
@@ -1377,7 +1377,7 @@ struct HomeView: View {
                         .background(Circle().fill(slot.color))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(slot.rawValue) check-in")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(AppFonts.bodyMedium(16))
                             .foregroundColor(AppColors.textPrimary)
                         Text("\(todayCheckInCount) of 4 done today")
                             .font(AppFonts.caption(12))
@@ -1454,19 +1454,19 @@ struct HomeView: View {
                 VStack(spacing: 4) {
                     ZStack {
                         Circle()
-                            .fill(done ? slot.color : Color.clear)
+                            .fill(done ? AppColors.completionGreen : Color.clear)
                         Circle()
                             .stroke(done ? Color.clear : slot.color, lineWidth: isCurrent ? 2 : 1)
                         if done {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.onAccent)
                         }
                     }
                     .frame(width: 22, height: 22)
                     Text(slot.rawValue)
                         .font(AppFonts.caption(10))
-                        .foregroundColor(done || isCurrent ? AppColors.textSecondary : AppColors.textMuted)
+                        .foregroundColor(done || isCurrent ? AppColors.textSecondary : AppColors.textSecondary.opacity(0.7))
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
