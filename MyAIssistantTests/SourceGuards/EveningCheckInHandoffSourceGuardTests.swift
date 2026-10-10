@@ -1,4 +1,5 @@
 import XCTest
+@testable import MyAIssistant
 
 /// Source-text guard for the Evening Flow redesign's check-in → Coach
 /// handoff: after "Save check-in", the app should land on the Coach tab
