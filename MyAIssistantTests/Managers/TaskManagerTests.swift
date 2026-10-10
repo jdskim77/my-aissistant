@@ -67,6 +67,72 @@ final class TaskManagerTests: XCTestCase {
         XCTAssertNil(task.completedAt)
     }
 
+    func testToggleCompletionRecurringDoesNotDuplicateOnReToggle() throws {
+        // P1 bug: toggling a recurring task done -> undone -> done again
+        // (e.g. an accidental double-tap / undo) inserted a SECOND clone of
+        // the next occurrence, since the recurrence-generation block only
+        // keyed off `task.done` flipping true with no de-dup check.
+        let task = makeTask(title: "Daily Standup", date: Date())
+        task.recurrence = .daily
+        sut.addTask(task)
+
+        // First completion: generates exactly one next-occurrence clone.
+        sut.toggleCompletion(task)
+        XCTAssertTrue(task.done)
+        XCTAssertEqual(sut.allTasks().count, 2, "expected original + 1 clone after first completion")
+
+        // Undo, then redo the completion on the SAME task/date/recurrence.
+        sut.toggleCompletion(task) // -> undone
+        XCTAssertFalse(task.done)
+        sut.toggleCompletion(task) // -> done again
+        XCTAssertTrue(task.done)
+
+        let clones = sut.allTasks().filter { $0.title == "Daily Standup" && $0.id != task.id }
+        XCTAssertEqual(clones.count, 1, "re-toggling done should not insert a duplicate recurring clone")
+    }
+
+    func testToggleCompletionRecurringSuccessorEditDoesNotCauseDuplicate() throws {
+        // Codex review of the first fix caught this: the generated
+        // successor's id is derived from the SOURCE task's own id, not
+        // from the successor's own (editable) title/category/date, so
+        // renaming/recategorizing/rescheduling the successor must NOT
+        // defeat the de-dup check on re-toggle of the original.
+        let task = makeTask(title: "Daily Standup", date: Date())
+        task.recurrence = .daily
+        sut.addTask(task)
+
+        sut.toggleCompletion(task) // -> done, generates successor
+        XCTAssertEqual(sut.allTasks().count, 2)
+
+        let successor = sut.allTasks().first { $0.id != task.id }
+        successor?.title = "Renamed"
+        successor?.category = .work
+        successor?.date = Calendar.current.date(byAdding: .day, value: 5, to: Date())!
+
+        sut.toggleCompletion(task) // -> undone
+        sut.toggleCompletion(task) // -> done again
+
+        XCTAssertEqual(sut.allTasks().count, 2, "editing the successor must not defeat de-dup on re-toggle")
+    }
+
+    func testToggleCompletionRecurringDoesNotCollideWithUnrelatedIdenticalTask() throws {
+        // Codex review: two independent recurring tasks with identical
+        // title/category/date/recurrence must each get their own
+        // successor — matching on those editable fields would silently
+        // drop the second task's legitimate successor.
+        let taskA = makeTask(title: "Daily Standup", category: .work, date: Date())
+        taskA.recurrence = .daily
+        let taskB = makeTask(title: "Daily Standup", category: .work, date: Date())
+        taskB.recurrence = .daily
+        sut.addTask(taskA)
+        sut.addTask(taskB)
+
+        sut.toggleCompletion(taskA)
+        sut.toggleCompletion(taskB)
+
+        XCTAssertEqual(sut.allTasks().count, 4, "each independent task must get its own successor")
+    }
+
     func testDeleteTask() throws {
         let task = makeTask()
         sut.addTask(task)

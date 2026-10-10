@@ -38,19 +38,53 @@ final class TaskManager {
         calendarSyncManager?.syncTaskCompletionToReminder(task)
 
         // Auto-generate next recurring instance when marking done
+        //
+        // Bug fix: toggling done -> false -> true again (e.g. undo/redo a
+        // checkbox tap) used to re-run this block and insert a SECOND clone
+        // for the identical next occurrence, since `task.date` /
+        // `recurrence` are unchanged by the back-and-forth.
+        //
+        // Guard by giving the generated clone a deterministic id derived
+        // from the SOURCE task's own (immutable) id and the target
+        // occurrence date, then checking for that exact id before
+        // inserting. This is deliberately NOT a match on title/category/
+        // date/recurrence (those are user-editable and two independent
+        // recurring tasks can legitimately share all four), so it can't
+        // misidentify an unrelated task as this one's successor, and it
+        // keeps matching the right successor even if the user later
+        // renames/recategorizes/reschedules it.
         if task.done, task.recurrence != .none,
            let nextDate = task.recurrence.nextDate(after: task.date) {
-            let next = TaskItem(
-                title: task.title,
-                category: task.category,
-                priority: task.priority,
-                date: nextDate,
-                icon: task.icon,
-                notes: task.notes,
-                recurrence: task.recurrence
+            let nextOccurrenceID = "\(task.id)#recur#\(nextDate.timeIntervalSinceReferenceDate)"
+            var existingDescriptor = FetchDescriptor<TaskItem>(
+                predicate: #Predicate { candidate in candidate.id == nextOccurrenceID }
             )
-            // D-06 fix: clone gets NO externalCalendarID — it's a new independent task
-            modelContext.insert(next)
+            existingDescriptor.fetchLimit = 1
+            let alreadyExists: Bool
+            do {
+                alreadyExists = try !modelContext.fetch(existingDescriptor).isEmpty
+            } catch {
+                // Fail safe: if we can't prove a successor already exists,
+                // don't risk silently dropping the next occurrence either —
+                // log and proceed with generation rather than guessing.
+                AppLogger.tasks.error("Recurrence dedup fetch failed: \(error.localizedDescription, privacy: .public)")
+                alreadyExists = false
+            }
+
+            if !alreadyExists {
+                let next = TaskItem(
+                    id: nextOccurrenceID,
+                    title: task.title,
+                    category: task.category,
+                    priority: task.priority,
+                    date: nextDate,
+                    icon: task.icon,
+                    notes: task.notes,
+                    recurrence: task.recurrence
+                )
+                // D-06 fix: clone gets NO externalCalendarID — it's a new independent task
+                modelContext.insert(next)
+            }
         }
 
         modelContext.safeSave()
