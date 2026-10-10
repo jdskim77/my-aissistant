@@ -42,9 +42,10 @@ final class NudgeEngine {
     /// can fire any day. If weak-dim were listed first it would always
     /// preempt the post-check-in action, even when the check-in signal
     /// is still fresh and more relevant. Fix for BUG-16.
-    /// `private var` (not `let`) so tests can swap in a deterministic
-    /// rule set without rebuilding the whole engine.
-    private var rules: [NudgeTriggerRule] = [
+    /// Internal (not `private`) `var` (not `let`) so tests can swap in a
+    /// deterministic rule set via `@testable import` without rebuilding
+    /// the whole engine or exercising the real rule implementations.
+    var rules: [NudgeTriggerRule] = [
         PostLowMoodCheckInRule(),
         WindowedHabitRule(),
         WeakDimensionWithOpenWindowRule()
@@ -60,14 +61,41 @@ final class NudgeEngine {
     /// in flight at a time. Fix for Q1-BUG-27.
     private var isEvaluating = false
 
+    /// Clock seam. Defaults to the real wall clock in production; tests
+    /// inject a fixed/advancing closure so quiet-hours, cooldown, and cap
+    /// logic (all of which read "now" repeatedly per evaluation) can be
+    /// driven deterministically without waiting on the real clock.
+    /// Behaviour-preserving: the default is exactly `Date()`.
+    private let now: () -> Date
+
+    /// UserDefaults seam. Defaults to `.standard` in production; tests
+    /// inject an isolated suite so nudge-tuning keys (kill switch toggle,
+    /// quiet hours, silenced categories, safety fingerprints/pause) don't
+    /// leak into or read stale state from the shared suite across test
+    /// runs. Behaviour-preserving: the default is exactly `.standard`.
+    private let defaults: UserDefaults
+
+    /// Kill-switch override. `nil` (the production default) means "use
+    /// `AppConstants.nudgeEngineKillSwitchEnabled`" — the constant isn't
+    /// injectable, so this lets tests exercise both the on and off branch
+    /// of the kill-switch gate without flipping the real app-wide constant.
+    /// Behaviour-preserving: the default is exactly the existing constant.
+    private let killSwitchOverride: Bool?
+
     init(
         modelContext: ModelContext,
         composer: NudgeComposer,
-        crisisClassifier: CrisisClassifier
+        crisisClassifier: CrisisClassifier,
+        now: @escaping () -> Date = Date.init,
+        defaults: UserDefaults = .standard,
+        killSwitchOverride: Bool? = nil
     ) {
         self.modelContext = modelContext
         self.composer = composer
         self.crisisClassifier = crisisClassifier
+        self.now = now
+        self.defaults = defaults
+        self.killSwitchOverride = killSwitchOverride
     }
 
     // MARK: - Entry points
@@ -105,12 +133,12 @@ final class NudgeEngine {
         defer { isEvaluating = false }
 
         // 1. Kill switch — emergency global off.
-        guard !AppConstants.nudgeEngineKillSwitchEnabled else { return }
+        guard !(killSwitchOverride ?? AppConstants.nudgeEngineKillSwitchEnabled) else { return }
 
         // 2. Safety pause — blocks everything (including safety re-scan) for
         //    24h after a crisis flag. Placed before the precheck so we don't
         //    re-emit safety nudges on every foreground inside the cooldown.
-        guard !isWithinSafetyPause(at: Date()) else { return }
+        guard !isWithinSafetyPause(at: now()) else { return }
 
         // 3. Safety precheck — scans the latest check-in note via the
         //    on-device crisis classifier. Bypasses user toggle and frequency
@@ -120,11 +148,11 @@ final class NudgeEngine {
 
         // 4. User-facing toggle (default off — Phase 1 was opt-in; Phase 2
         //    keeps the toggle so non-safety coaching stays consent-gated).
-        guard UserDefaults.standard.bool(forKey: AppConstants.nudgeEnabledKey) else { return }
+        guard defaults.bool(forKey: AppConstants.nudgeEnabledKey) else { return }
 
         // 5. Off-frequency short-circuit.
         let frequency = NudgeFrequency(
-            rawValue: UserDefaults.standard.string(forKey: AppConstants.nudgeFrequencyKey) ?? ""
+            rawValue: defaults.string(forKey: AppConstants.nudgeFrequencyKey) ?? ""
         ) ?? .balanced
         guard frequency != .off else { return }
 
@@ -135,7 +163,7 @@ final class NudgeEngine {
         //    (BGTask) triggers always respect quiet hours regardless of
         //    the bypass flag — we never wake the device at midnight.
         //    QA BUG-QA-02.
-        let quietNow = isQuietHours(at: Date())
+        let quietNow = isQuietHours(at: now())
 
         // 7. Daily + hourly caps.
         guard withinFrequencyCaps(frequency: frequency) else { return }
@@ -187,7 +215,7 @@ final class NudgeEngine {
     /// lets the user toggle categories off; the engine must honor it.
     /// Fix for Q1-BUG-29.
     private func readSilencedCategories() -> Set<String> {
-        let raw = UserDefaults.standard.string(forKey: AppConstants.nudgeSilencedCategoriesKey) ?? ""
+        let raw = defaults.string(forKey: AppConstants.nudgeSilencedCategoriesKey) ?? ""
         guard !raw.isEmpty else { return [] }
         return Set(raw.split(separator: ",").map(String.init))
     }
@@ -222,7 +250,7 @@ final class NudgeEngine {
         guard evaluation.isCrisis else { return false }
 
         log.notice("Crisis classifier flagged — emitting safety-route nudge and suppressing normal nudges for 24h")
-        recordSafetyPause(until: Date().addingTimeInterval(60 * 60 * 24))
+        recordSafetyPause(until: now().addingTimeInterval(60 * 60 * 24))
         recordSafetyFingerprint(fingerprint)
 
         let candidate = NudgeCandidate(
@@ -281,18 +309,18 @@ final class NudgeEngine {
     }
 
     private func hasEmittedSafetyForFingerprint(_ fp: String) -> Bool {
-        let raw = UserDefaults.standard.string(forKey: safetyFingerprintsKey) ?? ""
+        let raw = defaults.string(forKey: safetyFingerprintsKey) ?? ""
         return raw.split(separator: "|").contains(Substring(fp))
     }
 
     private func recordSafetyFingerprint(_ fp: String) {
-        var fps = (UserDefaults.standard.string(forKey: safetyFingerprintsKey) ?? "")
+        var fps = (defaults.string(forKey: safetyFingerprintsKey) ?? "")
             .split(separator: "|").map(String.init)
         fps.append(fp)
         // Cap the list to the last ~200 fingerprints so the key doesn't
         // grow without bound across months of use.
         if fps.count > 200 { fps = Array(fps.suffix(200)) }
-        UserDefaults.standard.set(fps.joined(separator: "|"), forKey: safetyFingerprintsKey)
+        defaults.set(fps.joined(separator: "|"), forKey: safetyFingerprintsKey)
     }
 
     // MARK: - Context collection
@@ -301,7 +329,7 @@ final class NudgeEngine {
     // from the injected managers.
 
     private func collectContext(trigger: EvaluationTrigger) -> NudgeEvalContext {
-        let now = Date()
+        let now = self.now()
         let streak = patternEngine?.currentStreak() ?? 0
 
         // Dimension scores. `BalanceManager.weeklyScores()` returns a composite
@@ -539,7 +567,7 @@ final class NudgeEngine {
 
     private func fetchNudgedCheckInIDs() -> Set<String> {
         let categoryRaw = NudgeCategory.postCheckInAction.rawValue
-        let since = Date().addingTimeInterval(-7 * 24 * 3600)
+        let since = now().addingTimeInterval(-7 * 24 * 3600)
         // Include pending + delivered + responded — any nudge row for
         // the post-check-in category consumes the record. Status
         // filtering would let a `pending` row (scheduling failure)
@@ -597,7 +625,6 @@ final class NudgeEngine {
     }
 
     private func readHourSetting(key: String, default fallback: Int) -> Int {
-        let defaults = UserDefaults.standard
         let raw = defaults.object(forKey: key) as? Int ?? fallback
         return max(0, min(23, raw))
     }
@@ -608,7 +635,7 @@ final class NudgeEngine {
     /// the enforcement silently inverted. Now the window itself scales with
     /// the configured minimum gap. (BUG-03)
     private func withinFrequencyCaps(frequency: NudgeFrequency) -> Bool {
-        let now = Date()
+        let now = self.now()
         let startOfDay = Calendar.current.startOfDay(for: now)
 
         // Daily cap.
@@ -666,7 +693,7 @@ final class NudgeEngine {
         let categoryRaw = rule.id.rawValue
         let deliveredRaw = NudgeStatus.delivered.rawValue
         let respondedRaw = NudgeStatus.responded.rawValue
-        let cutoff = Date().addingTimeInterval(-rule.cooldown)
+        let cutoff = now().addingTimeInterval(-rule.cooldown)
         // Only delivered/responded nudges consume a cooldown slot —
         // a `pending` nudge that never actually reached the user
         // (e.g. a scheduling failure) should not permanently block
@@ -684,7 +711,7 @@ final class NudgeEngine {
 
     private func isDimensionInCooldown(_ dimension: LifeDimension) -> Bool {
         let raw = dimension.rawValue
-        let cutoff = Date().addingTimeInterval(-Double(AppConstants.nudgeMaxPerDimensionHours) * 3600)
+        let cutoff = now().addingTimeInterval(-Double(AppConstants.nudgeMaxPerDimensionHours) * 3600)
         let descriptor = FetchDescriptor<Nudge>(
             predicate: #Predicate { nudge in
                 nudge.dimensionRaw == raw && nudge.createdAt >= cutoff
@@ -727,7 +754,7 @@ final class NudgeEngine {
         // this code path is unreachable anyway, but marking keeps caps
         // accurate if Phase 2 forgets to update status.
         nudge.status = .delivered
-        nudge.deliveredAt = Date()
+        nudge.deliveredAt = now()
         modelContext.safeSave()
     }
 
@@ -736,7 +763,7 @@ final class NudgeEngine {
     private var safetyPauseUntilKey: String { "coach.nudge.safetyPauseUntil" }
 
     private func recordSafetyPause(until: Date) {
-        UserDefaults.standard.set(until.timeIntervalSince1970, forKey: safetyPauseUntilKey)
+        defaults.set(until.timeIntervalSince1970, forKey: safetyPauseUntilKey)
     }
 
     /// True while an active safety pause is in effect (set when the crisis
@@ -744,7 +771,7 @@ final class NudgeEngine {
     /// `recordSafetyPause`; returns false once the pause has elapsed.
     /// Paired fix for BUG-02.
     private func isWithinSafetyPause(at date: Date) -> Bool {
-        let ts = UserDefaults.standard.double(forKey: safetyPauseUntilKey)
+        let ts = defaults.double(forKey: safetyPauseUntilKey)
         guard ts > 0 else { return false }
         return date.timeIntervalSince1970 < ts
     }
@@ -766,7 +793,7 @@ final class NudgeEngine {
                 return
             }
             nudge.userResponseRaw = response.rawValue
-            nudge.respondedAt = Date()
+            nudge.respondedAt = now()
             nudge.statusRaw = NudgeStatus.responded.rawValue
             modelContext.safeSave()
         } catch {
