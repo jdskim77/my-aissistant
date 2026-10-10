@@ -98,6 +98,9 @@ final class DataExportServiceTests: XCTestCase {
         XCTAssertEqual(restored.count, 1)
         XCTAssertEqual(restored.first?.id, "fixed-task-id")
         XCTAssertEqual(restored.first?.title, "Round trip me")
+        XCTAssertEqual(restored.first?.category, .health)
+        XCTAssertEqual(restored.first?.priority, .medium)
+        XCTAssertEqual(restored.first?.icon, "🏃")
         XCTAssertTrue(restored.first?.done ?? false)
     }
 
@@ -129,6 +132,51 @@ final class DataExportServiceTests: XCTestCase {
 
         let all = try context.fetch(FetchDescriptor<TaskItem>())
         XCTAssertEqual(all.count, 1, "re-importing a backup must not create duplicate rows")
+    }
+
+    func testImportJSONDedupMatchesOnIDNotJustExistence() throws {
+        // A broken "does ANY task already exist" dedup check would pass
+        // the test above too. Prove the match is keyed on id specifically:
+        // an unrelated existing task must not cause a different-id record
+        // to be (wrongly) skipped, and an existing task must not be
+        // overwritten by an import of a same-id record with different content.
+        let unrelated = TaskItem(
+            id: "unrelated-id",
+            title: "Pre-existing, unrelated",
+            category: .personal,
+            priority: .medium,
+            date: Date(),
+            icon: "📌"
+        )
+        context.insert(unrelated)
+
+        let sourceTask = TaskItem(
+            id: "fresh-id",
+            title: "Should still import",
+            category: .health,
+            priority: .high,
+            date: Date(),
+            icon: "🏃"
+        )
+        let sourceContainer = try TestModelContainer.create()
+        let sourceContext = sourceContainer.mainContext
+        sourceContext.insert(sourceTask)
+        let sourceService = DataExportService(modelContext: sourceContext)
+        let data = try sourceService.exportJSON()
+
+        let url = tempURL()
+        try data.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let result = try sut.importJSON(from: url)
+
+        XCTAssertEqual(result.tasksImported, 1, "a different-id record must import even when an unrelated task already exists")
+        XCTAssertEqual(result.skipped, 0)
+
+        let all = try context.fetch(FetchDescriptor<TaskItem>())
+        XCTAssertEqual(all.count, 2)
+        XCTAssertTrue(all.contains { $0.id == "unrelated-id" }, "pre-existing unrelated task must be untouched")
+        XCTAssertTrue(all.contains { $0.id == "fresh-id" }, "new record must have been imported")
     }
 
     func testImportJSONRejectsFileWithoutExportDate() throws {
@@ -180,6 +228,8 @@ final class DataExportServiceTests: XCTestCase {
         let restored = try freshContext.fetch(FetchDescriptor<CheckInRecord>())
         XCTAssertEqual(restored.count, 1)
         XCTAssertEqual(restored.first?.mood, 4)
+        XCTAssertEqual(restored.first?.energyLevel, 3)
+        XCTAssertTrue(restored.first?.completed ?? false)
         XCTAssertEqual(restored.first?.notes, "felt good")
     }
 }
