@@ -21,6 +21,7 @@ final class NudgeEngineTests: XCTestCase {
     private var container: ModelContainer!
     private var context: ModelContext!
     private var defaults: UserDefaults!
+    private var defaultsSuiteName: String!
     private var composer: NudgeComposer!
 
     override func setUp() async throws {
@@ -31,16 +32,17 @@ final class NudgeEngineTests: XCTestCase {
         // quiet hours, silenced categories, safety fingerprints/pause)
         // never leak state between tests or read stale state from the
         // shared `.standard` suite.
-        let suiteName = "NudgeEngineTests.\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)
+        defaultsSuiteName = "NudgeEngineTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: defaultsSuiteName)
     }
 
     override func tearDown() async throws {
-        defaults.removePersistentDomain(forName: defaults.suiteName ?? "")
+        defaults.removePersistentDomain(forName: defaultsSuiteName)
         UserDefaults.standard.removeObject(forKey: AppConstants.nudgePostLowMoodEnabledKey)
         container = nil
         context = nil
         defaults = nil
+        defaultsSuiteName = nil
         composer = nil
     }
 
