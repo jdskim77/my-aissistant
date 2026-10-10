@@ -67,6 +67,30 @@ final class TaskManagerTests: XCTestCase {
         XCTAssertNil(task.completedAt)
     }
 
+    func testToggleCompletionRecurringDoesNotDuplicateOnReToggle() throws {
+        // P1 bug: toggling a recurring task done -> undone -> done again
+        // (e.g. an accidental double-tap / undo) inserted a SECOND clone of
+        // the next occurrence, since the recurrence-generation block only
+        // keyed off `task.done` flipping true with no de-dup check.
+        let task = makeTask(title: "Daily Standup", date: Date())
+        task.recurrence = .daily
+        sut.addTask(task)
+
+        // First completion: generates exactly one next-occurrence clone.
+        sut.toggleCompletion(task)
+        XCTAssertTrue(task.done)
+        XCTAssertEqual(sut.allTasks().count, 2, "expected original + 1 clone after first completion")
+
+        // Undo, then redo the completion on the SAME task/date/recurrence.
+        sut.toggleCompletion(task) // -> undone
+        XCTAssertFalse(task.done)
+        sut.toggleCompletion(task) // -> done again
+        XCTAssertTrue(task.done)
+
+        let clones = sut.allTasks().filter { $0.title == "Daily Standup" && $0.id != task.id }
+        XCTAssertEqual(clones.count, 1, "re-toggling done should not insert a duplicate recurring clone")
+    }
+
     func testDeleteTask() throws {
         let task = makeTask()
         sut.addTask(task)

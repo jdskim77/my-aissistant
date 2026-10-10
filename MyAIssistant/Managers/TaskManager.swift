@@ -38,19 +38,40 @@ final class TaskManager {
         calendarSyncManager?.syncTaskCompletionToReminder(task)
 
         // Auto-generate next recurring instance when marking done
+        //
+        // Bug fix: toggling done -> false -> true again (e.g. undo/redo a
+        // checkbox tap) used to re-run this block and insert a SECOND clone
+        // for the identical next occurrence, since `task.date` /
+        // `recurrence` are unchanged by the back-and-forth. Guard against
+        // that by skipping generation if a clone for this exact next
+        // occurrence already exists (same title/category/date/recurrence).
         if task.done, task.recurrence != .none,
            let nextDate = task.recurrence.nextDate(after: task.date) {
-            let next = TaskItem(
-                title: task.title,
-                category: task.category,
-                priority: task.priority,
-                date: nextDate,
-                icon: task.icon,
-                notes: task.notes,
-                recurrence: task.recurrence
-            )
-            // D-06 fix: clone gets NO externalCalendarID — it's a new independent task
-            modelContext.insert(next)
+            let recurrenceRaw = task.recurrenceRaw
+            let categoryRaw = task.categoryRaw
+            let title = task.title
+            let alreadyExists = (try? modelContext.fetch(FetchDescriptor<TaskItem>(
+                predicate: #Predicate { candidate in
+                    candidate.title == title
+                        && candidate.categoryRaw == categoryRaw
+                        && candidate.date == nextDate
+                        && candidate.recurrenceRaw == recurrenceRaw
+                }
+            )).first) != nil
+
+            if !alreadyExists {
+                let next = TaskItem(
+                    title: task.title,
+                    category: task.category,
+                    priority: task.priority,
+                    date: nextDate,
+                    icon: task.icon,
+                    notes: task.notes,
+                    recurrence: task.recurrence
+                )
+                // D-06 fix: clone gets NO externalCalendarID — it's a new independent task
+                modelContext.insert(next)
+            }
         }
 
         modelContext.safeSave()
