@@ -138,4 +138,55 @@ final class HomeProgressCalcTests: XCTestCase {
             HomeProgressCalc.shouldShowTonightCard(hour: 8, nightCheckInDone: true)
         )
     }
+
+    // MARK: - completedSlotsToday (BUG-02 fix)
+
+    func test_completedSlotsToday_checkInRecordOnly_noBalanceManagerNight() {
+        let slots = HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: ["Morning", "Midday"],
+            nightCheckInDoneViaBalanceManager: false
+        )
+        XCTAssertEqual(slots, ["Morning", "Midday"])
+    }
+
+    func test_completedSlotsToday_balanceManagerNightOnly_unionsNightIn() {
+        // The evening/BalanceManager flow (DailyBalanceCheckIn) writes no
+        // CheckInRecord at all — this is the exact BUG-02 repro: Night
+        // must still show as completed.
+        let slots = HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: ["Morning"],
+            nightCheckInDoneViaBalanceManager: true
+        )
+        XCTAssertEqual(slots, ["Morning", "Night"])
+    }
+
+    func test_completedSlotsToday_overlapBothStoresHaveNight_noDoubleCount() {
+        // Both a CheckInRecord(.night) AND a DailyBalanceCheckIn exist for
+        // today (e.g. user did the conventional Night check-in too) —
+        // the union must still be a single "Night" entry, not counted
+        // twice.
+        let slots = HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: ["Morning", "Night"],
+            nightCheckInDoneViaBalanceManager: true
+        )
+        XCTAssertEqual(slots, ["Morning", "Night"])
+        XCTAssertEqual(slots.count, 2)
+    }
+
+    func test_completedSlotsToday_neitherStoreHasNight_nightAbsent() {
+        let slots = HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: ["Morning", "Midday", "Afternoon"],
+            nightCheckInDoneViaBalanceManager: false
+        )
+        XCTAssertFalse(slots.contains("Night"))
+        XCTAssertEqual(slots.count, 3)
+    }
+
+    func test_completedSlotsToday_emptyBoth_empty() {
+        let slots = HomeProgressCalc.completedSlotsToday(
+            checkInRecordSlots: [],
+            nightCheckInDoneViaBalanceManager: false
+        )
+        XCTAssertTrue(slots.isEmpty)
+    }
 }

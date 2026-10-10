@@ -41,6 +41,31 @@ final class HomeViewTonightCardSourceGuardTests: XCTestCase {
         )
     }
 
+    func testTonightCardAgreesWithUnifiedNightCompletion() throws {
+        // Codex audit fix: Tonight-card visibility must read Night
+        // completion through the same unified `isSlotCompletedToday`
+        // read model as the day strip/count/CTA, not the raw
+        // BalanceManager flag in isolation — otherwise a Night slot
+        // completed via the conventional CheckInRecord flow (no
+        // DailyBalanceCheckIn) left Tonight stuck prompting for an
+        // already-done check-in.
+        let source = try locateSourceFile()
+        guard let range = source.range(of: "private var shouldShowTonightCard: Bool {") else {
+            XCTFail("Expected a shouldShowTonightCard computed property in HomeView.swift")
+            return
+        }
+        let tail = source[range.lowerBound...]
+        guard let closeRange = tail.range(of: "\n    }") else {
+            XCTFail("Could not find end of shouldShowTonightCard body")
+            return
+        }
+        let body = tail[tail.startIndex..<closeRange.lowerBound]
+        XCTAssertTrue(
+            body.contains("nightCheckInDone: isSlotCompletedToday(.night)"),
+            "shouldShowTonightCard must pass isSlotCompletedToday(.night) (the unified read model), not a raw BalanceManager-only check"
+        )
+    }
+
     func testRemainingHabitsShownInsideTonightCard() throws {
         let source = try locateSourceFile()
         guard let cardRange = source.range(of: "private var tonightActionContent: some View") else {
