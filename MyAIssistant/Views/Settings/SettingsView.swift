@@ -758,6 +758,14 @@ struct SettingsView: View {
         _ = try wipe(UsageTracker.self)
         _ = try wipe(UserDimensionPreference.self)
         _ = try wipe(UserProfile.self)
+        // Codex/round-2 fix: these four @Model types were added to
+        // SchemaV1 after this function was written and never backfilled
+        // here — account deletion was leaving check-in scheduling
+        // preferences/behavior history and nudge records on-device.
+        _ = try wipe(CheckInPreference.self)
+        _ = try wipe(CheckInBehavior.self)
+        _ = try wipe(CheckInSuggestion.self)
+        _ = try wipe(Nudge.self)
         try modelContext.save()
 
         let keysToReset = [
@@ -844,6 +852,13 @@ struct SettingsView: View {
             deletedCount += try wipe(UsageTracker.self)
             deletedCount += try wipe(UserDimensionPreference.self)
             deletedCount += try wipe(UserProfile.self)
+            // Codex/round-2 fix: same gap as wipeAllLocalData() — these four
+            // @Model types were added to SchemaV1 after this function was
+            // written and never backfilled here.
+            deletedCount += try wipe(CheckInPreference.self)
+            deletedCount += try wipe(CheckInBehavior.self)
+            deletedCount += try wipe(CheckInSuggestion.self)
+            deletedCount += try wipe(Nudge.self)
 
             try modelContext.save()
 
