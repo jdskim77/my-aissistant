@@ -70,10 +70,22 @@ final class WipeAllDataCoversSchemaSourceGuardTests: XCTestCase {
             return []
         }
         let body = String(tail[tail.startIndex..<endRange.lowerBound])
+        // Strip `//` line comments first — a regex scan over raw source
+        // would otherwise treat a commented-out `wipe(Foo.self)` call as
+        // live coverage and pass even though the line no longer executes.
+        let activeLines = body
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line -> Substring in
+                if let commentIndex = line.range(of: "//")?.lowerBound {
+                    return line[line.startIndex..<commentIndex]
+                }
+                return line
+            }
+            .joined(separator: "\n")
         let pattern = #"wipe\(([A-Za-z0-9_]+)\.self\)"#
         let regex = try NSRegularExpression(pattern: pattern)
-        let nsBody = body as NSString
-        let matches = regex.matches(in: body, range: NSRange(location: 0, length: nsBody.length))
+        let nsBody = activeLines as NSString
+        let matches = regex.matches(in: activeLines, range: NSRange(location: 0, length: nsBody.length))
         return matches.map { nsBody.substring(with: $0.range(at: 1)) }
     }
 
