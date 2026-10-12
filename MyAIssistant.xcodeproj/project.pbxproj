@@ -186,7 +186,9 @@
 				4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */; };
 				7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */; };
 		29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */; };
-		F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */; };
+				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */; };
+				3DA3E0AE53CF44FF96322078 /* ChatManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE14EAC142843BA94368939 /* ChatManagerTests.swift */; };
+				8A29E6608FD34870AD12A317 /* WipeAllDataCoversSchemaSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95AA079EE91495B9DD23EE2 /* WipeAllDataCoversSchemaSourceGuardTests.swift */; };
 		A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */; };
 		A95B541D257444769356150C /* StartFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E04DADCBCF07415D79326E /* StartFocusIntent.swift */; };
 		AA00000001000000 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA00000001000000 /* Assets.xcassets */; };
@@ -516,7 +518,9 @@
 				56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeEngineTests.swift; sourceTree = "<group>"; };
 				7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManagerTests.swift; sourceTree = "<group>"; };
 		62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrivnBackendServiceAuthTests.swift; sourceTree = "<group>"; };
-		2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerErrorUXTests.swift; sourceTree = "<group>"; };
+				2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerErrorUXTests.swift; sourceTree = "<group>"; };
+				4EE14EAC142843BA94368939 /* ChatManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerTests.swift; sourceTree = "<group>"; };
+				B95AA079EE91495B9DD23EE2 /* WipeAllDataCoversSchemaSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WipeAllDataCoversSchemaSourceGuardTests.swift; sourceTree = "<group>"; };
 		4316DE2DA82859C3E181EFDD /* EveningCheckInViewGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EveningCheckInViewGuardTests.swift; sourceTree = "<group>"; };
 		BA00000001000000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA0000000B000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -1148,9 +1152,10 @@
 								AAEF637E5D2249F2ACF473AD /* ChatViewSourceGuardTests.swift */,
 								FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */,
 								04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */,
-								D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */,
-							);
-							path = SourceGuards;
+																D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */,
+																B95AA079EE91495B9DD23EE2 /* WipeAllDataCoversSchemaSourceGuardTests.swift */,
+															);
+															path = SourceGuards;
 			sourceTree = "<group>";
 		};
 		D900000002000000 /* Managers */ = {
@@ -1159,8 +1164,9 @@
 				B900000004000000 /* TaskManagerTests.swift */,
 				B900000005000000 /* PatternEngineTests.swift */,
 				B900000006000000 /* UsageGateManagerTests.swift */,
-				2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
-				1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */,
+								2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */,
+								4EE14EAC142843BA94368939 /* ChatManagerTests.swift */,
+								1F1A45CF509347C7831441D3 /* HabitNameDuplicateCheckTests.swift */,
 				D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */,
 								4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */,
 								56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */,
@@ -1783,6 +1789,8 @@
 				29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
 				9E041B8BA14C4DA5889F3947 /* KeywordCrisisClassifierTests.swift in Sources */,
 				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
+				3DA3E0AE53CF44FF96322078 /* ChatManagerTests.swift in Sources */,
+				8A29E6608FD34870AD12A317 /* WipeAllDataCoversSchemaSourceGuardTests.swift in Sources */,
 				A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
 								B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
 								4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */,
