@@ -75,4 +75,24 @@ enum HomeProgressCalc {
     ) -> Bool {
         hour >= 18 && !nightCheckInDone
     }
+
+    /// BUG-02 fix: today's completed check-in slots as a single
+    /// deduplicated read model. The Night slot can be satisfied by EITHER
+    /// store — a `CheckInRecord` from the conventional check-in flow, OR
+    /// a `DailyBalanceCheckIn` from the evening/BalanceManager flow (the
+    /// Tonight-card path writes only the latter, never the former). Every
+    /// Home-visible value that counts "completed slots today" (day strip,
+    /// `todayCheckInCount`, the CTA, Tonight-card visibility) must read
+    /// through this one function so they can't disagree with each other.
+    /// Pure/no SwiftData — callers pass in already-filtered-to-today data.
+    static func completedSlotsToday(
+        checkInRecordSlots: Set<String>,
+        nightCheckInDoneViaBalanceManager: Bool
+    ) -> Set<String> {
+        var slots = checkInRecordSlots
+        if nightCheckInDoneViaBalanceManager {
+            slots.insert(CheckInTime.night.rawValue)
+        }
+        return slots
+    }
 }
