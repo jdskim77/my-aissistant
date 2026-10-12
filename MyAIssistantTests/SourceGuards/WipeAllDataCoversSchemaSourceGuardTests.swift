@@ -34,7 +34,13 @@ final class WipeAllDataCoversSchemaSourceGuardTests: XCTestCase {
 
     /// Pull every `Foo.self,` entry out of `SchemaV1.models`'s array literal.
     private func schemaV1ModelNames(from source: String) throws -> [String] {
-        guard let startRange = source.range(of: "enum SchemaV1: VersionedSchema {"),
+        // Anchor on the full `models` property signature, not just the enum
+        // opener — `enum SchemaV1: VersionedSchema {` is immediately followed
+        // by `static var models: [any PersistentModel.Type] {`, and a naive
+        // search for the next "[" from the enum opener matches the return
+        // type's brackets instead of the array literal, yielding zero models
+        // and a false-negative "both wipe functions are compliant" result.
+        guard let startRange = source.range(of: "static var models: [any PersistentModel.Type] {"),
               let arrayStart = source.range(of: "[", range: startRange.upperBound..<source.endIndex),
               let arrayEnd = source.range(of: "]", range: arrayStart.upperBound..<source.endIndex) else {
             XCTFail("Could not locate SchemaV1.models array literal")
