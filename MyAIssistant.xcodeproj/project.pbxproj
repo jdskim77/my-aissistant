@@ -182,6 +182,7 @@
 		A900000007000000 /* AIProviderFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000007000000 /* AIProviderFactoryTests.swift */; };
 		A900000008000000 /* AIPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000008000000 /* AIPromptBuilderTests.swift */; };
 				A900000009000000 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000009000000 /* DataExportServiceTests.swift */; };
+		9E041B8BA14C4DA5889F3947 /* KeywordCrisisClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9997C6DC34814A548ECB22B5 /* KeywordCrisisClassifierTests.swift */; };
 				4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */; };
 				7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */; };
 		29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */; };
@@ -511,6 +512,7 @@
 		B900000007000000 /* AIProviderFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactoryTests.swift; sourceTree = "<group>"; };
 		B900000008000000 /* AIPromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPromptBuilderTests.swift; sourceTree = "<group>"; };
 				B900000009000000 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportServiceTests.swift; sourceTree = "<group>"; };
+		9997C6DC34814A548ECB22B5 /* KeywordCrisisClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordCrisisClassifierTests.swift; sourceTree = "<group>"; };
 				56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeEngineTests.swift; sourceTree = "<group>"; };
 				7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManagerTests.swift; sourceTree = "<group>"; };
 		62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrivnBackendServiceAuthTests.swift; sourceTree = "<group>"; };
@@ -1174,6 +1176,7 @@
 				B900000008000000 /* AIPromptBuilderTests.swift */,
 				B900000009000000 /* DataExportServiceTests.swift */,
 				62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */,
+				9997C6DC34814A548ECB22B5 /* KeywordCrisisClassifierTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1778,6 +1781,7 @@
 				A900000008000000 /* AIPromptBuilderTests.swift in Sources */,
 			A900000009000000 /* DataExportServiceTests.swift in Sources */,
 				29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */,
+				9E041B8BA14C4DA5889F3947 /* KeywordCrisisClassifierTests.swift in Sources */,
 				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */,
 				A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
 								B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
