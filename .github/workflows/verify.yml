@@ -1,17 +1,34 @@
 name: Verify
 
+# Cost guard (Oct 2026): this job runs on a GitHub-hosted macOS runner, which
+# bills at ~10x Linux. On 2026-10-10 it ran 44 times in one day (~$23 gross).
+# - PRs only (the PR run already gated the code; no duplicate run on push to main)
+# - docs/design-only changes skip it
+# - a newer push to the same PR cancels the older run
+# - hard 20-minute cap per run
+# Manual run: Actions -> Verify -> Run workflow.
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'Legal/**'
+      - '*.svg'
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    # Skip draft PRs: mark the PR "Ready for review" when you want the check.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -44,3 +61,4 @@ jobs:
         with:
           name: log
           path: build.log
+          retention-days: 3
