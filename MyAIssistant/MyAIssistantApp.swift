@@ -200,11 +200,14 @@ struct MyAIssistantApp: App {
                     checkInBehaviorEngine.seedDefaultPreferencesIfNeeded()
                     checkInBehaviorEngine.recalculateIfNeeded()
 
-                    // Schedule adaptive check-in reminders based on streak. Not
-                    // "alreadyCheckedInToday" here — this runs on app launch
-                    // before we know today's check-in state at this call site.
+                    // Schedule adaptive check-in reminders based on streak.
+                    // Derive alreadyCheckedInToday from today's actual records
+                    // so a relaunch after checking in doesn't rearm the 8pm
+                    // streak-at-risk reminder for a day that's already done.
                     let streak = patternEngine.currentStreak()
-                    notificationManager.scheduleAdaptiveCheckInReminders(currentStreak: streak)
+                    let checkInManagerForLaunch = CheckInManager(modelContext: modelContainer.mainContext)
+                    let completedToday = checkInManagerForLaunch.todayCheckIns().contains { $0.completed }
+                    notificationManager.scheduleAdaptiveCheckInReminders(currentStreak: streak, alreadyCheckedInToday: completedToday)
 
                     // Wire notification manager into habit manager for auto-rescheduling
                     habitManager.notificationManager = notificationManager
