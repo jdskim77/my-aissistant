@@ -182,7 +182,12 @@ final class NotificationManager {
 
     /// Schedules check-in reminders based on the user's current streak.
     /// Higher streaks mean fewer reminders (the habit is forming).
-    func scheduleAdaptiveCheckInReminders(currentStreak: Int) {
+    ///
+    /// `alreadyCheckedInToday` is forwarded to `scheduleStreakAtRiskReminder`
+    /// so a day that's already fully checked in doesn't get an 8pm nag
+    /// (see that method's doc comment for the bug this fixes). Defaults to
+    /// `false` to preserve existing call-site behavior.
+    func scheduleAdaptiveCheckInReminders(currentStreak: Int, alreadyCheckedInToday: Bool = false) {
         let frequency = NotificationFrequency.forStreak(currentStreak)
 
         // Persist the frequency tier
@@ -229,21 +234,32 @@ final class NotificationManager {
         }
 
         // Always schedule streak-at-risk for streaks > 0
-        scheduleStreakAtRiskReminder(currentStreak: currentStreak)
+        scheduleStreakAtRiskReminder(currentStreak: currentStreak, alreadyCheckedInToday: alreadyCheckedInToday)
     }
 
     // MARK: - Streak-at-Risk Notifications
 
-    /// Schedules an evening reminder (8 PM) if the user has an active streak.
-    /// Message varies by streak length to increase urgency proportionally.
-    func scheduleStreakAtRiskReminder(currentStreak: Int) {
+    /// Schedules an evening reminder (8 PM, non-repeating next-occurrence)
+    /// if the user has an active streak and hasn't already checked in
+    /// today. Message varies by streak length to increase urgency
+    /// proportionally.
+    ///
+    /// `alreadyCheckedInToday` fixes the bug where a `repeats: true`
+    /// calendar trigger kept firing at 8pm even on days the user had
+    /// already checked in: cancelling the pending request only cleared
+    /// it until the next `scheduleAdaptiveCheckInReminders` call re-armed
+    /// an identical repeating trigger. Scheduling non-repeating and
+    /// skipping straight to tomorrow when today is already done closes
+    /// that gap. Defaults to `false` so existing call sites that don't
+    /// yet know today's check-in status keep today's behavior.
+    func scheduleStreakAtRiskReminder(currentStreak: Int, alreadyCheckedInToday: Bool = false) {
         let center = UNUserNotificationCenter.current()
         let identifier = AppConstants.streakReminderIdentifier
 
         // Remove any existing streak reminder
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
-        guard currentStreak > 0 else { return }
+        guard currentStreak > 0, !alreadyCheckedInToday else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Streak Reminder"
@@ -259,11 +275,15 @@ final class NotificationManager {
             content.body = "You've built something incredible — \(currentStreak) days strong. Don't let it slip tonight."
         }
 
-        var dateComponents = DateComponents()
-        dateComponents.hour = AppConstants.streakReminderHour
-        dateComponents.minute = 0
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let fireDate = QuickCheckInLogic.nextStreakReminderFireDate(
+            now: Date(),
+            alreadyCheckedInToday: alreadyCheckedInToday,
+            hour: AppConstants.streakReminderHour
+        )
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second], from: fireDate
+        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(
             identifier: identifier,
             content: content,
@@ -357,9 +377,18 @@ final class NotificationManager {
             options: []
         )
 
+        // 10-second quick mood check-in (Feature 1). Deliberately NOT
+        // .foreground — tapping one of these must complete the check-in
+        // in the background without opening the app. Identifiers/titles
+        // come from QuickCheckInLogic so the action list and the response
+        // handler can never drift out of sync.
+        let moodActions = QuickCheckInLogic.moodActionSpecs.map { spec in
+            UNNotificationAction(identifier: spec.identifier, title: spec.title, options: [])
+        }
+
         let checkInCategory = UNNotificationCategory(
             identifier: "CHECKIN",
-            actions: [completeAction, dismissAction],
+            actions: [completeAction] + moodActions + [dismissAction],
             intentIdentifiers: []
         )
 
@@ -397,7 +426,7 @@ final class NotificationManager {
         )
         let streakCategory = UNNotificationCategory(
             identifier: "STREAK_REMINDER",
-            actions: [streakCheckInAction, dismissAction],
+            actions: [streakCheckInAction] + moodActions + [dismissAction],
             intentIdentifiers: []
         )
 

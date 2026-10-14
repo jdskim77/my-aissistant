@@ -200,7 +200,9 @@ struct MyAIssistantApp: App {
                     checkInBehaviorEngine.seedDefaultPreferencesIfNeeded()
                     checkInBehaviorEngine.recalculateIfNeeded()
 
-                    // Schedule adaptive check-in reminders based on streak
+                    // Schedule adaptive check-in reminders based on streak. Not
+                    // "alreadyCheckedInToday" here — this runs on app launch
+                    // before we know today's check-in state at this call site.
                     let streak = patternEngine.currentStreak()
                     notificationManager.scheduleAdaptiveCheckInReminders(currentStreak: streak)
 
@@ -354,6 +356,24 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         let category = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
         let action = response.actionIdentifier
+
+        // Quick mood check-in (Feature 1): these actions are non-foreground,
+        // so handle-and-complete here without ever posting a destination /
+        // opening the app. Must run before the destination switch below,
+        // which otherwise treats CHECKIN/STREAK_REMINDER responses as "open
+        // home" taps.
+        if (category == "CHECKIN" || category == "STREAK_REMINDER"),
+           QuickCheckInLogic.moodActionIdentifiers.contains(action) {
+            let explicitSlotRaw = userInfo["timeSlot"] as? String
+            Task { @MainActor in
+                QuickCheckInHandler.handle(
+                    actionIdentifier: action,
+                    explicitSlotRaw: explicitSlotRaw,
+                    completion: completionHandler
+                )
+            }
+            return
+        }
 
         // Determine which screen to open
         let destination: String

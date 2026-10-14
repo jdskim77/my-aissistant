@@ -26,13 +26,17 @@ final class CheckInManager {
         mood: Int,
         energyLevel: Int?,
         notes: String?,
-        aiSummary: String?
+        aiSummary: String?,
+        isQuickCheckIn: Bool = false
     ) {
         record.completed = true
         record.mood = mood
         record.energyLevel = energyLevel
         record.notes = notes
         record.aiSummary = aiSummary
+        if isQuickCheckIn {
+            record.isQuickCheckIn = true
+        }
         modelContext.safeSave()
     }
 

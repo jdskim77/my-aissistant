@@ -138,7 +138,9 @@
 		A400000001000000 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000001000000 /* NotificationManager.swift */; };
 		A400000002000000 /* CheckInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000002000000 /* CheckInManager.swift */; };
 		A400000003000000 /* MoodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000003000000 /* MoodPicker.swift */; };
-		A400000004000000 /* CheckInDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000004000000 /* CheckInDetailView.swift */; };
+				A400000004000000 /* CheckInDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000004000000 /* CheckInDetailView.swift */; };
+				A400000005000001 /* QuickCheckInLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000001 /* QuickCheckInLogic.swift */; };
+				A400000005000002 /* QuickCheckInHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000002 /* QuickCheckInHandler.swift */; };
 		A400000005000000 /* CheckInHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000005000000 /* CheckInHistoryView.swift */; };
 		A400000006000000 /* OnboardingContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000006000000 /* OnboardingContainerView.swift */; };
 		A400000007000000 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B400000007000000 /* WelcomeView.swift */; };
@@ -184,7 +186,9 @@
 				A900000009000000 /* DataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B900000009000000 /* DataExportServiceTests.swift */; };
 		9E041B8BA14C4DA5889F3947 /* KeywordCrisisClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9997C6DC34814A548ECB22B5 /* KeywordCrisisClassifierTests.swift */; };
 				4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */; };
-				7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */; };
+								7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */; };
+						8D0000005000001A /* QuickCheckInLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0000005000001B /* QuickCheckInLogicTests.swift */; };
+						8D0000005000002A /* QuickCheckInNotificationSourceGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0000005000002B /* QuickCheckInNotificationSourceGuardTests.swift */; };
 		29BDD0824209C786C9D2039F /* ThrivnBackendServiceAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */; };
 				F5BFF11912597B76E5DE051A /* ChatManagerErrorUXTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */; };
 				3DA3E0AE53CF44FF96322078 /* ChatManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE14EAC142843BA94368939 /* ChatManagerTests.swift */; };
@@ -470,7 +474,9 @@
 		B3A200P2000000000001 /* GoalTaskSuggester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTaskSuggester.swift; sourceTree = "<group>"; };
 		B3A200P2000000000002 /* GoalSuggestionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSuggestionsSheet.swift; sourceTree = "<group>"; };
 		B400000001000000 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		B400000002000000 /* CheckInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
+				B400000002000000 /* CheckInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInManager.swift; sourceTree = "<group>"; };
+				B400000005000001 /* QuickCheckInLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCheckInLogic.swift; sourceTree = "<group>"; };
+				B400000005000002 /* QuickCheckInHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCheckInHandler.swift; sourceTree = "<group>"; };
 		B400000003000000 /* MoodPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPicker.swift; sourceTree = "<group>"; };
 		B400000004000000 /* CheckInDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInDetailView.swift; sourceTree = "<group>"; };
 		B400000005000000 /* CheckInHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInHistoryView.swift; sourceTree = "<group>"; };
@@ -516,7 +522,9 @@
 				B900000009000000 /* DataExportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportServiceTests.swift; sourceTree = "<group>"; };
 		9997C6DC34814A548ECB22B5 /* KeywordCrisisClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordCrisisClassifierTests.swift; sourceTree = "<group>"; };
 				56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeEngineTests.swift; sourceTree = "<group>"; };
-				7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManagerTests.swift; sourceTree = "<group>"; };
+								7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManagerTests.swift; sourceTree = "<group>"; };
+						8D0000005000001B /* QuickCheckInLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCheckInLogicTests.swift; sourceTree = "<group>"; };
+						8D0000005000002B /* QuickCheckInNotificationSourceGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCheckInNotificationSourceGuardTests.swift; sourceTree = "<group>"; };
 		62AB70B38D9BC96FEDA00F04 /* ThrivnBackendServiceAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrivnBackendServiceAuthTests.swift; sourceTree = "<group>"; };
 				2A4FEBCFECED7744AEAD1333 /* ChatManagerErrorUXTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerErrorUXTests.swift; sourceTree = "<group>"; };
 				4EE14EAC142843BA94368939 /* ChatManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManagerTests.swift; sourceTree = "<group>"; };
@@ -1005,7 +1013,9 @@
 				B200000009000000 /* TaskManager.swift */,
 				B200000010000000 /* PatternEngine.swift */,
 				B400000001000000 /* NotificationManager.swift */,
-				B400000002000000 /* CheckInManager.swift */,
+								B400000002000000 /* CheckInManager.swift */,
+								B400000005000001 /* QuickCheckInLogic.swift */,
+								B400000005000002 /* QuickCheckInHandler.swift */,
 				B500000004000000 /* CalendarSyncManager.swift */,
 				B600000003000000 /* UsageGateManager.swift */,
 				B800000001000000 /* BackgroundTaskManager.swift */,
@@ -1153,7 +1163,8 @@
 								FEF535B31B1F79842BCC7963 /* HomeViewTonightCardSourceGuardTests.swift */,
 								04BE2F7ACCE3633B33BC0CBA /* EveningCheckInHandoffSourceGuardTests.swift */,
 																D1A1B2C3E4F5678901234502 /* HomeViewTodayHeroSourceGuardTests.swift */,
-																B95AA079EE91495B9DD23EE2 /* WipeAllDataCoversSchemaSourceGuardTests.swift */,
+																															B95AA079EE91495B9DD23EE2 /* WipeAllDataCoversSchemaSourceGuardTests.swift */,
+																			8D0000005000002B /* QuickCheckInNotificationSourceGuardTests.swift */,
 															);
 															path = SourceGuards;
 			sourceTree = "<group>";
@@ -1170,7 +1181,8 @@
 				D4B46CBFC2B244C792AF88A5 /* HomeProgressCalcTests.swift */,
 								4B9AB4A4599A4C67A69ADB00 /* MessageGroupingTests.swift */,
 								56487F52708C1F5AB3A37F5B /* NudgeEngineTests.swift */,
-				7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */,
+								7C3A9E21B4D05F6A8E1C2D3F /* WatchSyncManagerTests.swift */,
+								8D0000005000001B /* QuickCheckInLogicTests.swift */,
 							);
 							path = Managers;
 							sourceTree = "<group>";
@@ -1620,7 +1632,9 @@
 				A200000013000000 /* PreviewHelpers.swift in Sources */,
 				A200000014000000 /* Haptics.swift in Sources */,
 				A400000001000000 /* NotificationManager.swift in Sources */,
-				A400000002000000 /* CheckInManager.swift in Sources */,
+								A400000002000000 /* CheckInManager.swift in Sources */,
+								A400000005000001 /* QuickCheckInLogic.swift in Sources */,
+								A400000005000002 /* QuickCheckInHandler.swift in Sources */,
 				A400000003000000 /* MoodPicker.swift in Sources */,
 				A400000004000000 /* CheckInDetailView.swift in Sources */,
 				A400000005000000 /* CheckInHistoryView.swift in Sources */,
@@ -1794,7 +1808,9 @@
 				A36CCDE87481461232322279 /* EveningCheckInViewGuardTests.swift in Sources */,
 								B1472F8369E6D495F83E015E /* WatchScheduleDataTests.swift in Sources */,
 								4FBB6B88613196CE688ED1C8 /* NudgeEngineTests.swift in Sources */,
-				7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */,
+								7C3A9E21B4D05F6A8E1C2D40 /* WatchSyncManagerTests.swift in Sources */,
+								8D0000005000001A /* QuickCheckInLogicTests.swift in Sources */,
+								8D0000005000002A /* QuickCheckInNotificationSourceGuardTests.swift in Sources */,
 							);
 							runOnlyForDeploymentPostprocessing = 0;
 						};
