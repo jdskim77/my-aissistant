@@ -11,6 +11,11 @@ final class CheckInRecord {
     var energyLevel: Int?
     var notes: String?
     var aiSummary: String?
+    /// True when this record was completed via a notification mood action
+    /// (Feature 1: 10-second quick check-in) rather than the full in-app
+    /// flow. Additive property with a default, so it's a lightweight
+    /// SwiftData migration — no SchemaV2 needed (see SchemaVersioning.swift).
+    var isQuickCheckIn: Bool = false
 
     @Transient
     var timeSlot: CheckInTime {
@@ -26,7 +31,8 @@ final class CheckInRecord {
         mood: Int? = nil,
         energyLevel: Int? = nil,
         notes: String? = nil,
-        aiSummary: String? = nil
+        aiSummary: String? = nil,
+        isQuickCheckIn: Bool = false
     ) {
         self.id = id
         self.timeSlotRaw = timeSlot.rawValue
@@ -36,5 +42,6 @@ final class CheckInRecord {
         self.energyLevel = energyLevel
         self.notes = notes
         self.aiSummary = aiSummary
+        self.isQuickCheckIn = isQuickCheckIn
     }
 }
