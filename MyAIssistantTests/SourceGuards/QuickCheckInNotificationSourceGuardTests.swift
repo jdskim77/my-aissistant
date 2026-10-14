@@ -27,12 +27,15 @@ final class QuickCheckInNotificationSourceGuardTests: XCTestCase {
 
     func testCheckInCategoryIncludesAllMoodActionIdentifiers() throws {
         let source = try locateSourceFile(["Managers", "NotificationManager.swift"])
-        for identifier in QuickCheckInLogic.moodActionIdentifiers {
-            XCTAssertTrue(
-                source.contains(identifier),
-                "NotificationManager.swift should reference mood action identifier \(identifier)"
-            )
-        }
+        // NotificationManager builds mood actions from QuickCheckInLogic's
+        // specs rather than typing out "MOOD_1".."MOOD_5" as literals, so
+        // the identifiers themselves don't appear as source text here —
+        // assert the shared source-of-truth is referenced instead, which is
+        // what actually keeps the category and the response handler in sync.
+        XCTAssertTrue(
+            source.contains("QuickCheckInLogic.moodActionSpecs"),
+            "NotificationManager.swift should build mood actions from QuickCheckInLogic.moodActionSpecs"
+        )
         XCTAssertTrue(source.contains("\"CHECKIN\""))
         XCTAssertTrue(source.contains("\"STREAK_REMINDER\""))
     }

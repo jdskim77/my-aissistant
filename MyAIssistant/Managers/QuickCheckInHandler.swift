@@ -121,7 +121,7 @@ enum QuickCheckInHandler {
             return
         }
 
-        checkInManager.completeCheckIn(
+        let saved = checkInManager.completeCheckIn(
             record,
             mood: moodValue,
             energyLevel: nil,
@@ -129,6 +129,13 @@ enum QuickCheckInHandler {
             aiSummary: nil,
             isQuickCheckIn: true
         )
+        guard saved else {
+            // Save failed (e.g. disk/store issue) — don't claim success,
+            // don't cancel the streak reminder, don't fire the reward
+            // notification. The user can still complete it in-app later.
+            completion()
+            return
+        }
 
         // Mirror CheckInDetailView.finalizeCheckIn()'s side effects exactly.
         let checkInBehaviorEngine = CheckInBehaviorEngine(modelContext: context)

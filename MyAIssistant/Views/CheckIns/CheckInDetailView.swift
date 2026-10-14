@@ -818,13 +818,24 @@ struct CheckInDetailView: View {
 
     private func finalizeCheckIn() {
         guard let record else { return }
-        checkInManager?.completeCheckIn(
+        // Guard against a race with the notification-driven quick check-in
+        // (Feature 1): if this slot was already completed in the background
+        // (e.g. the App Group store container that QuickCheckInHandler uses)
+        // while this in-app form was still open, don't silently overwrite
+        // that mood/isQuickCheckIn with the stale in-form selection. Reuse
+        // the existing "auto-advance" notice banner rather than adding new UI.
+        if record.completed {
+            didAutoAdvanceSlot = true
+            return
+        }
+        let saved = checkInManager?.completeCheckIn(
             record,
             mood: selectedMood ?? 3,
             energyLevel: selectedEnergy,
             notes: notes.isEmpty ? nil : notes,
             aiSummary: aiGreeting
-        )
+        ) ?? false
+        guard saved else { return }
         usageGateManager?.recordCheckIn()
 
         // Feed the adaptive behavior engine so it can learn the user's actual
@@ -832,11 +843,12 @@ struct CheckInDetailView: View {
         checkInBehaviorEngine?.recordCompletion(window: timeSlot)
 
         // Cancel today's streak-at-risk reminder and re-schedule adaptive reminders
-        // for tomorrow based on the updated streak value. alreadyCheckedInToday:
-        // true because this just completed one — the 8pm nag should skip today.
+        // for tomorrow based on the updated streak value. alreadyCheckedInToday is
+        // `!isYesterday`: this view also supports backfilling yesterday's slot, and
+        // doing only that must NOT suppress today's still-pending reminder.
         let updatedStreak = patternEngine?.currentStreak() ?? 0
         notificationManager?.cancelStreakReminder()
-        notificationManager?.scheduleAdaptiveCheckInReminders(currentStreak: updatedStreak, alreadyCheckedInToday: true)
+        notificationManager?.scheduleAdaptiveCheckInReminders(currentStreak: updatedStreak, alreadyCheckedInToday: !isYesterday)
     }
 
     private func energyLabel(_ level: Int) -> String {

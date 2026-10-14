@@ -259,7 +259,7 @@ final class NotificationManager {
         // Remove any existing streak reminder
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
-        guard currentStreak > 0, !alreadyCheckedInToday else { return }
+        guard currentStreak > 0 else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "Streak Reminder"
@@ -388,7 +388,14 @@ final class NotificationManager {
 
         let checkInCategory = UNNotificationCategory(
             identifier: "CHECKIN",
-            actions: [completeAction] + moodActions + [dismissAction],
+            // Moods first: this is the primary 10-second quick-log path;
+            // "Start Check-in" (foreground, full flow) and "Dismiss" trail
+            // behind. iOS 15+ (deployment target 17.0) presents long-pressed
+            // actions in a scrollable list, not just the first 2/4 — only
+            // the compact banner swipe is limited to ~2, where moods being
+            // first means the most common ones win, with the standard flow
+            // still one long-press away.
+            actions: moodActions + [completeAction, dismissAction],
             intentIdentifiers: []
         )
 
@@ -426,7 +433,7 @@ final class NotificationManager {
         )
         let streakCategory = UNNotificationCategory(
             identifier: "STREAK_REMINDER",
-            actions: [streakCheckInAction] + moodActions + [dismissAction],
+            actions: moodActions + [streakCheckInAction, dismissAction],
             intentIdentifiers: []
         )
 
