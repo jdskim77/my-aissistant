@@ -14,6 +14,18 @@ actor GoogleCalendarService {
     private let authURL = "https://accounts.google.com/o/oauth2/v2/auth"
     private let tokenURL = "https://oauth2.googleapis.com/token"
 
+    /// Coalesces concurrent token-refresh calls into a single network
+    /// request. Fix for [P1] "Google Calendar token refresh is not
+    /// coalesced (actor re-entrancy)": `actor` only serializes the
+    /// synchronous portions of a method — the `await` inside
+    /// `refreshAccessToken()` yields the actor, so two near-simultaneous
+    /// 401s (or an `isTokenExpired` race) could both run the body and
+    /// each exchange the same refresh_token concurrently. Google rotates
+    /// refresh tokens on some flows, so the second exchange can revoke
+    /// the session the first one just established. Routing every caller
+    /// through one in-flight `Task` mirrors `ThrivnBackendService.refreshTokens()`.
+    private var inFlightRefresh: Task<Void, Error>?
+
     init(clientID: String = "", redirectURI: String = "com.myaissistant:/oauth2callback") {
         self.clientID = clientID
         self.redirectURI = redirectURI
@@ -145,7 +157,25 @@ actor GoogleCalendarService {
     }
 
     /// Refresh the access token using the stored refresh token.
+    /// Coalesces concurrent calls — if a refresh is already in flight, waits
+    /// for it instead of triggering a second one (which would race and
+    /// potentially revoke each other's token).
     private func refreshAccessToken() async throws {
+        if let existing = inFlightRefresh {
+            try await existing.value
+            return
+        }
+
+        let task = Task<Void, Error> {
+            try await self.performRefreshAccessToken()
+        }
+        inFlightRefresh = task
+        defer { inFlightRefresh = nil }
+
+        try await task.value
+    }
+
+    private func performRefreshAccessToken() async throws {
         guard let refreshToken else {
             throw GoogleCalendarError.notAuthenticated
         }

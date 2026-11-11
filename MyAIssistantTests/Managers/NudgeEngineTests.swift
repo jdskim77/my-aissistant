@@ -445,6 +445,28 @@ final class NudgeEngineTests: XCTestCase {
         XCTAssertEqual(a, b)
     }
 
+    func testSafetyNoteFingerprintIsStableAcrossProcesses() {
+        // Fix for [P1] "Crisis-safety dedupe key uses per-process
+        // String.hashValue": the fingerprint is persisted to UserDefaults
+        // and compared against a value written by a PRIOR app launch, so
+        // same-process stability (the test above) isn't enough to catch
+        // the bug — Swift's `String.hashValue` is stable *within* one
+        // process but re-seeded on every launch, so that test would pass
+        // even with the bug present.
+        //
+        // This asserts against a hardcoded SHA256 digest computed
+        // independently (Python `hashlib.sha256("i feel awful")`), which is
+        // deterministic across every process/platform/run. `String.hashValue`
+        // could never produce this exact literal value, so this test fails
+        // under the old implementation and passes only once the fingerprint
+        // is actually process-independent.
+        let fp = NudgeEngine.safetyNoteFingerprint(recordID: "rec-1", text: "I feel awful")
+        XCTAssertEqual(
+            fp,
+            "rec-1:6857edd03defc7a17f8bb641b6be31b54559d4bb1d5a36c1c191bb7a5513ce10"
+        )
+    }
+
     func testSafetyNoteFingerprintDiffersOnTextEdit() {
         // An edited note is treated as a fresh scan on purpose (not a bug) —
         // the fingerprint must change when the text changes.
