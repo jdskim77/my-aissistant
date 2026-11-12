@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Observation
 import SwiftData
@@ -303,9 +304,20 @@ final class NudgeEngine {
     /// text means an edit to the note (different fingerprint) is
     /// treated as a fresh scan — which is the correct behavior, not
     /// a bug.
+    ///
+    /// Fix for [P1] "Crisis-safety dedupe key uses per-process
+    /// String.hashValue": Swift re-seeds `String.hashValue` on every
+    /// process launch, so a fingerprint persisted to `UserDefaults` in
+    /// one app run can never match the same input hashed in a later
+    /// run. That meant every relaunch after a 24h safety pause re-fired
+    /// the safety nudge for the same historical note. SHA256 (via
+    /// CryptoKit) is deterministic across processes, so the persisted
+    /// fingerprint keeps matching after relaunch.
     static func safetyNoteFingerprint(recordID: String, text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return "\(recordID):\(trimmed.hashValue)"
+        let digest = SHA256.hash(data: Data(trimmed.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        return "\(recordID):\(hex)"
     }
 
     private func hasEmittedSafetyForFingerprint(_ fp: String) -> Bool {
