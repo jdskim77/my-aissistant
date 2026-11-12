@@ -30,6 +30,29 @@ final class CheckInRecordTests: XCTestCase {
         XCTAssertNil(record.notes)
         XCTAssertNil(record.aiSummary)
         XCTAssertFalse(record.id.isEmpty)
+        XCTAssertFalse(record.isQuickCheckIn, "Default should be false for the normal in-app flow")
+    }
+
+    func testQuickCheckInFlagDefaultsFalseAndCanBeSetTrue() {
+        let record = CheckInRecord(timeSlot: .midday, isQuickCheckIn: true)
+        XCTAssertTrue(record.isQuickCheckIn)
+    }
+
+    func testCompleteCheckInViaManagerMarksQuickCheckInFlag() {
+        let manager = CheckInManager(modelContext: context)
+        let record = manager.startCheckIn(timeSlot: .morning)
+        XCTAssertFalse(record.isQuickCheckIn)
+        manager.completeCheckIn(record, mood: 3, energyLevel: nil, notes: nil, aiSummary: nil, isQuickCheckIn: true)
+        XCTAssertTrue(record.isQuickCheckIn)
+        XCTAssertEqual(record.mood, 3)
+        XCTAssertTrue(record.completed)
+    }
+
+    func testCompleteCheckInDefaultsToNotQuickCheckIn() {
+        let manager = CheckInManager(modelContext: context)
+        let record = manager.startCheckIn(timeSlot: .morning)
+        manager.completeCheckIn(record, mood: 3, energyLevel: nil, notes: nil, aiSummary: nil)
+        XCTAssertFalse(record.isQuickCheckIn)
     }
 
     func testInitWithAllFields() {

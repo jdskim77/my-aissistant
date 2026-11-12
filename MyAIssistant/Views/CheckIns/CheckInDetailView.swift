@@ -460,6 +460,11 @@ struct CheckInDetailView: View {
                     .animation(.easeOut(duration: 0.3), value: recapMessage)
             }
 
+            // Post-check-in pattern insight (Feature 2) — shown for any
+            // check-in completion, independent of the AI daily recap above.
+            postCheckInInsightCard
+                .padding(.horizontal, 4)
+
             // Habits due today (not yet completed)
             if !habitsDueToday.isEmpty {
                 habitsDueCard
@@ -485,6 +490,56 @@ struct CheckInDetailView: View {
     }
 
     // MARK: - Daily Recap Card
+
+    // MARK: - Post-Check-in Insight (Feature 2)
+
+    @Environment(\.insightEngine) private var insightEngine
+
+    /// Small card shown right after any check-in completes: the current
+    /// streak plus InsightEngine's pattern insight for today, or — per
+    /// NUDGE_ENGINE_SPEC's non-goals ("no cheerleading") — a short factual
+    /// fallback when there isn't enough data yet (InsightEngine.todayInsight()
+    /// returns nil below 5 tasks / 3 check-ins in the last 14 days).
+    private var postCheckInInsightCard: some View {
+        let streak = patternEngine?.currentStreak() ?? 0
+        let insight = insightEngine?.todayInsight()
+        let icon = insight?.icon ?? "chart.bar.fill"
+        let text = insight?.text ?? QuickCheckInLogic.fallbackInsightText()
+
+        return HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.accent)
+                .frame(width: 28, height: 28)
+                .background(AppColors.accent.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("🔥 \(streak)-day streak")
+                    .font(AppFonts.label(9))
+                    .tracking(0.7)
+                    .foregroundColor(AppColors.accent)
+                Text(text)
+                    .font(AppFonts.body(13))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(AppColors.accent.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AppColors.accent.opacity(0.18), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(streak)-day streak. \(text)")
+    }
 
     // MARK: - Habits Due Today
 
@@ -763,13 +818,24 @@ struct CheckInDetailView: View {
 
     private func finalizeCheckIn() {
         guard let record else { return }
-        checkInManager?.completeCheckIn(
+        // Guard against a race with the notification-driven quick check-in
+        // (Feature 1): if this slot was already completed in the background
+        // (e.g. the App Group store container that QuickCheckInHandler uses)
+        // while this in-app form was still open, don't silently overwrite
+        // that mood/isQuickCheckIn with the stale in-form selection. Reuse
+        // the existing "auto-advance" notice banner rather than adding new UI.
+        if record.completed {
+            didAutoAdvanceSlot = true
+            return
+        }
+        let saved = checkInManager?.completeCheckIn(
             record,
             mood: selectedMood ?? 3,
             energyLevel: selectedEnergy,
             notes: notes.isEmpty ? nil : notes,
             aiSummary: aiGreeting
-        )
+        ) ?? false
+        guard saved else { return }
         usageGateManager?.recordCheckIn()
 
         // Feed the adaptive behavior engine so it can learn the user's actual
@@ -777,10 +843,12 @@ struct CheckInDetailView: View {
         checkInBehaviorEngine?.recordCompletion(window: timeSlot)
 
         // Cancel today's streak-at-risk reminder and re-schedule adaptive reminders
-        // for tomorrow based on the updated streak value
+        // for tomorrow based on the updated streak value. alreadyCheckedInToday is
+        // `!isYesterday`: this view also supports backfilling yesterday's slot, and
+        // doing only that must NOT suppress today's still-pending reminder.
         let updatedStreak = patternEngine?.currentStreak() ?? 0
         notificationManager?.cancelStreakReminder()
-        notificationManager?.scheduleAdaptiveCheckInReminders(currentStreak: updatedStreak)
+        notificationManager?.scheduleAdaptiveCheckInReminders(currentStreak: updatedStreak, alreadyCheckedInToday: !isYesterday)
     }
 
     private func energyLabel(_ level: Int) -> String {
