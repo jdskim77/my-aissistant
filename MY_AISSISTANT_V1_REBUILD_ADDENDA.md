@@ -79,17 +79,23 @@ The live model list (`/Users/joekim/Claude/My AIssistant/MyAIssistant/Models/`):
 | Model | Purpose |
 |-------|---------|
 | `AlarmEntry` | Task-linked alarms / reminders |
-| `TaskBuilderState` | In-progress task-builder state (multi-step form persistence) |
-| `WatchScheduleData` | Data shared with watchOS companion |
-| `WidgetCheckInWindow` | Next-check-in window for widget display |
+| `TaskBuilderState` (plain class, not `@Model`) | In-progress task-builder state (multi-step form persistence) |
+| `WatchScheduleData` (Codable struct, not `@Model`) | Data shared with watchOS companion |
+| `WidgetCheckInWindow` (Codable struct, not `@Model`) | Next-check-in window for widget display |
+
+### Nudges (see `NUDGE_ENGINE_SPEC.md`)
+
+| Model | Purpose |
+|-------|---------|
+| `Nudge` | Proactive coaching nudge produced by `NudgeEngine`, delivered as a local notification or in-app banner, rated by the user's response. CloudKit-compatible (no `.unique`, every stored property defaulted). |
 
 ### Schema versioning
 
 | File | Purpose |
 |------|---------|
-| `SchemaVersioning.swift` | Defines `VersionedSchema` stages (V1 → V2 → V3 → V4 per COMPASS_SPEC §13). All lightweight migrations so far. Consult before changing any `@Model` structure. |
+| `SchemaVersioning.swift` | Single `SchemaV1` baseline (version 1.0.0) listing every shipped `@Model`; `AppMigrationPlan` has one schema and no stages. Its header holds the recipe for adding a real V2. Consult before changing any `@Model` structure. |
 
-**`ModelContainer` setup:** the live schema must register **all** of the above, not the 7-model subset in the rebuild doc. Confirm against `MyAIssistantApp.swift` before assuming.
+**`ModelContainer` setup:** the live schema registers the 19 `@Model` types in `SchemaV1.models` (every `@Model` above; the enums, plain classes and Codable structs are not registered), not the 7-model subset in the rebuild doc. The app uses `Schema(versionedSchema: SchemaV1.self)` in `MyAIssistantApp.swift`; the App Intents container and the share extension use `Schema(AppSchema.allModels)`.
 
 ---
 
@@ -256,17 +262,17 @@ Replace Section 9's "Onboarding Flow" subsection with the 12-step sequence above
 
 ## F. Schema Versioning & Migration
 
-`Models/SchemaVersioning.swift` defines `VersionedSchema` stages. Per COMPASS_SPEC §13, the current version is **V4** with all lightweight migrations (V1 → V2 → V3 → V4).
+`Models/SchemaVersioning.swift` is a **single-baseline** schema: `SchemaV1` (version 1.0.0) lists every shipped `@Model`, and `AppMigrationPlan` has one schema and no stages. (Older notes and COMPASS_SPEC §13 describe V1 → V4 stages; the code collapsed those into one baseline pre-1.0 because the old V1/V2 shared the same live model types, which made the "migration" a no-op.)
 
 ### Rules
 
-- Any new `@Model` property or type requires a new `VersionedSchema` stage.
-- Migrations have been lightweight so far — keep it that way when possible (avoid renames, type changes, removing required fields).
-- When adding a stage: bump the schema, add a `MigrationStage` (lightweight if the change is additive), register in `ModelContainer` setup.
+- Additive changes (a new optional/defaulted property, a new `@Model` type) stay in `SchemaV1`: edit the model file, append any new type to `SchemaV1.models`, and SwiftData migrates lightweight-automatically.
+- A new `@Model` type must also be wiped by both `wipeAllLocalData()` and `performWipeAllData()` in `SettingsView.swift`; `WipeAllDataCoversSchemaSourceGuardTests` fails CI otherwise.
+- Breaking changes (renames, type changes, removing required fields) need a real `SchemaV2`: follow the numbered recipe in the `SchemaVersioning.swift` header (freeze V1 by duplicating its models into a `SchemaV2` namespace, never list the same live type in both versions, add a `MigrationStage`, point `AppSchema.allModels` at V2, test against an existing TestFlight store).
 
 ### Rebuild doc integration
 
-Section 2 of the rebuild doc shows a simple `ModelContainer` setup with 7 models and `isStoredInMemoryOnly: false`. The live setup must register **all** models listed in Section A of this addenda plus the `VersionedSchema` stages.
+Section 2 of the rebuild doc shows a simple `ModelContainer` setup with 7 models and `isStoredInMemoryOnly: false`. The live setup registers every `@Model` in `SchemaV1.models` (Section A of this addenda) via `Schema(versionedSchema: SchemaV1.self)`.
 
 ---
 
