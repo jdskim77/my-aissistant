@@ -53,8 +53,9 @@ final class CheckInManagerTests: XCTestCase {
 
     func testCompleteCheckIn() {
         let record = sut.startCheckIn(timeSlot: .morning)
-        sut.completeCheckIn(record, mood: 4, energyLevel: 3, notes: "Feeling good", aiSummary: "Great start!")
+        let saved = sut.completeCheckIn(record, mood: 4, energyLevel: 3, notes: "Feeling good", aiSummary: "Great start!")
 
+        XCTAssertTrue(saved)
         XCTAssertTrue(record.completed)
         XCTAssertEqual(record.mood, 4)
         XCTAssertEqual(record.energyLevel, 3)

@@ -21,19 +21,24 @@ final class CheckInManager {
 
     // MARK: - Complete Check-in
 
+    @discardableResult
     func completeCheckIn(
         _ record: CheckInRecord,
         mood: Int,
         energyLevel: Int?,
         notes: String?,
-        aiSummary: String?
-    ) {
+        aiSummary: String?,
+        isQuickCheckIn: Bool = false
+    ) -> Bool {
         record.completed = true
         record.mood = mood
         record.energyLevel = energyLevel
         record.notes = notes
         record.aiSummary = aiSummary
-        modelContext.safeSave()
+        if isQuickCheckIn {
+            record.isQuickCheckIn = true
+        }
+        return modelContext.safeSave()
     }
 
     // MARK: - Generate AI Greeting
